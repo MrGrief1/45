@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.wikipedia.org;">
+    <title>FlashSearch</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="aux-window-template.css">
+    <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+    <div id="app-container">
+        
+        <div id="search-view" class="view active">
+            <div id="main-layout">
+                <div id="search-box" class="glass-element">
+                    <i data-feather="search" class="icon search-icon"></i>
+                    <input type="text" id="search-input" placeholder="FlashSearch" autofocus>
+                </div>
+
+                <div id="action-buttons">
+                    <button class="action-button glass-element" data-window-type="apps-library" data-i18n-title="title_apps_library">
+                        <i data-feather="grid" class="icon"></i>
+                    </button>
+                    <button class="action-button glass-element" data-window-type="files" data-i18n-title="title_files">
+                        <i data-feather="folder" class="icon"></i>
+                    </button>
+                    <button class="action-button glass-element" data-window-type="commands" data-i18n-title="title_commands">
+                        <i data-feather="command" class="icon"></i>
+                    </button>
+                    <button class="action-button glass-element" data-window-type="clipboard" data-i18n-title="title_clipboard">
+                        <i data-feather="copy" class="icon"></i>
+                    </button>
+                    <button class="action-button glass-element settings-gear" id="settings-button" data-i18n-title="context_settings">
+                        <i data-feather="settings" class="icon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="pinned-apps-container" class="glass-element">
+                <!-- Pinned apps will be rendered here by renderer.js -->
+            </div>
+
+            <div id="aux-panel" class="glass-element">
+                <!-- Auxiliary content will be loaded here -->
+            </div>
+
+            <div id="results-area" class="glass-element">
+                <div id="results-container">
+                    <ul id="results-list"></ul>
+                </div>
+                <div id="web-preview-container">
+                    <div id="loader" style="display:none;">Loading...</div>
+                    </div>
+            </div>
+        </div>
+
+        <div id="settings-view" class="view">
+             <div class="settings-container glass-element">
+                <div class="settings-header">
+                    <button id="settings-back-button" class="action-button glass-element">
+                        <i data-feather="arrow-left" class="icon"></i>
+                    </button>
+                    <h2 data-i18n="settings_title">Settings</h2>
+                </div>
+                
+                <div class="settings-content">
+                    <div class="settings-sidebar">
+                        <ul>
+                            <li data-tab="general" class="active" data-i18n="settings_general">General</li>
+                            <li data-tab="appearance" data-i18n="settings_appearance">Appearance</li>
+                            <li data-tab="indexing" data-i18n="settings_indexing">Indexing</li>
+                            <li data-tab="automations" data-i18n="settings_automations">Automations</li>
+                            <li data-tab="about" data-i18n="settings_about">About</li>
+                        </ul>
+                    </div>
+                    <div class="settings-main">
+                        
+                        <div id="tab-general" class="tab-content active">
+                            <div class="setting-item">
+                                <label data-i18n="settings_language">Language</label>
+                                <div class="custom-select-wrapper" data-setting-key="language" id="custom-select-language">
+                                    <div class="custom-select">
+                                        <div class="custom-select-trigger">
+                                            <span>English</span>
+                                            <i data-feather="chevron-down" class="arrow"></i>
+                                        </div>
+                                        <div class="custom-options">
+                                            <div class="custom-option" data-value="en"><span>English</span></div>
+                                            <div class="custom-option" data-value="ru"><span>Русский</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <label data-i18n="settings_shortcut">Global Shortcut</label>
+                                <input type="text" id="setting-shortcut" placeholder="e.g., Alt+Space">
+                                <div class="setting-item-description">
+                                    <p data-i18n="settings_shortcut_description">Use modifiers like Ctrl, Alt, Shift + a key (e.g., Alt+S).</p>
+                                </div>
+                            </div>
+                             <div class="setting-item">
+                                <label data-i18n="settings_window_position">Window Position</label>
+                                <div class="custom-select-wrapper" data-setting-key="windowPosition" id="custom-select-position">
+                                    <div class="custom-select">
+                                        <div class="custom-select-trigger">
+                                            <span data-i18n="pos_top_center">Top Center</span>
+                                            <i data-feather="chevron-down" class="arrow"></i>
+                                        </div>
+                                        <div class="custom-options">
+                                            <div class="custom-option" data-value="top-center"><span data-i18n="pos_top_center">Top Center</span></div>
+                                            <div class="custom-option" data-value="center"><span data-i18n="pos_center">Center Screen</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                             <div class="setting-item">
+                                <label data-i18n="settings_pinned_apps">Pinned Apps</label>
+                                <label class="toggle-switch-ios">
+                                    <input type="checkbox" id="setting-pinned-apps">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <label data-i18n="settings_auto_launch">Launch at system startup</label>
+                                <label class="toggle-switch-ios">
+                                    <input type="checkbox" id="setting-auto-launch">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div id="tab-appearance" class="tab-content">
+                            <div class="setting-item">
+                                <label data-i18n="settings_theme">Theme</label>
+                                <div class="custom-select-wrapper" data-setting-key="theme" id="custom-select-theme">
+                                    <div class="custom-select">
+                                        <div class="custom-select-trigger">
+                                            <span data-i18n="theme_auto">Auto</span>
+                                            <i data-feather="chevron-down" class="arrow"></i>
+                                        </div>
+                                        <div class="custom-options">
+                                            <div class="custom-option" data-value="auto"><span data-i18n="theme_auto">Auto</span></div>
+                                            <div class="custom-option" data-value="light"><span data-i18n="theme_light">Light</span></div>
+                                            <div class="custom-option" data-value="dark"><span data-i18n="theme_dark">Dark</span></div>
+                                            <div class="custom-option" data-value="liquid_glass_blue"><span data-i18n="theme_liquid_glass_blue">Liquid Glass</span></div>
+                                            <div class="custom-option" data-value="ocean_depths"><span data-i18n="theme_ocean_depths">Ocean Depths</span></div>
+                                            <div class="custom-option" data-value="sunset"><span data-i18n="theme_sunset">Sunset Gradient</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                             <div class="setting-item">
+                                <label data-i18n="settings_animations">Enable Animations</label>
+                                <label class="toggle-switch-ios">
+                                    <input type="checkbox" id="setting-animations">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <label data-i18n="settings_animation_style">Animation Style</label>
+                                <div class="custom-select-wrapper" data-setting-key="animationStyle" id="custom-select-animation-style">
+                                     <div class="custom-select">
+                                        <div class="custom-select-trigger">
+                                            <span data-i18n="anim_scale">Scale & Bounce</span>
+                                            <i data-feather="chevron-down" class="arrow"></i>
+                                        </div>
+                                        <div class="custom-options">
+                                            <div class="custom-option" data-value="scale"><span data-i18n="anim_scale">Scale & Bounce</span></div>
+                                            <div class="custom-option" data-value="slide"><span data-i18n="anim_slide">Slide Down</span></div>
+                                            <div class="custom-option" data-value="fade"><span data-i18n="anim_fade">Fade</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                               <label data-i18n="settings_focus_highlight">Focus Highlight</label>
+                               <label class="toggle-switch-ios">
+                                   <input type="checkbox" id="setting-focus-highlight">
+                                   <span class="slider"></span>
+                               </label>
+                           </div>
+                            <div class="setting-item">
+                                <label data-i18n="settings_results_animation_style">Results Animation</label>
+                                <div class="custom-select-wrapper" data-setting-key="resultsAnimationStyle" id="custom-select-results-animation-style">
+                                     <div class="custom-select">
+                                        <div class="custom-select-trigger">
+                                            <span data-i18n="anim_slide_up">Slide Up</span>
+                                            <i data-feather="chevron-down" class="arrow"></i>
+                                        </div>
+                                        <div class="custom-options">
+                                            <div class="custom-option" data-value="slide-up"><span data-i18n="anim_slide_up">Slide Up</span></div>
+                                            <div class="custom-option" data-value="fade-in"><span data-i18n="anim_fade_in">Fade In</span></div>
+                                            <div class="custom-option" data-value="scale-in"><span data-i18n="anim_scale_in">Scale In</span></div>
+                                            <div class="custom-option" data-value="slide-right"><span data-i18n="anim_slide_right">Slide from Right</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- НОВОЕ: Выбор цвета выделения -->
+                            <div class="setting-item">
+                                <label data-i18n="settings_selection_color">Selection Color</label>
+                                <div class="custom-select-wrapper" data-setting-key="selectionColorStyle" id="custom-select-selection-color">
+                                     <div class="custom-select">
+                                        <div class="custom-select-trigger">
+                                            <span data-i18n="selection_gray">Gray</span>
+                                            <i data-feather="chevron-down" class="arrow"></i>
+                                        </div>
+                                        <div class="custom-options">
+                                            <div class="custom-option" data-value="gray"><span data-i18n="selection_gray">Gray</span></div>
+                                            <div class="custom-option" data-value="blue"><span data-i18n="selection_blue">Blue</span></div>
+                                            <div class="custom-option" data-value="green"><span data-i18n="selection_green">Green</span></div>
+                                            <div class="custom-option" data-value="purple"><span data-i18n="selection_purple">Purple</span></div>
+                                            <div class="custom-option" data-value="red"><span data-i18n="selection_red">Red</span></div>
+                                            <div class="custom-option" data-value="orange"><span data-i18n="selection_orange">Orange</span></div>
+                                            <div class="custom-option" data-value="yellow"><span data-i18n="selection_yellow">Yellow</span></div>
+                                            <div class="custom-option" data-value="accent"><span data-i18n="selection_accent">Accent (Theme)</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                             <div class="setting-item">
+                                <label data-i18n="settings_opacity">Opacity (%)</label>
+                                <input type="range" id="setting-opacity" min="0" max="100" step="1">
+                            </div>
+                            <div class="setting-item">
+                                <label data-i18n="settings_blur">Blur Strength (px)</label>
+                                <input type="range" id="setting-blur" min="0" max="100" step="1">
+                            </div>
+                            <hr>
+                            <div class="setting-item">
+                                <label data-i18n="settings_width">Window Width (px)</label>
+                                <input type="range" id="setting-width" min="600" max="1600" step="10">
+                            </div>
+                            <div class="setting-item">
+                                <label data-i18n="settings_height">Bar Height (px)</label>
+                                <input type="range" id="setting-height" min="70" max="120" step="1">
+                            </div>
+                            <div class="setting-item">
+                                <label data-i18n="settings_border_radius">Corner Radius (px)</label>
+                                <input type="range" id="setting-border-radius" min="10" max="40" step="1">
+                            </div>
+                        </div>
+
+                        <div id="tab-indexing" class="tab-content">
+                            <div class="setting-item">
+                                 <label data-i18n="settings_max_depth">Max Depth</label>
+                                 <input type="number" id="setting-max-depth" min="1" max="20">
+                            </div>
+
+                            <h4 data-i18n="settings_indexed_directories">Indexed Directories</h4>
+                            <div id="indexed-directories-list"></div>
+                            <button id="add-directory-button" class="settings-button" data-i18n="settings_add_directory">Add Directory</button>
+
+                            <hr>
+                            <h3 data-i18n="settings_indexing_status_header">Indexing Status</h3>
+                            <p><span data-i18n="settings_indexing_status">Status:</span> <strong id="index-status">Loading...</strong></p>
+                            <p><span data-i18n="settings_indexed_files">Indexed Files:</span> <strong id="index-count">0</strong></p>
+                            <button id="rebuild-index-button" class="settings-button secondary" data-i18n="settings_rebuild_index">Rebuild Index</button>
+                        </div>
+
+                        <div id="tab-automations" class="tab-content">
+                            <h4 data-i18n="settings_custom_automations">Custom Automations</h4>
+                            <div id="automations-list"></div>
+                            
+                            <div class="automation-form">
+                                <input type="text" id="new-auto-name" data-i18n-placeholder="settings_auto_name" placeholder="Name">
+                                <input type="text" id="new-auto-keyword" data-i18n-placeholder="settings_auto_keyword" placeholder="Keyword">
+                                <input type="text" id="new-auto-command" data-i18n-placeholder="settings_auto_command" placeholder="Command/Path">
+                                <button id="add-automation-button" class="settings-button" data-i18n="settings_add_automation">Add</button>
+                            </div>
+                            <hr>
+                            <div class="automation-instructions">
+                                <h4 data-i18n="auto_instructions_title">How to create an Automation</h4>
+                                <p data-i18n="auto_instructions_p1">Automations allow you to run commands or open applications using a short keyword.</p>
+                                <ul>
+                                    <li data-i18n-html="auto_instructions_step1"></li>
+                                    <li data-i18n-html="auto_instructions_step2"></li>
+                                    <li data-i18n-html="auto_instructions_step3"></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div id="tab-about" class="tab-content">
+                            <h3 data-i18n="app_name">FlashSearch</h3>
+                            <p><span data-i18n="about_version">Version:</span> <strong id="app-version">N/A</strong></p>
+                            <hr>
+                            <p><span data-i18n="about_developer">Developer:</span> <strong>Maks Urazov</strong></p>
+                            <p><span data-i18n="about_contact">Contact:</span> <a href="#" class="external-link" data-url="mailto:maksurazov1502@gmail.com">maksurazov1502@gmail.com</a></p>
+                            <p><span data-i18n="about_social">Follow us on X:</span> <a href="#" class="external-link" data-url="https://x.com/MrGr1ef">@MrGr1ef</a></p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script>
+      // Инициализация иконок Feather Icons (необходима для отображения)
+      if (window.feather) {
+          feather.replace();
+      }
+    </script>
+    <script src="renderer.js"></script>
+</body>
+</html>

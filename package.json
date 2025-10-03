@@ -1,0 +1,20 @@
+{
+    "name": "spotlite-windows",
+    "version": "1.0.0",
+    "description": "A Spotlight clone for Windows",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron ."
+    },
+    "author": "AI Assistant",
+    "license": "MIT",
+    "devDependencies": {
+        "electron": "^38.1.2"
+    },
+    "dependencies": {
+        "electron-store": "^8.1.0",
+        "file-icon": "^6.0.0",
+        "fuse.js": "^7.1.0",
+        "mathjs": "^12.4.2"
+    }
+}

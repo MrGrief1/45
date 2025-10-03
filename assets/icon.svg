@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>FlashSearch</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+    <div id="app-container">
+        
+        <div id="search-view" class="view active">
+            <div id="main-layout">
+                <div id="search-box" class="glass-element">
+                    <i data-feather="search" class="icon search-icon"></i>
+                    <input type="text" id="search-input" placeholder="FlashSearch" autofocus>
+                </div>
+
+                <div id="action-buttons">
+                     <button class="action-button glass-element" data-window-type="apps" data-i18n-title="title_apps">
+                        <i data-feather="grid" class="icon"></i>
+                    </button>
+                    <button class="action-button glass-element" data-window-type="files" data-i18n-title="title_files">
+                        <i data-feather="folder" class="icon"></i>
+                    </button>
+                    <button class="action-button glass-element" data-window-type="commands" data-i18n-title="title_commands">
+                        <i data-feather="command" class="icon"></i>
+                    </button>
+                    <button class="action-button glass-element" data-window-type="clipboard" data-i18n-title="title_clipboard">
+                        <i data-feather="copy" class="icon"></i>
+                    </button>
+                    <button class="action-button glass-element settings-gear" id="settings-button" data-i18n-title="context_settings">
+                        <i data-feather="settings" class="icon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="results-area" class="glass-element" style="display: none;">
+                <div id="results-container">
+                    <ul id="results-list"></ul>
+                </div>
+                <div id="web-preview-container">
+                    <div id="loader" style="display:none;">Loading...</div>
+                    </div>
+            </div>
+        </div>
+
+        <div id="settings-view" class="view">
+             <div class="settings-container glass-element">
+                <div class="settings-header">
+                    <button id="settings-back-button" class="action-button glass-element">
+                        <i data-feather="arrow-left" class="icon"></i>
+                    </button>
+                    <h2 data-i18n="settings_title">Settings</h2>
+                </div>
+                
+                <div class="settings-content">
+                    <div class="settings-sidebar">
+                        <ul>
+                            <li data-tab="general" class="active" data-i18n="settings_general">General</li>
+                            <li data-tab="appearance" data-i18n="settings_appearance">Appearance</li>
+                            <li data-tab="indexing" data-i18n="settings_indexing">Indexing</li>
+                            <li data-tab="automations" data-i18n="settings_automations">Automations</li>
+                            <li data-tab="about" data-i18n="settings_about">About</li>
+                        </ul>
+                    </div>
+                    <div class="settings-main">
+                        
+                        <div id="tab-general" class="tab-content active">
+                            <div class="setting-item">
+                                <label data-i18n="settings_language">Language</label>
+                                <select id="setting-language">
+                                    <option value="en">English</option>
+                                    <option value="ru">Русский</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label data-i18n="settings_shortcut">Global Shortcut</label>
+                                <input type="text" id="setting-shortcut" placeholder="e.g., Alt+Space">
+                            </div>
+                             <div class="setting-item">
+                                <label data-i18n="settings_window_position">Window Position</label>
+                                <select id="setting-position">
+                                    <option value="top-center" data-i18n="pos_top_center">Top Center</option>
+                                    <option value="center" data-i18n="pos_center">Center Screen</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div id="tab-appearance" class="tab-content">
+                            <div class="setting-item">
+                                <label data-i18n="settings_theme">Theme</label>
+                                <select id="setting-theme">
+                                    <option value="auto" data-i18n="theme_auto">Auto</option>
+                                    <option value="light" data-i18n="theme_light">Light</option>
+                                    <option value="dark" data-i18n="theme_dark">Dark</option>
+                                    <option value="liquid_glass_blue" data-i18n="theme_liquid_glass_blue">Liquid Glass</option>
+                                    <option value="ocean_depths" data-i18n="theme_ocean_depths">Ocean Depths</option>
+                                    <option value="sunset" data-i18n="theme_sunset">Sunset Gradient</option>
+                                </select>
+                            </div>
+                             <div class="setting-item">
+                                <label data-i18n="settings_animations">Enable Animations</label>
+                                <label class="toggle-switch-ios">
+                                    <input type="checkbox" id="setting-animations">
+                                    <span></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <label data-i18n="settings_animation_style">Animation Style</label>
+                                 <select id="setting-animation-style">
+                                    <option value="scale" data-i18n="anim_scale">Scale & Bounce</option>
+                                    <option value="slide" data-i18n="anim_slide">Slide Down</option>
+                                    <option value="fade" data-i18n="anim_fade">Fade</option>
+                                </select>
+                            </div>
+                             <div class="setting-item">
+                                <label data-i18n="settings_opacity">Opacity (%)</label>
+                                <input type="range" id="setting-opacity" min="0" max="100" step="1">
+                            </div>
+                            <div class="setting-item">
+                                <label data-i18n="settings_blur">Blur Strength (px)</label>
+                                <input type="range" id="setting-blur" min="0" max="100" step="1">
+                            </div>
+                        </div>
+
+                        <div id="tab-indexing" class="tab-content">
+                            <div class="setting-item">
+                                 <label data-i18n="settings_max_depth">Max Depth</label>
+                                 <input type="number" id="setting-max-depth" min="1" max="20">
+                            </div>
+
+                            <h4 data-i18n="settings_indexed_directories">Indexed Directories</h4>
+                            <div id="indexed-directories-list"></div>
+                            <button id="add-directory-button" class="settings-button" data-i18n="settings_add_directory">Add Directory</button>
+
+                            <hr>
+                            <h3 data-i18n="settings_indexing_status_header">Indexing Status</h3>
+                            <p><span data-i18n="settings_indexing_status">Status:</span> <strong id="index-status">Loading...</strong></p>
+                            <p><span data-i18n="settings_indexed_files">Indexed Files:</span> <strong id="index-count">0</strong></p>
+                            <button id="rebuild-index-button" class="settings-button secondary" data-i18n="settings_rebuild_index">Rebuild Index</button>
+                        </div>
+
+                        <div id="tab-automations" class="tab-content">
+                            <h4 data-i18n="settings_custom_automations">Custom Automations</h4>
+                            <div id="automations-list"></div>
+                            
+                            <div class="automation-form">
+                                <input type="text" id="new-auto-name" data-i18n-placeholder="settings_auto_name" placeholder="Name">
+                                <input type="text" id="new-auto-keyword" data-i18n-placeholder="settings_auto_keyword" placeholder="Keyword">
+                                <input type="text" id="new-auto-command" data-i18n-placeholder="settings_auto_command" placeholder="Command/Path">
+                                <button id="add-automation-button" class="settings-button" data-i18n="settings_add_automation">Add</button>
+                            </div>
+                            <hr>
+                            <div class="automation-instructions">
+                                <h4 data-i18n="auto_instructions_title">How to create an Automation</h4>
+                                <p data-i18n="auto_instructions_p1">Automations allow you to run commands or open applications using a short keyword.</p>
+                                <ul>
+                                    <li data-i18n="auto_instructions_step1"><b>Name:</b> A descriptive name for your automation (e.g., "Open Downloads Folder").</li>
+                                    <li data-i18n="auto_instructions_step2"><b>Keyword:</b> A short trigger word (e.g., "dl"). When you type this in the search, the automation will appear.</li>
+                                    <li data-i18n="auto_instructions_step3"><b>Command/Path:</b> The command to execute. This can be a path to a file/folder (e.g., C:\Users\YourUser\Downloads), a URL (e.g., https://google.com), or a system command (e.g., `cmd /c "shutdown /s /t 0"` to shutdown the PC).</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div id="tab-about" class="tab-content">
+                            <h3 data-i18n="app_name">FlashSearch</h3>
+                            <p><span data-i18n="about_version">Version:</span> <strong id="app-version">N/A</strong></p>
+                            <hr>
+                            <p><span data-i18n="about_developer">Developer:</span> <strong>Maks Urazov</strong></p>
+                            <p><span data-i18n="about_contact">Contact:</span> <a href="#" class="external-link" data-url="mailto:maksurazov1502@gmail.com">maksurazov1502@gmail.com</a></p>
+                            <p><span data-i18n="about_social">Follow us on X:</span> <a href="#" class="external-link" data-url="https://x.com/MrGr1ef">@MrGr1ef</a></p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script>
+      // Инициализация иконок Feather Icons (необходима для отображения)
+      if (window.feather) {
+          feather.replace();
+      }
+    </script>
+    <script src="renderer.js"></script>
+</body>
+</html>
