@@ -55,6 +55,17 @@ const Utils = {
     }
 };
 
+const FolderCustomization = {
+    defaultColor: '#FF6B6B',
+    defaultIcon: 'folder',
+    colors: ['#FF6B6B', '#FF8A65', '#FFA726', '#66BB6A', '#42A5F5', '#7E57C2'],
+    icons: [
+        'folder', 'box', 'code', 'cpu', 'layers', 'music', 'video', 'book', 'coffee', 'feather',
+        'edit-3', 'film', 'gift', 'headphones', 'heart', 'image', 'message-circle', 'monitor',
+        'shopping-bag', 'sliders', 'target', 'tool', 'trending-up', 'user'
+    ]
+};
+
 // =================================================================================
 // === Система Локализации (Клиентская сторона) ===
 // =================================================================================
@@ -93,6 +104,181 @@ const LocalizationRenderer = {
         if (AppState.currentView === 'settings') {
             SettingsModule.renderIndexedDirectories();
             SettingsModule.renderAutomations();
+        }
+    }
+};
+
+const FolderContextMenu = {
+    menuElement: null,
+    currentFolderId: null,
+    preventCloseActive: false,
+
+    init() {
+        if (this.menuElement) return;
+
+        this.menuElement = document.createElement('div');
+        this.menuElement.id = 'folder-context-menu';
+        this.menuElement.className = 'folder-context-menu hidden';
+        this.menuElement.innerHTML = this.buildMenuMarkup();
+        document.body.appendChild(this.menuElement);
+
+        this.bindEvents();
+        this.updateTranslations();
+    },
+
+    buildMenuMarkup() {
+        const colorButtons = FolderCustomization.colors.map(color => `
+            <button class="folder-menu-color" data-color="${color}" style="--swatch-color: ${color}" aria-label="${color}"></button>
+        `).join('');
+
+        const iconButtons = FolderCustomization.icons.map(iconName => {
+            const icon = window.feather?.icons?.[iconName]?.toSvg({ width: 20, height: 20 }) || '';
+            return `<button class="folder-menu-icon" data-icon="${iconName}" title="${iconName}">${icon}</button>`;
+        }).join('');
+
+        return `
+            <div class="folder-menu-section folder-menu-actions">
+                <button class="folder-menu-action" data-action="rename" data-i18n="context_rename_folder"></button>
+                <button class="folder-menu-action danger" data-action="delete" data-i18n="context_delete_folder"></button>
+            </div>
+            <div class="folder-menu-section">
+                <div class="folder-menu-title" data-i18n="folder_menu_color"></div>
+                <div class="folder-menu-colors">${colorButtons}</div>
+            </div>
+            <div class="folder-menu-section">
+                <div class="folder-menu-title" data-i18n="folder_menu_icon"></div>
+                <div class="folder-menu-icons">${iconButtons}</div>
+            </div>
+        `;
+    },
+
+    bindEvents() {
+        document.addEventListener('click', () => this.hide());
+        window.addEventListener('blur', () => this.hide());
+        window.addEventListener('resize', () => this.hide());
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.hide();
+            }
+        });
+
+        this.menuElement.addEventListener('click', (event) => event.stopPropagation());
+        this.menuElement.addEventListener('contextmenu', (event) => event.preventDefault());
+
+        this.menuElement.querySelector('[data-action="rename"]').addEventListener('click', () => {
+            const folderId = this.currentFolderId;
+            this.hide();
+            if (folderId) {
+                startFolderRename(folderId);
+            }
+        });
+
+        this.menuElement.querySelector('[data-action="delete"]').addEventListener('click', () => {
+            const folderId = this.currentFolderId;
+            this.hide();
+            if (folderId) {
+                ipcRenderer.send('delete-folder', folderId);
+            }
+        });
+
+        this.menuElement.querySelectorAll('.folder-menu-color').forEach(button => {
+            button.addEventListener('click', () => {
+                const folderId = this.currentFolderId;
+                const color = button.getAttribute('data-color');
+                this.hide();
+                if (folderId && color) {
+                    ipcRenderer.send('update-folder-color', { folderId, color });
+                }
+            });
+        });
+
+        this.menuElement.querySelectorAll('.folder-menu-icon').forEach(button => {
+            button.addEventListener('click', () => {
+                const folderId = this.currentFolderId;
+                const icon = button.getAttribute('data-icon');
+                this.hide();
+                if (folderId && icon) {
+                    ipcRenderer.send('update-folder-icon', { folderId, icon });
+                }
+            });
+        });
+    },
+
+    updateTranslations() {
+        if (!this.menuElement) return;
+        const renameButton = this.menuElement.querySelector('[data-action="rename"]');
+        const deleteButton = this.menuElement.querySelector('[data-action="delete"]');
+        const colorTitle = this.menuElement.querySelector('[data-i18n="folder_menu_color"]');
+        const iconTitle = this.menuElement.querySelector('[data-i18n="folder_menu_icon"]');
+
+        if (renameButton) renameButton.textContent = LocalizationRenderer.t('context_rename_folder');
+        if (deleteButton) deleteButton.textContent = LocalizationRenderer.t('context_delete_folder');
+        if (colorTitle) colorTitle.textContent = LocalizationRenderer.t('folder_menu_color');
+        if (iconTitle) iconTitle.textContent = LocalizationRenderer.t('folder_menu_icon');
+    },
+
+    show(event, folderId) {
+        if (!this.menuElement) this.init();
+
+        const folder = AppState.settings?.appFolders?.find(f => f.id === folderId);
+        if (!folder) return;
+
+        this.currentFolderId = folderId;
+
+        this.updateActiveOptions(folder);
+
+        this.menuElement.classList.remove('hidden');
+        this.menuElement.classList.add('visible');
+
+        const menuRect = this.menuElement.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        let left = event.clientX;
+        let top = event.clientY;
+
+        if (left + menuRect.width > viewportWidth) {
+            left = viewportWidth - menuRect.width - 8;
+        }
+        if (top + menuRect.height > viewportHeight) {
+            top = viewportHeight - menuRect.height - 8;
+        }
+
+        this.menuElement.style.left = `${Math.max(8, left)}px`;
+        this.menuElement.style.top = `${Math.max(8, top)}px`;
+
+        if (!this.preventCloseActive) {
+            ipcRenderer.send('set-prevent-close', true);
+            this.preventCloseActive = true;
+        }
+    },
+
+    updateActiveOptions(folder) {
+        const colorButtons = this.menuElement.querySelectorAll('.folder-menu-color');
+        const iconButtons = this.menuElement.querySelectorAll('.folder-menu-icon');
+
+        colorButtons.forEach(btn => {
+            const isActive = folder.color ? btn.getAttribute('data-color') === folder.color : btn.getAttribute('data-color') === FolderCustomization.defaultColor;
+            btn.classList.toggle('selected', isActive);
+        });
+
+        iconButtons.forEach(btn => {
+            const isActive = folder.icon ? btn.getAttribute('data-icon') === folder.icon : btn.getAttribute('data-icon') === FolderCustomization.defaultIcon;
+            btn.classList.toggle('selected', isActive);
+        });
+    },
+
+    hide() {
+        if (!this.menuElement || this.menuElement.classList.contains('hidden')) return;
+
+        this.menuElement.classList.remove('visible');
+        this.menuElement.classList.add('hidden');
+        this.currentFolderId = null;
+
+        if (this.preventCloseActive) {
+            ipcRenderer.send('set-prevent-close', false);
+            this.preventCloseActive = false;
         }
     }
 };
@@ -888,6 +1074,7 @@ const PinnedAppsModule = {
         const container = Utils.getElement('#pinned-apps-container');
         if (!container || !AppState.settings.appFolders) return;
 
+        FolderContextMenu.hide();
         container.innerHTML = '';
         const fragment = document.createDocumentFragment();
         const currentFolder = AppState.settings.appFolders.find(f => f.id === this.currentFolderId);
@@ -896,10 +1083,16 @@ const PinnedAppsModule = {
             // Render folders
             AppState.settings.appFolders.forEach(folder => {
                 if (folder.id === 'pinned') return;
-                const folderEl = this.createPinnedItem(folder.name, 'folder', () => {
-                    this.currentFolderId = folder.id;
-                    this.render();
-                });
+                const folderEl = this.createPinnedItem(
+                    folder.name,
+                    folder.icon || FolderCustomization.defaultIcon,
+                    () => {
+                        this.currentFolderId = folder.id;
+                        this.render();
+                    },
+                    null,
+                    { isFolder: true, color: folder.color || FolderCustomization.defaultColor }
+                );
                 folderEl.setAttribute('data-folder-id', folder.id); // Add data attribute for renaming
 
                 // --- D&D Target ---
@@ -927,7 +1120,7 @@ const PinnedAppsModule = {
                 folderEl.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    ipcRenderer.send('show-folder-context-menu', folder.id);
+                    FolderContextMenu.show(e, folder.id);
                 });
                 fragment.appendChild(folderEl);
             });
@@ -972,9 +1165,9 @@ const PinnedAppsModule = {
         ViewManager.resizeWindow(); // Recalculate window size after render
     },
 
-    createPinnedItem: function(name, iconName, onClick, path = null) {
+    createPinnedItem: function(name, iconName, onClick, path = null, options = {}) {
         const item = Utils.createElement('div', { className: 'pinned-item' });
-        
+
         // === УЛУЧШЕНО: Визуальная обратная связь при клике ===
         item.addEventListener('click', (e) => {
             item.style.transform = 'scale(0.9)';
@@ -997,16 +1190,26 @@ const PinnedAppsModule = {
 
         const icon = document.createElement(path ? 'img' : 'div');
         icon.className = 'pinned-item-icon';
+        if (!path) {
+            icon.classList.add('pinned-item-icon-vector');
+        }
         if (path) {
             const cachedSrc = AppState.iconCache.get(path);
-            const src = (cachedSrc && typeof cachedSrc === 'string' && cachedSrc.startsWith('data:image')) 
-                        ? cachedSrc 
+            const src = (cachedSrc && typeof cachedSrc === 'string' && cachedSrc.startsWith('data:image'))
+                        ? cachedSrc
                         : SearchModule.getFallbackIconDataUrl('cpu');
             icon.src = src;
             icon.setAttribute('data-path', path);
             icon.classList.add('app-icon');
         } else {
             icon.innerHTML = window.feather.icons[iconName] ? window.feather.icons[iconName].toSvg() : '';
+            if (options.isFolder) {
+                const color = options.color || FolderCustomization.defaultColor;
+                item.style.setProperty('--folder-accent', color);
+                icon.classList.add('pinned-item-icon-colored');
+                icon.style.backgroundColor = color;
+                icon.style.color = '#ffffff';
+            }
         }
 
         const nameEl = Utils.createElement('div', { className: 'pinned-item-name' });
@@ -1017,6 +1220,50 @@ const PinnedAppsModule = {
         return item;
     }
 };
+
+function startFolderRename(folderId) {
+    const folderEl = document.querySelector(`[data-folder-id="${folderId}"]`);
+    const nameEl = folderEl?.querySelector('.pinned-item-name');
+
+    if (!folderEl || !nameEl || folderEl.querySelector('.pinned-item-name-input')) return;
+
+    const originalName = nameEl.textContent;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = originalName;
+    input.className = 'pinned-item-name-input';
+
+    nameEl.style.display = 'none';
+    folderEl.appendChild(input);
+    input.focus();
+    input.select();
+
+    const finishEditing = () => {
+        if (!input.parentNode) return;
+
+        const newName = input.value.trim();
+
+        nameEl.style.display = 'block';
+        input.remove();
+
+        if (newName && newName !== originalName) {
+            nameEl.textContent = newName;
+            ipcRenderer.send('rename-folder', { folderId, newName });
+        } else {
+            nameEl.textContent = originalName;
+        }
+    };
+
+    input.addEventListener('blur', finishEditing);
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            finishEditing();
+        } else if (e.key === 'Escape') {
+            input.value = originalName;
+            finishEditing();
+        }
+    });
+}
 
 // =================================================================================
 // === Менеджер Видов и Анимаций (View Manager) ===
@@ -1660,6 +1907,7 @@ document.addEventListener('DOMContentLoaded', () => {
     SettingsModule.init();
     SearchModule.init();
     PinnedAppsModule.init();
+    FolderContextMenu.init();
     AuxPanelManager.init();
     CustomSelect.init();
 
@@ -1684,6 +1932,7 @@ document.addEventListener('DOMContentLoaded', () => {
         LocalizationRenderer.applyTranslations();
         SettingsModule.populateSettingsUI();
         PinnedAppsModule.render();
+        FolderContextMenu.updateTranslations();
         ViewManager.resizeWindow(); // Always resize after settings update
     });
 
@@ -1705,47 +1954,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     ipcRenderer.on('prompt-rename-folder', (event, folderId) => {
-        const folderEl = document.querySelector(`[data-folder-id="${folderId}"]`);
-        const nameEl = folderEl?.querySelector('.pinned-item-name');
-
-        if (!folderEl || !nameEl || folderEl.querySelector('.pinned-item-name-input')) return;
-
-        const originalName = nameEl.textContent;
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = originalName;
-        input.className = 'pinned-item-name-input';
-
-        nameEl.style.display = 'none';
-        folderEl.appendChild(input);
-        input.focus();
-        input.select();
-
-        const finishEditing = () => {
-            if (!input.parentNode) return;
-
-            const newName = input.value.trim();
-            
-            nameEl.style.display = 'block';
-            input.remove();
-
-            if (newName && newName !== originalName) {
-                nameEl.textContent = newName;
-                ipcRenderer.send('rename-folder', { folderId, newName });
-            } else {
-                nameEl.textContent = originalName;
-            }
-        };
-
-        input.addEventListener('blur', finishEditing);
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                finishEditing();
-            } else if (e.key === 'Escape') {
-                input.value = originalName;
-                finishEditing();
-            }
-        });
+        startFolderRename(folderId);
     });
 
     ipcRenderer.on('prompt-create-folder', () => {
@@ -1758,8 +1967,11 @@ document.addEventListener('DOMContentLoaded', () => {
         input.placeholder = LocalizationRenderer.t('new_folder_default_name');
         input.className = 'pinned-item-name-input';
 
-        const iconDiv = Utils.createElement('div', { className: 'pinned-item-icon' });
+        const iconDiv = Utils.createElement('div', { className: 'pinned-item-icon pinned-item-icon-vector pinned-item-icon-colored' });
+        const defaultColor = FolderCustomization.defaultColor;
         iconDiv.innerHTML = window.feather.icons['folder'].toSvg();
+        iconDiv.style.backgroundColor = defaultColor;
+        iconDiv.style.color = '#ffffff';
         
         tempItem.appendChild(iconDiv);
         tempItem.appendChild(input);

@@ -12,6 +12,17 @@ let AppState = {
     currentFolderId: 'pinned',
 };
 
+const FolderCustomization = {
+    defaultColor: '#FF6B6B',
+    defaultIcon: 'folder',
+    colors: ['#FF6B6B', '#FF8A65', '#FFA726', '#66BB6A', '#42A5F5', '#7E57C2'],
+    icons: [
+        'folder', 'box', 'code', 'cpu', 'layers', 'music', 'video', 'book', 'coffee', 'feather',
+        'edit-3', 'film', 'gift', 'headphones', 'heart', 'image', 'message-circle', 'monitor',
+        'shopping-bag', 'sliders', 'target', 'tool', 'trending-up', 'user'
+    ]
+};
+
 // === Инициализация и IPC обработчики ===
 ipcRenderer.on('settings-updated', (event, data) => {
     const settings = data.settings;
@@ -107,6 +118,8 @@ function createNewFolder() {
         const newFolder = {
             id: `folder-${Date.now()}`,
             name: folderName,
+            color: FolderCustomization.defaultColor,
+            icon: FolderCustomization.defaultIcon,
             apps: []
         };
         const updatedFolders = [...AppState.appFolders, newFolder];
@@ -135,10 +148,10 @@ function renderAppGrid() {
         // Сначала папки
         AppState.appFolders.forEach(folder => {
             if (folder.id === 'pinned') return;
-            const item = createGridItem(folder.name, 'folder', () => {
+            const item = createGridItem(folder.name, folder.icon || FolderCustomization.defaultIcon, () => {
                 AppState.currentFolderId = folder.id;
                 renderAppGrid();
-            });
+            }, null, { isFolder: true, color: folder.color || FolderCustomization.defaultColor });
             // НОВОЕ: Добавляем ID папки для drag & drop
             item.setAttribute('data-folder-id', folder.id);
             // НОВОЕ: Контекстное меню для папок
@@ -188,7 +201,7 @@ function renderAppGrid() {
     loadRealIcons();
 }
 
-function createGridItem(name, iconName, onClick, path = null) {
+function createGridItem(name, iconName, onClick, path = null, options = {}) {
     const item = document.createElement('div');
     item.className = 'grid-item';
     item.addEventListener('click', onClick);
@@ -226,6 +239,9 @@ function createGridItem(name, iconName, onClick, path = null) {
 
     const icon = document.createElement(path ? 'img' : 'div');
     icon.className = 'grid-item-icon';
+    if (!path) {
+        icon.classList.add('grid-item-icon-vector');
+    }
     if (path) {
         const cachedIcon = AppState.iconCache.get(path);
         if (cachedIcon && cachedIcon !== 'fetching' && cachedIcon.startsWith('data:image')) {
@@ -241,6 +257,13 @@ function createGridItem(name, iconName, onClick, path = null) {
         icon.onerror = () => { icon.src = getFallbackIconDataUrl('cpu', 48); };
     } else {
         icon.innerHTML = feather.icons[iconName] ? feather.icons[iconName].toSvg() : '';
+        if (options.isFolder) {
+            const color = options.color || FolderCustomization.defaultColor;
+            icon.classList.add('grid-item-icon-colored');
+            item.style.setProperty('--folder-accent', color);
+            icon.style.backgroundColor = color;
+            icon.style.color = '#ffffff';
+        }
     }
     
     const nameEl = document.createElement('div');

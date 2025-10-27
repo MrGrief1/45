@@ -11,6 +11,8 @@
   "context_rename_folder": "Переименовать",
   "context_run_as_admin": "Запустить от имени администратора",
   "context_create_folder": "Создать папку",
+  "folder_menu_color": "Цвет",
+  "folder_menu_icon": "Иконка",
   "new_folder_default_name": "Новая папка",
   "rename_folder_prompt": "Введите новое имя для папки:",
   "create_folder_prompt": "Введите имя для новой папки:",

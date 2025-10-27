@@ -52,13 +52,22 @@ const CONFIG_PATH = path.join(USER_DATA_PATH, `${APP_NAME}_config.json`);
 const INDEX_PATH = path.join(USER_DATA_PATH, `${APP_NAME}_index.json`);
 const ICON_CACHE_PATH = path.join(USER_DATA_PATH, `${APP_NAME}_icon_cache.json`); // НОВОЕ: Кэш иконок
 const LOG_PATH = path.join(USER_DATA_PATH, `${APP_NAME}_log.txt`);
-const ICON_PATH = path.join(__dirname, 'icon.svg'); 
+const ICON_PATH = path.join(__dirname, 'icon.svg');
 
 let mainWindow = null;
-let auxiliaryWindows = {}; 
+let auxiliaryWindows = {};
 let currentSettings = {};
 let applicationIsReady = false;
-let isHiding = false; 
+let isHiding = false;
+
+const FOLDER_COLOR_OPTIONS = ['#FF6B6B', '#FF8A65', '#FFA726', '#66BB6A', '#42A5F5', '#7E57C2'];
+const FOLDER_ICON_OPTIONS = [
+    'folder', 'box', 'code', 'cpu', 'layers', 'music', 'video', 'book', 'coffee', 'feather',
+    'edit-3', 'film', 'gift', 'headphones', 'heart', 'image', 'message-circle', 'monitor',
+    'shopping-bag', 'sliders', 'target', 'tool', 'trending-up', 'user'
+];
+const DEFAULT_FOLDER_COLOR = FOLDER_COLOR_OPTIONS[0];
+const DEFAULT_FOLDER_ICON = 'folder';
 
 const DEFAULT_SETTINGS = {
     theme: 'auto', // ИЗМЕНЕНО: Тема по умолчанию теперь 'auto'
@@ -91,8 +100,10 @@ const DEFAULT_SETTINGS = {
     appFolders: [
         {
             id: 'pinned',
-            name: 'Pinned Apps', 
-            apps: [] 
+            name: 'Pinned Apps',
+            color: DEFAULT_FOLDER_COLOR,
+            icon: DEFAULT_FOLDER_ICON,
+            apps: []
         }
     ]
 };
@@ -216,7 +227,7 @@ class SettingsManager {
         // ОДНОРАЗОВАЯ МИГРАЦИЯ V5 для полной очистки
         if (!currentSettings.migratedToV5) {
             Logger.info("Running migration V5 to clean and reset app list...");
-            currentSettings.appFolders = [ { id: 'pinned', name: 'Pinned Apps', apps: [] } ];
+            currentSettings.appFolders = [ { id: 'pinned', name: 'Pinned Apps', color: DEFAULT_FOLDER_COLOR, icon: DEFAULT_FOLDER_ICON, apps: [] } ];
             currentSettings.migratedToV5 = true;
             this.saveSettings();
             Logger.info("Migration V5 complete.");
@@ -225,7 +236,7 @@ class SettingsManager {
         // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: Убеждаемся что структура всегда корректная
         if (!currentSettings.appFolders || !Array.isArray(currentSettings.appFolders)) {
             Logger.warn("App folders structure is invalid, resetting to default");
-            currentSettings.appFolders = [ { id: 'pinned', name: 'Pinned Apps', apps: [] } ];
+            currentSettings.appFolders = [ { id: 'pinned', name: 'Pinned Apps', color: DEFAULT_FOLDER_COLOR, icon: DEFAULT_FOLDER_ICON, apps: [] } ];
             this.saveSettings();
         }
 
@@ -255,10 +266,22 @@ class SettingsManager {
             currentSettings.appFolders.unshift({
                 id: 'pinned',
                 name: 'Pinned Apps',
+                color: DEFAULT_FOLDER_COLOR,
+                icon: DEFAULT_FOLDER_ICON,
                 apps: []
             });
         }
-        
+
+        currentSettings.appFolders = currentSettings.appFolders.map(folder => ({
+            ...folder,
+            color: (typeof folder.color === 'string' && folder.color.trim().length > 0)
+                ? folder.color
+                : DEFAULT_FOLDER_COLOR,
+            icon: (typeof folder.icon === 'string' && folder.icon.trim().length > 0 && FOLDER_ICON_OPTIONS.includes(folder.icon))
+                ? folder.icon
+                : DEFAULT_FOLDER_ICON
+        }));
+
         Logger.info(`App folders structure: ${JSON.stringify(currentSettings.appFolders.map(f => ({id: f.id, name: f.name, appsCount: f.apps.length})))}`);
     }
 
@@ -2621,12 +2644,60 @@ ipcMain.on('show-folder-context-menu', (event, folderId) => {
     menu.popup({ window: openerWindow });
 });
 
+function updateFolderMetadata(folderId, updates) {
+    if (!folderId || folderId === 'pinned' || !updates || typeof updates !== 'object') {
+        return false;
+    }
+
+    const folderIndex = currentSettings.appFolders.findIndex(f => f.id === folderId);
+    if (folderIndex === -1) {
+        return false;
+    }
+
+    const newAppFolders = [...currentSettings.appFolders];
+    newAppFolders[folderIndex] = { ...newAppFolders[folderIndex], ...updates };
+    currentSettings.appFolders = newAppFolders;
+    settingsManager.updateSetting('appFolders', newAppFolders);
+    return true;
+}
+
 ipcMain.on('rename-folder', (event, { folderId, newName }) => {
     const folderIndex = currentSettings.appFolders.findIndex(f => f.id === folderId);
     if (folderIndex !== -1 && newName && newName.trim().length > 0) {
         currentSettings.appFolders[folderIndex].name = newName.trim();
         settingsManager.updateSetting('appFolders', currentSettings.appFolders);
     }
+});
+
+ipcMain.on('delete-folder', (event, folderId) => {
+    if (!folderId || folderId === 'pinned') {
+        return;
+    }
+
+    const updatedFolders = currentSettings.appFolders.filter(f => f.id !== folderId);
+    const deletedFolder = currentSettings.appFolders.find(f => f.id === folderId);
+    const pinnedFolder = updatedFolders.find(f => f.id === 'pinned');
+
+    if (deletedFolder && pinnedFolder && Array.isArray(deletedFolder.apps) && deletedFolder.apps.length > 0) {
+        pinnedFolder.apps = [...(pinnedFolder.apps || []), ...deletedFolder.apps];
+    }
+
+    currentSettings.appFolders = updatedFolders;
+    settingsManager.updateSetting('appFolders', updatedFolders);
+});
+
+ipcMain.on('update-folder-color', (event, payload) => {
+    if (!payload || typeof payload.folderId !== 'string') return;
+    const requestedColor = typeof payload.color === 'string' ? payload.color.trim() : '';
+    const safeColor = FOLDER_COLOR_OPTIONS.includes(requestedColor) ? requestedColor : DEFAULT_FOLDER_COLOR;
+    updateFolderMetadata(payload.folderId, { color: safeColor });
+});
+
+ipcMain.on('update-folder-icon', (event, payload) => {
+    if (!payload || typeof payload.folderId !== 'string') return;
+    const requestedIcon = typeof payload.icon === 'string' ? payload.icon.trim() : '';
+    const safeIcon = FOLDER_ICON_OPTIONS.includes(requestedIcon) ? requestedIcon : DEFAULT_FOLDER_ICON;
+    updateFolderMetadata(payload.folderId, { icon: safeIcon });
 });
 
 ipcMain.on('show-pinned-apps-context-menu', (event) => {
@@ -2647,6 +2718,8 @@ ipcMain.on('create-folder-with-name', (event, folderName) => {
         const newFolder = {
             id: `folder-${Date.now()}`,
             name: folderName.trim(),
+            color: DEFAULT_FOLDER_COLOR,
+            icon: DEFAULT_FOLDER_ICON,
             apps: []
         };
         const updatedFolders = [...currentSettings.appFolders, newFolder];
@@ -2733,12 +2806,23 @@ ipcMain.on('open-item', (event, itemPath) => {
     
     if (itemPath.startsWith('shell:')) {
         // UWP приложения
-        shell.openExternal(itemPath)
-            .then(() => {
-                const launchTime = Date.now() - launchStart;
-                Logger.info(`✓ UWP app launched in ${launchTime}ms: ${itemPath}`);
-            })
-            .catch(err => Logger.error(`Failed to open UWP app ${itemPath}: ${err.message}`));
+        if (process.platform === 'win32') {
+            execFile('explorer.exe', [itemPath], (error) => {
+                if (error) {
+                    Logger.error(`Failed to open UWP app ${itemPath}: ${error.message}`);
+                } else {
+                    const launchTime = Date.now() - launchStart;
+                    Logger.info(`✓ UWP app launched in ${launchTime}ms: ${itemPath}`);
+                }
+            });
+        } else {
+            shell.openExternal(itemPath)
+                .then(() => {
+                    const launchTime = Date.now() - launchStart;
+                    Logger.info(`✓ UWP app launched in ${launchTime}ms: ${itemPath}`);
+                })
+                .catch(err => Logger.error(`Failed to open UWP app ${itemPath}: ${err.message}`));
+        }
     } else if (itemPath.toLowerCase().endsWith('.exe')) {
         // === ОПТИМИЗАЦИЯ: Используем child_process.spawn для .exe файлов (быстрее чем shell.openPath) ===
         const { spawn } = require('child_process');
@@ -3088,11 +3172,18 @@ ipcMain.on('request-file-icon', async (event, filePath) => {
 
         // Fallback for non-apps or if PowerShell fails
         if (!dataUrl) {
-            if (!fs.existsSync(filePath)) {
-                Logger.warn(`File not found for icon request: ${filePath}`);
-            } else {
+            if (filePath.startsWith('shell:')) {
+                try {
+                    const icon = await app.getFileIcon(filePath, { size: 'normal' });
+                    dataUrl = icon.toDataURL();
+                } catch (shellError) {
+                    Logger.warn(`Failed to extract icon for UWP app ${filePath}: ${shellError.message}`);
+                }
+            } else if (fs.existsSync(filePath)) {
                 const icon = await app.getFileIcon(filePath, { size: 'normal' });
                 dataUrl = icon.toDataURL();
+            } else {
+                Logger.warn(`File not found for icon request: ${filePath}`);
             }
         }
         
