@@ -1,5 +1,7 @@
 // renderer.js
 const { ipcRenderer, shell } = require('electron');
+const fs = require('fs');
+const path = require('path');
 
 // =================================================================================
 // === Глобальное Состояние и Утилиты ===
@@ -90,6 +92,121 @@ const AppIconFallbacks = {
         return null;
     }
 };
+
+const FOLDER_ICON_OPTIONS = [
+    'folder', 'grid', 'layers', 'inbox', 'briefcase', 'file', 'archive', 'box', 'database', 'server',
+    'settings', 'sliders', 'tool', 'terminal', 'code', 'command', 'cpu', 'monitor', 'smartphone', 'tv', 'watch',
+    'navigation', 'map', 'compass', 'globe', 'target', 'flag', 'anchor', 'aperture',
+    'calendar', 'clock', 'bell', 'mail', 'message-circle', 'message-square', 'phone', 'rss', 'wifi', 'cloud', 'cast', 'sun', 'moon',
+    'home', 'user', 'users',
+    'star', 'heart', 'award', 'life-buoy', 'shield', 'lock', 'unlock',
+    'coffee', 'droplet', 'activity', 'zap', 'battery-charging', 'power',
+    'music', 'headphones', 'mic', 'radio',
+    'film', 'video', 'camera', 'image',
+    'book', 'book-open', 'bookmark',
+    'shopping-bag', 'shopping-cart', 'gift', 'package', 'truck', 'credit-card',
+    'clipboard', 'edit-3', 'pen-tool', 'scissors', 'type',
+    'bar-chart-2', 'pie-chart', 'trending-up', 'layout',
+    'whatsapp', 'telegram', 'discord', 'youtube', 'chrome', 'spotify', 'netflix', 'slack', 'notion', 'github', 'apple', 'windows', 'android', 'steam', 'twitch', 'x', 'teams', 'drive', 'vk'
+];
+
+const FolderIcons = (() => {
+    const assetBasePath = 'assets/folder-icons';
+    const assetIcons = [
+        { name: 'whatsapp', label: 'WhatsApp', src: `${assetBasePath}/whatsapp.svg`, color: '#25D366' },
+        { name: 'telegram', label: 'Telegram', src: `${assetBasePath}/telegram.svg`, color: '#26A5E4' },
+        { name: 'discord', label: 'Discord', src: `${assetBasePath}/discord.svg`, color: '#5865F2' },
+        { name: 'youtube', label: 'YouTube', src: `${assetBasePath}/youtube.svg`, color: '#FF0000' },
+        { name: 'chrome', label: 'Google Chrome', src: `${assetBasePath}/chrome.svg`, color: '#4285F4' },
+        { name: 'spotify', label: 'Spotify', src: `${assetBasePath}/spotify.svg`, color: '#1DB954' },
+        { name: 'netflix', label: 'Netflix', src: `${assetBasePath}/netflix.svg`, color: '#E50914' },
+        { name: 'slack', label: 'Slack', src: `${assetBasePath}/slack.svg`, color: '#4A154B' },
+        { name: 'notion', label: 'Notion', src: `${assetBasePath}/notion.svg`, color: '#000000' },
+        { name: 'github', label: 'GitHub', src: `${assetBasePath}/github.svg`, color: '#181717' },
+        { name: 'apple', label: 'Apple', src: `${assetBasePath}/apple.svg`, color: '#A3AAAE' },
+        { name: 'windows', label: 'Windows', src: `${assetBasePath}/windows.svg`, color: '#00A4EF' },
+        { name: 'android', label: 'Android', src: `${assetBasePath}/android.svg`, color: '#3DDC84' },
+        { name: 'steam', label: 'Steam', src: `${assetBasePath}/steam.svg`, color: '#1B2838' },
+        { name: 'twitch', label: 'Twitch', src: `${assetBasePath}/twitch.svg`, color: '#9146FF' },
+        { name: 'x', label: 'X', src: `${assetBasePath}/x.svg`, color: '#000000' },
+        { name: 'teams', label: 'Microsoft Teams', src: `${assetBasePath}/teams.svg`, color: '#6264A7' },
+        { name: 'drive', label: 'Google Drive', src: `${assetBasePath}/drive.svg`, color: '#0F9D58' },
+        { name: 'vk', label: 'VK', src: `${assetBasePath}/vk.svg`, color: '#0077FF' }
+    ];
+    const customIconDefinitions = new Map(assetIcons.map(icon => [icon.name, { ...icon, type: 'asset', rawSvg: null }]));
+
+    const defaultIcon = 'folder';
+
+    const formatLabel = (name) => {
+        if (!name) return 'Folder';
+        return name
+            .split(/[-_]/)
+            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(' ');
+    };
+
+    const loadRawSvg = (icon) => {
+        if (!icon || typeof icon.src !== 'string') return null;
+        if (typeof icon.rawSvg !== 'string') {
+            try {
+                const absolutePath = path.join(__dirname, icon.src);
+                icon.rawSvg = fs.readFileSync(absolutePath, 'utf8');
+            } catch (error) {
+                console.warn('[FolderIcons] Failed to load icon', icon.name, error);
+                icon.rawSvg = '';
+            }
+        }
+        return icon.rawSvg || null;
+    };
+
+    return {
+        getList() {
+            return [...FOLDER_ICON_OPTIONS];
+        },
+        get(iconName) {
+            const candidate = typeof iconName === 'string' && iconName ? iconName : defaultIcon;
+            if (customIconDefinitions.has(candidate)) {
+                return customIconDefinitions.get(candidate);
+            }
+            if (window.feather?.icons[candidate]) {
+                return { name: candidate, type: 'feather', label: formatLabel(candidate) };
+            }
+            if (customIconDefinitions.has(defaultIcon)) {
+                return { name: defaultIcon, ...customIconDefinitions.get(defaultIcon) };
+            }
+            return { name: defaultIcon, type: 'feather', label: formatLabel(defaultIcon) };
+        },
+        render(iconName, { width = 18, height = 18, className = '' } = {}) {
+            const icon = this.get(iconName);
+            const classes = className ? ` ${className}` : '';
+            if (icon.type === 'asset' && icon.src) {
+                const rawSvg = loadRawSvg(icon);
+                if (rawSvg) {
+                    const sanitized = rawSvg.replace('<svg', `<svg class="folder-icon-image${classes}" width="${width}" height="${height}" fill="currentColor"`);
+                    return sanitized;
+                }
+                return '';
+            }
+            if (window.feather?.icons[icon.name]) {
+                return window.feather.icons[icon.name].toSvg({ width, height });
+            }
+            return window.feather?.icons[defaultIcon]?.toSvg({ width, height }) || '';
+        },
+        applyToContainer(container, iconName, { width = 32, height = 32, className = '' } = {}) {
+            if (!container) return;
+            const icon = this.get(iconName);
+            container.innerHTML = this.render(icon.name, { width, height, className });
+            container.dataset.iconName = icon.name;
+            if (icon.type === 'asset') {
+                container.classList.add('has-custom-icon');
+                if (icon.color) container.style.color = icon.color;
+            } else {
+                container.classList.remove('has-custom-icon');
+                container.style.removeProperty('color');
+            }
+        }
+    };
+})();
 
 // =================================================================================
 // === Система Локализации (Клиентская сторона) ===
@@ -898,7 +1015,7 @@ const SearchModule = {
 
 const FolderContextMenu = {
     colors: [null, '#ff6b6b', '#ff9800', '#ffc107', '#4caf50', '#2196f3', '#3f51b5', '#9c27b0', '#e91e63'],
-    icons: ['folder', 'grid', 'inbox', 'briefcase', 'star', 'layers', 'code', 'command', 'music', 'film', 'book', 'pen-tool', 'coffee', 'cpu', 'camera', 'heart', 'life-buoy', 'map', 'monitor', 'package', 'pie-chart', 'shopping-bag', 'sliders', 'sun', 'users'],
+    iconOptions: FolderIcons.getList(),
     currentFolderId: null,
     menuEl: null,
     colorsContainer: null,
@@ -968,20 +1085,26 @@ const FolderContextMenu = {
         if (!this.iconsContainer) return;
         this.iconsContainer.innerHTML = '';
 
-        this.icons.forEach(iconName => {
+        this.iconOptions = FolderIcons.getList();
+        this.iconOptions.forEach(iconName => {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'folder-icon-option';
-            button.dataset.value = iconName;
-            button.title = iconName.replace(/-/g, ' ');
-            if (window.feather?.icons[iconName]) {
-                button.innerHTML = window.feather.icons[iconName].toSvg({ width: 18, height: 18 });
+            const info = FolderIcons.get(iconName);
+            button.dataset.value = info.name;
+            button.title = info.label || info.name;
+            button.setAttribute('aria-label', info.label || info.name);
+            if (info.type === 'asset') {
+                button.classList.add('uses-asset-icon');
+                if (info.color) button.style.color = info.color;
             } else {
-                button.textContent = iconName.substring(0, 2).toUpperCase();
+                button.classList.remove('uses-asset-icon');
+                button.style.removeProperty('color');
             }
+            button.innerHTML = FolderIcons.render(info.name, { width: 22, height: 22 });
             button.addEventListener('click', (event) => {
                 event.stopPropagation();
-                this.applyIcon(iconName);
+                this.applyIcon(info.name);
             });
             this.iconsContainer.appendChild(button);
         });
@@ -1026,8 +1149,9 @@ const FolderContextMenu = {
         if (!this.currentFolderId) return;
 
         if (action === 'rename') {
+            const targetId = this.currentFolderId;
             this.hide();
-            startFolderRename(this.currentFolderId);
+            if (targetId) startFolderRename(targetId);
         } else if (action === 'delete') {
             if (this.currentFolderId !== 'pinned') {
                 ipcRenderer.send('delete-folder', this.currentFolderId);
@@ -1055,19 +1179,20 @@ const FolderContextMenu = {
         const folder = this.getFolderById(this.currentFolderId);
         if (!folder) return;
 
-        if (folder.icon === iconName) return;
+        const normalizedIcon = FolderIcons.get(iconName).name;
+        if (folder.icon === normalizedIcon) return;
 
-        folder.icon = iconName;
+        folder.icon = normalizedIcon;
         this.highlightSelection(folder);
         this.updateFolderPreview(folder);
-        ipcRenderer.send('update-folder-style', { folderId: this.currentFolderId, icon: iconName });
+        ipcRenderer.send('update-folder-style', { folderId: this.currentFolderId, icon: normalizedIcon });
     },
 
     highlightSelection(folder) {
         if (!this.menuEl) return;
         const resolvedFolder = folder || (this.currentFolderId ? this.getFolderById(this.currentFolderId) : null);
         const activeColor = resolvedFolder?.color || '';
-        const activeIcon = resolvedFolder?.icon || 'folder';
+        const activeIcon = FolderIcons.get(resolvedFolder?.icon).name;
 
         this.colorsContainer?.querySelectorAll('.folder-color-option').forEach(option => {
             const value = option.dataset.value || '';
@@ -1085,13 +1210,6 @@ const FolderContextMenu = {
         const folderElement = document.querySelector(`.pinned-item[data-folder-id="${resolvedFolder.id}"]`);
         if (folderElement && typeof PinnedAppsModule?.applyFolderStyles === 'function') {
             PinnedAppsModule.applyFolderStyles(folderElement, resolvedFolder.color || null, resolvedFolder.icon || 'folder');
-            const iconContainer = folderElement.querySelector('.pinned-item-icon');
-            const iconName = resolvedFolder.icon || 'folder';
-            if (iconContainer && !iconContainer.querySelector('img')) {
-                if (window.feather?.icons[iconName]) {
-                    iconContainer.innerHTML = window.feather.icons[iconName].toSvg();
-                }
-            }
         }
     },
 
@@ -1261,8 +1379,8 @@ const PinnedAppsModule = {
             icon.setAttribute('data-path', path);
             icon.classList.add('app-icon');
         } else {
-            const folderIconName = options.icon || iconName;
-            icon.innerHTML = window.feather.icons[folderIconName] ? window.feather.icons[folderIconName].toSvg() : (window.feather.icons[iconName]?.toSvg() || '');
+            const folderIconName = FolderIcons.get(options.icon || iconName).name;
+            FolderIcons.applyToContainer(icon, folderIconName, { width: 32, height: 32 });
         }
 
         const nameEl = Utils.createElement('div', { className: 'pinned-item-name' });
@@ -1286,11 +1404,9 @@ const PinnedAppsModule = {
             item.style.removeProperty('--folder-accent-border');
             item.style.removeProperty('--folder-accent-color');
         }
-        if (iconName && !item.querySelector('.pinned-item-icon img')) {
-            const iconContainer = item.querySelector('.pinned-item-icon');
-            if (iconContainer && window.feather?.icons[iconName]) {
-                iconContainer.innerHTML = window.feather.icons[iconName].toSvg();
-            }
+        const iconContainer = item.querySelector('.pinned-item-icon');
+        if (iconContainer) {
+            FolderIcons.applyToContainer(iconContainer, iconName || 'folder', { width: 32, height: 32 });
         }
     }
 };
