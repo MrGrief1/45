@@ -91,8 +91,10 @@ const DEFAULT_SETTINGS = {
     appFolders: [
         {
             id: 'pinned',
-            name: 'Pinned Apps', 
-            apps: [] 
+            name: 'Pinned Apps',
+            apps: [],
+            color: null,
+            icon: 'folder'
         }
     ]
 };
@@ -216,7 +218,7 @@ class SettingsManager {
         // ОДНОРАЗОВАЯ МИГРАЦИЯ V5 для полной очистки
         if (!currentSettings.migratedToV5) {
             Logger.info("Running migration V5 to clean and reset app list...");
-            currentSettings.appFolders = [ { id: 'pinned', name: 'Pinned Apps', apps: [] } ];
+            currentSettings.appFolders = [ { id: 'pinned', name: 'Pinned Apps', apps: [], color: null, icon: 'folder' } ];
             currentSettings.migratedToV5 = true;
             this.saveSettings();
             Logger.info("Migration V5 complete.");
@@ -225,7 +227,7 @@ class SettingsManager {
         // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: Убеждаемся что структура всегда корректная
         if (!currentSettings.appFolders || !Array.isArray(currentSettings.appFolders)) {
             Logger.warn("App folders structure is invalid, resetting to default");
-            currentSettings.appFolders = [ { id: 'pinned', name: 'Pinned Apps', apps: [] } ];
+            currentSettings.appFolders = [ { id: 'pinned', name: 'Pinned Apps', apps: [], color: null, icon: 'folder' } ];
             this.saveSettings();
         }
 
@@ -255,10 +257,21 @@ class SettingsManager {
             currentSettings.appFolders.unshift({
                 id: 'pinned',
                 name: 'Pinned Apps',
-                apps: []
+                apps: [],
+                color: null,
+                icon: 'folder'
             });
         }
-        
+
+        currentSettings.appFolders = currentSettings.appFolders
+            .filter(folder => folder && typeof folder === 'object')
+            .map(folder => ({
+                ...folder,
+                apps: Array.isArray(folder.apps) ? folder.apps : [],
+                color: Object.prototype.hasOwnProperty.call(folder, 'color') ? folder.color : null,
+                icon: folder.icon || 'folder'
+            }));
+
         Logger.info(`App folders structure: ${JSON.stringify(currentSettings.appFolders.map(f => ({id: f.id, name: f.name, appsCount: f.apps.length})))}`);
     }
 
@@ -2629,6 +2642,58 @@ ipcMain.on('rename-folder', (event, { folderId, newName }) => {
     }
 });
 
+ipcMain.on('update-folder-style', (event, { folderId, color, icon }) => {
+    if (!folderId || folderId === 'pinned') return;
+
+    let changed = false;
+    const newAppFolders = currentSettings.appFolders.map(folder => {
+        if (folder.id !== folderId) {
+            return folder;
+        }
+
+        const updated = {
+            ...folder,
+            apps: Array.isArray(folder.apps) ? [...folder.apps] : []
+        };
+
+        if (typeof color !== 'undefined' && updated.color !== color) {
+            updated.color = color;
+            changed = true;
+        }
+        if (typeof icon !== 'undefined' && updated.icon !== (icon || 'folder')) {
+            updated.icon = icon || 'folder';
+            changed = true;
+        }
+
+        return updated;
+    });
+
+    if (changed) {
+        settingsManager.updateSetting('appFolders', newAppFolders);
+    }
+});
+
+ipcMain.on('delete-folder', (event, folderId) => {
+    if (!folderId || folderId === 'pinned') return;
+
+    const folderToDelete = currentSettings.appFolders.find(f => f.id === folderId);
+    if (!folderToDelete) return;
+
+    const remainingFolders = currentSettings.appFolders
+        .filter(f => f.id !== folderId)
+        .map(folder => ({
+            ...folder,
+            apps: Array.isArray(folder.apps) ? [...folder.apps] : []
+        }));
+
+    const pinnedFolder = remainingFolders.find(f => f.id === 'pinned');
+    if (pinnedFolder && Array.isArray(folderToDelete.apps) && folderToDelete.apps.length > 0) {
+        pinnedFolder.apps = [...pinnedFolder.apps, ...folderToDelete.apps];
+    }
+
+    settingsManager.updateSetting('appFolders', remainingFolders);
+});
+
 ipcMain.on('show-pinned-apps-context-menu', (event) => {
     const template = [
         {
@@ -2647,7 +2712,9 @@ ipcMain.on('create-folder-with-name', (event, folderName) => {
         const newFolder = {
             id: `folder-${Date.now()}`,
             name: folderName.trim(),
-            apps: []
+            apps: [],
+            color: null,
+            icon: 'folder'
         };
         const updatedFolders = [...currentSettings.appFolders, newFolder];
         settingsManager.updateSetting('appFolders', updatedFolders);
@@ -2738,7 +2805,16 @@ ipcMain.on('open-item', (event, itemPath) => {
                 const launchTime = Date.now() - launchStart;
                 Logger.info(`✓ UWP app launched in ${launchTime}ms: ${itemPath}`);
             })
-            .catch(err => Logger.error(`Failed to open UWP app ${itemPath}: ${err.message}`));
+            .catch(err => {
+                Logger.error(`Failed to open UWP app ${itemPath}: ${err.message}`);
+                exec(`start "" "${itemPath}"`, { shell: true }, (fallbackErr) => {
+                    if (fallbackErr) {
+                        Logger.error(`Fallback launch failed for ${itemPath}: ${fallbackErr.message}`);
+                    } else {
+                        Logger.info(`✓ UWP app launched via fallback: ${itemPath}`);
+                    }
+                });
+            });
     } else if (itemPath.toLowerCase().endsWith('.exe')) {
         // === ОПТИМИЗАЦИЯ: Используем child_process.spawn для .exe файлов (быстрее чем shell.openPath) ===
         const { spawn } = require('child_process');

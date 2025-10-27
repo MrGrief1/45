@@ -302,6 +302,22 @@
           feather.replace();
       }
     </script>
+    <div id="folder-context-menu" class="folder-context-menu">
+        <div class="folder-menu-actions">
+            <button type="button" class="folder-menu-action" data-action="rename" data-i18n="context_rename_folder">Rename</button>
+            <button type="button" class="folder-menu-action danger" data-action="delete" data-i18n="context_delete_folder">Delete Folder</button>
+        </div>
+        <div class="folder-menu-divider"></div>
+        <div class="folder-menu-section">
+            <div class="folder-menu-section-title" data-i18n="context_change_color">Change color</div>
+            <div class="folder-menu-colors"></div>
+        </div>
+        <div class="folder-menu-divider"></div>
+        <div class="folder-menu-section">
+            <div class="folder-menu-section-title" data-i18n="context_change_icon">Change icon</div>
+            <div class="folder-menu-icons"></div>
+        </div>
+    </div>
     <script src="renderer.js"></script>
 </body>
 </html>
