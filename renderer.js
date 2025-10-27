@@ -71,7 +71,7 @@ const Utils = {
 
 const AppIconFallbacks = {
     cache: {
-        whatsapp: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA2NCA2NCc+PGNpcmNsZSBjeD0nMzInIGN5PSczMicgcj0nMzAnIGZpbGw9JyMyNUQzNjYnLz48cGF0aCBmaWxsPScjZmZmJyBkPSdNMTggNDZsMi40LTcuMWEyMSAyMSAwIDAxLTUuNC0xNGMwLTExLjYgOS40LTIxIDIxLTIxczIxIDkuNCAyMSAyMS05LjQgMjEtMjEgMjFhMjEgMjEgMCAwMS0xNC01LjRMMTggNDZ6bTE0LjYtMTEuOGMxLjguOCAzLjMgMS4xIDQuNi44LjUtLjEgMS0uNCAxLjMtLjdsMS42LTEuNmExIDEgMCAwMTEuMS0uMmw0LjEgMS44Yy41LjIuOC45LjYgMS40LTEgMi40LTMuMyA0LTUuOCA0LTQuOSAwLTEzLjUtOC42LTEzLjUtMTMuNSAwLTIuNSAxLjYtNC44IDQtNS44LjUtLjIgMS4yLjEgMS40LjZsMS44IDQuMWExIDEgMCAwMS0uMiAxLjFsLTEuNiAxLjZjLS4zLjMtLjYuOC0uNyAxLjMtLjMgMS4zIDAgMi44LjggNC42eicvPjwvc3ZnPg==',
+        whatsapp: 'data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjMjVEMzY2IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEyIDBhMTIgMTIgMCAwMDExLjg2NyAxNC4wNzJsLjEyLjg1Ny0uNzYtLjQxYS45NjMuOTYzIDAgMDAuNzM2LjYxMi45NTkuOTU5IDAgMDEtLjE0MS43MzJMOS40MjMgMjMuMjg4bC0uMDIuMDA2LTIuODE1LS45MTZsLjQwMi0yLjQxNmE5Ljk5NyA5Ljk5NyAwIDAxLTQuMzYyLTguMzk0QTEwIDEwIDAgMTEyIDB6bTAgMS42N2E4LjMzMiA4LjMzMiAwIDAwLTQuMjM3IDE1LjQ0bC0uMjguMTY3LjI4NC0xLjY5MWEuNTQ0LjU0NCAwIDAwLS4xODQtLjQ2Ni44MTEuODExIDAgMDEtLjcyMS0uMjE1IDguMzM2IDguMzM2IDAgMTA3LjAxMy0xMy4yOGMuMjczLS4zMDIuNDI0LS43MDIuNC0xLjExN2EuODEyLjgxMiAwIDAwLS4zNzEtLjY0LjgxNC44MTQgMCAwMC0uNTUtLjA3N0w3LjM1IDEwLjJsLS4wNDItLjAxOWMtLjEyNC0uMDYzLS4yNS0uMTI1LS4zNzItLjIyYTQuOTk0IDQuOTk0IDAgMDEtMS4wOTMtMS40ODQgLjgxNy44MTcgMCAwMC0uMTA3LS41OTVjLjAzLS4xOTIuMTM3LS4zNTcuMzAxLS40NzRsMS4xNy0uODQtLjExLS4zYy0uMjY2LS43MjctLjIyNy0xLjUzMi4xMDctMi4yM2ExLjIwOCAxLjIwOCAwIDAxLjQwOC0uNDk2Yy4yMy0uMTY3LjUxMy0uMjQ2LjgxLS4yNDYuMzUxIDAgLjc1OC4xMTggMS4wNTUuNDA3bC4yMjUuMjEyLjI3LS4xNjhhNy4zNyA3LjM3IDAgMTExLjg0OCAxMC45NnptLjAwMyA0LjE1NmMtLjIyOSAwLS40MjQuMTItLjU0Ni4zMjdsLS42NSAxLjEzN2EuODMzLjgzMyAwIDAxLS43MDcuMzcxYy0xLjMzMi4wNzQtMi41OC0uMjIxLTMuNjU1LS45MjhhNi40NDMgNi40NDMgMCAwMS0xLjgtMS43MjdjLS4zLS40MzMtLjMyLS45NzYtLjA2LTEuNDNsLjQ5Ni0uODczYS40MzcuNDM3IDAgMDAtLjA0NC0uNDk1bC0uNDk5LS43MTFhLjQzNy40MzcgMCAwMC0uNTczLS4xNC40NDQuNDQ0IDAgMDAtLjI1NC4xM2wtLjU1NS4yNThhLjQ2Mi40NjIgMCAwMS0uNDExLS4wMjZjLS44Ny0uMzI3LTEuNTkzLS45ODMtMS45OTgtMS44MzRhLjQ2NC40NjQgMCAwMS4wNTItLjQ2M2wuNzQ5LS45MjhjLjI2My0uMy42NTQtLjQ2OCAxLjA2LS40NDhhLjg3OS44NzkgMCAwMS42MTMuMzJjLjE0NS4xMDguMjY2LjIzOC4zNjQuMzljLjMwNS40OTUuNzMgMS4xMyAxLjIyMyAxLjYxMi44Ny44NjUgMS44OTIgMS41MzggMy4wNDQgMS45MzguNzIuMjY5IDEuNDkzLjI1NyAyLjIxNi0uMDMxYS44NzUuODc1IDAgMDAuNDc0LS40MDdsLjU0NC0uOTFjLjA4NC0uMTQuMjMtLjIyMi4zOTQtLjIyMmguMDA3Yy4yNDIgMCAuNDY4LjEzNC41OTEuMzQ4bC42NTQgMS4wOTdjLjE1Ni4yNi4xNTMuNTg0LS4wMDEuODQxYTUuNDA5IDUuNDA5IDAgMDEtNC41MTMgMi4xNTN6Ii8+PC9zdmc+',
         roblox: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA2NCA2NCc+PHJlY3Qgd2lkdGg9JzQwJyBoZWlnaHQ9JzQwJyB4PScxMicgeT0nMTInIHJ4PSc4JyByeT0nOCcgZmlsbD0nIzIwMjAyMCcgdHJhbnNmb3JtPSdyb3RhdGUoMTUgMzIgMzIpJy8+PHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyB4PScyNycgeT0nMjcnIGZpbGw9JyNmZmZmZmYnIHRyYW5zZm9ybT0ncm90YXRlKDE1IDMyIDMyKScvPjwvc3ZnPg=='
     },
 
@@ -898,7 +898,14 @@ const SearchModule = {
 
 const FolderContextMenu = {
     colors: [null, '#ff6b6b', '#ff9800', '#ffc107', '#4caf50', '#2196f3', '#3f51b5', '#9c27b0', '#e91e63'],
-    icons: ['folder', 'grid', 'inbox', 'briefcase', 'star', 'layers', 'code', 'command', 'music', 'film', 'book', 'pen-tool', 'coffee', 'cpu', 'camera', 'heart', 'life-buoy', 'map', 'monitor', 'package', 'pie-chart', 'shopping-bag', 'sliders', 'sun', 'users'],
+    icons: [
+        'folder', 'grid', 'inbox', 'briefcase', 'star', 'layers', 'code', 'command', 'music', 'film', 'book', 'pen-tool', 'coffee',
+        'cpu', 'camera', 'heart', 'life-buoy', 'map', 'monitor', 'package', 'pie-chart', 'shopping-bag', 'sliders', 'sun', 'users',
+        'activity', 'airplay', 'alert-circle', 'archive', 'bar-chart-2', 'battery-charging', 'bell', 'bookmark', 'calendar', 'cast',
+        'check-circle', 'cloud', 'compass', 'disc', 'download', 'edit-3', 'external-link', 'feather', 'figma', 'git-branch', 'globe',
+        'headphones', 'home', 'image', 'key', 'lock', 'mail', 'message-circle', 'message-square', 'mic', 'paperclip', 'phone', 'play',
+        'save', 'search', 'settings', 'shield', 'smartphone', 'tablet', 'target', 'tool', 'trending-up', 'tv', 'type', 'watch', 'wifi', 'zap'
+    ],
     currentFolderId: null,
     menuEl: null,
     colorsContainer: null,
@@ -1026,8 +1033,9 @@ const FolderContextMenu = {
         if (!this.currentFolderId) return;
 
         if (action === 'rename') {
+            const folderId = this.currentFolderId;
             this.hide();
-            startFolderRename(this.currentFolderId);
+            startFolderRename(folderId);
         } else if (action === 'delete') {
             if (this.currentFolderId !== 'pinned') {
                 ipcRenderer.send('delete-folder', this.currentFolderId);
