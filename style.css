@@ -348,6 +348,50 @@ body.dark-theme .aux-header {
     border: none !important;
 }
 
+.pinned-item-icon .folder-custom-icon {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+    background: rgba(var(--secondary-bg-color-rgb), 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+}
+
+.folder-custom-icon .folder-color-circle {
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    top: -4px;
+    right: -4px;
+    border: 2px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
+.folder-custom-icon .folder-symbol svg {
+    width: 22px;
+    height: 22px;
+    stroke-width: 2.5px;
+}
+
+.folder-custom-icon .folder-symbol {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.custom-app-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
 .pinned-item-name {
     font-size: 12px;
     color: var(--text-color);
@@ -378,6 +422,133 @@ body.dark-theme .aux-header {
     width: 90%;
     padding: 2px;
     box-sizing: border-box;
+}
+
+#folder-context-menu {
+    position: fixed;
+    z-index: 9999;
+    min-width: 240px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    backdrop-filter: blur(18px);
+    background: rgba(var(--secondary-bg-color-rgb), 0.92);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: none;
+    animation: fadeInMenu 0.15s ease-out;
+}
+
+#folder-context-menu.visible {
+    display: block;
+}
+
+.folder-menu-section + .folder-menu-section {
+    margin-top: 12px;
+}
+
+.folder-menu-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--icon-color);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+}
+
+.folder-menu-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.folder-menu-action {
+    border: none;
+    border-radius: 12px;
+    padding: 8px 10px;
+    font-size: 13px;
+    background: rgba(var(--secondary-bg-color-rgb), 0.6);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.folder-menu-action:hover {
+    background: rgba(var(--secondary-bg-color-rgb), 0.95);
+    transform: translateY(-1px);
+}
+
+.folder-menu-action.danger {
+    color: var(--danger-color);
+}
+
+.folder-colors {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.folder-color-option {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s ease, border 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.folder-color-option.selected {
+    border-color: var(--text-color);
+    transform: scale(1.05);
+}
+
+.folder-color-option:hover {
+    transform: scale(1.08);
+}
+
+.folder-icons {
+    display: grid;
+    grid-template-columns: repeat(6, 32px);
+    gap: 6px;
+}
+
+.folder-icon-option {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.2s ease, transform 0.15s ease, border 0.2s ease;
+    background: rgba(var(--secondary-bg-color-rgb), 0.5);
+}
+
+.folder-icon-option svg {
+    width: 18px;
+    height: 18px;
+}
+
+.folder-icon-option.selected {
+    border-color: var(--highlight-color);
+    background: rgba(var(--secondary-bg-color-rgb), 0.85);
+}
+
+.folder-icon-option:hover {
+    transform: translateY(-1px);
+}
+
+@keyframes fadeInMenu {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 

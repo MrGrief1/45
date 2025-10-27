@@ -55,6 +55,29 @@ const Utils = {
     }
 };
 
+const IconManager = {
+    customIcons: {
+        whatsapp: 'assets/icons/whatsapp.svg',
+        roblox: 'assets/icons/roblox.svg'
+    },
+
+    guessIconHint(name = '', path = '') {
+        const haystack = `${String(name)} ${String(path)}`.toLowerCase();
+        if (haystack.includes('whatsapp')) return 'whatsapp';
+        if (haystack.includes('roblox')) return 'roblox';
+        return null;
+    },
+
+    getCustomIconHtml(iconHint, size = 24, extraClass = '') {
+        if (!iconHint) return null;
+        const src = this.customIcons[iconHint];
+        if (!src) return null;
+        const classes = ['custom-app-icon'];
+        if (extraClass) classes.push(extraClass);
+        return `<img src="${src}" alt="${iconHint} icon" class="${classes.join(' ')}" style="width:${size}px;height:${size}px;" />`;
+    }
+};
+
 // =================================================================================
 // === Система Локализации (Клиентская сторона) ===
 // =================================================================================
@@ -454,19 +477,33 @@ const SearchModule = {
         AppState.searchResults.forEach((result, index) => {
             const li = document.createElement('li');
             li.className = 'result-item';
-            
+
             let iconHtml = '';
             if (result.isApp) {
-                const cachedSrc = AppState.iconCache.get(result.path);
-                const src = (cachedSrc && typeof cachedSrc === 'string' && cachedSrc.startsWith('data:image')) 
-                            ? cachedSrc 
-                            : this.getFallbackIconDataUrl('cpu');
-                iconHtml = `<img class="result-icon app-icon" data-path="${Utils.escapeHtml(result.path)}" src="${src}" style="width: 24px; height: 24px; object-fit: contain;" />`;
-                console.log(`[Renderer] App icon for ${result.name}: ${cachedSrc ? 'Cached' : 'Fallback'}`);
+                const iconHint = result.iconHint || IconManager.guessIconHint(result.name, result.path);
+                if (iconHint && !result.iconHint) {
+                    result.iconHint = iconHint;
+                }
+
+                const isShellPath = typeof result.path === 'string' && result.path.startsWith('shell:');
+                const customIconHtml = IconManager.getCustomIconHtml(iconHint, 24, 'result-icon');
+
+                if (customIconHtml && (iconHint || isShellPath)) {
+                    iconHtml = customIconHtml;
+                } else if (result.path && !isShellPath) {
+                    const cachedSrc = AppState.iconCache.get(result.path);
+                    const src = (cachedSrc && typeof cachedSrc === 'string' && cachedSrc.startsWith('data:image'))
+                                ? cachedSrc
+                                : this.getFallbackIconDataUrl('cpu');
+                    iconHtml = `<img class="result-icon app-icon" data-path="${Utils.escapeHtml(result.path)}" src="${src}" style="width: 24px; height: 24px; object-fit: contain;" />`;
+                    console.log(`[Renderer] App icon for ${result.name}: ${cachedSrc ? 'Cached' : 'Fallback'}`);
+                } else if (window.feather && window.feather.icons['cpu']) {
+                    iconHtml = window.feather.icons['cpu'].toSvg({ class: 'result-icon' });
+                }
             } else {
                 iconHtml = this.generateSvgIconHtml(result);
             }
-            
+
             const textContent = result.name || result.title;
             li.innerHTML = `${iconHtml}<span class="result-text">${Utils.escapeHtml(textContent)}</span>`;
 
@@ -518,7 +555,10 @@ const SearchModule = {
     loadIconsForResults: function() {
         Utils.getAllElements('.app-icon').forEach(img => {
             const path = img.getAttribute('data-path');
-            if (path && !AppState.iconCache.has(path)) {
+            if (!path || path.startsWith('shell:')) {
+                return;
+            }
+            if (!AppState.iconCache.has(path)) {
                 AppState.iconCache.set(path, 'fetching');
                 ipcRenderer.send('request-file-icon', path);
             }
@@ -860,6 +900,185 @@ const SearchModule = {
 };
 
 // =================================================================================
+// === Контекстное меню папок (Folder Context Menu) ===
+// =================================================================================
+
+const FolderContextMenu = {
+    colors: ['#FF6B6B', '#FF8E53', '#FFD166', '#06D6A0', '#118AB2', '#4C6EF5', '#9B5DE5', '#F15BB5'],
+    icons: ['folder', 'grid', 'code', 'monitor', 'music', 'book', 'film', 'cpu', 'coffee', 'briefcase', 'star', 'aperture', 'heart', 'layers', 'package', 'feather', 'sliders', 'shopping-bag'],
+    element: null,
+    currentFolderId: null,
+    colorButtons: [],
+    iconButtons: [],
+
+    init: function() {
+        if (this.element) return;
+
+        const getText = (key, fallback) => {
+            if (!LocalizationRenderer || typeof LocalizationRenderer.t !== 'function') return fallback;
+            const translated = LocalizationRenderer.t(key);
+            return (translated && !String(translated).startsWith('Missing')) ? translated : fallback;
+        };
+
+        this.element = document.createElement('div');
+        this.element.id = 'folder-context-menu';
+
+        const actionsWrapper = Utils.createElement('div', { className: 'folder-menu-actions' });
+
+        const renameButton = Utils.createElement('button', { className: 'folder-menu-action' });
+        renameButton.setAttribute('data-i18n', 'context_rename_folder');
+        renameButton.textContent = getText('context_rename_folder', 'Rename');
+        renameButton.addEventListener('click', () => {
+            if (!this.currentFolderId) return;
+            this.hide();
+            PinnedAppsModule.beginRename(this.currentFolderId);
+        });
+
+        const deleteButton = Utils.createElement('button', { className: 'folder-menu-action danger' });
+        deleteButton.setAttribute('data-i18n', 'context_delete_folder');
+        deleteButton.textContent = getText('context_delete_folder', 'Delete');
+        deleteButton.addEventListener('click', () => {
+            if (!this.currentFolderId) return;
+            this.hide();
+            ipcRenderer.send('delete-folder', this.currentFolderId);
+        });
+
+        actionsWrapper.appendChild(renameButton);
+        actionsWrapper.appendChild(deleteButton);
+        this.element.appendChild(actionsWrapper);
+
+        const colorsSection = Utils.createElement('div', { className: 'folder-menu-section' });
+        const colorsTitle = Utils.createElement('div', { className: 'folder-menu-title' });
+        colorsTitle.setAttribute('data-i18n', 'context_change_color');
+        colorsTitle.textContent = getText('context_change_color', 'Color');
+        const colorsContainer = Utils.createElement('div', { className: 'folder-colors' });
+
+        this.colors.forEach(color => {
+            const option = Utils.createElement('div', { className: 'folder-color-option' });
+            option.style.backgroundColor = color;
+            option.dataset.color = color;
+            option.addEventListener('click', () => this.onColorSelected(color));
+            this.colorButtons.push(option);
+            colorsContainer.appendChild(option);
+        });
+
+        colorsSection.appendChild(colorsTitle);
+        colorsSection.appendChild(colorsContainer);
+        this.element.appendChild(colorsSection);
+
+        const iconsSection = Utils.createElement('div', { className: 'folder-menu-section' });
+        const iconsTitle = Utils.createElement('div', { className: 'folder-menu-title' });
+        iconsTitle.setAttribute('data-i18n', 'context_change_icon');
+        iconsTitle.textContent = getText('context_change_icon', 'Icon');
+        const iconsContainer = Utils.createElement('div', { className: 'folder-icons' });
+
+        this.icons.forEach(iconName => {
+            const option = Utils.createElement('div', { className: 'folder-icon-option' });
+            option.dataset.icon = iconName;
+            if (window.feather && window.feather.icons[iconName]) {
+                option.innerHTML = window.feather.icons[iconName].toSvg();
+            } else {
+                option.textContent = iconName;
+            }
+            option.addEventListener('click', () => this.onIconSelected(iconName));
+            this.iconButtons.push(option);
+            iconsContainer.appendChild(option);
+        });
+
+        iconsSection.appendChild(iconsTitle);
+        iconsSection.appendChild(iconsContainer);
+        this.element.appendChild(iconsSection);
+
+        document.body.appendChild(this.element);
+
+        document.addEventListener('click', (event) => {
+            if (!this.element.classList.contains('visible')) return;
+            if (!this.element.contains(event.target)) {
+                this.hide();
+            }
+        });
+        document.addEventListener('contextmenu', (event) => {
+            if (!this.element.classList.contains('visible')) return;
+            if (!this.element.contains(event.target)) {
+                this.hide();
+            }
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') this.hide();
+        });
+        window.addEventListener('resize', () => this.hide());
+        window.addEventListener('blur', () => this.hide());
+    },
+
+    show: function(folderId, clientX, clientY) {
+        if (!AppState.settings || !Array.isArray(AppState.settings.appFolders)) return;
+        const folder = AppState.settings.appFolders.find(f => f.id === folderId && f.id !== 'pinned');
+        if (!folder) return;
+
+        if (!this.element) this.init();
+        this.currentFolderId = folderId;
+        this.setActiveFolder(folder);
+
+        this.element.style.left = `${clientX}px`;
+        this.element.style.top = `${clientY}px`;
+        this.element.classList.add('visible');
+
+        requestAnimationFrame(() => {
+            const rect = this.element.getBoundingClientRect();
+            let x = clientX;
+            let y = clientY;
+            if (x + rect.width > window.innerWidth - 8) x = window.innerWidth - rect.width - 8;
+            if (y + rect.height > window.innerHeight - 8) y = window.innerHeight - rect.height - 8;
+            this.element.style.left = `${Math.max(8, x)}px`;
+            this.element.style.top = `${Math.max(8, y)}px`;
+        });
+    },
+
+    hide: function() {
+        if (this.element) {
+            this.element.classList.remove('visible');
+        }
+        this.currentFolderId = null;
+    },
+
+    onColorSelected: function(color) {
+        if (!this.currentFolderId) return;
+        this.highlightColor(color);
+        ipcRenderer.send('update-folder-style', { folderId: this.currentFolderId, color });
+    },
+
+    onIconSelected: function(icon) {
+        if (!this.currentFolderId) return;
+        this.highlightIcon(icon);
+        ipcRenderer.send('update-folder-style', { folderId: this.currentFolderId, icon });
+    },
+
+    highlightColor: function(color) {
+        this.colorButtons.forEach(btn => btn.classList.toggle('selected', btn.dataset.color === color));
+    },
+
+    highlightIcon: function(icon) {
+        this.iconButtons.forEach(btn => btn.classList.toggle('selected', btn.dataset.icon === icon));
+    },
+
+    setActiveFolder: function(folder) {
+        if (!folder) return;
+        if (folder.color) this.highlightColor(folder.color);
+        if (folder.icon) this.highlightIcon(folder.icon);
+    },
+
+    refreshSelection: function() {
+        if (!this.currentFolderId) return;
+        const folder = AppState.settings.appFolders?.find(f => f.id === this.currentFolderId);
+        if (folder) {
+            this.setActiveFolder(folder);
+        } else {
+            this.hide();
+        }
+    }
+};
+
+// =================================================================================
 // === Модуль Закрепленных Приложений (Pinned Apps Module) ===
 // =================================================================================
 
@@ -896,9 +1115,14 @@ const PinnedAppsModule = {
             // Render folders
             AppState.settings.appFolders.forEach(folder => {
                 if (folder.id === 'pinned') return;
-                const folderEl = this.createPinnedItem(folder.name, 'folder', () => {
-                    this.currentFolderId = folder.id;
-                    this.render();
+                const folderEl = this.createPinnedItem({
+                    name: folder.name,
+                    iconName: folder.icon || 'folder',
+                    folderData: folder,
+                    onClick: () => {
+                        this.currentFolderId = folder.id;
+                        this.render();
+                    }
                 });
                 folderEl.setAttribute('data-folder-id', folder.id); // Add data attribute for renaming
 
@@ -927,7 +1151,7 @@ const PinnedAppsModule = {
                 folderEl.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    ipcRenderer.send('show-folder-context-menu', folder.id);
+                    FolderContextMenu.show(folder.id, e.clientX, e.clientY);
                 });
                 fragment.appendChild(folderEl);
             });
@@ -936,7 +1160,13 @@ const PinnedAppsModule = {
             const pinnedFolder = AppState.settings.appFolders.find(f => f.id === 'pinned');
             if (pinnedFolder) {
                 pinnedFolder.apps.forEach(app => {
-                    const appEl = this.createPinnedItem(app.name, 'cpu', () => ipcRenderer.send('open-item', app.path), app.path);
+                    const appEl = this.createPinnedItem({
+                        name: app.name,
+                        iconName: 'cpu',
+                        onClick: () => ipcRenderer.send('open-item', app.path),
+                        path: app.path,
+                        iconHint: app.iconHint
+                    });
                     appEl.setAttribute('data-folder-id', 'pinned'); // Add data attribute for renaming
                     appEl.addEventListener('contextmenu', (e) => {
                         e.preventDefault();
@@ -948,15 +1178,25 @@ const PinnedAppsModule = {
             }
         } else if (currentFolder) {
             // Render "Back" button
-            const backButton = this.createPinnedItem(LocalizationRenderer.t('folder_back'), 'arrow-left', () => {
-                this.currentFolderId = 'pinned';
-                this.render();
+            const backButton = this.createPinnedItem({
+                name: LocalizationRenderer.t('folder_back'),
+                iconName: 'arrow-left',
+                onClick: () => {
+                    this.currentFolderId = 'pinned';
+                    this.render();
+                }
             });
             fragment.appendChild(backButton);
 
             // Render apps in folder
             currentFolder.apps.forEach(app => {
-                const appEl = this.createPinnedItem(app.name, 'cpu', () => ipcRenderer.send('open-item', app.path), app.path);
+                const appEl = this.createPinnedItem({
+                    name: app.name,
+                    iconName: 'cpu',
+                    onClick: () => ipcRenderer.send('open-item', app.path),
+                    path: app.path,
+                    iconHint: app.iconHint
+                });
                 appEl.setAttribute('data-folder-id', this.currentFolderId); // Add data attribute for renaming
                 appEl.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
@@ -966,15 +1206,15 @@ const PinnedAppsModule = {
                 fragment.appendChild(appEl);
             });
         }
-        
+
         container.appendChild(fragment);
         SearchModule.loadIconsForResults();
         ViewManager.resizeWindow(); // Recalculate window size after render
     },
 
-    createPinnedItem: function(name, iconName, onClick, path = null) {
+    createPinnedItem: function({ name, iconName = 'folder', onClick, path = null, folderData = null, iconHint = null }) {
         const item = Utils.createElement('div', { className: 'pinned-item' });
-        
+
         // === УЛУЧШЕНО: Визуальная обратная связь при клике ===
         item.addEventListener('click', (e) => {
             item.style.transform = 'scale(0.9)';
@@ -995,26 +1235,105 @@ const PinnedAppsModule = {
         }
         // --- End D&D ---
 
-        const icon = document.createElement(path ? 'img' : 'div');
-        icon.className = 'pinned-item-icon';
-        if (path) {
-            const cachedSrc = AppState.iconCache.get(path);
-            const src = (cachedSrc && typeof cachedSrc === 'string' && cachedSrc.startsWith('data:image')) 
-                        ? cachedSrc 
-                        : SearchModule.getFallbackIconDataUrl('cpu');
-            icon.src = src;
-            icon.setAttribute('data-path', path);
-            icon.classList.add('app-icon');
-        } else {
-            icon.innerHTML = window.feather.icons[iconName] ? window.feather.icons[iconName].toSvg() : '';
+        const iconContainer = Utils.createElement('div', { className: 'pinned-item-icon' });
+
+        if (folderData) {
+            const accentColor = folderData.color || '#FFD166';
+            const folderIconName = folderData.icon || iconName || 'folder';
+            const wrapper = Utils.createElement('div', { className: 'folder-custom-icon' });
+            wrapper.style.setProperty('--folder-accent-color', accentColor);
+
+            const symbol = Utils.createElement('div', { className: 'folder-symbol' });
+            if (window.feather && window.feather.icons[folderIconName]) {
+                symbol.innerHTML = window.feather.icons[folderIconName].toSvg({ stroke: accentColor });
+            } else {
+                symbol.textContent = '•';
+                symbol.style.color = accentColor;
+            }
+
+            const colorBadge = Utils.createElement('div', { className: 'folder-color-circle' });
+            colorBadge.style.backgroundColor = accentColor;
+
+            wrapper.appendChild(symbol);
+            wrapper.appendChild(colorBadge);
+            iconContainer.appendChild(wrapper);
+        } else if (path) {
+            const isShellPath = typeof path === 'string' && path.startsWith('shell:');
+            const resolvedHint = iconHint || IconManager.guessIconHint(name, path);
+            const customIconHtml = IconManager.getCustomIconHtml(resolvedHint, 32);
+
+            if (customIconHtml && (resolvedHint || isShellPath)) {
+                iconContainer.innerHTML = customIconHtml;
+            } else if (!isShellPath) {
+                const img = document.createElement('img');
+                const cachedSrc = AppState.iconCache.get(path);
+                const src = (cachedSrc && typeof cachedSrc === 'string' && cachedSrc.startsWith('data:image'))
+                    ? cachedSrc
+                    : SearchModule.getFallbackIconDataUrl(iconName || 'cpu');
+                img.src = src;
+                img.setAttribute('data-path', path);
+                img.classList.add('app-icon');
+                img.style.width = '32px';
+                img.style.height = '32px';
+                iconContainer.appendChild(img);
+            } else if (window.feather && window.feather.icons[iconName]) {
+                iconContainer.innerHTML = window.feather.icons[iconName].toSvg();
+            }
+        } else if (window.feather && window.feather.icons[iconName]) {
+            iconContainer.innerHTML = window.feather.icons[iconName].toSvg();
         }
 
         const nameEl = Utils.createElement('div', { className: 'pinned-item-name' });
         nameEl.textContent = name.replace(/\.(lnk|exe)$/i, '');
-        
-        item.appendChild(icon);
+
+        item.appendChild(iconContainer);
         item.appendChild(nameEl);
         return item;
+    },
+
+    beginRename: function(folderId) {
+        FolderContextMenu.hide();
+        const folderEl = document.querySelector(`[data-folder-id="${folderId}"]`);
+        const nameEl = folderEl?.querySelector('.pinned-item-name');
+
+        if (!folderEl || !nameEl || folderEl.querySelector('.pinned-item-name-input')) return;
+
+        const originalName = nameEl.textContent;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = originalName;
+        input.className = 'pinned-item-name-input';
+
+        nameEl.style.display = 'none';
+        folderEl.appendChild(input);
+        input.focus();
+        input.select();
+
+        const finishEditing = () => {
+            if (!input.parentNode) return;
+
+            const newName = input.value.trim();
+
+            nameEl.style.display = 'block';
+            input.remove();
+
+            if (newName && newName !== originalName) {
+                nameEl.textContent = newName;
+                ipcRenderer.send('rename-folder', { folderId, newName });
+            } else {
+                nameEl.textContent = originalName;
+            }
+        };
+
+        input.addEventListener('blur', finishEditing);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                finishEditing();
+            } else if (e.key === 'Escape') {
+                input.value = originalName;
+                finishEditing();
+            }
+        });
     }
 };
 
@@ -1659,6 +1978,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ViewManager.init();
     SettingsModule.init();
     SearchModule.init();
+    FolderContextMenu.init();
     PinnedAppsModule.init();
     AuxPanelManager.init();
     CustomSelect.init();
@@ -1684,6 +2004,7 @@ document.addEventListener('DOMContentLoaded', () => {
         LocalizationRenderer.applyTranslations();
         SettingsModule.populateSettingsUI();
         PinnedAppsModule.render();
+        FolderContextMenu.refreshSelection();
         ViewManager.resizeWindow(); // Always resize after settings update
     });
 
@@ -1705,47 +2026,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     ipcRenderer.on('prompt-rename-folder', (event, folderId) => {
-        const folderEl = document.querySelector(`[data-folder-id="${folderId}"]`);
-        const nameEl = folderEl?.querySelector('.pinned-item-name');
-
-        if (!folderEl || !nameEl || folderEl.querySelector('.pinned-item-name-input')) return;
-
-        const originalName = nameEl.textContent;
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = originalName;
-        input.className = 'pinned-item-name-input';
-
-        nameEl.style.display = 'none';
-        folderEl.appendChild(input);
-        input.focus();
-        input.select();
-
-        const finishEditing = () => {
-            if (!input.parentNode) return;
-
-            const newName = input.value.trim();
-            
-            nameEl.style.display = 'block';
-            input.remove();
-
-            if (newName && newName !== originalName) {
-                nameEl.textContent = newName;
-                ipcRenderer.send('rename-folder', { folderId, newName });
-            } else {
-                nameEl.textContent = originalName;
-            }
-        };
-
-        input.addEventListener('blur', finishEditing);
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                finishEditing();
-            } else if (e.key === 'Escape') {
-                input.value = originalName;
-                finishEditing();
-            }
-        });
+        PinnedAppsModule.beginRename(folderId);
     });
 
     ipcRenderer.on('prompt-create-folder', () => {

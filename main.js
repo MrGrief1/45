@@ -91,11 +91,66 @@ const DEFAULT_SETTINGS = {
     appFolders: [
         {
             id: 'pinned',
-            name: 'Pinned Apps', 
-            apps: [] 
+            name: 'Pinned Apps',
+            color: '#118AB2',
+            icon: 'folder',
+            apps: []
         }
     ]
 };
+
+const FOLDER_COLOR_PALETTE = ['#FF6B6B', '#FF8E53', '#FFD166', '#06D6A0', '#118AB2', '#4C6EF5', '#9B5DE5', '#F15BB5'];
+const DEFAULT_FOLDER_ICON = 'folder';
+
+function determineIconHint(name = '', appPath = '') {
+    const haystack = `${String(name || '')} ${String(appPath || '')}`.toLowerCase();
+    if (haystack.includes('whatsapp')) return 'whatsapp';
+    if (haystack.includes('roblox')) return 'roblox';
+    return null;
+}
+
+function sanitizeAppEntry(app) {
+    if (!app || typeof app !== 'object') return app;
+    const sanitized = { ...app };
+    if (sanitized.isApp) {
+        const iconHint = determineIconHint(sanitized.name, sanitized.path);
+        if (iconHint) sanitized.iconHint = iconHint;
+    }
+    return sanitized;
+}
+
+function sanitizeFolderStructure(folders = []) {
+    if (!Array.isArray(folders)) return [];
+    let colorIndex = 0;
+    return folders.map(folder => {
+        if (!folder || typeof folder !== 'object') return null;
+        const sanitized = { ...folder };
+        sanitized.id = sanitized.id || `folder-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+        sanitized.name = sanitized.name || 'Folder';
+
+        if (sanitized.id !== 'pinned') {
+            if (!sanitized.color) {
+                sanitized.color = FOLDER_COLOR_PALETTE[colorIndex % FOLDER_COLOR_PALETTE.length];
+            }
+            sanitized.icon = sanitized.icon || DEFAULT_FOLDER_ICON;
+            colorIndex += 1;
+        } else {
+            sanitized.color = sanitized.color || '#118AB2';
+            sanitized.icon = sanitized.icon || DEFAULT_FOLDER_ICON;
+        }
+
+        sanitized.apps = Array.isArray(sanitized.apps)
+            ? sanitized.apps.map(entry => sanitizeAppEntry(entry))
+            : [];
+
+        return sanitized;
+    }).filter(Boolean);
+}
+
+function getNextFolderColor(folders = []) {
+    const nonPinnedCount = (Array.isArray(folders) ? folders : []).filter(folder => folder && folder.id !== 'pinned').length;
+    return FOLDER_COLOR_PALETTE[nonPinnedCount % FOLDER_COLOR_PALETTE.length];
+}
 
 // =================================================================================
 // === Система Логирования ===
@@ -216,18 +271,20 @@ class SettingsManager {
         // ОДНОРАЗОВАЯ МИГРАЦИЯ V5 для полной очистки
         if (!currentSettings.migratedToV5) {
             Logger.info("Running migration V5 to clean and reset app list...");
-            currentSettings.appFolders = [ { id: 'pinned', name: 'Pinned Apps', apps: [] } ];
+            currentSettings.appFolders = sanitizeFolderStructure([...DEFAULT_SETTINGS.appFolders]);
             currentSettings.migratedToV5 = true;
             this.saveSettings();
             Logger.info("Migration V5 complete.");
         }
-        
+
         // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: Убеждаемся что структура всегда корректная
         if (!currentSettings.appFolders || !Array.isArray(currentSettings.appFolders)) {
             Logger.warn("App folders structure is invalid, resetting to default");
-            currentSettings.appFolders = [ { id: 'pinned', name: 'Pinned Apps', apps: [] } ];
+            currentSettings.appFolders = sanitizeFolderStructure([...DEFAULT_SETTINGS.appFolders]);
             this.saveSettings();
         }
+
+        currentSettings.appFolders = sanitizeFolderStructure(currentSettings.appFolders);
 
         this.validateSettings();
         this.applySettings();
@@ -276,6 +333,8 @@ class SettingsManager {
         if (key === 'indexedDirectories' || key === 'customAutomations') {
             currentSettings[key] = value;
             if (key === 'indexedDirectories') requiresReindex = true;
+        } else if (key === 'appFolders') {
+            currentSettings[key] = sanitizeFolderStructure(value);
         } else if (currentSettings[key] !== value) {
             if (['opacity', 'blurStrength', 'maxIndexDepth', 'width', 'height', 'borderRadius'].includes(key)) {
                 value = parseInt(value, 10);
@@ -472,7 +531,10 @@ const FileIndexer = {
         try {
             if (fs.existsSync(INDEX_PATH)) {
                 const data = fs.readFileSync(INDEX_PATH, 'utf8');
-                this.index = JSON.parse(data);
+                const parsed = JSON.parse(data);
+                this.index = Array.isArray(parsed)
+                    ? parsed.map(entry => sanitizeAppEntry(entry))
+                    : [];
                 this.updateStatus('Loaded from Cache', this.index.length);
             }
         } catch (error) {
@@ -513,8 +575,8 @@ const FileIndexer = {
             const startTime = Date.now();
             const apps = await this.scanApplications();
             const indexTime = Date.now() - startTime;
-            
-            this.index = [...apps];
+
+            this.index = apps.map(entry => sanitizeAppEntry(entry));
             
             Logger.info("================================================================");
             Logger.info(`✅ Индексация завершена за ${(indexTime / 1000).toFixed(2)}s`);
@@ -984,7 +1046,7 @@ const FileIndexer = {
         await this.scanDevelopmentTools(uniqueApps);
         Logger.info(`[STEP 7] Found ${uniqueApps.size} total apps after dev tools scan.`);
 
-        return Array.from(uniqueApps.values());
+        return Array.from(uniqueApps.values()).map(entry => sanitizeAppEntry(entry));
     },
 
     scanRegistry: async function(uniqueApps) {
@@ -2622,11 +2684,59 @@ ipcMain.on('show-folder-context-menu', (event, folderId) => {
 });
 
 ipcMain.on('rename-folder', (event, { folderId, newName }) => {
-    const folderIndex = currentSettings.appFolders.findIndex(f => f.id === folderId);
-    if (folderIndex !== -1 && newName && newName.trim().length > 0) {
-        currentSettings.appFolders[folderIndex].name = newName.trim();
-        settingsManager.updateSetting('appFolders', currentSettings.appFolders);
+    const trimmed = typeof newName === 'string' ? newName.trim() : '';
+    if (!folderId || !trimmed) return;
+
+    const updatedFolders = currentSettings.appFolders.map(folder => {
+        if (folder.id !== folderId) return folder;
+        return { ...folder, name: trimmed };
+    });
+
+    settingsManager.updateSetting('appFolders', updatedFolders);
+});
+
+ipcMain.on('update-folder-style', (event, { folderId, color, icon }) => {
+    if (!folderId || folderId === 'pinned') return;
+
+    const updatedFolders = currentSettings.appFolders.map(folder => {
+        if (folder.id !== folderId) return folder;
+        const updated = { ...folder };
+        if (color && typeof color === 'string') updated.color = color;
+        if (icon && typeof icon === 'string') updated.icon = icon;
+        return updated;
+    });
+
+    settingsManager.updateSetting('appFolders', updatedFolders);
+});
+
+ipcMain.on('delete-folder', (event, folderId) => {
+    if (!folderId || folderId === 'pinned') return;
+
+    let deletedFolder = null;
+    let pinnedFolderClone = null;
+
+    const updatedFolders = [];
+    currentSettings.appFolders.forEach(folder => {
+        if (folder.id === folderId) {
+            deletedFolder = folder;
+            return;
+        }
+
+        if (folder.id === 'pinned') {
+            pinnedFolderClone = { ...folder, apps: Array.isArray(folder.apps) ? [...folder.apps] : [] };
+            updatedFolders.push(pinnedFolderClone);
+            return;
+        }
+
+        updatedFolders.push(folder);
+    });
+
+    if (deletedFolder && pinnedFolderClone && Array.isArray(deletedFolder.apps) && deletedFolder.apps.length > 0) {
+        const migratedApps = deletedFolder.apps.map(app => sanitizeAppEntry(app));
+        pinnedFolderClone.apps = [...pinnedFolderClone.apps, ...migratedApps];
     }
+
+    settingsManager.updateSetting('appFolders', updatedFolders);
 });
 
 ipcMain.on('show-pinned-apps-context-menu', (event) => {
@@ -2647,6 +2757,8 @@ ipcMain.on('create-folder-with-name', (event, folderName) => {
         const newFolder = {
             id: `folder-${Date.now()}`,
             name: folderName.trim(),
+            color: getNextFolderColor(currentSettings.appFolders),
+            icon: DEFAULT_FOLDER_ICON,
             apps: []
         };
         const updatedFolders = [...currentSettings.appFolders, newFolder];
@@ -2662,11 +2774,12 @@ ipcMain.on('add-app-to-pinned-direct', (event, appData) => {
     if (pinnedFolderIndex !== -1) {
         const pinnedFolder = currentSettings.appFolders[pinnedFolderIndex];
         if (!pinnedFolder.apps.some(app => app.path === appData.path)) {
-            
+
             // Создаем новые массивы для обеспечения реакции на изменения
-            const newApps = [...pinnedFolder.apps, appData];
+            const appToStore = sanitizeAppEntry(appData);
+            const newApps = [...pinnedFolder.apps, appToStore];
             const newPinnedFolder = { ...pinnedFolder, apps: newApps };
-            
+
             const newAppFolders = [...currentSettings.appFolders];
             newAppFolders[pinnedFolderIndex] = newPinnedFolder;
             

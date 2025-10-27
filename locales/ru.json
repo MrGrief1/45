@@ -9,6 +9,8 @@
   "context_remove_from_folder": "Удалить из папки",
   "context_delete_folder": "Удалить папку",
   "context_rename_folder": "Переименовать",
+  "context_change_color": "Изменить цвет",
+  "context_change_icon": "Изменить значок",
   "context_run_as_admin": "Запустить от имени администратора",
   "context_create_folder": "Создать папку",
   "new_folder_default_name": "Новая папка",
