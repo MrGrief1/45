@@ -91,8 +91,10 @@ const DEFAULT_SETTINGS = {
     appFolders: [
         {
             id: 'pinned',
-            name: 'Pinned Apps', 
-            apps: [] 
+            name: 'Pinned Apps',
+            apps: [],
+            color: null,
+            icon: 'folder'
         }
     ]
 };
@@ -216,7 +218,7 @@ class SettingsManager {
         // ОДНОРАЗОВАЯ МИГРАЦИЯ V5 для полной очистки
         if (!currentSettings.migratedToV5) {
             Logger.info("Running migration V5 to clean and reset app list...");
-            currentSettings.appFolders = [ { id: 'pinned', name: 'Pinned Apps', apps: [] } ];
+            currentSettings.appFolders = [ { id: 'pinned', name: 'Pinned Apps', apps: [], color: null, icon: 'folder' } ];
             currentSettings.migratedToV5 = true;
             this.saveSettings();
             Logger.info("Migration V5 complete.");
@@ -225,7 +227,7 @@ class SettingsManager {
         // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: Убеждаемся что структура всегда корректная
         if (!currentSettings.appFolders || !Array.isArray(currentSettings.appFolders)) {
             Logger.warn("App folders structure is invalid, resetting to default");
-            currentSettings.appFolders = [ { id: 'pinned', name: 'Pinned Apps', apps: [] } ];
+            currentSettings.appFolders = [ { id: 'pinned', name: 'Pinned Apps', apps: [], color: null, icon: 'folder' } ];
             this.saveSettings();
         }
 
@@ -245,9 +247,9 @@ class SettingsManager {
         }
         // НОВОЕ: Проверка для папок приложений
         if (!Array.isArray(currentSettings.appFolders) || currentSettings.appFolders.length === 0) {
-            currentSettings.appFolders = DEFAULT_SETTINGS.appFolders;
+            currentSettings.appFolders = DEFAULT_SETTINGS.appFolders.map(folder => ({ ...folder }));
         }
-        
+
         // ИСПРАВЛЕНИЕ: Убеждаемся что папка pinned существует
         const pinnedFolder = currentSettings.appFolders.find(f => f.id === 'pinned');
         if (!pinnedFolder) {
@@ -255,10 +257,18 @@ class SettingsManager {
             currentSettings.appFolders.unshift({
                 id: 'pinned',
                 name: 'Pinned Apps',
-                apps: []
+                apps: [],
+                color: null,
+                icon: 'folder'
             });
         }
-        
+
+        currentSettings.appFolders = currentSettings.appFolders.map(folder => ({
+            ...folder,
+            color: (typeof folder.color === 'string' && folder.color.startsWith('#')) ? folder.color.toUpperCase() : null,
+            icon: (typeof folder.icon === 'string' && folder.icon.trim() !== '') ? folder.icon : 'folder'
+        }));
+
         Logger.info(`App folders structure: ${JSON.stringify(currentSettings.appFolders.map(f => ({id: f.id, name: f.name, appsCount: f.apps.length})))}`);
     }
 
@@ -373,6 +383,54 @@ class SettingsManager {
 }
 
 const settingsManager = new SettingsManager();
+
+function cloneAppFoldersWithApps(folders) {
+    return folders.map(folder => ({
+        ...folder,
+        apps: Array.isArray(folder.apps) ? [...folder.apps] : []
+    }));
+}
+
+function deleteFolderById(folderId) {
+    if (!folderId || folderId === 'pinned') return;
+    if (!Array.isArray(currentSettings.appFolders)) return;
+
+    const foldersCopy = cloneAppFoldersWithApps(currentSettings.appFolders);
+    const folderIndex = foldersCopy.findIndex(f => f.id === folderId);
+    if (folderIndex === -1) return;
+
+    const [removedFolder] = foldersCopy.splice(folderIndex, 1);
+    const pinnedFolder = foldersCopy.find(f => f.id === 'pinned');
+    if (removedFolder && pinnedFolder && Array.isArray(removedFolder.apps) && removedFolder.apps.length > 0) {
+        pinnedFolder.apps.push(...removedFolder.apps);
+    }
+
+    settingsManager.updateSetting('appFolders', foldersCopy);
+}
+
+function updateFolderAppearance(folderId, updates) {
+    if (!folderId || !updates || typeof updates !== 'object') return;
+    if (!Array.isArray(currentSettings.appFolders)) return;
+
+    const sanitizedUpdates = {};
+    if (Object.prototype.hasOwnProperty.call(updates, 'color')) {
+        const colorValue = updates.color;
+        sanitizedUpdates.color = (typeof colorValue === 'string' && colorValue.startsWith('#')) ? colorValue.toUpperCase() : null;
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, 'icon')) {
+        const iconValue = updates.icon;
+        sanitizedUpdates.icon = (typeof iconValue === 'string' && iconValue.trim() !== '') ? iconValue : 'folder';
+    }
+
+    if (Object.keys(sanitizedUpdates).length === 0) return;
+
+    const foldersCopy = cloneAppFoldersWithApps(currentSettings.appFolders);
+    const folderIndex = foldersCopy.findIndex(f => f.id === folderId);
+    if (folderIndex === -1) return;
+
+    foldersCopy[folderIndex] = { ...foldersCopy[folderIndex], ...sanitizedUpdates };
+    settingsManager.updateSetting('appFolders', foldersCopy);
+}
 
 // =================================================================================
 // === Система Индексации Файлов ===
@@ -2594,18 +2652,12 @@ ipcMain.on('show-folder-context-menu', (event, folderId) => {
                 }
             }
         },
-        { 
-            label: i18n.t('context_delete_folder'), 
+        {
+            label: i18n.t('context_delete_folder'),
             click: () => {
                 actionTaken = true; // Флаг, что действие совершено
-                const updatedFolders = currentSettings.appFolders.filter(f => f.id !== folderId);
-                const deletedFolder = currentSettings.appFolders.find(f => f.id === folderId);
-                const pinnedFolder = updatedFolders.find(f => f.id === 'pinned');
-                if (deletedFolder && pinnedFolder && deletedFolder.apps.length > 0) {
-                    pinnedFolder.apps.push(...deletedFolder.apps);
-                }
-                settingsManager.updateSetting('appFolders', updatedFolders);
-            } 
+                deleteFolderById(folderId);
+            }
         },
     ];
     const menu = Menu.buildFromTemplate(template);
@@ -2622,11 +2674,26 @@ ipcMain.on('show-folder-context-menu', (event, folderId) => {
 });
 
 ipcMain.on('rename-folder', (event, { folderId, newName }) => {
-    const folderIndex = currentSettings.appFolders.findIndex(f => f.id === folderId);
-    if (folderIndex !== -1 && newName && newName.trim().length > 0) {
-        currentSettings.appFolders[folderIndex].name = newName.trim();
-        settingsManager.updateSetting('appFolders', currentSettings.appFolders);
-    }
+    const trimmedName = typeof newName === 'string' ? newName.trim() : '';
+    if (!folderId || !trimmedName) return;
+    if (!Array.isArray(currentSettings.appFolders)) return;
+
+    const foldersCopy = cloneAppFoldersWithApps(currentSettings.appFolders);
+    const folderIndex = foldersCopy.findIndex(f => f.id === folderId);
+    if (folderIndex === -1) return;
+
+    foldersCopy[folderIndex] = { ...foldersCopy[folderIndex], name: trimmedName };
+    settingsManager.updateSetting('appFolders', foldersCopy);
+});
+
+ipcMain.on('delete-folder', (event, folderId) => {
+    deleteFolderById(folderId);
+});
+
+ipcMain.on('update-folder-appearance', (event, payload) => {
+    if (!payload || typeof payload !== 'object') return;
+    const { folderId, updates } = payload;
+    updateFolderAppearance(folderId, updates);
 });
 
 ipcMain.on('show-pinned-apps-context-menu', (event) => {
@@ -2647,7 +2714,9 @@ ipcMain.on('create-folder-with-name', (event, folderName) => {
         const newFolder = {
             id: `folder-${Date.now()}`,
             name: folderName.trim(),
-            apps: []
+            apps: [],
+            color: null,
+            icon: 'folder'
         };
         const updatedFolders = [...currentSettings.appFolders, newFolder];
         settingsManager.updateSetting('appFolders', updatedFolders);
@@ -2733,12 +2802,26 @@ ipcMain.on('open-item', (event, itemPath) => {
     
     if (itemPath.startsWith('shell:')) {
         // UWP приложения
-        shell.openExternal(itemPath)
-            .then(() => {
+        if (process.platform === 'win32') {
+            exec(`start "" "${itemPath}"`, { windowsHide: true }, (error) => {
                 const launchTime = Date.now() - launchStart;
-                Logger.info(`✓ UWP app launched in ${launchTime}ms: ${itemPath}`);
-            })
-            .catch(err => Logger.error(`Failed to open UWP app ${itemPath}: ${err.message}`));
+                if (error) {
+                    Logger.error(`Failed to open UWP app ${itemPath} via start: ${error.message}`);
+                    shell.openExternal(itemPath)
+                        .then(() => Logger.info(`✓ UWP app launched via fallback in ${launchTime}ms: ${itemPath}`))
+                        .catch(fallbackErr => Logger.error(`Fallback openExternal failed for ${itemPath}: ${fallbackErr.message}`));
+                } else {
+                    Logger.info(`✓ UWP app launched in ${launchTime}ms: ${itemPath}`);
+                }
+            });
+        } else {
+            shell.openExternal(itemPath)
+                .then(() => {
+                    const launchTime = Date.now() - launchStart;
+                    Logger.info(`✓ UWP app launched in ${launchTime}ms: ${itemPath}`);
+                })
+                .catch(err => Logger.error(`Failed to open UWP app ${itemPath}: ${err.message}`));
+        }
     } else if (itemPath.toLowerCase().endsWith('.exe')) {
         // === ОПТИМИЗАЦИЯ: Используем child_process.spawn для .exe файлов (быстрее чем shell.openPath) ===
         const { spawn } = require('child_process');
@@ -3088,11 +3171,18 @@ ipcMain.on('request-file-icon', async (event, filePath) => {
 
         // Fallback for non-apps or if PowerShell fails
         if (!dataUrl) {
-            if (!fs.existsSync(filePath)) {
-                Logger.warn(`File not found for icon request: ${filePath}`);
-            } else {
+            const isShellPath = typeof filePath === 'string' && filePath.startsWith('shell:');
+            if (!isShellPath) {
+                const fileExists = fs.existsSync(filePath);
+                if (!fileExists) {
+                    Logger.warn(`File not found for icon request: ${filePath}`);
+                }
+            }
+            try {
                 const icon = await app.getFileIcon(filePath, { size: 'normal' });
                 dataUrl = icon.toDataURL();
+            } catch (iconError) {
+                Logger.warn(`Could not retrieve icon for ${filePath} using app.getFileIcon: ${iconError.message}`);
             }
         }
         

@@ -328,14 +328,14 @@ body.dark-theme .aux-header {
     cursor: pointer;
     transition: background-color 0.2s ease, transform 0.15s ease;
     text-align: center;
-    background-color: rgba(var(--secondary-bg-color-rgb), 0.5);
+    background-color: var(--pinned-item-bg, rgba(var(--secondary-bg-color-rgb), 0.5));
     border: 1px solid transparent;
     width: 90px;
     height: 90px;
 }
 
 .pinned-item:hover {
-    background-color: rgba(var(--secondary-bg-color-rgb), 0.9);
+    background-color: var(--pinned-item-bg-hover, rgba(var(--secondary-bg-color-rgb), 0.9));
     transform: translateY(-2px);
 }
 
@@ -378,6 +378,172 @@ body.dark-theme .aux-header {
     width: 90%;
     padding: 2px;
     box-sizing: border-box;
+}
+
+.pinned-item.custom-folder {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+}
+
+.pinned-item.custom-folder .pinned-item-icon svg {
+    stroke-width: 1.8;
+}
+
+.folder-context-menu {
+    position: fixed;
+    z-index: 9999;
+    min-width: 240px;
+    max-width: 280px;
+    padding: 16px;
+    border-radius: 18px;
+    background: rgba(var(--base-bg-color-rgb), 0.92);
+    box-shadow: 0 25px 65px rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(24px);
+    display: none;
+    animation: folder-menu-fade 120ms ease-out;
+}
+
+.folder-context-menu.visible {
+    display: block;
+}
+
+@keyframes folder-menu-fade {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.folder-context-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.folder-context-action {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: rgba(var(--secondary-bg-color-rgb), 0.6);
+    color: var(--text-color);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s ease, background-color 0.2s ease;
+}
+
+.folder-context-action svg {
+    width: 16px;
+    height: 16px;
+}
+
+.folder-context-action:hover {
+    transform: translateY(-2px);
+    background: rgba(var(--secondary-bg-color-rgb), 0.85);
+}
+
+.folder-context-action.danger {
+    border-color: rgba(255, 59, 48, 0.3);
+    color: var(--danger-color);
+    background: rgba(255, 59, 48, 0.1);
+}
+
+.folder-context-section-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(var(--text-color-rgb, 29, 29, 31), 0.65);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.folder-context-section + .folder-context-section {
+    margin-top: 14px;
+}
+
+.folder-context-color-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(32px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.folder-context-color {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+    background: var(--color-swatch, transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.folder-context-color.default::after {
+    content: '';
+    width: 70%;
+    height: 70%;
+    border-radius: 50%;
+    border: 2px dashed rgba(var(--text-color-rgb, 29, 29, 31), 0.4);
+}
+
+.folder-context-color.selected {
+    border-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.folder-context-color:hover {
+    transform: translateY(-2px);
+}
+
+.folder-context-icons {
+    display: grid;
+    grid-template-columns: repeat(6, 32px);
+    gap: 8px;
+    max-height: 180px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.folder-context-icon-option {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: rgba(var(--secondary-bg-color-rgb), 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.2s ease;
+}
+
+.folder-context-icon-option svg {
+    width: 18px;
+    height: 18px;
+}
+
+.folder-context-icon-option:hover {
+    transform: translateY(-2px);
+    background: rgba(var(--secondary-bg-color-rgb), 0.85);
+}
+
+.folder-context-icon-option.selected {
+    border-color: var(--highlight-color);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
 }
 
 

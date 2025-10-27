@@ -52,6 +52,32 @@ const Utils = {
     escapeHtml: (unsafe) => {
         if (typeof unsafe !== 'string') return '';
         return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    },
+
+    lightenColor: (hex, percent = 12) => {
+        if (!hex || typeof hex !== 'string') return null;
+        let color = hex.trim();
+        if (!color.startsWith('#')) return null;
+        color = color.slice(1);
+        if (color.length === 3) {
+            color = color.split('').map(char => char + char).join('');
+        }
+        if (color.length !== 6) return null;
+
+        const num = parseInt(color, 16);
+        if (Number.isNaN(num)) return null;
+
+        let r = (num >> 16) & 0xff;
+        let g = (num >> 8) & 0xff;
+        let b = num & 0xff;
+
+        const ratio = Math.max(Math.min(percent, 100), -100) / 100;
+        r = Math.round(r + (255 - r) * ratio);
+        g = Math.round(g + (255 - g) * ratio);
+        b = Math.round(b + (255 - b) * ratio);
+
+        const toHex = (value) => value.toString(16).padStart(2, '0');
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
     }
 };
 
@@ -94,6 +120,285 @@ const LocalizationRenderer = {
             SettingsModule.renderIndexedDirectories();
             SettingsModule.renderAutomations();
         }
+    }
+};
+
+// =================================================================================
+// === Контекстное меню папок (Folder Context Menu) ===
+// =================================================================================
+
+const FolderContextMenu = {
+    menuEl: null,
+    isOpen: false,
+    currentFolder: null,
+    callbacks: {},
+    selectedColor: null,
+    selectedIcon: 'folder',
+    colors: [
+        { id: 'default', value: null, labelKey: 'context_color_default' },
+        { id: 'red', value: '#FF6B6B', labelKey: 'context_color_red' },
+        { id: 'orange', value: '#FF8E53', labelKey: 'context_color_orange' },
+        { id: 'yellow', value: '#FFD166', labelKey: 'context_color_yellow' },
+        { id: 'green', value: '#4CD964', labelKey: 'context_color_green' },
+        { id: 'blue', value: '#5AC8FA', labelKey: 'context_color_blue' },
+        { id: 'purple', value: '#AF52DE', labelKey: 'context_color_purple' },
+        { id: 'pink', value: '#FF69B4', labelKey: 'context_color_pink' }
+    ],
+    icons: [
+        { id: 'folder', labelKey: 'context_folder_icon_reset' },
+        { id: 'star' },
+        { id: 'heart' },
+        { id: 'code' },
+        { id: 'cpu' },
+        { id: 'music' },
+        { id: 'film' },
+        { id: 'book' },
+        { id: 'briefcase' },
+        { id: 'award' },
+        { id: 'box' },
+        { id: 'coffee' },
+        { id: 'command' },
+        { id: 'disc' },
+        { id: 'globe' },
+        { id: 'image' },
+        { id: 'layers' },
+        { id: 'life-buoy' },
+        { id: 'monitor' },
+        { id: 'moon' },
+        { id: 'sun' },
+        { id: 'palette' },
+        { id: 'shopping-bag' },
+        { id: 'settings' },
+        { id: 'shield' },
+        { id: 'smartphone' },
+        { id: 'terminal' },
+        { id: 'tool' },
+        { id: 'tv' },
+        { id: 'user' },
+        { id: 'users' },
+        { id: 'watch' },
+        { id: 'zap' },
+        { id: 'smile' },
+        { id: 'cloud' },
+        { id: 'map' },
+        { id: 'compass' },
+        { id: 'target' },
+        { id: 'feather' },
+        { id: 'gift' },
+        { id: 'headphones' },
+        { id: 'package' },
+        { id: 'pie-chart' },
+        { id: 'sliders' }
+    ],
+
+    init() {
+        if (this.menuEl) return;
+
+        this.menuEl = document.createElement('div');
+        this.menuEl.id = 'folder-context-menu';
+        this.menuEl.className = 'folder-context-menu';
+        this.menuEl.addEventListener('contextmenu', (event) => event.preventDefault());
+        document.body.appendChild(this.menuEl);
+
+        this.callbacks = {};
+        this.boundHide = () => this.hide();
+        this.boundDocumentClick = (event) => {
+            if (!this.isOpen) return;
+            if (!this.menuEl.contains(event.target)) {
+                this.hide();
+            }
+        };
+        this.boundKeyListener = (event) => {
+            if (event.key === 'Escape') {
+                this.hide();
+            }
+        };
+
+        document.addEventListener('click', this.boundDocumentClick);
+        document.addEventListener('keydown', this.boundKeyListener);
+        window.addEventListener('resize', this.boundHide);
+        window.addEventListener('blur', this.boundHide);
+        window.addEventListener('scroll', this.boundHide, true);
+    },
+
+    show({ folder, x, y, onRename, onDelete, onColorChange, onIconChange }) {
+        if (!folder) return;
+        this.init();
+
+        this.currentFolder = { ...folder };
+        this.callbacks = { onRename, onDelete, onColorChange, onIconChange };
+        this.selectedColor = (typeof folder.color === 'string' && folder.color.startsWith('#'))
+            ? folder.color.toUpperCase()
+            : null;
+        this.selectedIcon = this.icons.some(icon => icon.id === folder.icon) ? folder.icon : 'folder';
+
+        this.render();
+
+        this.menuEl.style.display = 'block';
+        requestAnimationFrame(() => {
+            const rect = this.menuEl.getBoundingClientRect();
+            let left = x;
+            let top = y;
+
+            if (left + rect.width > window.innerWidth) {
+                left = window.innerWidth - rect.width - 12;
+            }
+            if (top + rect.height > window.innerHeight) {
+                top = window.innerHeight - rect.height - 12;
+            }
+
+            this.menuEl.style.left = `${Math.max(12, left)}px`;
+            this.menuEl.style.top = `${Math.max(12, top)}px`;
+            this.menuEl.classList.add('visible');
+        });
+
+        this.isOpen = true;
+    },
+
+    hide() {
+        if (!this.menuEl || !this.isOpen) return;
+        this.menuEl.classList.remove('visible');
+        this.menuEl.style.display = 'none';
+        this.isOpen = false;
+    },
+
+    render() {
+        if (!this.menuEl) return;
+        this.menuEl.innerHTML = '';
+        this.menuEl.dataset.folderId = this.currentFolder?.id || '';
+
+        this.menuEl.appendChild(this.createActions());
+        this.menuEl.appendChild(this.createColorsSection());
+        this.menuEl.appendChild(this.createIconsSection());
+    },
+
+    createActions() {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'folder-context-actions';
+
+        const renameButton = this.createActionButton('edit-3', LocalizationRenderer.t('context_rename_folder'), () => {
+            if (typeof this.callbacks.onRename === 'function') {
+                this.callbacks.onRename();
+            }
+        });
+
+        const deleteButton = this.createActionButton('trash-2', LocalizationRenderer.t('context_delete_folder'), () => {
+            if (typeof this.callbacks.onDelete === 'function') {
+                this.callbacks.onDelete();
+            }
+        }, 'danger');
+
+        wrapper.appendChild(renameButton);
+        wrapper.appendChild(deleteButton);
+        return wrapper;
+    },
+
+    createActionButton(iconName, label, handler, extraClass = '') {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `folder-context-action${extraClass ? ` ${extraClass}` : ''}`;
+
+        if (window.feather && window.feather.icons[iconName]) {
+            button.innerHTML = `${window.feather.icons[iconName].toSvg()}<span>${label}</span>`;
+        } else {
+            button.textContent = label;
+        }
+
+        button.addEventListener('click', () => {
+            this.hide();
+            if (typeof handler === 'function') handler();
+        });
+
+        return button;
+    },
+
+    createColorsSection() {
+        const section = document.createElement('div');
+        section.className = 'folder-context-section';
+
+        const title = document.createElement('div');
+        title.className = 'folder-context-section-title';
+        title.textContent = LocalizationRenderer.t('context_folder_color');
+        section.appendChild(title);
+
+        const grid = document.createElement('div');
+        grid.className = 'folder-context-color-grid';
+
+        this.colors.forEach(colorOption => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'folder-context-color';
+
+            const normalizedValue = colorOption.value ? colorOption.value.toUpperCase() : null;
+            if (!colorOption.value) {
+                button.classList.add('default');
+            } else {
+                button.style.setProperty('--color-swatch', colorOption.value);
+            }
+
+            if ((this.selectedColor || null) === (normalizedValue || null)) {
+                button.classList.add('selected');
+            }
+
+            if (colorOption.labelKey) {
+                button.title = LocalizationRenderer.t(colorOption.labelKey);
+            }
+
+            button.addEventListener('click', () => {
+                this.hide();
+                if (typeof this.callbacks.onColorChange === 'function') {
+                    this.callbacks.onColorChange(colorOption.value);
+                }
+            });
+
+            grid.appendChild(button);
+        });
+
+        section.appendChild(grid);
+        return section;
+    },
+
+    createIconsSection() {
+        const section = document.createElement('div');
+        section.className = 'folder-context-section';
+
+        const title = document.createElement('div');
+        title.className = 'folder-context-section-title';
+        title.textContent = LocalizationRenderer.t('context_folder_icon');
+        section.appendChild(title);
+
+        const grid = document.createElement('div');
+        grid.className = 'folder-context-icons';
+
+        this.icons.forEach(iconOption => {
+            if (!window.feather || !window.feather.icons[iconOption.id]) return;
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'folder-context-icon-option';
+
+            if (this.selectedIcon === iconOption.id) {
+                button.classList.add('selected');
+            }
+
+            button.innerHTML = window.feather.icons[iconOption.id].toSvg();
+            if (iconOption.labelKey) {
+                button.title = LocalizationRenderer.t(iconOption.labelKey);
+            } else {
+                button.title = iconOption.id.replace(/[-_]/g, ' ');
+            }
+
+            button.addEventListener('click', () => {
+                this.hide();
+                if (typeof this.callbacks.onIconChange === 'function') {
+                    this.callbacks.onIconChange(iconOption.id);
+                }
+            });
+
+            grid.appendChild(button);
+        });
+
+        section.appendChild(grid);
+        return section;
     }
 };
 
@@ -866,6 +1171,7 @@ const SearchModule = {
 const PinnedAppsModule = {
     currentFolderId: 'pinned',
     init: function() {
+        FolderContextMenu.init();
         this.setupEventListeners();
     },
 
@@ -892,14 +1198,19 @@ const PinnedAppsModule = {
         const fragment = document.createDocumentFragment();
         const currentFolder = AppState.settings.appFolders.find(f => f.id === this.currentFolderId);
 
+        FolderContextMenu.hide();
+
         if (this.currentFolderId === 'pinned') {
             // Render folders
             AppState.settings.appFolders.forEach(folder => {
                 if (folder.id === 'pinned') return;
-                const folderEl = this.createPinnedItem(folder.name, 'folder', () => {
+
+                const resolvedIcon = (folder.icon && window.feather && window.feather.icons[folder.icon]) ? folder.icon : 'folder';
+                const resolvedColor = (typeof folder.color === 'string' && folder.color.startsWith('#')) ? folder.color : null;
+                const folderEl = this.createPinnedItem(folder.name, resolvedIcon, () => {
                     this.currentFolderId = folder.id;
                     this.render();
-                });
+                }, null, { type: 'folder', color: resolvedColor });
                 folderEl.setAttribute('data-folder-id', folder.id); // Add data attribute for renaming
 
                 // --- D&D Target ---
@@ -927,7 +1238,15 @@ const PinnedAppsModule = {
                 folderEl.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    ipcRenderer.send('show-folder-context-menu', folder.id);
+                    FolderContextMenu.show({
+                        folder: { ...folder, color: resolvedColor },
+                        x: e.clientX,
+                        y: e.clientY,
+                        onRename: () => this.startInlineRename(folder.id),
+                        onDelete: () => this.deleteFolder(folder.id),
+                        onColorChange: (colorValue) => this.updateFolderAppearance(folder.id, { color: colorValue ?? null }),
+                        onIconChange: (iconId) => this.updateFolderAppearance(folder.id, { icon: iconId || 'folder' })
+                    });
                 });
                 fragment.appendChild(folderEl);
             });
@@ -972,9 +1291,20 @@ const PinnedAppsModule = {
         ViewManager.resizeWindow(); // Recalculate window size after render
     },
 
-    createPinnedItem: function(name, iconName, onClick, path = null) {
+    createPinnedItem: function(name, iconName, onClick, path = null, options = {}) {
         const item = Utils.createElement('div', { className: 'pinned-item' });
-        
+
+        if (options.type === 'folder') {
+            item.classList.add('pinned-folder');
+        }
+
+        if (options && options.color) {
+            const hoverColor = Utils.lightenColor(options.color, 18);
+            item.style.setProperty('--pinned-item-bg', options.color);
+            if (hoverColor) item.style.setProperty('--pinned-item-bg-hover', hoverColor);
+            item.classList.add('custom-folder');
+        }
+
         // === УЛУЧШЕНО: Визуальная обратная связь при клике ===
         item.addEventListener('click', (e) => {
             item.style.transform = 'scale(0.9)';
@@ -999,14 +1329,15 @@ const PinnedAppsModule = {
         icon.className = 'pinned-item-icon';
         if (path) {
             const cachedSrc = AppState.iconCache.get(path);
-            const src = (cachedSrc && typeof cachedSrc === 'string' && cachedSrc.startsWith('data:image')) 
-                        ? cachedSrc 
+            const src = (cachedSrc && typeof cachedSrc === 'string' && cachedSrc.startsWith('data:image'))
+                        ? cachedSrc
                         : SearchModule.getFallbackIconDataUrl('cpu');
             icon.src = src;
             icon.setAttribute('data-path', path);
             icon.classList.add('app-icon');
         } else {
-            icon.innerHTML = window.feather.icons[iconName] ? window.feather.icons[iconName].toSvg() : '';
+            const resolvedIconName = (window.feather && window.feather.icons[iconName]) ? iconName : 'folder';
+            icon.innerHTML = (window.feather && window.feather.icons[resolvedIconName]) ? window.feather.icons[resolvedIconName].toSvg() : '';
         }
 
         const nameEl = Utils.createElement('div', { className: 'pinned-item-name' });
@@ -1015,6 +1346,84 @@ const PinnedAppsModule = {
         item.appendChild(icon);
         item.appendChild(nameEl);
         return item;
+    },
+
+    startInlineRename: function(folderId) {
+        const folderEl = document.querySelector(`[data-folder-id="${folderId}"]`);
+        const nameEl = folderEl?.querySelector('.pinned-item-name');
+
+        if (!folderEl || !nameEl || folderEl.querySelector('.pinned-item-name-input')) return;
+
+        FolderContextMenu.hide();
+
+        const originalName = nameEl.textContent;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = originalName;
+        input.className = 'pinned-item-name-input';
+
+        nameEl.style.display = 'none';
+        folderEl.appendChild(input);
+        input.focus();
+        input.select();
+
+        const finishEditing = () => {
+            if (!input.parentNode) return;
+
+            const newName = input.value.trim();
+
+            nameEl.style.display = 'block';
+            input.remove();
+
+            if (newName && newName !== originalName) {
+                nameEl.textContent = newName;
+                ipcRenderer.send('rename-folder', { folderId, newName });
+            } else {
+                nameEl.textContent = originalName;
+            }
+        };
+
+        input.addEventListener('blur', finishEditing);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                finishEditing();
+            } else if (e.key === 'Escape') {
+                input.value = originalName;
+                finishEditing();
+            }
+        });
+    },
+
+    deleteFolder: function(folderId) {
+        if (!folderId) return;
+        FolderContextMenu.hide();
+        ipcRenderer.send('delete-folder', folderId);
+    },
+
+    updateFolderAppearance: function(folderId, updates) {
+        if (!folderId || !updates || typeof updates !== 'object') return;
+
+        const sanitizedUpdates = {};
+        if (Object.prototype.hasOwnProperty.call(updates, 'color')) {
+            const colorValue = updates.color;
+            sanitizedUpdates.color = (typeof colorValue === 'string' && colorValue.startsWith('#')) ? colorValue.toUpperCase() : null;
+        }
+        if (Object.prototype.hasOwnProperty.call(updates, 'icon')) {
+            const iconValue = updates.icon;
+            sanitizedUpdates.icon = (typeof iconValue === 'string' && iconValue.trim() !== '') ? iconValue : 'folder';
+        }
+
+        if (Object.keys(sanitizedUpdates).length === 0) return;
+
+        if (Array.isArray(AppState.settings.appFolders)) {
+            const folder = AppState.settings.appFolders.find(f => f.id === folderId);
+            if (folder) {
+                Object.assign(folder, sanitizedUpdates);
+                this.render();
+            }
+        }
+
+        ipcRenderer.send('update-folder-appearance', { folderId, updates: sanitizedUpdates });
     }
 };
 
@@ -1684,6 +2093,7 @@ document.addEventListener('DOMContentLoaded', () => {
         LocalizationRenderer.applyTranslations();
         SettingsModule.populateSettingsUI();
         PinnedAppsModule.render();
+        FolderContextMenu.hide();
         ViewManager.resizeWindow(); // Always resize after settings update
     });
 
@@ -1705,47 +2115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     ipcRenderer.on('prompt-rename-folder', (event, folderId) => {
-        const folderEl = document.querySelector(`[data-folder-id="${folderId}"]`);
-        const nameEl = folderEl?.querySelector('.pinned-item-name');
-
-        if (!folderEl || !nameEl || folderEl.querySelector('.pinned-item-name-input')) return;
-
-        const originalName = nameEl.textContent;
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = originalName;
-        input.className = 'pinned-item-name-input';
-
-        nameEl.style.display = 'none';
-        folderEl.appendChild(input);
-        input.focus();
-        input.select();
-
-        const finishEditing = () => {
-            if (!input.parentNode) return;
-
-            const newName = input.value.trim();
-            
-            nameEl.style.display = 'block';
-            input.remove();
-
-            if (newName && newName !== originalName) {
-                nameEl.textContent = newName;
-                ipcRenderer.send('rename-folder', { folderId, newName });
-            } else {
-                nameEl.textContent = originalName;
-            }
-        };
-
-        input.addEventListener('blur', finishEditing);
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                finishEditing();
-            } else if (e.key === 'Escape') {
-                input.value = originalName;
-                finishEditing();
-            }
-        });
+        PinnedAppsModule.startInlineRename(folderId);
     });
 
     ipcRenderer.on('prompt-create-folder', () => {
