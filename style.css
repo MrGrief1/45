@@ -20,6 +20,7 @@
     --icon-color: #8a8a8e;
     --highlight-color: #007AFF;
     --danger-color: #FF3B30;
+    --danger-color-rgb: 255, 59, 48;
     --border-color: rgba(0, 0, 0, 0.1);
     --shadow: 0 15px 45px rgba(0, 0, 0, 0.15);
     --scrollbar-thumb: rgba(0, 0, 0, 0.3);
@@ -29,6 +30,8 @@
     --context-menu-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
     --context-menu-button-bg: rgba(229, 229, 234, 0.85);
     --context-menu-button-hover: rgba(0, 122, 255, 0.18);
+    --context-menu-danger-bg: rgba(var(--danger-color-rgb), 0.12);
+    --context-menu-danger-hover: rgba(var(--danger-color-rgb), 0.24);
     /* Стили для ползунка */
     --slider-track-bg: rgba(0, 0, 0, 0.1);
     --slider-thumb-bg: #ffffff;
@@ -45,6 +48,7 @@ body.dark-theme {
     --text-color: #f5f5f7;
     --icon-color: #98989d;
     --highlight-color: #0A84FF;
+    --danger-color-rgb: 255, 69, 58;
     --border-color: rgba(255, 255, 255, 0.15);
     --shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
     --scrollbar-thumb: rgba(255, 255, 255, 0.3);
@@ -68,6 +72,7 @@ body.liquid_glass_blue-theme {
     --text-color: #102a43;
     --highlight-color: #007AFF;
     --button-icon-color: #243b53;
+    --danger-color-rgb: 224, 60, 49;
     --shadow: 0 30px 90px rgba(0, 50, 100, 0.2);
     --border-color: rgba(255, 255, 255, 0.6);
     --context-menu-bg: rgba(230, 245, 255, 0.95);
@@ -81,6 +86,7 @@ body.ocean_depths-theme {
     --secondary-bg-color-rgb: 20, 50, 100;
     --text-color: #FFFFFF;
     --highlight-color: #1E90FF;
+    --danger-color-rgb: 255, 95, 82;
     --border-color: rgba(255, 255, 255, 0.2);
     --shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
     --scrollbar-thumb: rgba(255, 255, 255, 0.4);
@@ -458,12 +464,12 @@ body.dark-theme .aux-header {
 }
 
 .folder-menu-action.danger {
-    color: #ff6b6b;
-    background: rgba(255, 107, 107, 0.1);
+    color: var(--danger-color);
+    background: var(--context-menu-danger-bg);
 }
 
 .folder-menu-action.danger:hover {
-    background: rgba(255, 107, 107, 0.2);
+    background: var(--context-menu-danger-hover);
 }
 
 .folder-menu-divider {
@@ -979,7 +985,10 @@ input[type="range"]:active::-webkit-slider-thumb {
     border: none;
     box-shadow: none;
     overflow: hidden;
-    
+    min-height: 360px;
+    padding: 12px 0 24px;
+    display: flex;
+
     /* БЫСТРАЯ АНИМАЦИЯ */
     opacity: 0;
     transform: translateY(6px);
@@ -993,7 +1002,7 @@ input[type="range"]:active::-webkit-slider-thumb {
 }
 
 #apps-library-content {
-    padding: 10px 10px 0 10px; /* убран нижний отступ */
+    padding: 0 8px; /* компактные отступы, чтобы не обрезать контент */
     overflow-y: auto;
     overflow-x: hidden;
     max-height: 600px;
@@ -1001,6 +1010,9 @@ input[type="range"]:active::-webkit-slider-thumb {
     box-sizing: border-box;
     width: 100%;
     scroll-padding-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 }
 
 .app-category {
@@ -1173,4 +1185,47 @@ input[type="range"]:active::-webkit-slider-thumb {
     font-size: 22px;
     font-weight: 600;
     color: var(--text-color);
+}
+.apps-library-loading,
+.apps-library-empty {
+    margin: auto;
+    padding: 32px 24px;
+    border-radius: 20px;
+    background: rgba(var(--secondary-bg-color-rgb), 0.6);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+    color: var(--text-color);
+    min-width: 260px;
+    max-width: 320px;
+    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.18);
+}
+
+.apps-library-loading-text,
+.apps-library-empty-caption {
+    font-size: 14px;
+    line-height: 1.5;
+    opacity: 0.75;
+}
+
+.apps-library-empty-title {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.apps-library-spinner {
+    width: 42px;
+    height: 42px;
+    border: 3px solid rgba(var(--secondary-bg-color-rgb), 0.4);
+    border-top-color: var(--highlight-color);
+    border-radius: 50%;
+    animation: appsLibrarySpinner 0.9s linear infinite;
+}
+
+@keyframes appsLibrarySpinner {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }

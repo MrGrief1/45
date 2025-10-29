@@ -1482,45 +1482,95 @@ const AuxPanelManager = {
 
     // НОВОЕ: Загрузка библиотеки приложений с категоризацией
     loadAppsLibrary: async function() {
+        const content = this.panelContainer.querySelector('#apps-library-content');
+
+        if (!content) return;
+
+        // Показываем предзагрузку, чтобы окно сразу заняло нужный размер
+        content.innerHTML = '';
+        const loadingState = this.createAppsLibraryLoadingState();
+        content.appendChild(loadingState);
+        this.panelContainer.classList.add('visible');
+        ViewManager.resizeWindow();
+
         try {
             const allApps = await ipcRenderer.invoke('get-all-apps');
             const categories = this.categorizeApps(allApps);
-            const content = this.panelContainer.querySelector('#apps-library-content');
 
-            if (content) {
-                content.innerHTML = '';
-                const sortedCategories = Object.entries(categories).sort(([, a], [, b]) => b.length - a.length);
-                let categoriesToLoad = sortedCategories.filter(([, apps]) => apps.length > 0).length;
-
-                if (categoriesToLoad === 0) {
-                    AuxPanelManager.panelContainer.classList.add('visible');
-                    ViewManager.resizeWindow();
-                    return;
-                }
-
-                const onCategoryLoaded = () => {
-                    categoriesToLoad--;
-                    if (categoriesToLoad === 0) {
-                        requestAnimationFrame(() => {
-                            AuxPanelManager.panelContainer.classList.add('visible');
-                            ViewManager.resizeWindow();
-                        });
-                    }
-                };
-
-                const fragment = document.createDocumentFragment();
-                sortedCategories.forEach(([categoryName, apps]) => {
-                    if (apps.length > 0) {
-                        const categoryEl = this.createCategoryElement(categoryName, apps, onCategoryLoaded);
-                        fragment.appendChild(categoryEl);
-                    }
+            content.innerHTML = '';
+            const sortedCategories = Object.entries(categories)
+                .filter(([, apps]) => apps.length > 0)
+                .sort(([categoryA], [categoryB]) => {
+                    if (categoryA === 'Other') return 1;
+                    if (categoryB === 'Other') return -1;
+                    return categoryA.localeCompare(categoryB, undefined, { sensitivity: 'base' });
                 });
-                content.appendChild(fragment);
-                SearchModule.loadIconsForResults();
+
+            if (sortedCategories.length === 0) {
+                content.appendChild(this.createEmptyAppsLibraryState());
+                ViewManager.resizeWindow();
+                return;
             }
+
+            const fragment = document.createDocumentFragment();
+            const onCategoryLoaded = () => {
+                // Пересчитываем размеры после загрузки иконок для плавности
+                this.debouncedResizeForAppsLibrary();
+            };
+
+            sortedCategories.forEach(([categoryName, apps]) => {
+                const categoryEl = this.createCategoryElement(categoryName, apps, onCategoryLoaded);
+                fragment.appendChild(categoryEl);
+            });
+
+            content.appendChild(fragment);
+            SearchModule.loadIconsForResults();
+            // Финальный пересчет, чтобы убрать возможные артефакты
+            this.debouncedResizeForAppsLibrary();
         } catch (error) {
             console.error('[AppsLibrary] Error loading apps:', error);
+            content.innerHTML = '';
+            content.appendChild(this.createAppsLibraryErrorState());
+            ViewManager.resizeWindow();
         }
+    },
+
+    createAppsLibraryLoadingState: function() {
+        const wrapper = Utils.createElement('div', { className: 'apps-library-loading' });
+        const spinner = Utils.createElement('div', { className: 'apps-library-spinner' });
+        const text = Utils.createElement('div', {
+            className: 'apps-library-loading-text',
+            text: LocalizationRenderer.t('loading_apps_library') || 'Loading applications…'
+        });
+        wrapper.appendChild(spinner);
+        wrapper.appendChild(text);
+        return wrapper;
+    },
+
+    createAppsLibraryErrorState: function() {
+        const wrapper = Utils.createElement('div', { className: 'apps-library-empty' });
+        wrapper.appendChild(Utils.createElement('div', {
+            className: 'apps-library-empty-title',
+            text: LocalizationRenderer.t('apps_library_failed') || 'Unable to load applications'
+        }));
+        wrapper.appendChild(Utils.createElement('div', {
+            className: 'apps-library-empty-caption',
+            text: LocalizationRenderer.t('apps_library_failed_hint') || 'Please try again later.'
+        }));
+        return wrapper;
+    },
+
+    createEmptyAppsLibraryState: function() {
+        const wrapper = Utils.createElement('div', { className: 'apps-library-empty' });
+        wrapper.appendChild(Utils.createElement('div', {
+            className: 'apps-library-empty-title',
+            text: LocalizationRenderer.t('apps_library_empty') || 'Nothing to show yet'
+        }));
+        wrapper.appendChild(Utils.createElement('div', {
+            className: 'apps-library-empty-caption',
+            text: LocalizationRenderer.t('apps_library_empty_hint') || 'Pin apps to see them here.'
+        }));
+        return wrapper;
     },
     
     // НОВОЕ: Оптимизированный дебаунсинг для resizeWindow при загрузке иконок
@@ -1604,11 +1654,15 @@ const AuxPanelManager = {
         if (AppState.settings.appsLibraryBasicOnly !== false) {
             const advancedAppKeywords = [
                 'furmark', 'gpu-z', 'gpuz', 'gpushark', 'cpuburner', 'occt', 'stress test', 'benchmark', 'profiler',
-                'diagnostic', 'burner', 'shadercache', 'minidump', 'debug', 'telemetry'
+                'diagnostic', 'burner', 'shadercache', 'minidump', 'debug', 'telemetry',
+                'p11-kit', 'awk', 'grcat', 'gpg-auth', 'rmt', 'mingw', 'command line',
+                'helper', 'crashhandler', 'crash reporter', 'cleanup', 'maintenance tool', 'compatibility tool'
             ];
             const advancedPathPatterns = [
-                '\\git\\usr\\', '\\git\\mingw64\\', '\\geeks3d\\', '\\furmark', '\\gpushark', '\\gpuz', '\\cpuburner',
-                '\\nsight', '\\debug\\', '\\diagnostic'
+                '\\git\\usr\\', '\\git\\mingw64\\', '\\git\\bin\\', '\\geeks3d\\', '\\furmark', '\\gpushark', '\\gpuz', '\\cpuburner',
+                '\\nsight', '\\debug\\', '\\diagnostic', '\\libexec\\', '\\usr\\lib\\', '\\usr\\bin\\',
+                '/git/usr/', '/git/mingw64/', '/git/bin/', '/geeks3d/', '/furmark', '/gpuz', '/gpushark', '/cpuburner',
+                '/libexec/', '/usr/lib/', '/usr/bin/'
             ];
 
             filteredApps = filteredApps.filter(app => {
@@ -1623,6 +1677,8 @@ const AuxPanelManager = {
                 return true;
             });
         }
+
+        filteredApps.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
         filteredApps.forEach(app => {
             const appName = app.name.toLowerCase();
@@ -1639,6 +1695,10 @@ const AuxPanelManager = {
             if (!categorized) {
                 categories['Other'].push(app);
             }
+        });
+
+        Object.keys(categories).forEach(categoryName => {
+            categories[categoryName].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
         });
 
         return categories;

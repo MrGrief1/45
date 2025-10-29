@@ -132,5 +132,10 @@
   "category_media": "Медиа",
   "category_utilities": "Утилиты",
   "category_games": "Игры",
-  "category_other": "Другое"
+  "category_other": "Другое",
+  "loading_apps_library": "Загружаем приложения…",
+  "apps_library_failed": "Не удалось загрузить приложения",
+  "apps_library_failed_hint": "Попробуйте позже.",
+  "apps_library_empty": "Пока пусто",
+  "apps_library_empty_hint": "Закрепите приложения или отключите фильтры, чтобы увидеть их здесь."
 }

@@ -129,5 +129,11 @@
     "category_media": "Media",
     "category_utilities": "Utilities",
     "category_games": "Games",
-    "category_other": "Other"
+    "category_other": "Other",
+    "loading_apps_library": "Loading applications…",
+    "apps_library_failed": "Unable to load applications",
+    "apps_library_failed_hint": "Please try again later.",
+    "apps_library_empty": "Nothing to show yet",
+    "apps_library_empty_hint": "Pin apps or disable filters to see them here."
   }
+
