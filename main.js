@@ -73,6 +73,7 @@ const DEFAULT_SETTINGS = {
     resultsAnimationStyle: 'slide-up', // НОВОЕ: Анимация для результатов
     selectionColorStyle: 'gray', // НОВОЕ: Стиль цвета выделения результата
     showFocusHighlight: true,
+    showAllApps: false,
     blurStrength: 40, // ИЗМЕНЕНО: Уменьшено для более чистого вида
     opacity: 85, // ИЗМЕНЕНО: Немного увеличена непрозрачность
     enablePinnedApps: true,

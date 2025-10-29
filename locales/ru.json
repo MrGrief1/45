@@ -64,6 +64,8 @@
   "settings_indexed_files": "Проиндексировано файлов:",
   "settings_rebuild_index": "Перестроить индекс",
   "settings_pinned_apps": "Закрепленные приложения",
+  "settings_show_all_apps": "Показывать технические приложения",
+  "settings_show_all_apps_description": "Отображать служебные утилиты и диагностические программы вместе с обычными приложениями.",
   "settings_custom_automations": "Пользовательские автоматизации",
   "settings_auto_name": "Название",
   "settings_auto_keyword": "Ключевое слово",
@@ -130,5 +132,7 @@
   "category_media": "Медиа",
   "category_utilities": "Утилиты",
   "category_games": "Игры",
-  "category_other": "Другое"
+  "category_other": "Другое",
+  "apps_library_loading": "Подготавливаем список приложений...",
+  "apps_library_empty": "Нет приложений, подходящих под выбранные фильтры."
 }

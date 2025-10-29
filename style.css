@@ -31,6 +31,9 @@
     /* Стили для кнопок */
     --action-button-bg: rgba(229, 229, 234, 0.8);
     --action-button-hover-bg: rgba(209, 209, 214, 1);
+    --context-menu-bg: rgba(255, 255, 255, 0.92);
+    --context-menu-border: rgba(0, 0, 0, 0.08);
+    --context-menu-shadow: 0 28px 60px rgba(0, 0, 0, 0.18);
 }
 
 /* Тема: Темная */
@@ -49,6 +52,9 @@ body.dark-theme {
     --slider-thumb-border: rgba(255, 255, 255, 0.2);
     --action-button-bg: rgba(58, 58, 60, 0.8);
     --action-button-hover-bg: rgba(72, 72, 74, 1);
+    --context-menu-bg: rgba(28, 28, 30, 0.96);
+    --context-menu-border: rgba(255, 255, 255, 0.08);
+    --context-menu-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
 }
 
 /* ... другие темы ... */
@@ -60,6 +66,9 @@ body.liquid_glass_blue-theme {
     --button-icon-color: #243b53;
     --shadow: 0 30px 90px rgba(0, 50, 100, 0.2);
     --border-color: rgba(255, 255, 255, 0.6);
+    --context-menu-bg: rgba(235, 248, 255, 0.95);
+    --context-menu-border: rgba(0, 60, 120, 0.12);
+    --context-menu-shadow: 0 26px 70px rgba(0, 90, 160, 0.28);
 }
 body.ocean_depths-theme {
     --base-bg-color-rgb: 10, 30, 70;
@@ -69,6 +78,14 @@ body.ocean_depths-theme {
     --border-color: rgba(255, 255, 255, 0.2);
     --shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
     --scrollbar-thumb: rgba(255, 255, 255, 0.4);
+    --context-menu-bg: rgba(12, 28, 60, 0.96);
+    --context-menu-border: rgba(255, 255, 255, 0.12);
+    --context-menu-shadow: 0 34px 80px rgba(0, 0, 0, 0.65);
+}
+body.sunset-theme {
+    --context-menu-bg: rgba(255, 226, 186, 0.9);
+    --context-menu-border: rgba(255, 149, 0, 0.25);
+    --context-menu-shadow: 0 28px 70px rgba(255, 140, 0, 0.35);
 }
 body.sunset-theme .glass-element {
     background: linear-gradient(135deg, 
@@ -397,14 +414,16 @@ body.dark-theme .aux-header {
     position: fixed;
     z-index: 3000;
     min-width: 340px;
-    background: rgba(var(--secondary-bg-color-rgb, 20, 20, 20), 1);
+    background: var(--context-menu-bg);
     backdrop-filter: blur(22px);
     border-radius: 18px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 28px 60px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--context-menu-border);
+    box-shadow: var(--context-menu-shadow);
     padding: 18px 20px;
     display: none;
     overflow: hidden;
+    color: var(--text-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .folder-context-menu.visible {
@@ -1000,9 +1019,119 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 /* НОВОЕ: Скрываем категорию пока не загрузятся иконки */
 .app-category.loading {
-    opacity: 0;
-    visibility: hidden;
+    opacity: 0.35;
+    filter: saturate(0.4);
     pointer-events: none;
+}
+
+#apps-library-wrapper.loading #apps-library-content {
+    min-height: 320px;
+}
+
+#apps-library-wrapper.loading .app-category {
+    transition: none;
+}
+
+.apps-library-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 32px 0 16px;
+    color: var(--icon-color);
+    font-size: 14px;
+}
+
+.apps-library-loader .loader-spinner {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 4px solid rgba(var(--secondary-bg-color-rgb), 0.45);
+    border-top-color: var(--highlight-color);
+    animation: appsLibrarySpin 1s linear infinite;
+}
+
+@keyframes appsLibrarySpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.apps-library-skeleton-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.app-category.skeleton {
+    opacity: 1;
+    filter: none;
+    pointer-events: none;
+    background: linear-gradient(
+        135deg,
+        rgba(var(--secondary-bg-color-rgb), 0.55),
+        rgba(var(--secondary-bg-color-rgb), 0.45)
+    );
+    border: 1px solid var(--border-color);
+    animation: skeletonPulse 1.25s ease-in-out infinite;
+}
+
+.skeleton-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.skeleton-line {
+    width: 60%;
+    height: 12px;
+    border-radius: 6px;
+    background: rgba(var(--base-bg-color-rgb), 0.3);
+}
+
+.skeleton-line.small {
+    width: 70%;
+    height: 10px;
+}
+
+.skeleton-pill {
+    width: 48px;
+    height: 16px;
+    border-radius: 12px;
+    background: rgba(var(--base-bg-color-rgb), 0.25);
+}
+
+.category-apps-grid.skeleton-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+}
+
+.category-app-item.skeleton {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.category-app-item.skeleton .skeleton-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    background: rgba(var(--base-bg-color-rgb), 0.28);
+}
+
+.apps-library-empty {
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--icon-color);
+    font-size: 14px;
+}
+
+@keyframes skeletonPulse {
+    0% { opacity: 0.65; }
+    50% { opacity: 1; }
+    100% { opacity: 0.65; }
 }
 
 /* УДАЛЕНО: Анимация fadeInCategory больше не нужна */
