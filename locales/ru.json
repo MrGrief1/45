@@ -132,5 +132,7 @@
   "category_media": "Медиа",
   "category_utilities": "Утилиты",
   "category_games": "Игры",
-  "category_other": "Другое"
+  "category_other": "Другое",
+  "apps_library_loading": "Загружаем приложения…",
+  "apps_library_empty": "Приложения ещё не готовы."
 }

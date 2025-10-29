@@ -126,8 +126,10 @@
     "category_development": "Development",
     "category_creative": "Creative",
     "category_communication": "Communication",
-    "category_media": "Media",
-    "category_utilities": "Utilities",
-    "category_games": "Games",
-    "category_other": "Other"
-  }
+  "category_media": "Media",
+  "category_utilities": "Utilities",
+  "category_games": "Games",
+  "category_other": "Other",
+  "apps_library_loading": "Loading applications…",
+  "apps_library_empty": "No applications available right now."
+}

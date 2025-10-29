@@ -5,12 +5,17 @@
     <title>Apps Library</title>
 </head>
 <body>
-    <!-- Библиотека приложений - однослойный дизайн -->
-    <div id="apps-library-wrapper">
-        <div id="apps-library-content">
-            <!-- Категории будут добавлены динамически -->
+    <!-- Библиотека приложений - расширенное состояние загрузки -->
+    <div id="apps-library-wrapper" class="state-loading">
+        <div id="apps-library-loading" class="apps-library-placeholder" role="status" aria-live="polite">
+            <div class="apps-library-spinner" aria-hidden="true"></div>
+            <div class="apps-library-placeholder-text" data-i18n="apps_library_loading">Loading applications…</div>
         </div>
+        <div id="apps-library-empty" class="apps-library-placeholder" role="status" aria-live="polite">
+            <div class="apps-library-empty-icon" aria-hidden="true">📁</div>
+            <div class="apps-library-placeholder-text" data-i18n="apps_library_empty">No applications found.</div>
+        </div>
+        <div id="apps-library-content"></div>
     </div>
 </body>
 </html>
-
