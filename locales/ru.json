@@ -17,6 +17,7 @@
   "new_folder_default_name": "Новая папка",
   "rename_folder_prompt": "Введите новое имя для папки:",
   "create_folder_prompt": "Введите имя для новой папки:",
+  "apps_library_loading": "Загрузка приложений…",
   "shortcut_recorder_placeholder": "Нажмите клавиши...",
   "shortcut_recorder_error": "Используйте модификатор",
   "settings_title": "Настройки FlashSearch",

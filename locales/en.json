@@ -17,6 +17,7 @@
     "new_folder_default_name": "New Folder",
     "rename_folder_prompt": "Enter new name for the folder:",
     "create_folder_prompt": "Enter a name for the new folder:",
+    "apps_library_loading": "Loading applications…",
     "shortcut_recorder_placeholder": "Press keys...",
     "shortcut_recorder_error": "Please use a modifier key",
     "settings_title": "FlashSearch Settings",

@@ -1364,11 +1364,11 @@ const AuxPanelManager = {
             const content = doc.body.innerHTML;
 
             this.panelContainer.innerHTML = content;
-            
+
             // НОВОЕ: Для библиотеки приложений используем apps-library-wrapper
             const auxContainer = this.panelContainer.querySelector('#aux-container');
             const appsLibraryWrapper = this.panelContainer.querySelector('#apps-library-wrapper');
-            
+
             // Apply animation class based on settings
             if (AppState.settings.animations && AppState.settings.resultsAnimationStyle) {
                 if (auxContainer) {
@@ -1378,12 +1378,17 @@ const AuxPanelManager = {
                     appsLibraryWrapper.classList.add('results-anim-' + AppState.settings.resultsAnimationStyle);
                 }
             }
-            
-            // ИЗМЕНЕНИЕ: Не показываем панель сразу для библиотеки
-            if (type !== 'apps-library') {
+
+            if (type === 'apps-library') {
+                this.panelContainer.classList.add('visible');
+                if (appsLibraryWrapper) {
+                    appsLibraryWrapper.classList.add('loading-state');
+                }
+                ViewManager.resizeWindow();
+            } else {
                 this.panelContainer.classList.add('visible');
             }
-            
+
             // ОПТИМИЗАЦИЯ: Используем requestAnimationFrame для более плавной анимации
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
@@ -1449,13 +1454,21 @@ const AuxPanelManager = {
             const allApps = await ipcRenderer.invoke('get-all-apps');
             const categories = this.categorizeApps(allApps);
             const content = this.panelContainer.querySelector('#apps-library-content');
+            const wrapper = this.panelContainer.querySelector('#apps-library-wrapper');
 
             if (content) {
                 content.innerHTML = '';
                 const sortedCategories = Object.entries(categories).sort(([, a], [, b]) => b.length - a.length);
                 let categoriesToLoad = sortedCategories.filter(([, apps]) => apps.length > 0).length;
 
+                if (wrapper) {
+                    wrapper.classList.add('loading-state');
+                }
+
                 if (categoriesToLoad === 0) {
+                    if (wrapper) {
+                        wrapper.classList.remove('loading-state');
+                    }
                     AuxPanelManager.panelContainer.classList.add('visible');
                     ViewManager.resizeWindow();
                     return;
@@ -1464,10 +1477,15 @@ const AuxPanelManager = {
                 const onCategoryLoaded = () => {
                     categoriesToLoad--;
                     if (categoriesToLoad === 0) {
+                        if (wrapper) {
+                            wrapper.classList.remove('loading-state');
+                        }
                         requestAnimationFrame(() => {
                             AuxPanelManager.panelContainer.classList.add('visible');
                             ViewManager.resizeWindow();
                         });
+                    } else {
+                        this.debouncedResizeForAppsLibrary();
                     }
                 };
 
@@ -1483,6 +1501,10 @@ const AuxPanelManager = {
             }
         } catch (error) {
             console.error('[AppsLibrary] Error loading apps:', error);
+            const wrapper = this.panelContainer.querySelector('#apps-library-wrapper');
+            if (wrapper) {
+                wrapper.classList.remove('loading-state');
+            }
         }
     },
     
@@ -1527,7 +1549,9 @@ const AuxPanelManager = {
             'iscsi', 'odbc', 'memory diagnostic', 'recoverydr', 'ahk2exe',
             'nsight', 'nvidia nsight', // NVIDIA инструменты разработчика
             'foxit pdf reader activator', 'автоматическое обновление',
-            'удалить', 'деинсталл', 'сброс', 'восстановление'
+            'удалить', 'деинсталл', 'сброс', 'восстановление',
+            'p11-kit', 'mingw', 'git-credential', 'git-remote', 'git-http',
+            'cpuburner', 'gpu shark', 'gpushark', 'gpu-z', 'gpuz', 'furmark'
         ];
 
         const categoryKeywords = {
@@ -1541,17 +1565,42 @@ const AuxPanelManager = {
         };
 
         // УЛУЧШЕНО: Фильтруем системные приложения
+        const gitAllowedExecutables = ['git-bash.exe', 'git gui.exe', 'git-cmd.exe'];
+        const systemPathBlacklist = [
+            '\\program files\\git\\usr\\',
+            '\\program files\\git\\mingw64\\',
+            '\\program files\\git\\mingw32\\',
+            '\\program files\\git\\libexec\\',
+            '\\program files\\git\\mingw64\\bin\\',
+            '\\program files\\git\\usr\\bin\\',
+            '\\program files\\git\\usr\\lib\\'
+        ];
+
         const filteredApps = apps.filter(app => {
-            const appName = app.name.toLowerCase();
+            const originalName = app.name || '';
+            const appName = originalName.toLowerCase();
             const appPath = (app.path || '').toLowerCase();
-            
+
+            if (!/^[A-Za-zА-Яа-я0-9]/.test(originalName.trim())) {
+                return false;
+            }
+
             // Исключаем приложения из черного списка
             if (systemAppBlacklist.some(keyword => appName.includes(keyword) || appPath.includes(keyword))) {
                 return false;
             }
-            
+
+            if (systemPathBlacklist.some(pattern => appPath.includes(pattern))) {
+                return false;
+            }
+
+            if (appPath.includes('\\program files\\git\\') &&
+                !gitAllowedExecutables.some(exe => appPath.endsWith(exe))) {
+                return false;
+            }
+
             // Исключаем приложения из системных папок Windows (кроме известных приложений)
-            const isSystemPath = appPath.includes('\\windows\\') || 
+            const isSystemPath = appPath.includes('\\windows\\') ||
                                  appPath.includes('\\system32\\') ||
                                  appPath.includes('\\syswow64\\');
             

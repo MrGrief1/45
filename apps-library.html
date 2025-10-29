@@ -6,7 +6,11 @@
 </head>
 <body>
     <!-- Библиотека приложений - однослойный дизайн -->
-    <div id="apps-library-wrapper">
+    <div id="apps-library-wrapper" class="loading-state">
+        <div class="apps-library-loader">
+            <div class="apps-library-spinner" aria-hidden="true"></div>
+            <p data-i18n="apps_library_loading">Loading applications…</p>
+        </div>
         <div id="apps-library-content">
             <!-- Категории будут добавлены динамически -->
         </div>

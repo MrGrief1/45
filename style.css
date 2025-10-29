@@ -31,6 +31,11 @@
     /* Стили для кнопок */
     --action-button-bg: rgba(229, 229, 234, 0.8);
     --action-button-hover-bg: rgba(209, 209, 214, 1);
+    --context-menu-bg: rgba(var(--secondary-bg-color-rgb), 0.95);
+    --context-menu-border: rgba(0, 0, 0, 0.08);
+    --context-menu-shadow: 0 28px 60px rgba(0, 0, 0, 0.18);
+    --context-menu-action-bg: rgba(var(--secondary-bg-color-rgb), 0.82);
+    --context-menu-action-hover-bg: rgba(var(--secondary-bg-color-rgb), 1);
 }
 
 /* Тема: Темная */
@@ -49,6 +54,11 @@ body.dark-theme {
     --slider-thumb-border: rgba(255, 255, 255, 0.2);
     --action-button-bg: rgba(58, 58, 60, 0.8);
     --action-button-hover-bg: rgba(72, 72, 74, 1);
+    --context-menu-bg: rgba(var(--secondary-bg-color-rgb), 0.92);
+    --context-menu-border: rgba(255, 255, 255, 0.12);
+    --context-menu-shadow: 0 32px 70px rgba(0, 0, 0, 0.55);
+    --context-menu-action-bg: rgba(var(--secondary-bg-color-rgb), 0.78);
+    --context-menu-action-hover-bg: rgba(255, 255, 255, 0.08);
 }
 
 /* ... другие темы ... */
@@ -397,11 +407,11 @@ body.dark-theme .aux-header {
     position: fixed;
     z-index: 3000;
     min-width: 340px;
-    background: rgba(var(--secondary-bg-color-rgb, 20, 20, 20), 1);
+    background: var(--context-menu-bg);
     backdrop-filter: blur(22px);
     border-radius: 18px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 28px 60px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--context-menu-border);
+    box-shadow: var(--context-menu-shadow);
     padding: 18px 20px;
     display: none;
     overflow: hidden;
@@ -424,7 +434,7 @@ body.dark-theme .aux-header {
     border-radius: 10px;
     border: none;
     cursor: pointer;
-    background: rgba(var(--secondary-bg-color-rgb, 40, 40, 40), 0.82);
+    background: var(--context-menu-action-bg);
     color: var(--text-color);
     font-size: 13px;
     font-weight: 600;
@@ -433,7 +443,7 @@ body.dark-theme .aux-header {
 }
 
 .folder-menu-action:hover {
-    background: rgba(0, 122, 255, 0.15);
+    background: var(--context-menu-action-hover-bg);
     transform: translateY(-1px);
 }
 
@@ -951,7 +961,8 @@ input[type="range"]:active::-webkit-slider-thumb {
     border: none;
     box-shadow: none;
     overflow: hidden;
-    
+    min-height: 420px;
+
     /* БЫСТРАЯ АНИМАЦИЯ */
     opacity: 0;
     transform: translateY(6px);
@@ -959,9 +970,26 @@ input[type="range"]:active::-webkit-slider-thumb {
     will-change: opacity, transform;
 }
 
+#apps-library-wrapper.loading-state {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 #apps-library-wrapper.visible {
     opacity: 1;
     transform: translateY(0);
+}
+
+#apps-library-wrapper.loading-state #apps-library-content {
+    display: none;
+}
+
+#apps-library-wrapper.loading-state .apps-library-loader {
+    display: flex;
+}
+
+#apps-library-wrapper.loading-state.results-anim-slide-up {
+    transform: translateY(6px);
 }
 
 #apps-library-content {
@@ -973,6 +1001,38 @@ input[type="range"]:active::-webkit-slider-thumb {
     box-sizing: border-box;
     width: 100%;
     scroll-padding-bottom: 0;
+}
+
+.apps-library-loader {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    min-height: 340px;
+    padding: 40px 20px;
+    color: var(--text-color);
+    text-align: center;
+}
+
+.apps-library-loader p {
+    margin: 0;
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+.apps-library-spinner {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 3px solid rgba(var(--secondary-bg-color-rgb), 0.3);
+    border-top-color: var(--highlight-color);
+    animation: apps-library-spin 1s linear infinite;
+}
+
+@keyframes apps-library-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .app-category {
