@@ -69,9 +69,11 @@ const Utils = {
     }
 };
 
+const WHATSAPP_FALLBACK_SVG = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'><defs><radialGradient id='g' cx='128' cy='128' r='128' gradientUnits='userSpaceOnUse'><stop offset='0' stop-color='#3bda6c'/><stop offset='1' stop-color='#08a54c'/></radialGradient></defs><circle cx='128' cy='128' r='128' fill='url(#g)'/><path fill='#25d366' d='M128 16C66 16 16 66 16 128c0 21 5.3 40.6 14.6 57.8L16 240l56.4-14.1C89.9 235.1 108.3 240 128 240c62 0 112-50 112-112S190 16 128 16z'/><path fill='#fff' d='M173.3 82.7A52.4 52.4 0 00128.2 60c-29.4 0-53.3 23.7-53.3 52.8 0 11.1 3.6 21.4 9.8 30L80 196l54.9-14.1c8.3 4.5 17.7 7 27.6 7 29.4 0 53.3-23.7 53.3-52.8 0-14.1-5.7-27-15.1-36.4zM154.7 167c-3 3-16.8-1.6-22.7-4.6-5.9-3-13.5-9.5-19.5-17-5.9-7.5-9.8-15.5-10.3-20.7-.5-5.2 3.6-8 6.6-11 3-3 4-4.7 5.4-4.2 1.4.4 3 4.4 4.4 7.5 1.3 3.1 4.4 10.4 3.6 12.3-.8 1.9-2.1 2.2-3.6 3.7-1.5 1.5-1.8 2.6-.9 4.3.9 1.7 4 6.8 8.5 10.9 4.5 4 11.5 8.1 13.8 8.9 2.3.8 3.6.7 5-.8 1.4-1.5 6-7.9 7.2-10 .9-1.5 1.8-1.3 3.6-.5 1.8.8 10.6 5.6 12.3 6.6 1.7.9 2.8 1.4 2.9 2.4.1 1-1.3 6.3-4.3 9.3z'/></svg>";
+
 const AppIconFallbacks = {
     cache: {
-        whatsapp: 'data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+V2hhdHNBcHA8L3RpdGxlPjxwYXRoIGQ9Ik0xNy40NzIgMTQuMzgyYy0uMjk3LS4xNDktMS43NTgtLjg2Ny0yLjAzLS45NjctLjI3My0uMDk5LS40NzEtLjE0OC0uNjcuMTUtLjE5Ny4yOTctLjc2Ny45NjYtLjk0IDEuMTY0LS4xNzMuMTk5LS4zNDcuMjIzLS42NDQuMDc1LS4yOTctLjE1LTEuMjU1LS40NjMtMi4zOS0xLjQ3NS0uODgzLS43ODgtMS40OC0xLjc2MS0xLjY1My0yLjA1OS0uMTczLS4yOTctLjAxOC0uNDU4LjEzLS42MDYuMTM0LS4xMzMuMjk4LS4zNDcuNDQ2LS41Mi4xNDktLjE3NC4xOTgtLjI5OC4yOTgtLjQ5Ny4wOTktLjE5OC4wNS0uMzcxLS4wMjUtLjUyLS4wNzUtLjE0OS0uNjY5LTEuNjEyLS45MTYtMi4yMDctLjI0Mi0uNTc5LS40ODctLjUtLjY2OS0uNTEtLjE3My0uMDA4LS4zNzEtLjAxLS41Ny0uMDEtLjE5OCAwLS41Mi4wNzQtLjc5Mi4zNzItLjI3Mi4yOTctMS4wNCAxLjAxNi0xLjA0IDIuNDc5IDAgMS40NjIgMS4wNjUgMi44NzUgMS4yMTMgMy4wNzQuMTQ5LjE5OCAyLjA5NiAzLjIgNS4wNzcgNC40ODcuNzA5LjMwNiAxLjI2Mi40ODkgMS42OTQuNjI1LjcxMi4yMjcgMS4zNi4xOTUgMS44NzEuMTE4LjU3MS0uMDg1IDEuNzU4LS43MTkgMi4wMDYtMS40MTMuMjQ4LS42OTQuMjQ4LTEuMjg5LjE3My0xLjQxMy0uMDc0LS4xMjQtLjI3Mi0uMTk4LS41Ny0uMzQ3bS01LjQyMSA3LjQwM2gtLjAwNGE5Ljg3IDkuODcgMCAwMS01LjAzMS0xLjM3OGwtLjM2MS0uMjE0LTMuNzQxLjk4Mi45OTgtMy42NDgtLjIzNS0uMzc0YTkuODYgOS44NiAwIDAxLTEuNTEtNS4yNmMuMDAxLTUuNDUgNC40MzYtOS44ODQgOS44ODgtOS44ODQgMi42NCAwIDUuMTIyIDEuMDMgNi45ODggMi44OThhOS44MjUgOS44MjUgMCAwMTIuODkzIDYuOTk0Yy0uMDAzIDUuNDUtNC40MzcgOS44ODQtOS44ODUgOS44ODRtOC40MTMtMTguMjk3QTExLjgxNSAxMS44MTUgMCAwMDEyLjA1IDBDNS40OTUgMCAuMTYgNS4zMzUuMTU3IDExLjg5MmMwIDIuMDk2LjU0NyA0LjE0MiAxLjU4OCA1Ljk0NUwuMDU3IDI0bDYuMzA1LTEuNjU0YTExLjg4MiAxMS44ODIgMCAwMDUuNjgzIDEuNDQ4aC4wMDVjNi41NTQgMCAxMS44OS01LjMzNSAxMS44OTMtMTEuODkzYTExLjgyMSAxMS44MjEgMCAwMC0zLjQ4LTguNDEzWiIvPjwvc3ZnPg==',
+        whatsapp: `data:image/svg+xml;utf8,${encodeURIComponent(WHATSAPP_FALLBACK_SVG)}`,
         roblox: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA2NCA2NCc+PHJlY3Qgd2lkdGg9JzQwJyBoZWlnaHQ9JzQwJyB4PScxMicgeT0nMTInIHJ4PSc4JyByeT0nOCcgZmlsbD0nIzIwMjAyMCcgdHJhbnNmb3JtPSdyb3RhdGUoMTUgMzIgMzIpJy8+PHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyB4PScyNycgeT0nMjcnIGZpbGw9JyNmZmZmZmYnIHRyYW5zZm9ybT0ncm90YXRlKDE1IDMyIDMyKScvPjwvc3ZnPg=='
     },
 
@@ -146,6 +148,7 @@ const SettingsModule = {
     setupEventListeners: function() {
         this.bindCheckboxSetting('setting-animations', 'animations');
         this.bindCheckboxSetting('setting-pinned-apps', 'enablePinnedApps');
+        this.bindCheckboxSetting('setting-show-all-apps', 'showAllApps');
         this.bindCheckboxSetting('setting-focus-highlight', 'showFocusHighlight');
         this.bindCheckboxSetting('setting-auto-launch', 'autoLaunch');
         this.bindRangeSetting('setting-opacity', 'opacity');
@@ -240,6 +243,7 @@ const SettingsModule = {
         CustomSelect.setValue('custom-select-position', AppState.settings.windowPosition);
         this.setElementValue('setting-animations', AppState.settings.animations, true);
         this.setElementValue('setting-pinned-apps', AppState.settings.enablePinnedApps, true);
+        this.setElementValue('setting-show-all-apps', AppState.settings.showAllApps, true);
         this.setElementValue('setting-auto-launch', AppState.settings.autoLaunch, true);
         this.setElementValue('setting-opacity', AppState.settings.opacity);
         this.setElementValue('setting-blur', AppState.settings.blurStrength);
@@ -1139,10 +1143,55 @@ const PinnedAppsModule = {
                 if (!targetIsItem) {
                     e.preventDefault();
                     e.stopPropagation(); // Stop the event from bubbling up to the window's context menu listener
-                    ipcRenderer.send('show-pinned-apps-context-menu');
+                    PinnedContextMenu.show(e.clientX, e.clientY);
                 }
             });
         }
+    },
+
+    promptCreateFolder: function() {
+        const container = Utils.getElement('#pinned-apps-container');
+        if (!container) return;
+
+        // Avoid stacking multiple inputs
+        const existingInput = container.querySelector('.pinned-item-name-input');
+        if (existingInput) {
+            existingInput.focus();
+            existingInput.select?.();
+            return;
+        }
+
+        const tempItem = Utils.createElement('div', { className: 'pinned-item' });
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = LocalizationRenderer.t('new_folder_default_name');
+        input.className = 'pinned-item-name-input';
+
+        const iconDiv = Utils.createElement('div', { className: 'pinned-item-icon' });
+        iconDiv.innerHTML = window.feather.icons['folder'].toSvg();
+
+        tempItem.appendChild(iconDiv);
+        tempItem.appendChild(input);
+        container.appendChild(tempItem);
+        input.focus();
+
+        const finishCreating = () => {
+            const newName = input.value.trim();
+            tempItem.remove();
+            if (newName) {
+                ipcRenderer.send('create-folder-with-name', newName);
+            }
+        };
+
+        input.addEventListener('blur', finishCreating, { once: true });
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                finishCreating();
+            } else if (e.key === 'Escape') {
+                input.value = '';
+                finishCreating();
+            }
+        });
     },
 
     render: function() {
@@ -1313,6 +1362,71 @@ const PinnedAppsModule = {
     }
 };
 
+const PinnedContextMenu = {
+    menuEl: null,
+    init: function() {
+        this.menuEl = Utils.getElement('#pinned-context-menu');
+        if (!this.menuEl) return;
+
+        this.menuEl.addEventListener('click', (event) => {
+            const button = event.target.closest('button');
+            if (!button) return;
+            const action = button.getAttribute('data-action');
+            this.hide();
+            if (action === 'create-folder') {
+                PinnedAppsModule.promptCreateFolder();
+            }
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!this.menuEl.classList.contains('visible')) return;
+            if (!this.menuEl.contains(event.target)) {
+                this.hide();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                this.hide();
+            }
+        });
+
+        window.addEventListener('blur', () => this.hide());
+    },
+
+    show: function(clientX, clientY) {
+        if (!this.menuEl) return;
+        const { innerWidth, innerHeight } = window;
+
+        this.menuEl.classList.add('visible');
+        this.menuEl.style.left = '0px';
+        this.menuEl.style.top = '0px';
+
+        const rect = this.menuEl.getBoundingClientRect();
+        const menuWidth = rect.width || 220;
+        const menuHeight = rect.height || 60;
+
+        let x = clientX;
+        let y = clientY;
+
+        if (x + menuWidth > innerWidth) {
+            x = innerWidth - menuWidth - 8;
+        }
+        if (y + menuHeight > innerHeight) {
+            y = innerHeight - menuHeight - 8;
+        }
+
+        this.menuEl.style.left = `${Math.max(8, x)}px`;
+        this.menuEl.style.top = `${Math.max(8, y)}px`;
+        this.menuEl.classList.add('visible');
+    },
+
+    hide: function() {
+        if (!this.menuEl) return;
+        this.menuEl.classList.remove('visible');
+    }
+};
+
 // =================================================================================
 // === Менеджер Видов и Анимаций (View Manager) ===
 // =================================================================================
@@ -1456,16 +1570,22 @@ const AuxPanelManager = {
                 let categoriesToLoad = sortedCategories.filter(([, apps]) => apps.length > 0).length;
 
                 if (categoriesToLoad === 0) {
-                    AuxPanelManager.panelContainer.classList.add('visible');
+                    if (AuxPanelManager.panelContainer) {
+                        AuxPanelManager.panelContainer.classList.add('visible');
+                    }
                     ViewManager.resizeWindow();
                     return;
                 }
 
+                const manager = this;
                 const onCategoryLoaded = () => {
                     categoriesToLoad--;
+                    manager.debouncedResizeForAppsLibrary();
                     if (categoriesToLoad === 0) {
                         requestAnimationFrame(() => {
-                            AuxPanelManager.panelContainer.classList.add('visible');
+                            if (AuxPanelManager.panelContainer) {
+                                AuxPanelManager.panelContainer.classList.add('visible');
+                            }
                             ViewManager.resizeWindow();
                         });
                     }
@@ -1479,6 +1599,10 @@ const AuxPanelManager = {
                     }
                 });
                 content.appendChild(fragment);
+                if (AuxPanelManager.panelContainer) {
+                    AuxPanelManager.panelContainer.classList.add('visible');
+                }
+                ViewManager.resizeWindow();
                 SearchModule.loadIconsForResults();
             }
         } catch (error) {
@@ -1527,7 +1651,9 @@ const AuxPanelManager = {
             'iscsi', 'odbc', 'memory diagnostic', 'recoverydr', 'ahk2exe',
             'nsight', 'nvidia nsight', // NVIDIA инструменты разработчика
             'foxit pdf reader activator', 'автоматическое обновление',
-            'удалить', 'деинсталл', 'сброс', 'восстановление'
+            'удалить', 'деинсталл', 'сброс', 'восстановление',
+            'furmark', 'gpu-z', 'gpuz', 'gpushark', 'cpu burner', 'cpuburner',
+            'adig', 'grcat', 'gpg-auth', 'p11-kit', 'rmt.exe', 'rmt'
         ];
 
         const categoryKeywords = {
@@ -1541,17 +1667,32 @@ const AuxPanelManager = {
         };
 
         // УЛУЧШЕНО: Фильтруем системные приложения
-        const filteredApps = apps.filter(app => {
+        const includeAllApps = AppState.settings.showAllApps === true;
+
+        const filteredApps = includeAllApps ? apps : apps.filter(app => {
             const appName = app.name.toLowerCase();
             const appPath = (app.path || '').toLowerCase();
-            
+
             // Исключаем приложения из черного списка
             if (systemAppBlacklist.some(keyword => appName.includes(keyword) || appPath.includes(keyword))) {
                 return false;
             }
-            
+
+            const developerToolPaths = [
+                '\\git\\usr\\',
+                '\\git\\mingw64\\',
+                '\\p11-kit\\',
+                '\\gnupg\\',
+                '\\awk\\',
+                '\\tar\\'
+            ];
+
+            if (developerToolPaths.some(segment => appPath.includes(segment))) {
+                return false;
+            }
+
             // Исключаем приложения из системных папок Windows (кроме известных приложений)
-            const isSystemPath = appPath.includes('\\windows\\') || 
+            const isSystemPath = appPath.includes('\\windows\\') ||
                                  appPath.includes('\\system32\\') ||
                                  appPath.includes('\\syswow64\\');
             
@@ -1956,6 +2097,7 @@ document.addEventListener('DOMContentLoaded', () => {
     SearchModule.init();
     FolderContextMenu.init();
     PinnedAppsModule.init();
+    PinnedContextMenu.init();
     AuxPanelManager.init();
     CustomSelect.init();
 
@@ -1981,6 +2123,9 @@ document.addEventListener('DOMContentLoaded', () => {
         SettingsModule.populateSettingsUI();
         PinnedAppsModule.render();
         FolderContextMenu.highlightSelection();
+        if (AuxPanelManager.currentPanel === 'apps-library') {
+            AuxPanelManager.loadAppsLibrary();
+        }
         ViewManager.resizeWindow(); // Always resize after settings update
     });
 
@@ -2006,43 +2151,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     ipcRenderer.on('prompt-create-folder', () => {
-        const container = Utils.getElement('#pinned-apps-container');
-        if (!container) return;
-
-        const tempItem = Utils.createElement('div', { className: 'pinned-item' });
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = LocalizationRenderer.t('new_folder_default_name');
-        input.className = 'pinned-item-name-input';
-
-        const iconDiv = Utils.createElement('div', { className: 'pinned-item-icon' });
-        iconDiv.innerHTML = window.feather.icons['folder'].toSvg();
-        
-        tempItem.appendChild(iconDiv);
-        tempItem.appendChild(input);
-        container.appendChild(tempItem);
-        input.focus();
-
-        const finishCreating = () => {
-            const newName = input.value.trim();
-            if (newName) {
-                ipcRenderer.send('create-folder-with-name', newName);
-            } else {
-                // If no name, just remove the temporary item
-                tempItem.remove();
-            }
-             // The re-render from main process will handle replacing the temp item
-        };
-
-        input.addEventListener('blur', finishCreating);
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                finishCreating();
-            } else if (e.key === 'Escape') {
-                input.value = ''; // Discard
-                finishCreating();
-            }
-        });
+        PinnedContextMenu.hide();
+        PinnedAppsModule.promptCreateFolder();
     });
 });
 

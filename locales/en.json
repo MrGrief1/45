@@ -57,6 +57,8 @@
     "settings_max_depth": "Max Index Depth",
     "settings_add_directory": "Add Directory",
     "settings_pinned_apps": "Pinned Apps",
+    "settings_show_all_apps": "Show developer & system apps",
+    "settings_show_all_apps_hint": "Include diagnostics, helper tools, and utilities in the apps library.",
     "settings_indexed_directories": "Indexed Directories",
     "settings_remove": "Remove",
     "settings_custom_automations": "Custom Automations",

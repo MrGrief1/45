@@ -632,7 +632,7 @@ body.dark-theme .aux-header {
     color: var(--icon-color);
     font-size: 13px;
     border-bottom: none; /* Убираем дублирующуюся границу */
-    text-align: right; /* Выравнивание по правому краю */
+    text-align: left;
 }
 .setting-item .setting-item-description p { /* НОВЫЙ СЕЛЕКТОР */
     margin: 0;
@@ -658,6 +658,44 @@ select:focus,input[type=text]:focus,input[type=number]:focus{border-color:var(--
 .automation-instructions li { margin-bottom: 8px; }
 .external-link{color:var(--highlight-color);text-decoration:none;cursor:pointer}
 .external-link:hover{text-decoration:underline}
+
+/* === Кастомное контекстное меню (правая кнопка) === */
+.custom-context-menu {
+    position: fixed;
+    z-index: 4000;
+    min-width: 220px;
+    background: rgba(var(--secondary-bg-color-rgb, 20, 20, 20), 0.92);
+    color: var(--text-color);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(24px);
+    box-shadow: 0 25px 55px rgba(0, 0, 0, 0.35);
+    padding: 8px;
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.custom-context-menu.visible {
+    display: flex;
+}
+
+.custom-context-menu button {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 14px;
+    padding: 10px 12px;
+    text-align: left;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.custom-context-menu button:hover {
+    background: rgba(var(--secondary-bg-color-rgb), 0.85);
+    transform: translateY(-1px);
+}
 hr{border:none;border-top:1px solid var(--border-color);margin:20px 0}
 /* FIX: Minimalistic scrollbar with padding */
 ::-webkit-scrollbar {
@@ -951,7 +989,8 @@ input[type="range"]:active::-webkit-slider-thumb {
     border: none;
     box-shadow: none;
     overflow: hidden;
-    
+    min-height: 320px;
+
     /* БЫСТРАЯ АНИМАЦИЯ */
     opacity: 0;
     transform: translateY(6px);
@@ -968,7 +1007,9 @@ input[type="range"]:active::-webkit-slider-thumb {
     padding: 10px 10px 0 10px; /* убран нижний отступ */
     overflow-y: auto;
     overflow-x: hidden;
-    max-height: 600px;
+    max-height: none;
+    height: 100%;
+    min-height: 320px;
     background-color: transparent;
     box-sizing: border-box;
     width: 100%;
@@ -998,11 +1039,30 @@ input[type="range"]:active::-webkit-slider-thumb {
     transition: opacity 0.2s ease;
 }
 
-/* НОВОЕ: Скрываем категорию пока не загрузятся иконки */
+/* НОВОЕ: Мягкий индикатор загрузки вместо скрытия */
 .app-category.loading {
-    opacity: 0;
-    visibility: hidden;
+    opacity: 0.45;
+    filter: saturate(0.6);
+    position: relative;
+}
+
+.app-category.loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(120deg,
+        rgba(var(--base-bg-color-rgb), 0.15) 25%,
+        rgba(var(--base-bg-color-rgb), 0.35) 50%,
+        rgba(var(--base-bg-color-rgb), 0.15) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s linear infinite;
     pointer-events: none;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }
 
 /* УДАЛЕНО: Анимация fadeInCategory больше не нужна */

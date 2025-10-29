@@ -76,6 +76,7 @@ const DEFAULT_SETTINGS = {
     blurStrength: 40, // ИЗМЕНЕНО: Уменьшено для более чистого вида
     opacity: 85, // ИЗМЕНЕНО: Немного увеличена непрозрачность
     enablePinnedApps: true,
+    showAllApps: false,
     // === УЛУЧШЕНО: Индексируем ТОЛЬКО папки меню "Пуск" для быстрого и чистого поиска ===
     indexedDirectories: [
         ...(process.platform === 'win32' ? [

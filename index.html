@@ -114,12 +114,22 @@
                                     </div>
                                 </div>
                             </div>
-                             <div class="setting-item">
+                            <div class="setting-item">
                                 <label data-i18n="settings_pinned_apps">Pinned Apps</label>
                                 <label class="toggle-switch-ios">
                                     <input type="checkbox" id="setting-pinned-apps">
                                     <span class="slider"></span>
                                 </label>
+                            </div>
+                            <div class="setting-item">
+                                <label data-i18n="settings_show_all_apps">Show developer &amp; system apps</label>
+                                <label class="toggle-switch-ios">
+                                    <input type="checkbox" id="setting-show-all-apps">
+                                    <span class="slider"></span>
+                                </label>
+                                <div class="setting-item-description">
+                                    <p data-i18n="settings_show_all_apps_hint">Include diagnostics and helper tools in the apps library.</p>
+                                </div>
                             </div>
                             <div class="setting-item">
                                 <label data-i18n="settings_auto_launch">Launch at system startup</label>
@@ -302,6 +312,9 @@
           feather.replace();
       }
     </script>
+    <div id="pinned-context-menu" class="custom-context-menu">
+        <button type="button" data-action="create-folder" data-i18n="context_create_folder">Create Folder</button>
+    </div>
     <div id="folder-context-menu" class="folder-context-menu">
         <div class="folder-menu-actions">
             <button type="button" class="folder-menu-action" data-action="rename" data-i18n="context_rename_folder">Rename</button>
