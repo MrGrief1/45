@@ -1045,6 +1045,7 @@ const FolderContextMenu = {
         this.currentFolderId = resolvedFolder.id;
         this.highlightSelection(resolvedFolder);
 
+        PinnedContextMenu.hide();
         this.menuEl.classList.add('visible');
         this.menuEl.style.left = '-9999px';
         this.menuEl.style.top = '-9999px';
@@ -1153,6 +1154,65 @@ const FolderContextMenu = {
     }
 };
 
+const PinnedContextMenu = {
+    menuEl: null,
+
+    init() {
+        this.menuEl = Utils.getElement('#pinned-context-menu');
+        if (!this.menuEl) return;
+
+        this.menuEl.addEventListener('contextmenu', (event) => event.preventDefault());
+        const actionButton = this.menuEl.querySelector('[data-action="create-folder"]');
+        if (actionButton) {
+            actionButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                this.hide();
+                promptCreateFolderInline();
+            });
+        }
+
+        document.addEventListener('click', (event) => {
+            if (!this.menuEl.contains(event.target)) {
+                this.hide();
+            }
+        });
+
+        window.addEventListener('blur', () => this.hide());
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                this.hide();
+            }
+        });
+    },
+
+    show(event) {
+        if (!this.menuEl) return;
+        FolderContextMenu.hide();
+        this.menuEl.classList.add('visible');
+        this.menuEl.style.left = '-9999px';
+        this.menuEl.style.top = '-9999px';
+
+        const rect = this.menuEl.getBoundingClientRect();
+        let posX = event.clientX;
+        let posY = event.clientY;
+
+        if (posX + rect.width > window.innerWidth) {
+            posX = window.innerWidth - rect.width - 8;
+        }
+        if (posY + rect.height > window.innerHeight) {
+            posY = window.innerHeight - rect.height - 8;
+        }
+
+        this.menuEl.style.left = `${Math.max(8, posX)}px`;
+        this.menuEl.style.top = `${Math.max(8, posY)}px`;
+    },
+
+    hide() {
+        if (!this.menuEl) return;
+        this.menuEl.classList.remove('visible');
+    }
+};
+
 // =================================================================================
 // === Модуль Закрепленных Приложений (Pinned Apps Module) ===
 // =================================================================================
@@ -1172,7 +1232,7 @@ const PinnedAppsModule = {
                 if (!targetIsItem) {
                     e.preventDefault();
                     e.stopPropagation(); // Stop the event from bubbling up to the window's context menu listener
-                    ipcRenderer.send('show-pinned-apps-context-menu');
+                    PinnedContextMenu.show(e);
                 }
             });
         }
@@ -1401,11 +1461,13 @@ const AuxPanelManager = {
             const content = doc.body.innerHTML;
 
             this.panelContainer.innerHTML = content;
-            
+
             // НОВОЕ: Для библиотеки приложений используем apps-library-wrapper
             const auxContainer = this.panelContainer.querySelector('#aux-container');
             const appsLibraryWrapper = this.panelContainer.querySelector('#apps-library-wrapper');
-            
+            const loadingState = this.panelContainer.querySelector('#apps-library-loading-state');
+            const isAppsLibrary = type === 'apps-library';
+
             // Apply animation class based on settings
             if (AppState.settings.animations && AppState.settings.resultsAnimationStyle) {
                 if (auxContainer) {
@@ -1415,12 +1477,16 @@ const AuxPanelManager = {
                     appsLibraryWrapper.classList.add('results-anim-' + AppState.settings.resultsAnimationStyle);
                 }
             }
-            
-            // ИЗМЕНЕНИЕ: Не показываем панель сразу для библиотеки
-            if (type !== 'apps-library') {
+
+            if (isAppsLibrary) {
+                this.panelContainer.classList.add('visible', 'loading-apps');
+                if (loadingState) {
+                    loadingState.classList.add('visible');
+                }
+            } else {
                 this.panelContainer.classList.add('visible');
             }
-            
+
             // ОПТИМИЗАЦИЯ: Используем requestAnimationFrame для более плавной анимации
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
@@ -1428,15 +1494,12 @@ const AuxPanelManager = {
                     if (appsLibraryWrapper) appsLibraryWrapper.classList.add('visible');
                 });
             });
-            
+
             Utils.getElement('#pinned-apps-container').classList.remove('visible');
-            
+
             this.executePanelLogic(type);
-            
-            // ИЗМЕНЕНИЕ: Не меняем размер для библиотеки здесь
-            if (type !== 'apps-library') {
-                setTimeout(() => ViewManager.resizeWindow(), 50);
-            }
+
+            setTimeout(() => ViewManager.resizeWindow(), isAppsLibrary ? 120 : 50);
         } catch (error) {
             console.error(`[AuxPanelManager] Error opening panel:`, error);
             this.closePanel();
@@ -1449,7 +1512,7 @@ const AuxPanelManager = {
         
         this.currentPanel = null;
         this.panelContainer.innerHTML = '';
-        this.panelContainer.classList.remove('visible');
+        this.panelContainer.classList.remove('visible', 'loading-apps');
         
         const hasSearchQuery = Utils.getElement('#search-input').value.trim().length > 1;
         
@@ -1482,6 +1545,12 @@ const AuxPanelManager = {
 
     // НОВОЕ: Загрузка библиотеки приложений с категоризацией
     loadAppsLibrary: async function() {
+        const loadingState = this.panelContainer.querySelector('#apps-library-loading-state');
+        if (loadingState) {
+            loadingState.classList.add('visible');
+        }
+        this.panelContainer.classList.add('loading-apps');
+        let loadFailed = false;
         try {
             const allApps = await ipcRenderer.invoke('get-all-apps');
             const categories = this.categorizeApps(allApps);
@@ -1493,6 +1562,10 @@ const AuxPanelManager = {
                 let categoriesToLoad = sortedCategories.filter(([, apps]) => apps.length > 0).length;
 
                 if (categoriesToLoad === 0) {
+                    if (loadingState) {
+                        loadingState.classList.remove('visible');
+                    }
+                    AuxPanelManager.panelContainer.classList.remove('loading-apps');
                     AuxPanelManager.panelContainer.classList.add('visible');
                     ViewManager.resizeWindow();
                     return;
@@ -1502,6 +1575,10 @@ const AuxPanelManager = {
                     categoriesToLoad--;
                     if (categoriesToLoad === 0) {
                         requestAnimationFrame(() => {
+                            if (loadingState) {
+                                loadingState.classList.remove('visible');
+                            }
+                            AuxPanelManager.panelContainer.classList.remove('loading-apps');
                             AuxPanelManager.panelContainer.classList.add('visible');
                             ViewManager.resizeWindow();
                         });
@@ -1516,10 +1593,19 @@ const AuxPanelManager = {
                     }
                 });
                 content.appendChild(fragment);
+                AuxPanelManager.debouncedResizeForAppsLibrary();
                 SearchModule.loadIconsForResults();
             }
         } catch (error) {
             console.error('[AppsLibrary] Error loading apps:', error);
+            loadFailed = true;
+        } finally {
+            if (loadFailed || AuxPanelManager.currentPanel !== 'apps-library') {
+                if (loadingState) {
+                    loadingState.classList.remove('visible');
+                }
+                this.panelContainer.classList.remove('loading-apps');
+            }
         }
     },
     
@@ -1564,7 +1650,8 @@ const AuxPanelManager = {
             'iscsi', 'odbc', 'memory diagnostic', 'recoverydr', 'ahk2exe',
             'nsight', 'nvidia nsight', // NVIDIA инструменты разработчика
             'foxit pdf reader activator', 'автоматическое обновление',
-            'удалить', 'деинсталл', 'сброс', 'восстановление'
+            'удалить', 'деинсталл', 'сброс', 'восстановление',
+            'bonjour', 'compatibility', 'legacy', 'resource', 'required'
         ];
 
         const categoryKeywords = {
@@ -1597,18 +1684,28 @@ const AuxPanelManager = {
                 const allowedSystemApps = ['notepad', 'calculator', 'paint', 'cmd', 'powershell', 'windowsterminal'];
                 return allowedSystemApps.some(allowed => appName.includes(allowed));
             }
-            
+
+            const sanitizedName = appName.replace(/\.(lnk|exe)$/i, '').replace(/[^a-z0-9]/g, '');
+            if (sanitizedName.length >= 6 && /^[0-9a-f]+$/i.test(sanitizedName)) {
+                return false;
+            }
+            if (/^[0-9]{4,}$/.test(sanitizedName)) {
+                return false;
+            }
+
             return true;
         });
 
         if (AppState.settings.appsLibraryBasicOnly !== false) {
             const advancedAppKeywords = [
                 'furmark', 'gpu-z', 'gpuz', 'gpushark', 'cpuburner', 'occt', 'stress test', 'benchmark', 'profiler',
-                'diagnostic', 'burner', 'shadercache', 'minidump', 'debug', 'telemetry'
+                'diagnostic', 'burner', 'shadercache', 'minidump', 'debug', 'telemetry',
+                'mingw', 'p11-kit', 'bash', 'git-bash', 'gitcmd', 'awk', 'curl', 'openssl',
+                'dynamiclink', 'dynamic link', 'helper', 'resource', 'legacy', 'compatibility', 'required'
             ];
             const advancedPathPatterns = [
-                '\\git\\usr\\', '\\git\\mingw64\\', '\\geeks3d\\', '\\furmark', '\\gpushark', '\\gpuz', '\\cpuburner',
-                '\\nsight', '\\debug\\', '\\diagnostic'
+                '\\git\\usr\\', '\\git\\mingw64\\', '\\program files\\git\\', '\\geeks3d\\', '\\furmark', '\\gpushark', '\\gpuz', '\\cpuburner',
+                '\\nsight', '\\debug\\', '\\diagnostic', '\\system32\\drivers\\', '\\windows\\servicing\\'
             ];
 
             filteredApps = filteredApps.filter(app => {
@@ -1709,6 +1806,7 @@ const AuxPanelManager = {
                         appItem.classList.add('loaded');
                     }, Math.min(index * 30, 600));
                 });
+                AuxPanelManager.debouncedResizeForAppsLibrary();
                 checkAllLoaded();
                 icon.onload = null;
                 icon.onerror = null;
@@ -1733,11 +1831,13 @@ const AuxPanelManager = {
             });
             
             grid.appendChild(appItem);
+
+            AuxPanelManager.debouncedResizeForAppsLibrary();
         });
-        
+
         categoryDiv.appendChild(header);
         categoryDiv.appendChild(grid);
-        
+
         return categoryDiv;
     },
 
@@ -2027,6 +2127,7 @@ document.addEventListener('DOMContentLoaded', () => {
     SettingsModule.init();
     SearchModule.init();
     FolderContextMenu.init();
+    PinnedContextMenu.init();
     PinnedAppsModule.init();
     AuxPanelManager.init();
     CustomSelect.init();
@@ -2097,45 +2198,7 @@ document.addEventListener('DOMContentLoaded', () => {
         startFolderRename(folderId);
     });
 
-    ipcRenderer.on('prompt-create-folder', () => {
-        const container = Utils.getElement('#pinned-apps-container');
-        if (!container) return;
-
-        const tempItem = Utils.createElement('div', { className: 'pinned-item' });
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = LocalizationRenderer.t('new_folder_default_name');
-        input.className = 'pinned-item-name-input';
-
-        const iconDiv = Utils.createElement('div', { className: 'pinned-item-icon' });
-        iconDiv.innerHTML = window.feather.icons['folder'].toSvg();
-        
-        tempItem.appendChild(iconDiv);
-        tempItem.appendChild(input);
-        container.appendChild(tempItem);
-        input.focus();
-
-        const finishCreating = () => {
-            const newName = input.value.trim();
-            if (newName) {
-                ipcRenderer.send('create-folder-with-name', newName);
-            } else {
-                // If no name, just remove the temporary item
-                tempItem.remove();
-            }
-             // The re-render from main process will handle replacing the temp item
-        };
-
-        input.addEventListener('blur', finishCreating);
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                finishCreating();
-            } else if (e.key === 'Escape') {
-                input.value = ''; // Discard
-                finishCreating();
-            }
-        });
-    });
+    ipcRenderer.on('prompt-create-folder', promptCreateFolderInline);
 });
 
 function startFolderRename(folderId) {
@@ -2180,6 +2243,49 @@ function startFolderRename(folderId) {
         } else if (e.key === 'Escape') {
             input.value = originalName;
             finishEditing();
+        }
+    });
+}
+
+function promptCreateFolderInline() {
+    const container = Utils.getElement('#pinned-apps-container');
+    if (!container) return;
+
+    PinnedContextMenu.hide();
+
+    const tempItem = Utils.createElement('div', { className: 'pinned-item' });
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = LocalizationRenderer.t('new_folder_default_name');
+    input.className = 'pinned-item-name-input';
+
+    const iconDiv = Utils.createElement('div', { className: 'pinned-item-icon' });
+    iconDiv.innerHTML = window.feather.icons['folder'].toSvg();
+
+    tempItem.appendChild(iconDiv);
+    tempItem.appendChild(input);
+    container.appendChild(tempItem);
+    input.focus();
+
+    let handled = false;
+    const finishCreating = () => {
+        if (handled) return;
+        handled = true;
+        const newName = input.value.trim();
+        if (newName) {
+            ipcRenderer.send('create-folder-with-name', newName);
+        } else {
+            tempItem.remove();
+        }
+    };
+
+    input.addEventListener('blur', finishCreating);
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            finishCreating();
+        } else if (e.key === 'Escape') {
+            input.value = '';
+            finishCreating();
         }
     });
 }
