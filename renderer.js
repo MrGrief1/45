@@ -1379,9 +1379,13 @@ const AuxPanelManager = {
                 }
             }
             
-            // ИЗМЕНЕНИЕ: Не показываем панель сразу для библиотеки
-            if (type !== 'apps-library') {
-                this.panelContainer.classList.add('visible');
+            // Панель всегда появляется сразу, чтобы окно имело корректный размер
+            this.panelContainer.classList.add('visible');
+
+            if (type === 'apps-library') {
+                this.panelContainer.classList.add('loading');
+                // Гарантируем пересчет размеров, чтобы избежать визуального "обрезания"
+                requestAnimationFrame(() => ViewManager.resizeWindow());
             }
             
             // ОПТИМИЗАЦИЯ: Используем requestAnimationFrame для более плавной анимации
@@ -1396,7 +1400,7 @@ const AuxPanelManager = {
             
             this.executePanelLogic(type);
             
-            // ИЗМЕНЕНИЕ: Не меняем размер для библиотеки здесь
+            // Для остальных панелей пересчитываем размер сразу
             if (type !== 'apps-library') {
                 setTimeout(() => ViewManager.resizeWindow(), 50);
             }
@@ -1413,6 +1417,7 @@ const AuxPanelManager = {
         this.currentPanel = null;
         this.panelContainer.innerHTML = '';
         this.panelContainer.classList.remove('visible');
+        this.panelContainer.classList.remove('loading');
         
         const hasSearchQuery = Utils.getElement('#search-input').value.trim().length > 1;
         
@@ -1452,10 +1457,18 @@ const AuxPanelManager = {
 
             if (content) {
                 content.innerHTML = '';
+                const loader = Utils.createElement('div', { className: 'apps-library-loading' });
+                loader.appendChild(Utils.createElement('span'));
+                loader.appendChild(Utils.createElement('span'));
+                loader.appendChild(Utils.createElement('span'));
+                content.appendChild(loader);
+
                 const sortedCategories = Object.entries(categories).sort(([, a], [, b]) => b.length - a.length);
                 let categoriesToLoad = sortedCategories.filter(([, apps]) => apps.length > 0).length;
 
                 if (categoriesToLoad === 0) {
+                    loader.remove();
+                    AuxPanelManager.panelContainer.classList.remove('loading');
                     AuxPanelManager.panelContainer.classList.add('visible');
                     ViewManager.resizeWindow();
                     return;
@@ -1465,6 +1478,7 @@ const AuxPanelManager = {
                     categoriesToLoad--;
                     if (categoriesToLoad === 0) {
                         requestAnimationFrame(() => {
+                            AuxPanelManager.panelContainer.classList.remove('loading');
                             AuxPanelManager.panelContainer.classList.add('visible');
                             ViewManager.resizeWindow();
                         });
@@ -1478,11 +1492,13 @@ const AuxPanelManager = {
                         fragment.appendChild(categoryEl);
                     }
                 });
+                content.innerHTML = '';
                 content.appendChild(fragment);
                 SearchModule.loadIconsForResults();
             }
         } catch (error) {
             console.error('[AppsLibrary] Error loading apps:', error);
+            this.panelContainer.classList.remove('loading');
         }
     },
     
@@ -1530,6 +1546,17 @@ const AuxPanelManager = {
             'удалить', 'деинсталл', 'сброс', 'восстановление'
         ];
 
+        const pathBlacklistPatterns = [
+            /\\windowsapps\\/i,
+            /\\git\\usr\\/i,
+            /\\git\\mingw64\\/i,
+            /\\git\\mingw32\\/i,
+            /\\git\\libexec\\/i,
+            /\\git\\bin\\/i,
+            /\\python\\[^\\]+\\scripts\\/i,
+            /\\microsoft\\edge\\application\\[0-9]/i
+        ];
+
         const categoryKeywords = {
             'Productivity': ['office', 'word', 'excel', 'powerpoint', 'onenote', 'outlook', 'notes', 'calendar', 'todo', 'task', 'project', 'planner', 'notion', 'evernote', 'trello', 'asana', 'monday', 'airtable'],
             'Development': ['visual studio', 'code', 'git', 'github', 'python', 'node', 'java', 'android studio', 'xcode', 'unity', 'unreal', 'terminal', 'cmd', 'powershell', 'docker', 'vmware', 'virtualbox', 'windowsterminal', 'postman', 'insomnia', 'mysql', 'mongodb', 'postgres', 'redis'],
@@ -1542,7 +1569,8 @@ const AuxPanelManager = {
 
         // УЛУЧШЕНО: Фильтруем системные приложения
         const filteredApps = apps.filter(app => {
-            const appName = app.name.toLowerCase();
+            const originalName = typeof app.name === 'string' ? app.name : '';
+            const appName = originalName.toLowerCase();
             const appPath = (app.path || '').toLowerCase();
             
             // Исключаем приложения из черного списка
@@ -1550,22 +1578,30 @@ const AuxPanelManager = {
                 return false;
             }
             
+            // Исключаем приложения из заранее определенных путей (служебные инструменты)
+            if (pathBlacklistPatterns.some(pattern => pattern.test(appPath))) {
+                return false;
+            }
+
             // Исключаем приложения из системных папок Windows (кроме известных приложений)
-            const isSystemPath = appPath.includes('\\windows\\') || 
+            const isSystemPath = appPath.includes('\\windows\\') ||
                                  appPath.includes('\\system32\\') ||
                                  appPath.includes('\\syswow64\\');
-            
+
             if (isSystemPath) {
                 // Разрешаем только известные системные утилиты
                 const allowedSystemApps = ['notepad', 'calculator', 'paint', 'cmd', 'powershell', 'windowsterminal'];
                 return allowedSystemApps.some(allowed => appName.includes(allowed));
             }
             
-            return true;
+            const looksLikeCliUtility = !/[A-ZА-Я]/.test(originalName) && !originalName.includes(' ') && originalName.length <= 5 && appPath.includes('\\bin\\');
+
+            return !looksLikeCliUtility;
         });
 
         filteredApps.forEach(app => {
-            const appName = app.name.toLowerCase();
+            const originalName = typeof app.name === 'string' ? app.name : '';
+            const appName = originalName.toLowerCase();
             let categorized = false;
 
             for (const [category, keywords] of Object.entries(categoryKeywords)) {
