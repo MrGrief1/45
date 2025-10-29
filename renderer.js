@@ -71,7 +71,7 @@ const Utils = {
 
 const AppIconFallbacks = {
     cache: {
-        whatsapp: 'data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+V2hhdHNBcHA8L3RpdGxlPjxwYXRoIGQ9Ik0xNy40NzIgMTQuMzgyYy0uMjk3LS4xNDktMS43NTgtLjg2Ny0yLjAzLS45NjctLjI3My0uMDk5LS40NzEtLjE0OC0uNjcuMTUtLjE5Ny4yOTctLjc2Ny45NjYtLjk0IDEuMTY0LS4xNzMuMTk5LS4zNDcuMjIzLS42NDQuMDc1LS4yOTctLjE1LTEuMjU1LS40NjMtMi4zOS0xLjQ3NS0uODgzLS43ODgtMS40OC0xLjc2MS0xLjY1My0yLjA1OS0uMTczLS4yOTctLjAxOC0uNDU4LjEzLS42MDYuMTM0LS4xMzMuMjk4LS4zNDcuNDQ2LS41Mi4xNDktLjE3NC4xOTgtLjI5OC4yOTgtLjQ5Ny4wOTktLjE5OC4wNS0uMzcxLS4wMjUtLjUyLS4wNzUtLjE0OS0uNjY5LTEuNjEyLS45MTYtMi4yMDctLjI0Mi0uNTc5LS40ODctLjUtLjY2OS0uNTEtLjE3My0uMDA4LS4zNzEtLjAxLS41Ny0uMDEtLjE5OCAwLS41Mi4wNzQtLjc5Mi4zNzItLjI3Mi4yOTctMS4wNCAxLjAxNi0xLjA0IDIuNDc5IDAgMS40NjIgMS4wNjUgMi44NzUgMS4yMTMgMy4wNzQuMTQ5LjE5OCAyLjA5NiAzLjIgNS4wNzcgNC40ODcuNzA5LjMwNiAxLjI2Mi40ODkgMS42OTQuNjI1LjcxMi4yMjcgMS4zNi4xOTUgMS44NzEuMTE4LjU3MS0uMDg1IDEuNzU4LS43MTkgMi4wMDYtMS40MTMuMjQ4LS42OTQuMjQ4LTEuMjg5LjE3My0xLjQxMy0uMDc0LS4xMjQtLjI3Mi0uMTk4LS41Ny0uMzQ3bS01LjQyMSA3LjQwM2gtLjAwNGE5Ljg3IDkuODcgMCAwMS01LjAzMS0xLjM3OGwtLjM2MS0uMjE0LTMuNzQxLjk4Mi45OTgtMy42NDgtLjIzNS0uMzc0YTkuODYgOS44NiAwIDAxLTEuNTEtNS4yNmMuMDAxLTUuNDUgNC40MzYtOS44ODQgOS44ODgtOS44ODQgMi42NCAwIDUuMTIyIDEuMDMgNi45ODggMi44OThhOS44MjUgOS44MjUgMCAwMTIuODkzIDYuOTk0Yy0uMDAzIDUuNDUtNC40MzcgOS44ODQtOS44ODUgOS44ODRtOC40MTMtMTguMjk3QTExLjgxNSAxMS44MTUgMCAwMDEyLjA1IDBDNS40OTUgMCAuMTYgNS4zMzUuMTU3IDExLjg5MmMwIDIuMDk2LjU0NyA0LjE0MiAxLjU4OCA1Ljk0NUwuMDU3IDI0bDYuMzA1LTEuNjU0YTExLjg4MiAxMS44ODIgMCAwMDUuNjgzIDEuNDQ4aC4wMDVjNi41NTQgMCAxMS44OS01LjMzNSAxMS44OTMtMTEuODkzYTExLjgyMSAxMS44MjEgMCAwMC0zLjQ4LTguNDEzWiIvPjwvc3ZnPg==',
+        whatsapp: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgcm9sZT0iaW1nIj4KICA8dGl0bGU+V2hhdHNBcHA8L3RpdGxlPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJ3YUdyYWRpZW50IiB4MT0iNTAlIiB4Mj0iNTAlIiB5MT0iMCUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzJBRjU5OCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMyNUQzNjYiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIiBmaWxsPSJ1cmwoI3dhR3JhZGllbnQpIi8+CiAgPHBhdGggZmlsbD0iI0U5RkNFQiIgZD0iTTEyLjA2IDYuNWMtMy4wMiAwLTUuNDggMi4zOC01LjQ4IDUuMzIgMCAxLjA1LjMgMi4wNS44NyAyLjkzTDYgMThsMy4zNy0xLjA0YTUuNjIgNS42MiAwIDAgMCAyLjY5LjdjMy4wMiAwIDUuNDgtMi4zOCA1LjQ4LTUuMzIgMC0yLjk0LTIuNDYtNS4zMi01LjQ4LTUuMzJ6bTMuMTMgNy41OWMtLjEzLjM2LS43NS43LTEuMDIuNzItLjI3LjAyLS4yNy4yMy0xLjc0LS4zNS0xLjQ3LS41OC0yLjQtMi4wMi0yLjQ3LTIuMTItLjA3LS4xLS41OC0uOC0uNTUtMS41Mi4wMy0uNzIuNDEtMS4wNy41Ni0xLjIyLjE1LS4xNS4zMy0uMTguNDQtLjE4LjExIDAgLjIyIDAgLjMyLjAxLjEuMDEuMjQtLjA0LjM4LjI5LjE0LjMyLjQ4IDEuMTIuNTIgMS4yLjA0LjA4LjA3LjE4LjAxLjI4LS4wNi4xLS4xLjE2LS4xOC4yNS0uMDguMDktLjE4LjItLjI2LjI3LS4wOS4wNy0uMTguMTUtLjA4LjMzLjEuMTguNDQuNzMuOTUgMS4xNy42NS41OCAxLjIuNzYgMS4zOC44NS4xOC4wOS4yOC4wOC4zOC0uMDQuMS0uMTIuNDMtLjUuNTQtLjY3LjExLS4xNy4yMy0uMTQuMzgtLjA4LjE1LjA2Ljk3LjQ2IDEuMTQuNTQuMTcuMDguMjguMTIuMzIuMTguMDQuMDYuMDQuMzctLjA5LjczeiIvPgo8L3N2Zz4=',
         roblox: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA2NCA2NCc+PHJlY3Qgd2lkdGg9JzQwJyBoZWlnaHQ9JzQwJyB4PScxMicgeT0nMTInIHJ4PSc4JyByeT0nOCcgZmlsbD0nIzIwMjAyMCcgdHJhbnNmb3JtPSdyb3RhdGUoMTUgMzIgMzIpJy8+PHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyB4PScyNycgeT0nMjcnIGZpbGw9JyNmZmZmZmYnIHRyYW5zZm9ybT0ncm90YXRlKDE1IDMyIDMyKScvPjwvc3ZnPg=='
     },
 
@@ -119,6 +119,10 @@ const LocalizationRenderer = {
         Utils.getAllElements('[data-i18n-title]').forEach(element => {
             element.title = this.t(element.getAttribute('data-i18n-title'));
         });
+        const appsLibraryWrapper = Utils.getElement('#apps-library-wrapper');
+        if (appsLibraryWrapper) {
+            appsLibraryWrapper.dataset.loadingLabel = this.t('apps_library_loading');
+        }
         this.refreshLanguageDependentUI();
     },
 
@@ -146,6 +150,7 @@ const SettingsModule = {
     setupEventListeners: function() {
         this.bindCheckboxSetting('setting-animations', 'animations');
         this.bindCheckboxSetting('setting-pinned-apps', 'enablePinnedApps');
+        this.bindCheckboxSetting('setting-app-library-show-all', 'showAllAppsInLibrary');
         this.bindCheckboxSetting('setting-focus-highlight', 'showFocusHighlight');
         this.bindCheckboxSetting('setting-auto-launch', 'autoLaunch');
         this.bindRangeSetting('setting-opacity', 'opacity');
@@ -240,6 +245,7 @@ const SettingsModule = {
         CustomSelect.setValue('custom-select-position', AppState.settings.windowPosition);
         this.setElementValue('setting-animations', AppState.settings.animations, true);
         this.setElementValue('setting-pinned-apps', AppState.settings.enablePinnedApps, true);
+        this.setElementValue('setting-app-library-show-all', AppState.settings.showAllAppsInLibrary, true);
         this.setElementValue('setting-auto-launch', AppState.settings.autoLaunch, true);
         this.setElementValue('setting-opacity', AppState.settings.opacity);
         this.setElementValue('setting-blur', AppState.settings.blurStrength);
@@ -1379,8 +1385,17 @@ const AuxPanelManager = {
                 }
             }
             
-            // ИЗМЕНЕНИЕ: Не показываем панель сразу для библиотеки
-            if (type !== 'apps-library') {
+            const isAppsLibrary = type === 'apps-library';
+
+            if (isAppsLibrary) {
+                this.panelContainer.classList.add('visible');
+                if (appsLibraryWrapper) {
+                    appsLibraryWrapper.classList.add('loading');
+                    appsLibraryWrapper.setAttribute('aria-busy', 'true');
+                    appsLibraryWrapper.dataset.loadingLabel = LocalizationRenderer.t('apps_library_loading');
+                }
+                ViewManager.resizeWindow();
+            } else {
                 this.panelContainer.classList.add('visible');
             }
             
@@ -1397,7 +1412,7 @@ const AuxPanelManager = {
             this.executePanelLogic(type);
             
             // ИЗМЕНЕНИЕ: Не меняем размер для библиотеки здесь
-            if (type !== 'apps-library') {
+            if (!isAppsLibrary) {
                 setTimeout(() => ViewManager.resizeWindow(), 50);
             }
         } catch (error) {
@@ -1449,25 +1464,40 @@ const AuxPanelManager = {
             const allApps = await ipcRenderer.invoke('get-all-apps');
             const categories = this.categorizeApps(allApps);
             const content = this.panelContainer.querySelector('#apps-library-content');
+            const wrapper = this.panelContainer.querySelector('#apps-library-wrapper');
 
             if (content) {
                 content.innerHTML = '';
+                if (wrapper) {
+                    wrapper.classList.add('loading');
+                    wrapper.setAttribute('aria-busy', 'true');
+                    wrapper.dataset.loadingLabel = LocalizationRenderer.t('apps_library_loading');
+                }
+                ViewManager.resizeWindow();
+
                 const sortedCategories = Object.entries(categories).sort(([, a], [, b]) => b.length - a.length);
                 let categoriesToLoad = sortedCategories.filter(([, apps]) => apps.length > 0).length;
 
+                const finishLoading = () => {
+                    if (wrapper) {
+                        wrapper.classList.remove('loading');
+                        wrapper.removeAttribute('aria-busy');
+                    }
+                    requestAnimationFrame(() => {
+                        AuxPanelManager.panelContainer.classList.add('visible');
+                        AuxPanelManager.debouncedResizeForAppsLibrary();
+                    });
+                };
+
                 if (categoriesToLoad === 0) {
-                    AuxPanelManager.panelContainer.classList.add('visible');
-                    ViewManager.resizeWindow();
+                    finishLoading();
                     return;
                 }
 
                 const onCategoryLoaded = () => {
                     categoriesToLoad--;
                     if (categoriesToLoad === 0) {
-                        requestAnimationFrame(() => {
-                            AuxPanelManager.panelContainer.classList.add('visible');
-                            ViewManager.resizeWindow();
-                        });
+                        finishLoading();
                     }
                 };
 
@@ -1479,6 +1509,7 @@ const AuxPanelManager = {
                     }
                 });
                 content.appendChild(fragment);
+                ViewManager.resizeWindow();
                 SearchModule.loadIconsForResults();
             }
         } catch (error) {
@@ -1512,6 +1543,8 @@ const AuxPanelManager = {
             'Other': []
         };
 
+        const includeSystemApps = AppState.settings.showAllAppsInLibrary === true;
+
         // УЛУЧШЕНО: Расширенный черный список системных/служебных приложений
         const systemAppBlacklist = [
             'uninstall', 'unins', 'uninst', 'setup', 'installer', 'activator',
@@ -1527,7 +1560,9 @@ const AuxPanelManager = {
             'iscsi', 'odbc', 'memory diagnostic', 'recoverydr', 'ahk2exe',
             'nsight', 'nvidia nsight', // NVIDIA инструменты разработчика
             'foxit pdf reader activator', 'автоматическое обновление',
-            'удалить', 'деинсталл', 'сброс', 'восстановление'
+            'удалить', 'деинсталл', 'сброс', 'восстановление',
+            'gpu-z', 'gpuz', 'gpushark', 'furmark', 'cpu burner', 'cpuburner',
+            'adig', 'grcat', 'gpg-auth', 'rmt.exe', 'unchecky', 'occt'
         ];
 
         const categoryKeywords = {
@@ -1542,9 +1577,13 @@ const AuxPanelManager = {
 
         // УЛУЧШЕНО: Фильтруем системные приложения
         const filteredApps = apps.filter(app => {
+            if (includeSystemApps) {
+                return true;
+            }
+
             const appName = app.name.toLowerCase();
             const appPath = (app.path || '').toLowerCase();
-            
+
             // Исключаем приложения из черного списка
             if (systemAppBlacklist.some(keyword => appName.includes(keyword) || appPath.includes(keyword))) {
                 return false;
@@ -1981,6 +2020,9 @@ document.addEventListener('DOMContentLoaded', () => {
         SettingsModule.populateSettingsUI();
         PinnedAppsModule.render();
         FolderContextMenu.highlightSelection();
+        if (AuxPanelManager.currentPanel === 'apps-library') {
+            AuxPanelManager.loadAppsLibrary();
+        }
         ViewManager.resizeWindow(); // Always resize after settings update
     });
 

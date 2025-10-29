@@ -17,6 +17,7 @@
     --base-bg-color-rgb: 245, 245, 247;
     --secondary-bg-color-rgb: 229, 229, 234;
     --text-color: #1d1d1f;
+    --text-color-rgb: 29, 29, 31;
     --icon-color: #8a8a8e;
     --highlight-color: #007AFF; 
     --danger-color: #FF3B30;
@@ -38,6 +39,7 @@ body.dark-theme {
     --base-bg-color-rgb: 44, 44, 46;
     --secondary-bg-color-rgb: 58, 58, 60;
     --text-color: #f5f5f7;
+    --text-color-rgb: 245, 245, 247;
     --icon-color: #98989d;
     --highlight-color: #0A84FF;
     --border-color: rgba(255, 255, 255, 0.15);
@@ -56,6 +58,7 @@ body.liquid_glass_blue-theme {
     --base-bg-color-rgb: 230, 245, 255;
     --secondary-bg-color-rgb: 200, 230, 250;
     --text-color: #102a43;
+    --text-color-rgb: 16, 42, 67;
     --highlight-color: #007AFF;
     --button-icon-color: #243b53;
     --shadow: 0 30px 90px rgba(0, 50, 100, 0.2);
@@ -65,6 +68,7 @@ body.ocean_depths-theme {
     --base-bg-color-rgb: 10, 30, 70;
     --secondary-bg-color-rgb: 20, 50, 100;
     --text-color: #FFFFFF;
+    --text-color-rgb: 255, 255, 255;
     --highlight-color: #1E90FF;
     --border-color: rgba(255, 255, 255, 0.2);
     --shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
@@ -397,14 +401,17 @@ body.dark-theme .aux-header {
     position: fixed;
     z-index: 3000;
     min-width: 340px;
-    background: rgba(var(--secondary-bg-color-rgb, 20, 20, 20), 1);
+    background: linear-gradient(135deg,
+                rgba(var(--base-bg-color-rgb, 245, 245, 247), 0.95),
+                rgba(var(--secondary-bg-color-rgb, 229, 229, 234), 0.92));
     backdrop-filter: blur(22px);
     border-radius: 18px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 28px 60px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 28px 60px rgba(0, 0, 0, 0.28);
     padding: 18px 20px;
     display: none;
     overflow: hidden;
+    color: var(--text-color);
 }
 
 .folder-context-menu.visible {
@@ -422,19 +429,25 @@ body.dark-theme .aux-header {
     flex: 1 1 140px;
     padding: 10px 12px;
     border-radius: 10px;
-    border: none;
+    border: 1px solid rgba(var(--text-color-rgb, 29, 29, 31), 0.08);
     cursor: pointer;
-    background: rgba(var(--secondary-bg-color-rgb, 40, 40, 40), 0.82);
+    background: rgba(var(--secondary-bg-color-rgb, 229, 229, 234), 0.65);
     color: var(--text-color);
     font-size: 13px;
     font-weight: 600;
-    transition: background-color 0.2s ease, transform 0.15s ease;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
     white-space: nowrap;
 }
 
 .folder-menu-action:hover {
-    background: rgba(0, 122, 255, 0.15);
+    background: rgba(var(--secondary-bg-color-rgb, 229, 229, 234), 0.9);
+    border-color: rgba(var(--text-color-rgb, 29, 29, 31), 0.16);
     transform: translateY(-1px);
+}
+
+.folder-menu-action:active {
+    transform: translateY(0);
+    background: rgba(var(--secondary-bg-color-rgb, 229, 229, 234), 0.82);
 }
 
 .folder-menu-action.danger {
@@ -444,6 +457,23 @@ body.dark-theme .aux-header {
 
 .folder-menu-action.danger:hover {
     background: rgba(255, 107, 107, 0.2);
+}
+
+body.dark-theme .folder-context-menu {
+    background: linear-gradient(135deg,
+                rgba(var(--base-bg-color-rgb, 44, 44, 46), 0.92),
+                rgba(var(--secondary-bg-color-rgb, 58, 58, 60), 0.88));
+    box-shadow: 0 32px 70px rgba(0, 0, 0, 0.55);
+}
+
+body.dark-theme .folder-menu-action {
+    background: rgba(var(--secondary-bg-color-rgb, 58, 58, 60), 0.76);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-theme .folder-menu-action:hover {
+    background: rgba(var(--secondary-bg-color-rgb, 58, 58, 60), 0.94);
+    border-color: rgba(255, 255, 255, 0.16);
 }
 
 .folder-menu-divider {
@@ -951,12 +981,44 @@ input[type="range"]:active::-webkit-slider-thumb {
     border: none;
     box-shadow: none;
     overflow: hidden;
-    
+
     /* БЫСТРАЯ АНИМАЦИЯ */
     opacity: 0;
     transform: translateY(6px);
     transition: opacity 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
     will-change: opacity, transform;
+}
+
+#apps-library-wrapper.loading {
+    position: relative;
+    min-height: 320px;
+    pointer-events: none;
+}
+
+#apps-library-wrapper.loading::after {
+    content: attr(data-loading-label);
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-color);
+    letter-spacing: 0.01em;
+    opacity: 0.85;
+}
+
+#apps-library-wrapper.loading #apps-library-content {
+    opacity: 0;
+    filter: blur(4px);
+    transition: opacity 0.2s ease, filter 0.3s ease;
+}
+
+body.dark-theme #apps-library-wrapper.loading::after,
+body.ocean_depths-theme #apps-library-wrapper.loading::after {
+    color: rgba(255, 255, 255, 0.9);
+    opacity: 0.92;
 }
 
 #apps-library-wrapper.visible {
@@ -973,6 +1035,7 @@ input[type="range"]:active::-webkit-slider-thumb {
     box-sizing: border-box;
     width: 100%;
     scroll-padding-bottom: 0;
+    transition: opacity 0.2s ease;
 }
 
 .app-category {
