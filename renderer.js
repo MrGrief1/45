@@ -71,9 +71,11 @@ const Utils = {
 
 const AppIconFallbacks = {
     cache: {
-        whatsapp: 'data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+V2hhdHNBcHA8L3RpdGxlPjxwYXRoIGQ9Ik0xNy40NzIgMTQuMzgyYy0uMjk3LS4xNDktMS43NTgtLjg2Ny0yLjAzLS45NjctLjI3My0uMDk5LS40NzEtLjE0OC0uNjcuMTUtLjE5Ny4yOTctLjc2Ny45NjYtLjk0IDEuMTY0LS4xNzMuMTk5LS4zNDcuMjIzLS42NDQuMDc1LS4yOTctLjE1LTEuMjU1LS40NjMtMi4zOS0xLjQ3NS0uODgzLS43ODgtMS40OC0xLjc2MS0xLjY1My0yLjA1OS0uMTczLS4yOTctLjAxOC0uNDU4LjEzLS42MDYuMTM0LS4xMzMuMjk4LS4zNDcuNDQ2LS41Mi4xNDktLjE3NC4xOTgtLjI5OC4yOTgtLjQ5Ny4wOTktLjE5OC4wNS0uMzcxLS4wMjUtLjUyLS4wNzUtLjE0OS0uNjY5LTEuNjEyLS45MTYtMi4yMDctLjI0Mi0uNTc5LS40ODctLjUtLjY2OS0uNTEtLjE3My0uMDA4LS4zNzEtLjAxLS41Ny0uMDEtLjE5OCAwLS41Mi4wNzQtLjc5Mi4zNzItLjI3Mi4yOTctMS4wNCAxLjAxNi0xLjA0IDIuNDc5IDAgMS40NjIgMS4wNjUgMi44NzUgMS4yMTMgMy4wNzQuMTQ5LjE5OCAyLjA5NiAzLjIgNS4wNzcgNC40ODcuNzA5LjMwNiAxLjI2Mi40ODkgMS42OTQuNjI1LjcxMi4yMjcgMS4zNi4xOTUgMS44NzEuMTE4LjU3MS0uMDg1IDEuNzU4LS43MTkgMi4wMDYtMS40MTMuMjQ4LS42OTQuMjQ4LTEuMjg5LjE3My0xLjQxMy0uMDc0LS4xMjQtLjI3Mi0uMTk4LS41Ny0uMzQ3bS01LjQyMSA3LjQwM2gtLjAwNGE5Ljg3IDkuODcgMCAwMS01LjAzMS0xLjM3OGwtLjM2MS0uMjE0LTMuNzQxLjk4Mi45OTgtMy42NDgtLjIzNS0uMzc0YTkuODYgOS44NiAwIDAxLTEuNTEtNS4yNmMuMDAxLTUuNDUgNC40MzYtOS44ODQgOS44ODgtOS44ODQgMi42NCAwIDUuMTIyIDEuMDMgNi45ODggMi44OThhOS44MjUgOS44MjUgMCAwMTIuODkzIDYuOTk0Yy0uMDAzIDUuNDUtNC40MzcgOS44ODQtOS44ODUgOS44ODRtOC40MTMtMTguMjk3QTExLjgxNSAxMS44MTUgMCAwMDEyLjA1IDBDNS40OTUgMCAuMTYgNS4zMzUuMTU3IDExLjg5MmMwIDIuMDk2LjU0NyA0LjE0MiAxLjU4OCA1Ljk0NUwuMDU3IDI0bDYuMzA1LTEuNjU0YTExLjg4MiAxMS44ODIgMCAwMDUuNjgzIDEuNDQ4aC4wMDVjNi41NTQgMCAxMS44OS01LjMzNSAxMS44OTMtMTEuODkzYTExLjgyMSAxMS44MjEgMCAwMC0zLjQ4LTguNDEzWiIvPjwvc3ZnPg==',
+        whatsapp: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA2NCA2NCc+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCUnIHkxPScwJScgeDI9JzEwMCUnIHkyPScxMDAlJz48c3RvcCBvZmZzZXQ9JzAlJyBzdG9wLWNvbG9yPScjMjVEMzY2Jy8+PHN0b3Agb2Zmc2V0PScxMDAlJyBzdG9wLWNvbG9yPScjMTI4QzdFJy8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZmlsbD0ndXJsKCNnKScgZD0nTTMyIDRjMTUuNDY0IDAgMjggMTIuNTM2IDI4IDI4IDAgMTUuNDYzLTEyLjUzNiAyOC0yOCAyOC00Ljc0IDAtOS4yMDYtMS4xNy0xMy4xMy0zLjIzNEw0IDYwbDMuNTAyLTE0LjU5NEM1LjM0NiA0MS41MiA0IDM2LjkwMiA0IDMyIDQgMTYuNTM2IDE2LjUzNiA0IDMyIDR6Jy8+PHBhdGggZmlsbD0nI0Y1RkRGOScgZD0nTTI0LjI1OCAxOC41Yy0uNTYyLTEuMjE2LTEuMTYtMS4yNC0xLjY5NC0xLjI2LS40MzgtLjAxOC0uOTQtLjAxNy0xLjQ0Mi0uMDE3LS41MDQgMC0xLjMyLjE5LTIuMDEuOTUtLjY5Ljc2LTIuNjM1IDIuNTc0LTIuNjM1IDYuMjggMCAzLjcwNiAyLjY5NiA3LjI5IDMuMDc0IDcuNzk1LjM3OC41MDYgNS4yMDQgOC4zMzkgMTIuODIzIDExLjM1IDYuMzQzIDIuNTA0IDcuNjIgMi4wMDYgOS4wMDUgMS44ODEgMS4zODYtLjEyNiA0LjQzMi0xLjgwOCA1LjA2LTMuNTU3LjYzLTEuNzUuNjMtMy4yNDguNDQtMy41NTctLjE5LS4zMS0uNjktLjUtMS40NC0uODc2LS43NS0uMzc3LTQuNDMtMi4xODYtNS4xMTgtMi40MzctLjY5LS4yNTItMS4xOTItLjM3OC0xLjY5NC4zOC0uNTA0Ljc1Ni0xLjk0NCAyLjQzNy0yLjM4MyAyLjkzNS0uNDQuNS0uODc3LjU2Ni0xLjYzLjE5LS43NTMtLjM3Ny0zLjE4LTEuMTc2LTYuMDUtMy43NDYtMi4yMzctMS45OTYtMy43NDQtNC40Ni00LjE4Mi01LjIxNi0uNDM4LS43NTYtLjA0Ny0xLjE2NS4zMy0xLjU0LjMzOC0uMzM1Ljc1My0uODc2IDEuMTMtMS4zMTQuMzgtLjQzOC41MDQtLjc1Ljc1Ni0xLjI1Mi4yNTItLjUuMTI2LS45NC0uMDYzLTEuMzE3LS4xOS0uMzc3LTEuNjczLTQuMTUtMi4yOC01LjY2NnonLz48L3N2Zz4=',
         roblox: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA2NCA2NCc+PHJlY3Qgd2lkdGg9JzQwJyBoZWlnaHQ9JzQwJyB4PScxMicgeT0nMTInIHJ4PSc4JyByeT0nOCcgZmlsbD0nIzIwMjAyMCcgdHJhbnNmb3JtPSdyb3RhdGUoMTUgMzIgMzIpJy8+PHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyB4PScyNycgeT0nMjcnIGZpbGw9JyNmZmZmZmYnIHRyYW5zZm9ybT0ncm90YXRlKDE1IDMyIDMyKScvPjwvc3ZnPg=='
     },
+
+    forcePatterns: ['whatsapp'],
 
     get(name = '', path = '') {
         const normalizedName = String(name).toLowerCase();
@@ -88,6 +90,14 @@ const AppIconFallbacks = {
         }
 
         return null;
+    },
+
+    shouldForceFallback(name = '', path = '') {
+        const normalizedName = String(name).toLowerCase();
+        const normalizedPath = String(path).toLowerCase();
+        return this.forcePatterns.some(pattern =>
+            normalizedName.includes(pattern) || normalizedPath.includes(pattern)
+        );
     }
 };
 
@@ -146,6 +156,7 @@ const SettingsModule = {
     setupEventListeners: function() {
         this.bindCheckboxSetting('setting-animations', 'animations');
         this.bindCheckboxSetting('setting-pinned-apps', 'enablePinnedApps');
+        this.bindCheckboxSetting('setting-apps-library-basic-only', 'appsLibraryBasicOnly');
         this.bindCheckboxSetting('setting-focus-highlight', 'showFocusHighlight');
         this.bindCheckboxSetting('setting-auto-launch', 'autoLaunch');
         this.bindRangeSetting('setting-opacity', 'opacity');
@@ -240,6 +251,8 @@ const SettingsModule = {
         CustomSelect.setValue('custom-select-position', AppState.settings.windowPosition);
         this.setElementValue('setting-animations', AppState.settings.animations, true);
         this.setElementValue('setting-pinned-apps', AppState.settings.enablePinnedApps, true);
+        const basicOnly = AppState.settings.appsLibraryBasicOnly !== false;
+        this.setElementValue('setting-apps-library-basic-only', basicOnly, true);
         this.setElementValue('setting-auto-launch', AppState.settings.autoLaunch, true);
         this.setElementValue('setting-opacity', AppState.settings.opacity);
         this.setElementValue('setting-blur', AppState.settings.blurStrength);
@@ -498,7 +511,9 @@ const SearchModule = {
                 const src = (cachedSrc && typeof cachedSrc === 'string' && cachedSrc.startsWith('data:image'))
                             ? cachedSrc
                             : (fallbackIcon || this.getFallbackIconDataUrl('cpu'));
-                iconHtml = `<img class="result-icon app-icon" data-path="${Utils.escapeHtml(result.path)}" src="${src}" style="width: 24px; height: 24px; object-fit: contain;" />`;
+                const safePath = Utils.escapeHtml(result.path);
+                const safeName = Utils.escapeHtml(result.name || '');
+                iconHtml = `<img class="result-icon app-icon" data-path="${safePath}" data-app-name="${safeName}" src="${src}" style="width: 24px; height: 24px; object-fit: contain;" />`;
                 console.log(`[Renderer] App icon for ${result.name}: ${cachedSrc ? 'Cached' : 'Fallback'}`);
             } else {
                 iconHtml = this.generateSvgIconHtml(result);
@@ -555,7 +570,25 @@ const SearchModule = {
     loadIconsForResults: function() {
         Utils.getAllElements('.app-icon').forEach(img => {
             const path = img.getAttribute('data-path');
-            if (path && !path.startsWith('shell:') && !AppState.iconCache.has(path)) {
+            if (!path || path.startsWith('shell:')) {
+                return;
+            }
+
+            const appName = img.getAttribute('data-app-name') || '';
+            if (AppIconFallbacks.shouldForceFallback(appName, path)) {
+                const fallback = AppIconFallbacks.get(appName, path);
+                if (fallback) {
+                    if (AppState.iconCache.get(path) !== fallback) {
+                        AppState.iconCache.set(path, fallback);
+                    }
+                    if (img.src !== fallback) {
+                        img.src = fallback;
+                    }
+                }
+                return;
+            }
+
+            if (!AppState.iconCache.has(path)) {
                 AppState.iconCache.set(path, 'fetching');
                 ipcRenderer.send('request-file-icon', path);
             }
@@ -1277,7 +1310,11 @@ const PinnedAppsModule = {
                         : (fallbackIcon || SearchModule.getFallbackIconDataUrl('cpu'));
             icon.src = src;
             icon.setAttribute('data-path', path);
+            icon.setAttribute('data-app-name', name);
             icon.classList.add('app-icon');
+            if (!cachedSrc && fallbackIcon && src === fallbackIcon) {
+                AppState.iconCache.set(path, fallbackIcon);
+            }
         } else {
             const folderIconName = options.icon || iconName;
             icon.innerHTML = window.feather.icons[folderIconName] ? window.feather.icons[folderIconName].toSvg() : (window.feather.icons[iconName]?.toSvg() || '');
@@ -1541,10 +1578,10 @@ const AuxPanelManager = {
         };
 
         // УЛУЧШЕНО: Фильтруем системные приложения
-        const filteredApps = apps.filter(app => {
+        let filteredApps = apps.filter(app => {
             const appName = app.name.toLowerCase();
             const appPath = (app.path || '').toLowerCase();
-            
+
             // Исключаем приложения из черного списка
             if (systemAppBlacklist.some(keyword => appName.includes(keyword) || appPath.includes(keyword))) {
                 return false;
@@ -1563,6 +1600,29 @@ const AuxPanelManager = {
             
             return true;
         });
+
+        if (AppState.settings.appsLibraryBasicOnly !== false) {
+            const advancedAppKeywords = [
+                'furmark', 'gpu-z', 'gpuz', 'gpushark', 'cpuburner', 'occt', 'stress test', 'benchmark', 'profiler',
+                'diagnostic', 'burner', 'shadercache', 'minidump', 'debug', 'telemetry'
+            ];
+            const advancedPathPatterns = [
+                '\\git\\usr\\', '\\git\\mingw64\\', '\\geeks3d\\', '\\furmark', '\\gpushark', '\\gpuz', '\\cpuburner',
+                '\\nsight', '\\debug\\', '\\diagnostic'
+            ];
+
+            filteredApps = filteredApps.filter(app => {
+                const name = app.name.toLowerCase();
+                const appPath = (app.path || '').toLowerCase();
+                if (advancedAppKeywords.some(keyword => name.includes(keyword))) {
+                    return false;
+                }
+                if (advancedPathPatterns.some(pattern => appPath.includes(pattern))) {
+                    return false;
+                }
+                return true;
+            });
+        }
 
         filteredApps.forEach(app => {
             const appName = app.name.toLowerCase();
@@ -1621,14 +1681,26 @@ const AuxPanelManager = {
 
         apps.forEach((app, index) => {
             const appItem = Utils.createElement('div', { className: 'category-app-item' });
-            
+
             const icon = document.createElement('img');
             icon.className = 'category-app-icon app-icon';
             icon.setAttribute('data-path', app.path);
+            icon.setAttribute('data-app-name', app.name);
             const cachedSrc = AppState.iconCache.get(app.path);
-            icon.src = (cachedSrc && typeof cachedSrc === 'string' && cachedSrc.startsWith('data:image')) 
-                        ? cachedSrc 
-                        : SearchModule.getFallbackIconDataUrl('cpu');
+            const fallbackIcon = AppIconFallbacks.get(app.name, app.path);
+            const forceFallback = AppIconFallbacks.shouldForceFallback(app.name, app.path);
+            let initialSrc = (cachedSrc && typeof cachedSrc === 'string' && cachedSrc.startsWith('data:image'))
+                        ? cachedSrc
+                        : (fallbackIcon || SearchModule.getFallbackIconDataUrl('cpu'));
+
+            if (forceFallback && fallbackIcon) {
+                initialSrc = fallbackIcon;
+                if (AppState.iconCache.get(app.path) !== fallbackIcon) {
+                    AppState.iconCache.set(app.path, fallbackIcon);
+                }
+            }
+
+            icon.src = initialSrc;
             
             const onIconLoad = () => {
                 loadedIcons++;
@@ -1960,13 +2032,30 @@ document.addEventListener('DOMContentLoaded', () => {
     CustomSelect.init();
 
     ipcRenderer.on('file-icon-response', (event, { path, dataUrl }) => {
-        AppState.iconCache.set(path, dataUrl || null);
+        const relatedImages = [];
         Utils.getAllElements('.app-icon').forEach(imgElement => {
             if (imgElement.getAttribute('data-path') === path) {
-                if (dataUrl) imgElement.src = dataUrl;
+                relatedImages.push(imgElement);
             }
         });
-        
+
+        const appName = relatedImages[0]?.getAttribute('data-app-name') || '';
+        const fallbackIcon = AppIconFallbacks.get(appName, path);
+        const forceFallback = AppIconFallbacks.shouldForceFallback(appName, path);
+
+        let finalDataUrl = dataUrl;
+        if ((forceFallback && fallbackIcon) || (!dataUrl && fallbackIcon)) {
+            finalDataUrl = fallbackIcon;
+        }
+
+        AppState.iconCache.set(path, finalDataUrl || null);
+
+        relatedImages.forEach(imgElement => {
+            if (finalDataUrl) {
+                imgElement.src = finalDataUrl;
+            }
+        });
+
         // ИСПРАВЛЕНИЕ: Убираем пересчет после каждой иконки - это вызывает дергание
         // Вместо этого полагаемся на debouncedResizeForAppsLibrary
     });
@@ -1981,6 +2070,9 @@ document.addEventListener('DOMContentLoaded', () => {
         SettingsModule.populateSettingsUI();
         PinnedAppsModule.render();
         FolderContextMenu.highlightSelection();
+        if (AuxPanelManager.currentPanel === 'apps-library') {
+            AuxPanelManager.loadAppsLibrary();
+        }
         ViewManager.resizeWindow(); // Always resize after settings update
     });
 

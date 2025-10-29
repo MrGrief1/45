@@ -12,6 +12,36 @@ let AppState = {
     currentFolderId: 'pinned',
 };
 
+const AppFallbacks = {
+    whatsapp: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA2NCA2NCc+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCUnIHkxPScwJScgeDI9JzEwMCUnIHkyPScxMDAlJz48c3RvcCBvZmZzZXQ9JzAlJyBzdG9wLWNvbG9yPScjMjVEMzY2Jy8+PHN0b3Agb2Zmc2V0PScxMDAlJyBzdG9wLWNvbG9yPScjMTI4QzdFJy8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZmlsbD0ndXJsKCNnKScgZD0nTTMyIDRjMTUuNDY0IDAgMjggMTIuNTM2IDI4IDI4IDAgMTUuNDYzLTEyLjUzNiAyOC0yOCAyOC00Ljc0IDAtOS4yMDYtMS4xNy0xMy4xMy0zLjIzNEw0IDYwbDMuNTAyLTE0LjU5NEM1LjM0NiA0MS41MiA0IDM2LjkwMiA0IDMyIDQgMTYuNTM2IDE2LjUzNiA0IDMyIDR6Jy8+PHBhdGggZmlsbD0nI0Y1RkRGOScgZD0nTTI0LjI1OCAxOC41Yy0uNTYyLTEuMjE2LTEuMTYtMS4yNC0xLjY5NC0xLjI2LS40MzgtLjAxOC0uOTQtLjAxNy0xLjQ0Mi0uMDE3LS41MDQgMC0xLjMyLjE5LTIuMDEuOTUtLjY5Ljc2LTIuNjM1IDIuNTc0LTIuNjM1IDYuMjggMCAzLjcwNiAyLjY5NiA3LjI5IDMuMDc0IDcuNzk1LjM3OC41MDYgNS4yMDQgOC4zMzkgMTIuODIzIDExLjM1IDYuMzQzIDIuNTA0IDcuNjIgMi4wMDYgOS4wMDUgMS44ODEgMS4zODYtLjEyNiA0LjQzMi0xLjgwOCA1LjA2LTMuNTU3LjYzLTEuNzUuNjMtMy4yNDguNDQtMy41NTctLjE5LS4zMS0uNjktLjUtMS40NC0uODc2LS43NS0uMzc3LTQuNDMtMi4xODYtNS4xMTgtMi40MzctLjY5LS4yNTItMS4xOTItLjM3OC0xLjY5NC4zOC0uNTA0Ljc1Ni0xLjk0NCAyLjQzNy0yLjM4MyAyLjkzNS0uNDQuNS0uODc3LjU2Ni0xLjYzLjE5LS43NTMtLjM3Ny0zLjE4LTEuMTc2LTYuMDUtMy43NDYtMi4yMzctMS45OTYtMy43NDQtNC40Ni00LjE4Mi01LjIxNi0uNDM4LS43NTYtLjA0Ny0xLjE2NS4zMy0xLjU0LjMzOC0uMzM1Ljc1My0uODc2IDEuMTMtMS4zMTQuMzgtLjQzOC41MDQtLjc1Ljc1Ni0xLjI1Mi4yNTItLjUuMTI2LS45NC0uMDYzLTEuMzE3LS4xOS0uMzc3LTEuNjczLTQuMTUtMi4yOC01LjY2NnonLz48L3N2Zz4=',
+    roblox: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA2NCA2NCc+PHJlY3Qgd2lkdGg9JzQwJyBoZWlnaHQ9JzQwJyB4PScxMicgeT0nMTInIHJ4PSc4JyByeT0nOCcgZmlsbD0nIzIwMjAyMCcgdHJhbnNmb3JtPSdyb3RhdGUoMTUgMzIgMzIpJy8+PHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyB4PScyNycgeT0nMjcnIGZpbGw9JyNmZmZmZmYnIHRyYW5zZm9ybT0ncm90YXRlKDE1IDMyIDMyKScvPjwvc3ZnPg=='
+};
+
+const forceFallbackPatterns = ['whatsapp'];
+
+function getAppFallback(name = '', path = '') {
+    const normalizedName = String(name).toLowerCase();
+    const normalizedPath = String(path).toLowerCase();
+
+    if (normalizedName.includes('whatsapp') || normalizedPath.includes('whatsapp')) {
+        return AppFallbacks.whatsapp;
+    }
+
+    if (normalizedName.includes('roblox') || normalizedPath.includes('roblox')) {
+        return AppFallbacks.roblox;
+    }
+
+    return null;
+}
+
+function shouldForceFallback(name = '', path = '') {
+    const normalizedName = String(name).toLowerCase();
+    const normalizedPath = String(path).toLowerCase();
+    return forceFallbackPatterns.some(pattern =>
+        normalizedName.includes(pattern) || normalizedPath.includes(pattern)
+    );
+}
+
 // === Инициализация и IPC обработчики ===
 ipcRenderer.on('settings-updated', (event, data) => {
     const settings = data.settings;
@@ -55,17 +85,25 @@ ipcRenderer.on('update-data', (event, data) => {
 });
 
 ipcRenderer.on('file-icon-response', (event, { path, dataUrl }) => {
-    AppState.iconCache.set(path, dataUrl || null);
     console.log(`[Apps] Received icon for ${path}:`, dataUrl ? 'Success' : 'Failed');
-    
-    // Обновляем все изображения с данным путем
-    document.querySelectorAll(`img[data-path="${path}"]`).forEach(imgElement => {
-        if (dataUrl && dataUrl.startsWith('data:image')) {
-            imgElement.src = dataUrl;
-            console.log(`[Apps] Updated icon for ${path}`);
-        } else {
-            // Если иконка не получена, оставляем fallback
-            console.log(`[Apps] No valid icon received for ${path}, keeping fallback`);
+
+    const images = Array.from(document.querySelectorAll(`img[data-path="${path}"]`));
+    const appName = images[0]?.getAttribute('data-app-name') || '';
+    const fallbackIcon = getAppFallback(appName, path);
+    const forceFallback = shouldForceFallback(appName, path);
+
+    let finalDataUrl = dataUrl;
+    if ((forceFallback && fallbackIcon) || (!dataUrl && fallbackIcon)) {
+        finalDataUrl = fallbackIcon;
+    }
+
+    AppState.iconCache.set(path, finalDataUrl || null);
+
+    images.forEach(imgElement => {
+        if (finalDataUrl) {
+            imgElement.src = finalDataUrl;
+        } else if (!imgElement.src) {
+            imgElement.src = getFallbackIconDataUrl('cpu', AppState.windowType === 'apps' ? 48 : 24);
         }
     });
 });
@@ -228,17 +266,30 @@ function createGridItem(name, iconName, onClick, path = null) {
     icon.className = 'grid-item-icon';
     if (path) {
         const cachedIcon = AppState.iconCache.get(path);
-        if (cachedIcon && cachedIcon !== 'fetching' && cachedIcon.startsWith('data:image')) {
-            icon.src = cachedIcon;
-        } else {
-            icon.src = getFallbackIconDataUrl('cpu', 48);
-            if (!AppState.iconCache.has(path)) {
-                AppState.iconCache.set(path, 'fetching');
-                ipcRenderer.send('request-file-icon', path);
-            }
+        const fallbackIcon = getAppFallback(name, path);
+        const forceFallback = shouldForceFallback(name, path);
+        let initialSrc = (cachedIcon && cachedIcon !== 'fetching' && cachedIcon.startsWith('data:image'))
+            ? cachedIcon
+            : (fallbackIcon || getFallbackIconDataUrl('cpu', 48));
+
+        if (forceFallback && fallbackIcon) {
+            initialSrc = fallbackIcon;
+            AppState.iconCache.set(path, fallbackIcon);
         }
+
+        icon.src = initialSrc;
         icon.setAttribute('data-path', path);
-        icon.onerror = () => { icon.src = getFallbackIconDataUrl('cpu', 48); };
+        icon.setAttribute('data-app-name', name);
+        icon.onerror = () => {
+            if (!forceFallback || !fallbackIcon) {
+                icon.src = getFallbackIconDataUrl('cpu', 48);
+            }
+        };
+
+        if (!forceFallback && !AppState.iconCache.has(path)) {
+            AppState.iconCache.set(path, 'fetching');
+            ipcRenderer.send('request-file-icon', path);
+        }
     } else {
         icon.innerHTML = feather.icons[iconName] ? feather.icons[iconName].toSvg() : '';
     }
@@ -314,7 +365,25 @@ function generateListIconElement(params, path) {
         const img = document.createElement('img');
         img.className = 'list-icon';
         img.setAttribute('data-path', path);
-        img.src = getIconSrc(path, params.iconName);
+        img.setAttribute('data-app-name', params.displayText || '');
+        const cached = AppState.iconCache.get(path);
+        const fallbackIcon = getAppFallback(params.displayText, path);
+        const forceFallback = shouldForceFallback(params.displayText, path);
+        let initialSrc = (cached && cached.startsWith('data:image'))
+            ? cached
+            : (fallbackIcon || getFallbackIconDataUrl(params.iconName || 'cpu', AppState.windowType === 'apps' ? 48 : 24));
+
+        if (forceFallback && fallbackIcon) {
+            initialSrc = fallbackIcon;
+            AppState.iconCache.set(path, fallbackIcon);
+        }
+
+        img.src = initialSrc;
+        img.onerror = () => {
+            if (!forceFallback || !fallbackIcon) {
+                img.src = getFallbackIconDataUrl(params.iconName || 'cpu', AppState.windowType === 'apps' ? 48 : 24);
+            }
+        };
         return img;
     } else if (params.iconName && window.feather.icons[params.iconName]) {
         const svgString = window.feather.icons[params.iconName].toSvg({ class: 'list-icon' });
@@ -345,11 +414,6 @@ function updateTitle() {
     }
 }
 
-function getIconSrc(path, fallbackIcon) {
-    const cached = AppState.iconCache.get(path);
-    return (cached && cached.startsWith('data:image')) ? cached : getFallbackIconDataUrl(fallbackIcon, AppState.windowType === 'apps' ? 48 : 24);
-}
-
 function getFallbackIconDataUrl(iconName, size = 24) {
     return (window.feather && feather.icons[iconName]) ? `data:image/svg+xml;base64,${btoa(feather.icons[iconName].toSvg({width: size, height: size}))}` : '';
 }
@@ -360,6 +424,16 @@ function loadRealIcons() {
         const path = img.getAttribute('data-path');
         if (path) {
             console.log(`[Apps] Processing icon for: ${path}`);
+            const appName = img.getAttribute('data-app-name') || '';
+            if (shouldForceFallback(appName, path)) {
+                const fallback = getAppFallback(appName, path);
+                if (fallback) {
+                    img.src = fallback;
+                    AppState.iconCache.set(path, fallback);
+                }
+                return;
+            }
+
             if (!AppState.iconCache.has(path) || AppState.iconCache.get(path) === 'fetching') {
                 AppState.iconCache.set(path, 'fetching');
                 console.log(`[Apps] Requesting icon for: ${path}`);
