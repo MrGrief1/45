@@ -64,6 +64,8 @@
   "settings_indexed_files": "Проиндексировано файлов:",
   "settings_rebuild_index": "Перестроить индекс",
   "settings_pinned_apps": "Закрепленные приложения",
+  "settings_apps_library_show_all": "Показывать технические приложения",
+  "settings_apps_library_show_all_hint": "По умолчанию скрывает служебные и системные утилиты из раздела \"Все приложения\".",
   "settings_custom_automations": "Пользовательские автоматизации",
   "settings_auto_name": "Название",
   "settings_auto_keyword": "Ключевое слово",

@@ -57,6 +57,8 @@
     "settings_max_depth": "Max Index Depth",
     "settings_add_directory": "Add Directory",
     "settings_pinned_apps": "Pinned Apps",
+    "settings_apps_library_show_all": "Show advanced apps",
+    "settings_apps_library_show_all_hint": "Hide technical and system utilities from the Apps Library unless enabled.",
     "settings_indexed_directories": "Indexed Directories",
     "settings_remove": "Remove",
     "settings_custom_automations": "Custom Automations",

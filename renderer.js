@@ -71,7 +71,7 @@ const Utils = {
 
 const AppIconFallbacks = {
     cache: {
-        whatsapp: 'data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+V2hhdHNBcHA8L3RpdGxlPjxwYXRoIGQ9Ik0xNy40NzIgMTQuMzgyYy0uMjk3LS4xNDktMS43NTgtLjg2Ny0yLjAzLS45NjctLjI3My0uMDk5LS40NzEtLjE0OC0uNjcuMTUtLjE5Ny4yOTctLjc2Ny45NjYtLjk0IDEuMTY0LS4xNzMuMTk5LS4zNDcuMjIzLS42NDQuMDc1LS4yOTctLjE1LTEuMjU1LS40NjMtMi4zOS0xLjQ3NS0uODgzLS43ODgtMS40OC0xLjc2MS0xLjY1My0yLjA1OS0uMTczLS4yOTctLjAxOC0uNDU4LjEzLS42MDYuMTM0LS4xMzMuMjk4LS4zNDcuNDQ2LS41Mi4xNDktLjE3NC4xOTgtLjI5OC4yOTgtLjQ5Ny4wOTktLjE5OC4wNS0uMzcxLS4wMjUtLjUyLS4wNzUtLjE0OS0uNjY5LTEuNjEyLS45MTYtMi4yMDctLjI0Mi0uNTc5LS40ODctLjUtLjY2OS0uNTEtLjE3My0uMDA4LS4zNzEtLjAxLS41Ny0uMDEtLjE5OCAwLS41Mi4wNzQtLjc5Mi4zNzItLjI3Mi4yOTctMS4wNCAxLjAxNi0xLjA0IDIuNDc5IDAgMS40NjIgMS4wNjUgMi44NzUgMS4yMTMgMy4wNzQuMTQ5LjE5OCAyLjA5NiAzLjIgNS4wNzcgNC40ODcuNzA5LjMwNiAxLjI2Mi40ODkgMS42OTQuNjI1LjcxMi4yMjcgMS4zNi4xOTUgMS44NzEuMTE4LjU3MS0uMDg1IDEuNzU4LS43MTkgMi4wMDYtMS40MTMuMjQ4LS42OTQuMjQ4LTEuMjg5LjE3My0xLjQxMy0uMDc0LS4xMjQtLjI3Mi0uMTk4LS41Ny0uMzQ3bS01LjQyMSA3LjQwM2gtLjAwNGE5Ljg3IDkuODcgMCAwMS01LjAzMS0xLjM3OGwtLjM2MS0uMjE0LTMuNzQxLjk4Mi45OTgtMy42NDgtLjIzNS0uMzc0YTkuODYgOS44NiAwIDAxLTEuNTEtNS4yNmMuMDAxLTUuNDUgNC40MzYtOS44ODQgOS44ODgtOS44ODQgMi42NCAwIDUuMTIyIDEuMDMgNi45ODggMi44OThhOS44MjUgOS44MjUgMCAwMTIuODkzIDYuOTk0Yy0uMDAzIDUuNDUtNC40MzcgOS44ODQtOS44ODUgOS44ODRtOC40MTMtMTguMjk3QTExLjgxNSAxMS44MTUgMCAwMDEyLjA1IDBDNS40OTUgMCAuMTYgNS4zMzUuMTU3IDExLjg5MmMwIDIuMDk2LjU0NyA0LjE0MiAxLjU4OCA1Ljk0NUwuMDU3IDI0bDYuMzA1LTEuNjU0YTExLjg4MiAxMS44ODIgMCAwMDUuNjgzIDEuNDQ4aC4wMDVjNi41NTQgMCAxMS44OS01LjMzNSAxMS44OTMtMTEuODkzYTExLjgyMSAxMS44MjEgMCAwMC0zLjQ4LTguNDEzWiIvPjwvc3ZnPg==',
+        whatsapp: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjNWFmMTc4Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzI1ZDM2NiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPGNpcmNsZSBjeD0iMzIiIGN5PSIzMiIgcj0iMzAiIGZpbGw9InVybCgjZykiLz4KICA8cGF0aCBmaWxsPSIjZmZmIiBkPSJNMzIgMTRjLTkuOTQxIDAtMTggNy42MTMtMTggMTdhMTYuMzIgMTYuMzIgMCAwIDAgMi42NCA4LjgybC0xLjc0IDcuNTggNy43Ny0xLjY0QTE5LjAxIDE5LjAxIDAgMCAwIDMyIDQ4YzkuOTQxIDAgMTgtNy42MTMgMTgtMTdzLTguMDU5LTE3LTE4LTE3em0wIDMwLjZhMTUuNTYgMTUuNTYgMCAwIDEtNy45Ni0yLjE4bC0uNTctLjM0LTQuNjEuOTguOTgtNC40OS0uMzctLjU4QTEzLjYgMTMuNiAwIDAgMSAxOC40IDMxYzAtNy4yNCA2LjEtMTMuMTIgMTMuNi0xMy4xMlM0NS42IDIzLjc2IDQ1LjYgMzEgMzkuNSA0NC42IDMyIDQ0LjZ6bTguMi0xMC4wNmMtLjQ1LS4yMy0yLjY2LTEuMzEtMy4wNy0xLjQ2LS40MS0uMTUtLjctLjIzLS45OS4yMy0uMy40NS0xLjE0IDEuNDYtMS40IDEuNzYtLjI2LjMtLjUyLjM0LS45Ny4xMS0uNDUtLjIzLTEuODktLjc0LTMuNjEtMi4zNi0xLjMzLTEuMi0yLjIzLTIuNjgtMi40OS0zLjEzLS4yNi0uNDUtLjAzLS43LjItLjkzLjIxLS4yMS40NS0uNTIuNjctLjc4LjIyLS4yNi4zLS40NS40NS0uNzUuMTUtLjMuMDctLjU3LS4wNC0uOC0uMTEtLjIzLS45OS0yLjM3LTEuMzYtMy4yNC0uMzYtLjg3LS43My0uNzUtMS0uNzYtLjI2LS4wMS0uNTYtLjAyLS44Ni0uMDItLjMgMC0uNzguMTEtMS4xOS41Ny0uNDEuNDUtMS41NiAxLjUyLTEuNTYgMy43IDAgMi4xOCAxLjYgNC4yOSAxLjgyIDQuNTkuMjIuMyAzLjE1IDQuOCA3LjY0IDYuNzEuNTguMjUgMS4wMy4zOSAxLjM4LjUuNTguMTggMS4xLjE2IDEuNTEuMS40Ni0uMDcgMS40LS41NyAxLjYtMS4xMi4yLS41NS4yLTEuMDIuMTQtMS4xMi0uMDYtLjEtLjIzLS4xNS0uNDctLjI2eiIvPgo8L3N2Zz4=',
         roblox: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA2NCA2NCc+PHJlY3Qgd2lkdGg9JzQwJyBoZWlnaHQ9JzQwJyB4PScxMicgeT0nMTInIHJ4PSc4JyByeT0nOCcgZmlsbD0nIzIwMjAyMCcgdHJhbnNmb3JtPSdyb3RhdGUoMTUgMzIgMzIpJy8+PHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyB4PScyNycgeT0nMjcnIGZpbGw9JyNmZmZmZmYnIHRyYW5zZm9ybT0ncm90YXRlKDE1IDMyIDMyKScvPjwvc3ZnPg=='
     },
 
@@ -148,6 +148,7 @@ const SettingsModule = {
         this.bindCheckboxSetting('setting-pinned-apps', 'enablePinnedApps');
         this.bindCheckboxSetting('setting-focus-highlight', 'showFocusHighlight');
         this.bindCheckboxSetting('setting-auto-launch', 'autoLaunch');
+        this.bindCheckboxSetting('setting-apps-library-show-all', 'appsLibraryShowAll');
         this.bindRangeSetting('setting-opacity', 'opacity');
         this.bindRangeSetting('setting-blur', 'blurStrength');
         this.bindRangeSetting('setting-border-radius', 'borderRadius');
@@ -240,6 +241,7 @@ const SettingsModule = {
         CustomSelect.setValue('custom-select-position', AppState.settings.windowPosition);
         this.setElementValue('setting-animations', AppState.settings.animations, true);
         this.setElementValue('setting-pinned-apps', AppState.settings.enablePinnedApps, true);
+        this.setElementValue('setting-apps-library-show-all', AppState.settings.appsLibraryShowAll, true);
         this.setElementValue('setting-auto-launch', AppState.settings.autoLaunch, true);
         this.setElementValue('setting-opacity', AppState.settings.opacity);
         this.setElementValue('setting-blur', AppState.settings.blurStrength);
@@ -1126,8 +1128,11 @@ const FolderContextMenu = {
 
 const PinnedAppsModule = {
     currentFolderId: 'pinned',
+    contextMenuEl: null,
+    contextMenuHideTimer: null,
     init: function() {
         this.setupEventListeners();
+        this.setupContextMenu();
     },
 
     setupEventListeners: function() {
@@ -1139,10 +1144,134 @@ const PinnedAppsModule = {
                 if (!targetIsItem) {
                     e.preventDefault();
                     e.stopPropagation(); // Stop the event from bubbling up to the window's context menu listener
-                    ipcRenderer.send('show-pinned-apps-context-menu');
+                    this.showCreateFolderMenu(e.clientX, e.clientY);
                 }
             });
         }
+    },
+
+    setupContextMenu: function() {
+        this.contextMenuEl = Utils.getElement('#pinned-context-menu');
+        if (!this.contextMenuEl) return;
+
+        this.contextMenuEl.addEventListener('contextmenu', (event) => event.preventDefault());
+        this.contextMenuEl.addEventListener('click', (event) => {
+            const action = event.target.closest('button')?.dataset.action;
+            if (!action) return;
+            if (action === 'create-folder') {
+                this.hideCreateFolderMenu();
+                this.promptCreateFolder();
+            }
+        });
+
+        const hideHandler = (event) => {
+            if (!this.contextMenuEl) return;
+            if (event && this.contextMenuEl.contains(event.target)) return;
+            this.hideCreateFolderMenu();
+        };
+
+        document.addEventListener('click', hideHandler);
+        window.addEventListener('blur', () => this.hideCreateFolderMenu());
+        window.addEventListener('resize', () => this.hideCreateFolderMenu());
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                this.hideCreateFolderMenu();
+            }
+        });
+    },
+
+    showCreateFolderMenu: function(x, y) {
+        if (!this.contextMenuEl) return;
+
+        if (this.contextMenuHideTimer) {
+            clearTimeout(this.contextMenuHideTimer);
+            this.contextMenuHideTimer = null;
+        }
+
+        this.contextMenuEl.style.display = 'block';
+        this.contextMenuEl.style.opacity = '0';
+        this.contextMenuEl.style.pointerEvents = 'none';
+
+        requestAnimationFrame(() => {
+            const menuWidth = this.contextMenuEl.offsetWidth;
+            const menuHeight = this.contextMenuEl.offsetHeight;
+            const margin = 8;
+            let left = Math.max(margin, x);
+            let top = Math.max(margin, y);
+
+            if (left + menuWidth + margin > window.innerWidth) {
+                left = Math.max(margin, window.innerWidth - menuWidth - margin);
+            }
+            if (top + menuHeight + margin > window.innerHeight) {
+                top = Math.max(margin, window.innerHeight - menuHeight - margin);
+            }
+
+            this.contextMenuEl.style.left = `${left}px`;
+            this.contextMenuEl.style.top = `${top}px`;
+
+            requestAnimationFrame(() => {
+                this.contextMenuEl.classList.add('visible');
+                this.contextMenuEl.style.opacity = '';
+                this.contextMenuEl.style.pointerEvents = '';
+            });
+        });
+    },
+
+    hideCreateFolderMenu: function() {
+        if (!this.contextMenuEl) return;
+        this.contextMenuEl.classList.remove('visible');
+        if (this.contextMenuHideTimer) {
+            clearTimeout(this.contextMenuHideTimer);
+        }
+        this.contextMenuHideTimer = setTimeout(() => {
+            if (this.contextMenuEl) {
+                this.contextMenuEl.style.display = 'none';
+            }
+        }, 150);
+    },
+
+    promptCreateFolder: function() {
+        const container = Utils.getElement('#pinned-apps-container');
+        if (!container) return;
+
+        const tempItem = Utils.createElement('div', { className: 'pinned-item' });
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = LocalizationRenderer.t('new_folder_default_name');
+        input.className = 'pinned-item-name-input';
+
+        const iconDiv = Utils.createElement('div', { className: 'pinned-item-icon' });
+        iconDiv.innerHTML = window.feather.icons['folder'].toSvg();
+
+        tempItem.appendChild(iconDiv);
+        tempItem.appendChild(input);
+        container.appendChild(tempItem);
+        input.focus();
+
+        const cleanup = () => {
+            input.removeEventListener('blur', onBlur);
+        };
+
+        const finishCreating = () => {
+            cleanup();
+            const newName = input.value.trim();
+            if (newName) {
+                ipcRenderer.send('create-folder-with-name', newName);
+            }
+            tempItem.remove();
+        };
+
+        const onBlur = () => finishCreating();
+
+        input.addEventListener('blur', onBlur);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                finishCreating();
+            } else if (e.key === 'Escape') {
+                input.value = '';
+                finishCreating();
+            }
+        });
     },
 
     render: function() {
@@ -1379,9 +1508,11 @@ const AuxPanelManager = {
                 }
             }
             
-            // ИЗМЕНЕНИЕ: Не показываем панель сразу для библиотеки
             if (type !== 'apps-library') {
                 this.panelContainer.classList.add('visible');
+            } else {
+                this.panelContainer.classList.add('visible');
+                ViewManager.resizeWindow();
             }
             
             // ОПТИМИЗАЦИЯ: Используем requestAnimationFrame для более плавной анимации
@@ -1396,9 +1527,10 @@ const AuxPanelManager = {
             
             this.executePanelLogic(type);
             
-            // ИЗМЕНЕНИЕ: Не меняем размер для библиотеки здесь
             if (type !== 'apps-library') {
                 setTimeout(() => ViewManager.resizeWindow(), 50);
+            } else {
+                requestAnimationFrame(() => ViewManager.resizeWindow());
             }
         } catch (error) {
             console.error(`[AuxPanelManager] Error opening panel:`, error);
@@ -1469,6 +1601,7 @@ const AuxPanelManager = {
                             ViewManager.resizeWindow();
                         });
                     }
+                    this.debouncedResizeForAppsLibrary();
                 };
 
                 const fragment = document.createDocumentFragment();
@@ -1479,6 +1612,9 @@ const AuxPanelManager = {
                     }
                 });
                 content.appendChild(fragment);
+                this.panelContainer.classList.add('visible');
+                ViewManager.resizeWindow();
+                this.debouncedResizeForAppsLibrary();
                 SearchModule.loadIconsForResults();
             }
         } catch (error) {
@@ -1512,6 +1648,8 @@ const AuxPanelManager = {
             'Other': []
         };
 
+        const shouldFilterSystemApps = AppState.settings?.appsLibraryShowAll !== true;
+
         // УЛУЧШЕНО: Расширенный черный список системных/служебных приложений
         const systemAppBlacklist = [
             'uninstall', 'unins', 'uninst', 'setup', 'installer', 'activator',
@@ -1527,7 +1665,9 @@ const AuxPanelManager = {
             'iscsi', 'odbc', 'memory diagnostic', 'recoverydr', 'ahk2exe',
             'nsight', 'nvidia nsight', // NVIDIA инструменты разработчика
             'foxit pdf reader activator', 'автоматическое обновление',
-            'удалить', 'деинсталл', 'сброс', 'восстановление'
+            'удалить', 'деинсталл', 'сброс', 'восстановление',
+            'gpu-z', 'gpuz', 'furmark', 'cpuburner', 'gpushark',
+            'p11-kit', 'mingw', 'awk', 'gnupg', 'gpg-auth', 'adig', 'tar'
         ];
 
         const categoryKeywords = {
@@ -1541,28 +1681,29 @@ const AuxPanelManager = {
         };
 
         // УЛУЧШЕНО: Фильтруем системные приложения
-        const filteredApps = apps.filter(app => {
+        const sourceApps = Array.isArray(apps) ? [...apps] : [];
+        const filteredApps = shouldFilterSystemApps ? sourceApps.filter(app => {
             const appName = app.name.toLowerCase();
             const appPath = (app.path || '').toLowerCase();
-            
+
             // Исключаем приложения из черного списка
             if (systemAppBlacklist.some(keyword => appName.includes(keyword) || appPath.includes(keyword))) {
                 return false;
             }
-            
+
             // Исключаем приложения из системных папок Windows (кроме известных приложений)
-            const isSystemPath = appPath.includes('\\windows\\') || 
+            const isSystemPath = appPath.includes('\\windows\\') ||
                                  appPath.includes('\\system32\\') ||
                                  appPath.includes('\\syswow64\\');
-            
+
             if (isSystemPath) {
                 // Разрешаем только известные системные утилиты
                 const allowedSystemApps = ['notepad', 'calculator', 'paint', 'cmd', 'powershell', 'windowsterminal'];
                 return allowedSystemApps.some(allowed => appName.includes(allowed));
             }
-            
+
             return true;
-        });
+        }) : sourceApps;
 
         filteredApps.forEach(app => {
             const appName = app.name.toLowerCase();
@@ -1635,6 +1776,7 @@ const AuxPanelManager = {
                 requestAnimationFrame(() => {
                     setTimeout(() => {
                         appItem.classList.add('loaded');
+                        AuxPanelManager.debouncedResizeForAppsLibrary();
                     }, Math.min(index * 30, 600));
                 });
                 checkAllLoaded();
@@ -1966,9 +2108,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (dataUrl) imgElement.src = dataUrl;
             }
         });
-        
+
         // ИСПРАВЛЕНИЕ: Убираем пересчет после каждой иконки - это вызывает дергание
         // Вместо этого полагаемся на debouncedResizeForAppsLibrary
+        if (AuxPanelManager?.currentPanel === 'apps-library') {
+            AuxPanelManager.debouncedResizeForAppsLibrary();
+        }
     });
 
     ipcRenderer.on('settings-updated', (event, data) => {
@@ -1981,6 +2126,9 @@ document.addEventListener('DOMContentLoaded', () => {
         SettingsModule.populateSettingsUI();
         PinnedAppsModule.render();
         FolderContextMenu.highlightSelection();
+        if (AuxPanelManager.currentPanel === 'apps-library') {
+            AuxPanelManager.loadAppsLibrary();
+        }
         ViewManager.resizeWindow(); // Always resize after settings update
     });
 
@@ -2005,45 +2153,9 @@ document.addEventListener('DOMContentLoaded', () => {
         startFolderRename(folderId);
     });
 
-    ipcRenderer.on('prompt-create-folder', () => {
-        const container = Utils.getElement('#pinned-apps-container');
-        if (!container) return;
-
-        const tempItem = Utils.createElement('div', { className: 'pinned-item' });
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = LocalizationRenderer.t('new_folder_default_name');
-        input.className = 'pinned-item-name-input';
-
-        const iconDiv = Utils.createElement('div', { className: 'pinned-item-icon' });
-        iconDiv.innerHTML = window.feather.icons['folder'].toSvg();
-        
-        tempItem.appendChild(iconDiv);
-        tempItem.appendChild(input);
-        container.appendChild(tempItem);
-        input.focus();
-
-        const finishCreating = () => {
-            const newName = input.value.trim();
-            if (newName) {
-                ipcRenderer.send('create-folder-with-name', newName);
-            } else {
-                // If no name, just remove the temporary item
-                tempItem.remove();
-            }
-             // The re-render from main process will handle replacing the temp item
-        };
-
-        input.addEventListener('blur', finishCreating);
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                finishCreating();
-            } else if (e.key === 'Escape') {
-                input.value = ''; // Discard
-                finishCreating();
-            }
-        });
-    });
+ipcRenderer.on('prompt-create-folder', () => {
+    PinnedAppsModule.promptCreateFolder();
+});
 });
 
 function startFolderRename(folderId) {

@@ -397,11 +397,16 @@ body.dark-theme .aux-header {
     position: fixed;
     z-index: 3000;
     min-width: 340px;
-    background: rgba(var(--secondary-bg-color-rgb, 20, 20, 20), 1);
-    backdrop-filter: blur(22px);
+    background: linear-gradient(
+        135deg,
+        rgba(var(--base-bg-color-rgb), var(--dynamic-opacity-top, 0.6)),
+        rgba(var(--base-bg-color-rgb), var(--dynamic-opacity, 0.85))
+    );
+    backdrop-filter: var(--dynamic-blur);
+    -webkit-backdrop-filter: var(--dynamic-blur);
     border-radius: 18px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 28px 60px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow);
     padding: 18px 20px;
     display: none;
     overflow: hidden;
@@ -409,6 +414,56 @@ body.dark-theme .aux-header {
 
 .folder-context-menu.visible {
     display: block;
+}
+
+.pinned-context-menu {
+    position: fixed;
+    z-index: 3050;
+    min-width: 220px;
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    background: linear-gradient(
+        135deg,
+        rgba(var(--base-bg-color-rgb), var(--dynamic-opacity-top, 0.6)),
+        rgba(var(--base-bg-color-rgb), var(--dynamic-opacity, 0.85))
+    );
+    box-shadow: var(--shadow);
+    backdrop-filter: var(--dynamic-blur);
+    -webkit-backdrop-filter: var(--dynamic-blur);
+    display: none;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    pointer-events: none;
+}
+
+.pinned-context-menu.visible {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.pinned-context-menu button {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    font-size: 14px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.18s ease, transform 0.18s ease;
+}
+
+.pinned-context-menu button:hover {
+    background-color: var(--selection-color);
+    transform: translateY(-1px);
+}
+
+.pinned-context-menu button:active {
+    transform: scale(0.97);
 }
 
 .folder-menu-actions {

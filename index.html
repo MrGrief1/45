@@ -114,12 +114,22 @@
                                     </div>
                                 </div>
                             </div>
-                             <div class="setting-item">
+                            <div class="setting-item">
                                 <label data-i18n="settings_pinned_apps">Pinned Apps</label>
                                 <label class="toggle-switch-ios">
                                     <input type="checkbox" id="setting-pinned-apps">
                                     <span class="slider"></span>
                                 </label>
+                            </div>
+                            <div class="setting-item">
+                                <label data-i18n="settings_apps_library_show_all">Show advanced apps</label>
+                                <label class="toggle-switch-ios">
+                                    <input type="checkbox" id="setting-apps-library-show-all">
+                                    <span class="slider"></span>
+                                </label>
+                                <div class="setting-item-description">
+                                    <p data-i18n="settings_apps_library_show_all_hint">Hide system utilities from the Apps Library unless enabled.</p>
+                                </div>
                             </div>
                             <div class="setting-item">
                                 <label data-i18n="settings_auto_launch">Launch at system startup</label>
@@ -302,6 +312,9 @@
           feather.replace();
       }
     </script>
+    <div id="pinned-context-menu" class="pinned-context-menu">
+        <button type="button" data-action="create-folder" data-i18n="context_create_folder">Create folder</button>
+    </div>
     <div id="folder-context-menu" class="folder-context-menu">
         <div class="folder-menu-actions">
             <button type="button" class="folder-menu-action" data-action="rename" data-i18n="context_rename_folder">Rename</button>

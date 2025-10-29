@@ -76,6 +76,7 @@ const DEFAULT_SETTINGS = {
     blurStrength: 40, // ИЗМЕНЕНО: Уменьшено для более чистого вида
     opacity: 85, // ИЗМЕНЕНО: Немного увеличена непрозрачность
     enablePinnedApps: true,
+    appsLibraryShowAll: false,
     // === УЛУЧШЕНО: Индексируем ТОЛЬКО папки меню "Пуск" для быстрого и чистого поиска ===
     indexedDirectories: [
         ...(process.platform === 'win32' ? [
@@ -248,6 +249,9 @@ class SettingsManager {
         // НОВОЕ: Проверка для папок приложений
         if (!Array.isArray(currentSettings.appFolders) || currentSettings.appFolders.length === 0) {
             currentSettings.appFolders = DEFAULT_SETTINGS.appFolders;
+        }
+        if (typeof currentSettings.appsLibraryShowAll !== 'boolean') {
+            currentSettings.appsLibraryShowAll = DEFAULT_SETTINGS.appsLibraryShowAll;
         }
         
         // ИСПРАВЛЕНИЕ: Убеждаемся что папка pinned существует
