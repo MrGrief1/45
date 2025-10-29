@@ -1452,6 +1452,10 @@ const AuxPanelManager = {
 
             if (content) {
                 content.innerHTML = '';
+                if (!AuxPanelManager.panelContainer.classList.contains('visible')) {
+                    AuxPanelManager.panelContainer.classList.add('visible');
+                }
+                AuxPanelManager.debouncedResizeForAppsLibrary();
                 const sortedCategories = Object.entries(categories).sort(([, a], [, b]) => b.length - a.length);
                 let categoriesToLoad = sortedCategories.filter(([, apps]) => apps.length > 0).length;
 
@@ -1469,6 +1473,7 @@ const AuxPanelManager = {
                             ViewManager.resizeWindow();
                         });
                     }
+                    AuxPanelManager.debouncedResizeForAppsLibrary();
                 };
 
                 const fragment = document.createDocumentFragment();
@@ -1530,6 +1535,16 @@ const AuxPanelManager = {
             'удалить', 'деинсталл', 'сброс', 'восстановление'
         ];
 
+        const systemPathBlacklist = [
+            '\\program files\\git\\usr\\',
+            '\\program files\\git\\mingw64\\',
+            '\\program files\\git\\bin\\',
+            '\\programdata\\microsoft\\windows defender\\',
+            '\\appdata\\local\\temp\\'
+        ];
+
+        const hashedNamePattern = /^[\[\](){}0-9_.-]+$/;
+
         const categoryKeywords = {
             'Productivity': ['office', 'word', 'excel', 'powerpoint', 'onenote', 'outlook', 'notes', 'calendar', 'todo', 'task', 'project', 'planner', 'notion', 'evernote', 'trello', 'asana', 'monday', 'airtable'],
             'Development': ['visual studio', 'code', 'git', 'github', 'python', 'node', 'java', 'android studio', 'xcode', 'unity', 'unreal', 'terminal', 'cmd', 'powershell', 'docker', 'vmware', 'virtualbox', 'windowsterminal', 'postman', 'insomnia', 'mysql', 'mongodb', 'postgres', 'redis'],
@@ -1544,14 +1559,23 @@ const AuxPanelManager = {
         const filteredApps = apps.filter(app => {
             const appName = app.name.toLowerCase();
             const appPath = (app.path || '').toLowerCase();
-            
+            const normalizedName = app.name.replace(/\.(lnk|exe)$/i, '').trim();
+
             // Исключаем приложения из черного списка
             if (systemAppBlacklist.some(keyword => appName.includes(keyword) || appPath.includes(keyword))) {
                 return false;
             }
-            
+
+            if (systemPathBlacklist.some(segment => appPath.includes(segment))) {
+                return false;
+            }
+
+            if (!/[a-zа-яё]/i.test(normalizedName) || hashedNamePattern.test(normalizedName.toLowerCase())) {
+                return false;
+            }
+
             // Исключаем приложения из системных папок Windows (кроме известных приложений)
-            const isSystemPath = appPath.includes('\\windows\\') || 
+            const isSystemPath = appPath.includes('\\windows\\') ||
                                  appPath.includes('\\system32\\') ||
                                  appPath.includes('\\syswow64\\');
             
@@ -1637,15 +1661,16 @@ const AuxPanelManager = {
                         appItem.classList.add('loaded');
                     }, Math.min(index * 30, 600));
                 });
+                AuxPanelManager.debouncedResizeForAppsLibrary();
                 checkAllLoaded();
                 icon.onload = null;
                 icon.onerror = null;
             };
-            
+
             icon.onload = onIconLoad;
             icon.onerror = onIconLoad;
-            
-            const name = Utils.createElement('div', { 
+
+            const name = Utils.createElement('div', {
                 className: 'category-app-name',
                 text: app.name.replace(/\.(lnk|exe)$/i, '')
             });
