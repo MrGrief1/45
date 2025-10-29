@@ -57,6 +57,8 @@
     "settings_max_depth": "Max Index Depth",
     "settings_add_directory": "Add Directory",
     "settings_pinned_apps": "Pinned Apps",
+    "settings_show_all_apps": "Show all applications",
+    "settings_show_all_apps_description": "Include system tools, launchers and utilities in the All Apps library.",
     "settings_indexed_directories": "Indexed Directories",
     "settings_remove": "Remove",
     "settings_custom_automations": "Custom Automations",
@@ -127,5 +129,6 @@
     "category_media": "Media",
     "category_utilities": "Utilities",
     "category_games": "Games",
-    "category_other": "Other"
-  }
+    "category_other": "Other",
+    "apps_library_loading": "Preparing your applications…"
+}

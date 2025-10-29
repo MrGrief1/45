@@ -71,7 +71,7 @@ const Utils = {
 
 const AppIconFallbacks = {
     cache: {
-        whatsapp: 'data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+V2hhdHNBcHA8L3RpdGxlPjxwYXRoIGQ9Ik0xNy40NzIgMTQuMzgyYy0uMjk3LS4xNDktMS43NTgtLjg2Ny0yLjAzLS45NjctLjI3My0uMDk5LS40NzEtLjE0OC0uNjcuMTUtLjE5Ny4yOTctLjc2Ny45NjYtLjk0IDEuMTY0LS4xNzMuMTk5LS4zNDcuMjIzLS42NDQuMDc1LS4yOTctLjE1LTEuMjU1LS40NjMtMi4zOS0xLjQ3NS0uODgzLS43ODgtMS40OC0xLjc2MS0xLjY1My0yLjA1OS0uMTczLS4yOTctLjAxOC0uNDU4LjEzLS42MDYuMTM0LS4xMzMuMjk4LS4zNDcuNDQ2LS41Mi4xNDktLjE3NC4xOTgtLjI5OC4yOTgtLjQ5Ny4wOTktLjE5OC4wNS0uMzcxLS4wMjUtLjUyLS4wNzUtLjE0OS0uNjY5LTEuNjEyLS45MTYtMi4yMDctLjI0Mi0uNTc5LS40ODctLjUtLjY2OS0uNTEtLjE3My0uMDA4LS4zNzEtLjAxLS41Ny0uMDEtLjE5OCAwLS41Mi4wNzQtLjc5Mi4zNzItLjI3Mi4yOTctMS4wNCAxLjAxNi0xLjA0IDIuNDc5IDAgMS40NjIgMS4wNjUgMi44NzUgMS4yMTMgMy4wNzQuMTQ5LjE5OCAyLjA5NiAzLjIgNS4wNzcgNC40ODcuNzA5LjMwNiAxLjI2Mi40ODkgMS42OTQuNjI1LjcxMi4yMjcgMS4zNi4xOTUgMS44NzEuMTE4LjU3MS0uMDg1IDEuNzU4LS43MTkgMi4wMDYtMS40MTMuMjQ4LS42OTQuMjQ4LTEuMjg5LjE3My0xLjQxMy0uMDc0LS4xMjQtLjI3Mi0uMTk4LS41Ny0uMzQ3bS01LjQyMSA3LjQwM2gtLjAwNGE5Ljg3IDkuODcgMCAwMS01LjAzMS0xLjM3OGwtLjM2MS0uMjE0LTMuNzQxLjk4Mi45OTgtMy42NDgtLjIzNS0uMzc0YTkuODYgOS44NiAwIDAxLTEuNTEtNS4yNmMuMDAxLTUuNDUgNC40MzYtOS44ODQgOS44ODgtOS44ODQgMi42NCAwIDUuMTIyIDEuMDMgNi45ODggMi44OThhOS44MjUgOS44MjUgMCAwMTIuODkzIDYuOTk0Yy0uMDAzIDUuNDUtNC40MzcgOS44ODQtOS44ODUgOS44ODRtOC40MTMtMTguMjk3QTExLjgxNSAxMS44MTUgMCAwMDEyLjA1IDBDNS40OTUgMCAuMTYgNS4zMzUuMTU3IDExLjg5MmMwIDIuMDk2LjU0NyA0LjE0MiAxLjU4OCA1Ljk0NUwuMDU3IDI0bDYuMzA1LTEuNjU0YTExLjg4MiAxMS44ODIgMCAwMDUuNjgzIDEuNDQ4aC4wMDVjNi41NTQgMCAxMS44OS01LjMzNSAxMS44OTMtMTEuODkzYTExLjgyMSAxMS44MjEgMCAwMC0zLjQ4LTguNDEzWiIvPjwvc3ZnPg==',
+        whatsapp: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJXaGF0c0FwcCI+CiAgPHBhdGggZmlsbD0iIzI1RDM2NiIgZD0iTTEyIDJDNi40NzcgMiAyIDYuMTY2IDIgMTEuM2MwIDEuNzQ3LjQ3MyAzLjQxIDEuMzY4IDQuODYzTDIgMjJsNi4wNC0xLjg3N0ExMC4yOSAxMC4yOSAwIDAgMCAxMiAyMC42YzUuNTIzIDAgMTAtNC4xNjYgMTAtOS4zUzE3LjUyMyAyIDEyIDJaIi8+CiAgPHBhdGggZmlsbD0iI0U5RkZFRSIgZD0ibTkuMjMyIDcuNTItLjQ4Mi0uMDExYy0uMTUgMC0uMzk2LjA1NC0uNi4yNy0uMjA2LjIxNy0uNzg3Ljc3LS43ODcgMS44OCAwIDEuMTEuODA2IDIuMTg2LjkxOCAyLjMzNy4xMTIuMTUgMS42MzggMi40ODggMy45ODQgMy4zOC41NTYuMjE0Ljk4Ni4zNCAxLjMyOC40NC41NTYuMTcgMS4wNTYuMTUgMS40NTMuMDkzLjQ0Mi0uMDY1IDEuMzU4LS41NSAxLjU0Ni0xLjA3NS4xOS0uNTI1LjE5LS45ODUuMTMzLTEuMDgtLjA1Ny0uMDk2LS4yMDYtLjE1LS40MzEtLjI1N2wtLjA0LS4wMmMtLjI2OS0uMTM0LTEuMzQtLjY2MS0xLjU0NS0uNzM2LS4yMDUtLjA3NS0uMzUtLjExMi0uNDk3LjExMi0uMTQ5LjIyMy0uNTc0Ljc0My0uNzA4Ljg5NC0uMTMyLjE1LS4yNjQuMTY4LS40ODYuMDU2LS4yMjMtLjExMi0uOTM1LS4zNDgtMS43Ny0xLjA5NC0uODEyLS43MS0xLjM1LTEuMjYtMS40NjItMS40ODUtLjExMi0uMjI1LS4wMTItLjM0Ny4wOTQtLjQ2LjA5Ni0uMS4yMjMtLjI0Mi4zMzUtLjM2NS4xMS0uMTIzLjE0OC0uMjA2LjIwNC0uMzMuMDU3LS4xMjQuMDI4LS4yMzYtLjAxMS0uMzMtLjAzNy0uMDk0LS41LTEuMjM3LS42ODctMS42OTMtLjE4Ni0uNDU1LS4zNjgtLjM5Mi0uNDk3LS4zOTVaIi8+Cjwvc3ZnPg==',
         roblox: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA2NCA2NCc+PHJlY3Qgd2lkdGg9JzQwJyBoZWlnaHQ9JzQwJyB4PScxMicgeT0nMTInIHJ4PSc4JyByeT0nOCcgZmlsbD0nIzIwMjAyMCcgdHJhbnNmb3JtPSdyb3RhdGUoMTUgMzIgMzIpJy8+PHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyB4PScyNycgeT0nMjcnIGZpbGw9JyNmZmZmZmYnIHRyYW5zZm9ybT0ncm90YXRlKDE1IDMyIDMyKScvPjwvc3ZnPg=='
     },
 
@@ -147,6 +147,7 @@ const SettingsModule = {
         this.bindCheckboxSetting('setting-animations', 'animations');
         this.bindCheckboxSetting('setting-pinned-apps', 'enablePinnedApps');
         this.bindCheckboxSetting('setting-focus-highlight', 'showFocusHighlight');
+        this.bindCheckboxSetting('setting-show-all-apps', 'showAllApps');
         this.bindCheckboxSetting('setting-auto-launch', 'autoLaunch');
         this.bindRangeSetting('setting-opacity', 'opacity');
         this.bindRangeSetting('setting-blur', 'blurStrength');
@@ -240,6 +241,7 @@ const SettingsModule = {
         CustomSelect.setValue('custom-select-position', AppState.settings.windowPosition);
         this.setElementValue('setting-animations', AppState.settings.animations, true);
         this.setElementValue('setting-pinned-apps', AppState.settings.enablePinnedApps, true);
+        this.setElementValue('setting-show-all-apps', AppState.settings.showAllApps, true);
         this.setElementValue('setting-auto-launch', AppState.settings.autoLaunch, true);
         this.setElementValue('setting-opacity', AppState.settings.opacity);
         this.setElementValue('setting-blur', AppState.settings.blurStrength);
@@ -1380,9 +1382,7 @@ const AuxPanelManager = {
             }
             
             // ИЗМЕНЕНИЕ: Не показываем панель сразу для библиотеки
-            if (type !== 'apps-library') {
-                this.panelContainer.classList.add('visible');
-            }
+            this.panelContainer.classList.add('visible');
             
             // ОПТИМИЗАЦИЯ: Используем requestAnimationFrame для более плавной анимации
             requestAnimationFrame(() => {
@@ -1446,16 +1446,36 @@ const AuxPanelManager = {
     // НОВОЕ: Загрузка библиотеки приложений с категоризацией
     loadAppsLibrary: async function() {
         try {
-            const allApps = await ipcRenderer.invoke('get-all-apps');
-            const categories = this.categorizeApps(allApps);
             const content = this.panelContainer.querySelector('#apps-library-content');
-
+            let loadingElement = null;
             if (content) {
                 content.innerHTML = '';
+                loadingElement = document.createElement('div');
+                loadingElement.className = 'apps-library-loading';
+                loadingElement.innerHTML = `
+                    <div class="apps-library-spinner"></div>
+                    <span>${LocalizationRenderer.t('apps_library_loading')}</span>
+                `;
+                content.appendChild(loadingElement);
+            }
+            ViewManager.resizeWindow();
+
+            const allApps = await ipcRenderer.invoke('get-all-apps');
+            const categories = this.categorizeApps(allApps);
+
+            if (content) {
                 const sortedCategories = Object.entries(categories).sort(([, a], [, b]) => b.length - a.length);
                 let categoriesToLoad = sortedCategories.filter(([, apps]) => apps.length > 0).length;
 
+                const finalizeLoadingState = () => {
+                    if (loadingElement && loadingElement.parentNode === content) {
+                        content.removeChild(loadingElement);
+                        loadingElement = null;
+                    }
+                };
+
                 if (categoriesToLoad === 0) {
+                    finalizeLoadingState();
                     AuxPanelManager.panelContainer.classList.add('visible');
                     ViewManager.resizeWindow();
                     return;
@@ -1464,6 +1484,7 @@ const AuxPanelManager = {
                 const onCategoryLoaded = () => {
                     categoriesToLoad--;
                     if (categoriesToLoad === 0) {
+                        finalizeLoadingState();
                         requestAnimationFrame(() => {
                             AuxPanelManager.panelContainer.classList.add('visible');
                             ViewManager.resizeWindow();
@@ -1541,10 +1562,13 @@ const AuxPanelManager = {
         };
 
         // УЛУЧШЕНО: Фильтруем системные приложения
-        const filteredApps = apps.filter(app => {
+        const sourceApps = Array.isArray(apps) ? [...apps] : [];
+        const shouldFilterSystemApps = AppState.settings.showAllApps !== true;
+
+        const filteredApps = shouldFilterSystemApps ? sourceApps.filter(app => {
             const appName = app.name.toLowerCase();
             const appPath = (app.path || '').toLowerCase();
-            
+
             // Исключаем приложения из черного списка
             if (systemAppBlacklist.some(keyword => appName.includes(keyword) || appPath.includes(keyword))) {
                 return false;
@@ -1560,9 +1584,9 @@ const AuxPanelManager = {
                 const allowedSystemApps = ['notepad', 'calculator', 'paint', 'cmd', 'powershell', 'windowsterminal'];
                 return allowedSystemApps.some(allowed => appName.includes(allowed));
             }
-            
+
             return true;
-        });
+        }) : sourceApps;
 
         filteredApps.forEach(app => {
             const appName = app.name.toLowerCase();
@@ -1982,6 +2006,9 @@ document.addEventListener('DOMContentLoaded', () => {
         PinnedAppsModule.render();
         FolderContextMenu.highlightSelection();
         ViewManager.resizeWindow(); // Always resize after settings update
+        if (AuxPanelManager.currentPanel === 'apps-library') {
+            AuxPanelManager.loadAppsLibrary();
+        }
     });
 
     // НОВОЕ: Слушатель смены системной темы

@@ -76,6 +76,7 @@ const DEFAULT_SETTINGS = {
     blurStrength: 40, // ИЗМЕНЕНО: Уменьшено для более чистого вида
     opacity: 85, // ИЗМЕНЕНО: Немного увеличена непрозрачность
     enablePinnedApps: true,
+    showAllApps: false,
     // === УЛУЧШЕНО: Индексируем ТОЛЬКО папки меню "Пуск" для быстрого и чистого поиска ===
     indexedDirectories: [
         ...(process.platform === 'win32' ? [
@@ -244,6 +245,9 @@ class SettingsManager {
         }
         if (!Array.isArray(currentSettings.customAutomations)) {
             currentSettings.customAutomations = DEFAULT_SETTINGS.customAutomations;
+        }
+        if (typeof currentSettings.showAllApps !== 'boolean') {
+            currentSettings.showAllApps = DEFAULT_SETTINGS.showAllApps;
         }
         // НОВОЕ: Проверка для папок приложений
         if (!Array.isArray(currentSettings.appFolders) || currentSettings.appFolders.length === 0) {
