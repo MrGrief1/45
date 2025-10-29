@@ -338,6 +338,16 @@ body.dark-theme .aux-header {
     display: flex;
 }
 
+#aux-panel.loading {
+    opacity: 0.75;
+    pointer-events: none;
+}
+
+#aux-panel.loading #apps-library-content {
+    pointer-events: none;
+    filter: saturate(0.9);
+}
+
 .pinned-item {
     display: flex;
     flex-direction: column;
@@ -979,7 +989,8 @@ input[type="range"]:active::-webkit-slider-thumb {
     border: none;
     box-shadow: none;
     overflow: hidden;
-    
+    min-height: 320px;
+
     /* БЫСТРАЯ АНИМАЦИЯ */
     opacity: 0;
     transform: translateY(6px);

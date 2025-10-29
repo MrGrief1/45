@@ -1419,6 +1419,8 @@ const AuxPanelManager = {
             // ИЗМЕНЕНИЕ: Не показываем панель сразу для библиотеки
             if (type !== 'apps-library') {
                 this.panelContainer.classList.add('visible');
+            } else {
+                this.panelContainer.classList.add('visible', 'loading');
             }
             
             // ОПТИМИЗАЦИЯ: Используем requestAnimationFrame для более плавной анимации
@@ -1449,7 +1451,7 @@ const AuxPanelManager = {
         
         this.currentPanel = null;
         this.panelContainer.innerHTML = '';
-        this.panelContainer.classList.remove('visible');
+        this.panelContainer.classList.remove('visible', 'loading');
         
         const hasSearchQuery = Utils.getElement('#search-input').value.trim().length > 1;
         
@@ -1483,6 +1485,7 @@ const AuxPanelManager = {
     // НОВОЕ: Загрузка библиотеки приложений с категоризацией
     loadAppsLibrary: async function() {
         try {
+            AuxPanelManager.panelContainer.classList.add('visible', 'loading');
             const allApps = await ipcRenderer.invoke('get-all-apps');
             const categories = this.categorizeApps(allApps);
             const content = this.panelContainer.querySelector('#apps-library-content');
@@ -1493,6 +1496,7 @@ const AuxPanelManager = {
                 let categoriesToLoad = sortedCategories.filter(([, apps]) => apps.length > 0).length;
 
                 if (categoriesToLoad === 0) {
+                    AuxPanelManager.panelContainer.classList.remove('loading');
                     AuxPanelManager.panelContainer.classList.add('visible');
                     ViewManager.resizeWindow();
                     return;
@@ -1502,6 +1506,7 @@ const AuxPanelManager = {
                     categoriesToLoad--;
                     if (categoriesToLoad === 0) {
                         requestAnimationFrame(() => {
+                            AuxPanelManager.panelContainer.classList.remove('loading');
                             AuxPanelManager.panelContainer.classList.add('visible');
                             ViewManager.resizeWindow();
                         });
@@ -1516,10 +1521,12 @@ const AuxPanelManager = {
                     }
                 });
                 content.appendChild(fragment);
+                ViewManager.resizeWindow();
                 SearchModule.loadIconsForResults();
             }
         } catch (error) {
             console.error('[AppsLibrary] Error loading apps:', error);
+            AuxPanelManager.panelContainer.classList.remove('loading');
         }
     },
     
@@ -1564,7 +1571,8 @@ const AuxPanelManager = {
             'iscsi', 'odbc', 'memory diagnostic', 'recoverydr', 'ahk2exe',
             'nsight', 'nvidia nsight', // NVIDIA инструменты разработчика
             'foxit pdf reader activator', 'автоматическое обновление',
-            'удалить', 'деинсталл', 'сброс', 'восстановление'
+            'удалить', 'деинсталл', 'сброс', 'восстановление',
+            'dynamiclink', 'resource', 'prebuilt', 'required', 'compatibility'
         ];
 
         const categoryKeywords = {
@@ -1578,17 +1586,42 @@ const AuxPanelManager = {
         };
 
         // УЛУЧШЕНО: Фильтруем системные приложения
+        const allowedExtensions = new Set(['.exe', '.lnk', '.appref-ms', '.url', '.bat', '.cmd']);
+        const advancedUtilityIndicators = ['diagnostic', 'profiler', 'benchmark', 'stress'];
         let filteredApps = apps.filter(app => {
-            const appName = app.name.toLowerCase();
+            const rawName = (app.name || '').toString();
+            if (!rawName.trim()) {
+                return false;
+            }
+            const appName = rawName.toLowerCase();
             const appPath = (app.path || '').toLowerCase();
+            const pathForExtension = (app.path || app.name || '').toLowerCase();
+            const extensionMatch = pathForExtension.match(/\.([a-z0-9]+)$/i);
+            const extension = extensionMatch ? `.${extensionMatch[1]}` : '';
 
             // Исключаем приложения из черного списка
             if (systemAppBlacklist.some(keyword => appName.includes(keyword) || appPath.includes(keyword))) {
                 return false;
             }
-            
+
+            if (extension && !allowedExtensions.has(extension)) {
+                return false;
+            }
+
+            if (!extension && advancedUtilityIndicators.some(word => appName.includes(word))) {
+                return false;
+            }
+
+            if (appName.replace(/\.(lnk|exe)$/g, '').trim().length < 2) {
+                return false;
+            }
+
+            if (/^[\d_\-\.]+$/.test(appName)) {
+                return false;
+            }
+
             // Исключаем приложения из системных папок Windows (кроме известных приложений)
-            const isSystemPath = appPath.includes('\\windows\\') || 
+            const isSystemPath = appPath.includes('\\windows\\') ||
                                  appPath.includes('\\system32\\') ||
                                  appPath.includes('\\syswow64\\');
             
@@ -1604,11 +1637,12 @@ const AuxPanelManager = {
         if (AppState.settings.appsLibraryBasicOnly !== false) {
             const advancedAppKeywords = [
                 'furmark', 'gpu-z', 'gpuz', 'gpushark', 'cpuburner', 'occt', 'stress test', 'benchmark', 'profiler',
-                'diagnostic', 'burner', 'shadercache', 'minidump', 'debug', 'telemetry'
+                'diagnostic', 'burner', 'shadercache', 'minidump', 'debug', 'telemetry', 'mingw', 'usr\\bin', 'libexec',
+                'p11-kit', 'awk', 'gnupg', 'tar', 'unins', 'updater', 'helper'
             ];
             const advancedPathPatterns = [
-                '\\git\\usr\\', '\\git\\mingw64\\', '\\geeks3d\\', '\\furmark', '\\gpushark', '\\gpuz', '\\cpuburner',
-                '\\nsight', '\\debug\\', '\\diagnostic'
+                '\\git\\usr\\', '\\git\\mingw64\\', '\\git\\bin\\', '\\geeks3d\\', '\\furmark', '\\gpushark', '\\gpuz', '\\cpuburner',
+                '\\nsight', '\\debug\\', '\\diagnostic', '\\vc\\', '\\support\\', '\\redist\\', '\\resources\\'
             ];
 
             filteredApps = filteredApps.filter(app => {
@@ -1623,6 +1657,18 @@ const AuxPanelManager = {
                 return true;
             });
         }
+
+        const uniqueApps = [];
+        const seenPaths = new Set();
+        filteredApps.forEach(app => {
+            const key = (app.path || app.name).toLowerCase();
+            if (!seenPaths.has(key)) {
+                seenPaths.add(key);
+                uniqueApps.push(app);
+            }
+        });
+
+        filteredApps = uniqueApps;
 
         filteredApps.forEach(app => {
             const appName = app.name.toLowerCase();
@@ -1700,8 +1746,6 @@ const AuxPanelManager = {
                 }
             }
 
-            icon.src = initialSrc;
-            
             const onIconLoad = () => {
                 loadedIcons++;
                 requestAnimationFrame(() => {
@@ -1709,13 +1753,19 @@ const AuxPanelManager = {
                         appItem.classList.add('loaded');
                     }, Math.min(index * 30, 600));
                 });
+                AuxPanelManager.debouncedResizeForAppsLibrary();
                 checkAllLoaded();
                 icon.onload = null;
                 icon.onerror = null;
             };
-            
+
             icon.onload = onIconLoad;
             icon.onerror = onIconLoad;
+
+            icon.src = initialSrc;
+            if (icon.complete) {
+                onIconLoad();
+            }
             
             const name = Utils.createElement('div', { 
                 className: 'category-app-name',
@@ -1948,11 +1998,19 @@ const ViewManager = {
         document.body.className = '';
         
         // Логика для темы 'auto'
-        if (AppState.settings.theme === 'auto') {
+        const themeSetting = AppState.settings.theme || 'auto';
+        if (themeSetting === 'auto') {
             document.body.classList.add(AppState.systemTheme + '-theme');
-        } else if (AppState.settings.theme) {
-            document.body.classList.add(AppState.settings.theme + '-theme');
+        } else if (themeSetting) {
+            document.body.classList.add(themeSetting + '-theme');
         }
+
+        const darkThemes = new Set(['dark', 'ocean_depths']);
+        let nativeThemeSource = 'system';
+        if (themeSetting !== 'auto') {
+            nativeThemeSource = darkThemes.has(themeSetting) ? 'dark' : 'light';
+        }
+        ipcRenderer.send('update-native-theme', nativeThemeSource);
 
         if (AppState.settings.showFocusHighlight === false) {
             document.body.classList.add('no-focus-highlight');

@@ -2503,10 +2503,16 @@ ipcMain.on('resize-window', (event, { width, height }) => {
     if (mainWindow) {
         const newWidth = Math.round(width);
         const newHeight = Math.round(height);
-        
+
         mainWindow.setSize(newWidth, newHeight, true);
         WindowManager.setWindowPosition(currentSettings.windowPosition);
         WindowManager.repositionAuxiliaryWindows(); // НОВОЕ
+    }
+});
+
+ipcMain.on('update-native-theme', (event, themeSource) => {
+    if (['system', 'light', 'dark'].includes(themeSource)) {
+        nativeTheme.themeSource = themeSource;
     }
 });
 
