@@ -136,9 +136,12 @@ body.anim-fade #app-container { transition: height 0.3s cubic-bezier(0.4, 0, 0.2
 body.visible #app-container { opacity: 1; transform: translate(0) scale(1); }
 
 /* НОВОЕ: Анимация для списка результатов И ПАНЕЛЕЙ */
-#results-area, #aux-panel {
+#results-area,
+#aux-panel {
     opacity: 0;
     pointer-events: none;
+    transform: translateY(12px) scale(0.98);
+    transition: opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1), transform 0.32s cubic-bezier(0.23, 1, 0.32, 1);
     will-change: opacity, transform; /* Оптимизация производительности */
 }
 
@@ -164,11 +167,19 @@ body.visible #app-container { opacity: 1; transform: translate(0) scale(1); }
 }
 
 
-#results-area.visible, #aux-panel.visible {
+#results-area.visible,
+#aux-panel.visible {
     /* display: block; УДАЛЕНО: Больше не нужно */
     transform: translateY(0) scale(1);
     opacity: 1;
     pointer-events: auto;
+}
+
+#results-area.visible.closing,
+#aux-panel.visible.closing {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+    pointer-events: none;
 }
 
 #aux-container.visible {
@@ -315,10 +326,23 @@ body.dark-theme .aux-header {
     flex-wrap: wrap;
     gap: 10px;
     min-height: 110px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-8px) scale(0.96);
+    transition: opacity 0.24s cubic-bezier(0.4, 0, 0.2, 1), transform 0.28s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 #pinned-apps-container.visible {
     display: flex;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+#pinned-apps-container.visible.closing {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+    pointer-events: none;
 }
 
 #aux-panel {
@@ -332,10 +356,23 @@ body.dark-theme .aux-header {
     padding-bottom: 0; /* Убрали нижний отступ */
     height: 600px; /* Увеличено с 500px до 600px */
     max-height: 600px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px) scale(0.98);
+    transition: opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1), transform 0.32s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 #aux-panel.visible {
     display: flex;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+#aux-panel.visible.closing {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+    pointer-events: none;
 }
 
 .pinned-context-menu {
@@ -556,17 +593,25 @@ body.dark-theme .aux-header {
     gap: 8px;
     max-height: 260px;
     overflow-y: auto;
-    padding-right: 6px;
+    padding-right: 4px;
     scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 .folder-menu-icons::-webkit-scrollbar {
-    width: 6px;
+    width: 12px;
 }
 
 .folder-menu-icons::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.18);
+    background: var(--scrollbar-thumb);
     border-radius: 10px;
+    border: 4px solid transparent;
+    background-clip: content-box;
+    transition: background-color 0.2s ease;
+}
+
+.folder-menu-icons::-webkit-scrollbar-thumb:hover {
+    background-color: var(--highlight-color);
 }
 
 .folder-menu-icons::-webkit-scrollbar-track {
@@ -618,14 +663,31 @@ body.dark-theme .aux-header {
     margin: 0 auto 10px;
     border-radius:var(--dynamic-border-radius);
     max-height:600px;
-    overflow-y:auto
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+#results-container{
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-gutter: stable both-edges;
 }
 #results-list{list-style:none;padding:10px 15px;margin:0}
 .result-item{padding:14px 15px;cursor:default;display:flex;align-items:center;transition:all 0.2s cubic-bezier(0.16, 1, 0.3, 1);border-radius:15px}
 .result-icon{margin-right:15px;width:24px;height:24px;color:var(--icon-color);object-fit:contain;flex-shrink:0;background-color:transparent !important;border:none !important}
 .result-item.selected{background-color:var(--selection-color);color:var(--text-color)}
 .result-item.selected .result-icon{color:var(--icon-color)}
-#web-preview-container{padding:30px;display:none}
+#web-preview-container{
+    padding:30px;
+    display:none;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y:auto;
+    box-sizing:border-box;
+    border-radius: inherit;
+    scrollbar-gutter: stable both-edges;
+}
 #loader{text-align:center;padding:20px;color:var(--icon-color)}
 .wiki-content{animation:fadeInContent .4s ease-out}
 @keyframes fadeInContent{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -649,11 +711,28 @@ body.dark-theme .aux-header {
     transform: translateY(15px);
     transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
+.view.closing{
+    animation: viewCollapse 0.32s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
 .view.active{
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0);
     position: relative; /* Take up space in the document flow */
+}
+.view.active.closing{
+    position: absolute;
+}
+
+@keyframes viewCollapse{
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(25px) scale(0.97);
+    }
 }
 .settings-container{
     width: 950px;

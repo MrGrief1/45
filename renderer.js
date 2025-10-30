@@ -69,6 +69,68 @@ const Utils = {
     }
 };
 
+const UIAnimator = {
+    animationsDisabled() {
+        return Boolean(document.body && document.body.classList.contains('no-animations'));
+    },
+
+    show(element) {
+        if (!element) return;
+        element.classList.remove('closing');
+        if (element.classList.contains('visible')) return;
+
+        if (this.animationsDisabled()) {
+            element.classList.add('visible');
+            return;
+        }
+
+        requestAnimationFrame(() => element.classList.add('visible'));
+    },
+
+    hide(element, callback) {
+        if (!element) {
+            if (typeof callback === 'function') callback();
+            return;
+        }
+
+        if (!element.classList.contains('visible')) {
+            element.classList.remove('closing');
+            if (typeof callback === 'function') callback();
+            return;
+        }
+
+        if (this.animationsDisabled()) {
+            element.classList.remove('closing');
+            element.classList.remove('visible');
+            if (typeof callback === 'function') callback();
+            return;
+        }
+
+        element.classList.add('closing');
+
+        let finished = false;
+        const cleanup = () => {
+            if (finished) return;
+            finished = true;
+            element.classList.remove('closing');
+            element.classList.remove('visible');
+            element.removeEventListener('transitionend', onEnd);
+            element.removeEventListener('animationend', onEnd);
+            if (timeout) clearTimeout(timeout);
+            if (typeof callback === 'function') callback();
+        };
+
+        const onEnd = (event) => {
+            if (event && event.target !== element) return;
+            cleanup();
+        };
+
+        const timeout = setTimeout(cleanup, 350);
+        element.addEventListener('transitionend', onEnd);
+        element.addEventListener('animationend', onEnd);
+    }
+};
+
 const AppIconFallbacks = {
     cache: {
         whatsapp: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA2NCA2NCc+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCUnIHkxPScwJScgeDI9JzEwMCUnIHkyPScxMDAlJz48c3RvcCBvZmZzZXQ9JzAlJyBzdG9wLWNvbG9yPScjMjVEMzY2Jy8+PHN0b3Agb2Zmc2V0PScxMDAlJyBzdG9wLWNvbG9yPScjMTI4QzdFJy8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZmlsbD0ndXJsKCNnKScgZD0nTTMyIDRjMTUuNDY0IDAgMjggMTIuNTM2IDI4IDI4IDAgMTUuNDYzLTEyLjUzNiAyOC0yOCAyOC00Ljc0IDAtOS4yMDYtMS4xNy0xMy4xMy0zLjIzNEw0IDYwbDMuNTAyLTE0LjU5NEM1LjM0NiA0MS41MiA0IDM2LjkwMiA0IDMyIDQgMTYuNTM2IDE2LjUzNiA0IDMyIDR6Jy8+PHBhdGggZmlsbD0nI0Y1RkRGOScgZD0nTTI0LjI1OCAxOC41Yy0uNTYyLTEuMjE2LTEuMTYtMS4yNC0xLjY5NC0xLjI2LS40MzgtLjAxOC0uOTQtLjAxNy0xLjQ0Mi0uMDE3LS41MDQgMC0xLjMyLjE5LTIuMDEuOTUtLjY5Ljc2LTIuNjM1IDIuNTc0LTIuNjM1IDYuMjggMCAzLjcwNiAyLjY5NiA3LjI5IDMuMDc0IDcuNzk1LjM3OC41MDYgNS4yMDQgOC4zMzkgMTIuODIzIDExLjM1IDYuMzQzIDIuNTA0IDcuNjIgMi4wMDYgOS4wMDUgMS44ODEgMS4zODYtLjEyNiA0LjQzMi0xLjgwOCA1LjA2LTMuNTU3LjYzLTEuNzUuNjMtMy4yNDguNDQtMy41NTctLjE5LS4zMS0uNjktLjUtMS40NC0uODc2LS43NS0uMzc3LTQuNDMtMi4xODYtNS4xMTgtMi40MzctLjY5LS4yNTItMS4xOTItLjM3OC0xLjY5NC4zOC0uNTA0Ljc1Ni0xLjk0NCAyLjQzNy0yLjM4MyAyLjkzNS0uNDQuNS0uODc3LjU2Ni0xLjYzLjE5LS43NTMtLjM3Ny0zLjE4LTEuMTc2LTYuMDUtMy43NDYtMi4yMzctMS45OTYtMy43NDQtNC40Ni00LjE4Mi01LjIxNi0uNDM4LS43NTYtLjA0Ny0xLjE2NS4zMy0xLjU0LjMzOC0uMzM1Ljc1My0uODc2IDEuMTMtMS4zMTQuMzgtLjQzOC41MDQtLjc1Ljc1Ni0xLjI1Mi4yNTItLjUuMTI2LS45NC0uMDYzLTEuMzE3LS4xOS0uMzc3LTEuNjczLTQuMTUtMi4yOC01LjY2NnonLz48L3N2Zz4=',
@@ -484,7 +546,7 @@ const SearchModule = {
         const resultsArea = Utils.getElement('#results-area');
         const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
 
-        if (pinnedAppsContainer) pinnedAppsContainer.classList.remove('visible');
+        if (pinnedAppsContainer) UIAnimator.hide(pinnedAppsContainer, () => ViewManager.resizeWindow());
 
         if (AuxPanelManager.currentPanel) {
             AuxPanelManager.closePanel(false);
@@ -548,7 +610,7 @@ const SearchModule = {
         });
 
         resultsList.appendChild(fragment);
-        resultsArea.classList.add('visible'); // Добавляем класс для анимации
+        UIAnimator.show(resultsArea);
         
         // УДАЛЕНО: Убираем назойливую подсказку
         // this.showAppHintIfNeeded();
@@ -600,7 +662,7 @@ const SearchModule = {
         if (resultsList) resultsList.innerHTML = '';
         
         const resultsArea = Utils.getElement('#results-area');
-        if (resultsArea) resultsArea.classList.remove('visible');
+        if (resultsArea) UIAnimator.hide(resultsArea, () => ViewManager.resizeWindow());
 
         // Close any open auxiliary panel to return to the default state.
         if (AuxPanelManager.currentPanel) {
@@ -609,7 +671,7 @@ const SearchModule = {
 
         const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
         if (pinnedAppsContainer && AppState.settings.enablePinnedApps) {
-            pinnedAppsContainer.classList.add('visible');
+            UIAnimator.show(pinnedAppsContainer);
         }
         
         AppState.searchResults = [];
@@ -1491,8 +1553,8 @@ const AuxPanelManager = {
         
         // If search results are visible, hide them before opening a panel.
         const resultsArea = Utils.getElement('#results-area');
-        if (resultsArea.classList.contains('visible')) {
-            resultsArea.classList.remove('visible');
+        if (resultsArea?.classList.contains('visible')) {
+            UIAnimator.hide(resultsArea);
         }
 
         this.currentPanel = type;
@@ -1522,7 +1584,7 @@ const AuxPanelManager = {
                 }
             }
             
-            this.panelContainer.classList.add('visible');
+            UIAnimator.show(this.panelContainer);
 
             if (type === 'apps-library') {
                 if (appsLibraryWrapper) {
@@ -1540,7 +1602,7 @@ const AuxPanelManager = {
                 });
             });
             
-            Utils.getElement('#pinned-apps-container').classList.remove('visible');
+            UIAnimator.hide(Utils.getElement('#pinned-apps-container'));
             
             this.executePanelLogic(type);
             
@@ -1560,18 +1622,21 @@ const AuxPanelManager = {
         ipcRenderer.send('set-prevent-close', false);
         
         this.currentPanel = null;
-        this.panelContainer.innerHTML = '';
-        this.panelContainer.classList.remove('visible');
-        
-        const hasSearchQuery = Utils.getElement('#search-input').value.trim().length > 1;
-        
-        if (hasSearchQuery && AppState.searchResults.length > 0) {
-            Utils.getElement('#results-area').classList.add('visible');
-        } else if (showPinnedApps && !hasSearchQuery && AppState.settings.enablePinnedApps) {
-            Utils.getElement('#pinned-apps-container').classList.add('visible');
-        }
+        UIAnimator.hide(this.panelContainer, () => {
+            this.panelContainer.innerHTML = '';
 
-        setTimeout(() => ViewManager.resizeWindow(), 50);
+            const hasSearchQuery = Utils.getElement('#search-input').value.trim().length > 1;
+            const resultsArea = Utils.getElement('#results-area');
+            const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
+
+            if (hasSearchQuery && AppState.searchResults.length > 0) {
+                UIAnimator.show(resultsArea);
+            } else if (showPinnedApps && !hasSearchQuery && AppState.settings.enablePinnedApps) {
+                UIAnimator.show(pinnedAppsContainer);
+            }
+
+            setTimeout(() => ViewManager.resizeWindow(), 50);
+        });
     },
     
     executePanelLogic: function(type) {
@@ -2074,20 +2139,60 @@ const ViewManager = {
     },
     switchView: function(viewName) {
         if (AppState.currentView === viewName) return;
-        AppState.currentView = viewName;
-        document.querySelector('.view.active')?.classList.remove('active');
-        const newView = Utils.getElement(`#${viewName}-view`);
-        if (newView) newView.classList.add('active');
-        if (viewName === 'settings') {
-            ipcRenderer.invoke('get-indexing-state').then(state => SettingsModule.updateIndexingStatus(state));
-            SettingsModule.renderIndexedDirectories();
-            SettingsModule.renderAutomations();
+
+        const previousView = document.querySelector('.view.active');
+        const finalizeSwitch = () => {
+            const newView = Utils.getElement(`#${viewName}-view`);
+            if (newView) {
+                newView.classList.remove('closing');
+                newView.classList.add('active');
+            }
+
+            AppState.currentView = viewName;
+
+            if (viewName === 'settings') {
+                ipcRenderer.invoke('get-indexing-state').then(state => SettingsModule.updateIndexingStatus(state));
+                SettingsModule.renderIndexedDirectories();
+                SettingsModule.renderAutomations();
+            } else {
+                Utils.getElement('#search-input')?.focus();
+                AuxPanelManager.closePanel();
+            }
+
+            requestAnimationFrame(() => this.resizeWindow());
+        };
+
+        if (previousView) {
+            if (UIAnimator.animationsDisabled()) {
+                previousView.classList.remove('closing');
+                previousView.classList.remove('active');
+                finalizeSwitch();
+                return;
+            }
+
+            previousView.classList.add('closing');
+
+            const cleanup = () => {
+                previousView.classList.remove('closing');
+                previousView.classList.remove('active');
+                previousView.removeEventListener('animationend', handler);
+                previousView.removeEventListener('transitionend', handler);
+                if (fallback) clearTimeout(fallback);
+                finalizeSwitch();
+            };
+
+            const handler = (event) => {
+                if (event && event.target !== previousView) return;
+                cleanup();
+            };
+
+            const fallback = setTimeout(() => cleanup(), 360);
+
+            previousView.addEventListener('animationend', handler, { once: true });
+            previousView.addEventListener('transitionend', handler, { once: true });
         } else {
-            Utils.getElement('#search-input')?.focus();
-            AuxPanelManager.closePanel();
+            finalizeSwitch();
         }
-        // ОПТИМИЗАЦИЯ: Используем requestAnimationFrame для плавной анимации
-        requestAnimationFrame(() => this.resizeWindow());
     },
     resizeWindow: function() {
         const appContainer = Utils.getElement('#app-container');
@@ -2158,9 +2263,9 @@ const ViewManager = {
         const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
         if (pinnedAppsContainer) {
             if (AppState.settings.enablePinnedApps) {
-                pinnedAppsContainer.classList.add('visible');
+                UIAnimator.show(pinnedAppsContainer);
             } else {
-                pinnedAppsContainer.classList.remove('visible');
+                UIAnimator.hide(pinnedAppsContainer);
             }
         }
 
