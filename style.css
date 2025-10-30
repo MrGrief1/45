@@ -162,6 +162,23 @@ body.visible #app-container { opacity: 1; transform: translate(0) scale(1); }
     transform: translateX(8px);
     transition: opacity 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
+.results-anim-fold {
+    opacity: 0;
+    transform-origin: top center;
+    transform: perspective(600px) rotateX(-18deg) translateY(-4px);
+    transition: opacity 0.28s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.results-anim-fold.visible {
+    transform: perspective(600px) rotateX(0deg) translateY(0);
+}
+.results-anim-shrink {
+    opacity: 0;
+    transform: scale(0.94) translateY(6px);
+    transition: opacity 0.22s cubic-bezier(0.3, 0.7, 0.4, 1), transform 0.28s cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+.results-anim-shrink.visible {
+    transform: scale(1) translateY(0);
+}
 
 
 #results-area.visible, #aux-panel.visible {
@@ -174,6 +191,11 @@ body.visible #app-container { opacity: 1; transform: translate(0) scale(1); }
 #aux-container.visible {
     opacity: 1;
     transform: translateY(0) scale(1);
+}
+
+#aux-container.closing,
+#apps-library-wrapper.closing {
+    pointer-events: none;
 }
 
 /* =================================================================================
@@ -625,7 +647,18 @@ body.dark-theme .aux-header {
 .result-icon{margin-right:15px;width:24px;height:24px;color:var(--icon-color);object-fit:contain;flex-shrink:0;background-color:transparent !important;border:none !important}
 .result-item.selected{background-color:var(--selection-color);color:var(--text-color)}
 .result-item.selected .result-icon{color:var(--icon-color)}
-#web-preview-container{padding:30px;display:none}
+#web-preview-container{
+    padding:30px;
+    display:none;
+    overflow-y:auto;
+    max-height:70vh;
+    box-sizing:border-box;
+    scrollbar-gutter:stable both-edges;
+}
+
+#web-preview-container::-webkit-scrollbar-track{
+    margin:0;
+}
 #loader{text-align:center;padding:20px;color:var(--icon-color)}
 .wiki-content{animation:fadeInContent .4s ease-out}
 @keyframes fadeInContent{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}

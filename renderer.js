@@ -130,6 +130,9 @@ const LocalizationRenderer = {
             element.title = this.t(element.getAttribute('data-i18n-title'));
         });
         this.refreshLanguageDependentUI();
+        if (typeof CustomSelect?.refreshAll === 'function') {
+            CustomSelect.refreshAll();
+        }
     },
 
     refreshLanguageDependentUI: function() {
@@ -1558,20 +1561,62 @@ const AuxPanelManager = {
     closePanel: function(showPinnedApps = true) {
         // ИСПРАВЛЕНИЕ БАГА: Сбрасываем preventClose при закрытии панели
         ipcRenderer.send('set-prevent-close', false);
-        
-        this.currentPanel = null;
-        this.panelContainer.innerHTML = '';
-        this.panelContainer.classList.remove('visible');
-        
-        const hasSearchQuery = Utils.getElement('#search-input').value.trim().length > 1;
-        
-        if (hasSearchQuery && AppState.searchResults.length > 0) {
-            Utils.getElement('#results-area').classList.add('visible');
-        } else if (showPinnedApps && !hasSearchQuery && AppState.settings.enablePinnedApps) {
-            Utils.getElement('#pinned-apps-container').classList.add('visible');
-        }
 
-        setTimeout(() => ViewManager.resizeWindow(), 50);
+        this.currentPanel = null;
+
+        const finalizeClose = () => {
+            this.panelContainer.innerHTML = '';
+            this.panelContainer.classList.remove('visible');
+
+            const hasSearchQuery = Utils.getElement('#search-input').value.trim().length > 1;
+
+            if (hasSearchQuery && AppState.searchResults.length > 0) {
+                Utils.getElement('#results-area').classList.add('visible');
+            } else if (showPinnedApps && !hasSearchQuery && AppState.settings.enablePinnedApps) {
+                Utils.getElement('#pinned-apps-container').classList.add('visible');
+            }
+
+            setTimeout(() => ViewManager.resizeWindow(), 50);
+        };
+
+        const animatedElements = Array.from(this.panelContainer.querySelectorAll('#aux-container, #apps-library-wrapper'));
+
+        if (AppState.settings.animations && animatedElements.length > 0) {
+            let completed = 0;
+            let finished = false;
+            const listeners = new Map();
+
+            const safeFinalize = () => {
+                if (finished) return;
+                finished = true;
+                listeners.forEach((listener, el) => el.removeEventListener('transitionend', listener));
+                finalizeClose();
+            };
+
+            animatedElements.forEach((element) => {
+                const handleTransitionEnd = (event) => {
+                    if (event.target !== element) return;
+                    element.removeEventListener('transitionend', handleTransitionEnd);
+                    completed += 1;
+                    if (completed === animatedElements.length) {
+                        safeFinalize();
+                    }
+                };
+
+                element.addEventListener('transitionend', handleTransitionEnd);
+                listeners.set(element, handleTransitionEnd);
+
+                requestAnimationFrame(() => {
+                    element.classList.add('closing');
+                    element.classList.remove('visible');
+                });
+            });
+
+            // Страховка на случай отсутствия transitionend
+            setTimeout(safeFinalize, 400);
+        } else {
+            finalizeClose();
+        }
     },
     
     executePanelLogic: function(type) {
@@ -2062,6 +2107,19 @@ const CustomSelect = {
             trigger.querySelector('span').textContent = options[0].querySelector('span').textContent;
             options[0].classList.add('selected');
         }
+    },
+
+    refreshDisplay: function(wrapper) {
+        if (!wrapper) return;
+        const triggerSpan = wrapper.querySelector('.custom-select-trigger span');
+        const selectedOption = wrapper.querySelector('.custom-option.selected span');
+        if (triggerSpan && selectedOption) {
+            triggerSpan.textContent = selectedOption.textContent;
+        }
+    },
+
+    refreshAll: function() {
+        Utils.getAllElements('.custom-select-wrapper').forEach(wrapper => this.refreshDisplay(wrapper));
     }
 };
 

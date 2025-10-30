@@ -134,5 +134,12 @@
   "category_games": "Игры",
   "category_other": "Другое",
   "apps_library_loading": "Загружаем приложения…",
-  "apps_library_empty": "Приложения ещё не готовы."
+  "apps_library_empty": "Приложения ещё не готовы.",
+  "language_name_en": "Английский",
+  "language_name_ru": "Русский",
+  "language_name_fr": "Французский",
+  "language_name_de": "Немецкий",
+  "language_name_zh": "Китайский (упрощенный)",
+  "anim_fold": "Складывание",
+  "anim_shrink": "Сжатие и исчезновение"
 }
