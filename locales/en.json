@@ -106,6 +106,8 @@
     "anim_fade_in": "Fade In",
     "anim_scale_in": "Scale In",
     "anim_slide_right": "Slide from Right",
+    "anim_fold": "Fold Away",
+    "anim_shrink": "Gentle Shrink",
     "title_clipboard": "Clipboard History",
     "title_apps": "Installed Apps",
     "title_files": "Recent Files",
