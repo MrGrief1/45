@@ -143,6 +143,96 @@ const LocalizationRenderer = {
     }
 };
 
+const RESULTS_ANIMATION_CLASSES = [
+    'results-anim-slide-up',
+    'results-anim-fade-in',
+    'results-anim-scale-in',
+    'results-anim-slide-right',
+    'results-anim-fold',
+    'results-anim-shrink',
+    'results-anim-glide',
+    'results-anim-twist'
+];
+
+const AnimationClassManager = {
+    applyResultsAnimation(element) {
+        if (!element) return;
+        RESULTS_ANIMATION_CLASSES.forEach(cls => element.classList.remove(cls));
+        if (AppState.settings.animations === false) return;
+        const styleKey = AppState.settings.resultsAnimationStyle;
+        if (styleKey) {
+            element.classList.add(`results-anim-${styleKey}`);
+        }
+    },
+    clearResultsAnimation(element) {
+        if (!element) return;
+        RESULTS_ANIMATION_CLASSES.forEach(cls => element.classList.remove(cls));
+    }
+};
+
+const VisibilityAnimator = {
+    animationsEnabled() {
+        return AppState.settings.animations !== false && !document.body.classList.contains('no-animations');
+    },
+    show(element) {
+        return this.toggle(element, true);
+    },
+    hide(element) {
+        return this.toggle(element, false);
+    },
+    toggle(element, shouldShow) {
+        if (!element) return Promise.resolve();
+
+        const isVisible = element.classList.contains('visible');
+        if (shouldShow && isVisible) {
+            element.classList.remove('is-closing');
+            return Promise.resolve();
+        }
+        if (!shouldShow && !isVisible) {
+            element.classList.remove('is-closing');
+            return Promise.resolve();
+        }
+
+        if (!this.animationsEnabled()) {
+            element.classList.toggle('visible', shouldShow);
+            element.classList.remove('is-closing', 'is-animating');
+            return Promise.resolve();
+        }
+
+        return new Promise(resolve => {
+            let resolved = false;
+            const cleanup = () => {
+                if (resolved) return;
+                resolved = true;
+                element.removeEventListener('transitionend', onTransitionEnd);
+                element.classList.remove('is-animating');
+                if (!shouldShow) element.classList.remove('visible');
+                element.classList.remove('is-closing');
+                resolve();
+            };
+            const onTransitionEnd = (event) => {
+                if (event.target !== element) return;
+                cleanup();
+            };
+
+            element.addEventListener('transitionend', onTransitionEnd);
+            element.classList.add('is-animating');
+
+            requestAnimationFrame(() => {
+                if (shouldShow) {
+                    element.classList.remove('is-closing');
+                    element.classList.add('visible');
+                } else {
+                    element.classList.add('is-closing');
+                    element.classList.remove('visible');
+                }
+            });
+
+            setTimeout(cleanup, 450);
+        });
+    }
+};
+
 // =================================================================================
 // === Модуль Управления Настройками (UI) ===
 // =================================================================================
@@ -475,27 +565,37 @@ const SearchModule = {
             AppState.searchResults = [];
         }
         AppState.selectedIndex = 0;
-        this.displayResults();
+        await this.displayResults();
         this.loadIconsForResults();
     },
 
-    displayResults: function() {
+    displayResults: async function() {
         const resultsList = Utils.getElement('#results-list');
         const resultsArea = Utils.getElement('#results-area');
         const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
 
-        if (pinnedAppsContainer) pinnedAppsContainer.classList.remove('visible');
+        if (pinnedAppsContainer) await VisibilityAnimator.hide(pinnedAppsContainer);
 
         if (AuxPanelManager.currentPanel) {
-            AuxPanelManager.closePanel(false);
+            await AuxPanelManager.closePanel(false);
         }
-        
+
         resultsList.innerHTML = '';
-        Utils.getElement('#web-preview-container').style.display = 'none';
-        Utils.getElement('#results-container').style.display = 'block';
+        const webPreviewContainer = Utils.getElement('#web-preview-container');
+        if (webPreviewContainer) webPreviewContainer.style.display = 'none';
+        const resultsContainer = Utils.getElement('#results-container');
+        if (resultsContainer) resultsContainer.style.display = 'block';
+
+        const previewScroll = Utils.getElement('#web-preview-scroll');
+        if (previewScroll) {
+            previewScroll.querySelectorAll('.wiki-content').forEach(el => el.remove());
+            previewScroll.scrollTop = 0;
+        }
+        const previewLoader = Utils.getElement('#loader');
+        if (previewLoader) previewLoader.style.display = 'none';
 
         if (AppState.searchResults.length === 0) {
-            this.clearResults();
+            await this.clearResults();
             return;
         }
 
@@ -548,8 +648,12 @@ const SearchModule = {
         });
 
         resultsList.appendChild(fragment);
-        resultsArea.classList.add('visible'); // Добавляем класс для анимации
-        
+
+        if (resultsArea) {
+            AnimationClassManager.applyResultsAnimation(resultsArea);
+            await VisibilityAnimator.show(resultsArea);
+        }
+
         // УДАЛЕНО: Убираем назойливую подсказку
         // this.showAppHintIfNeeded();
         ViewManager.resizeWindow();
@@ -595,23 +699,38 @@ const SearchModule = {
         });
     },
 
-    clearResults: function() {
+    clearResults: async function() {
         const resultsList = Utils.getElement('#results-list');
         if (resultsList) resultsList.innerHTML = '';
-        
+
         const resultsArea = Utils.getElement('#results-area');
-        if (resultsArea) resultsArea.classList.remove('visible');
+        const hideResultsPromise = resultsArea ? VisibilityAnimator.hide(resultsArea) : Promise.resolve();
+
+        const webPreviewContainer = Utils.getElement('#web-preview-container');
+        if (webPreviewContainer) webPreviewContainer.style.display = 'none';
+        const resultsContainer = Utils.getElement('#results-container');
+        if (resultsContainer) resultsContainer.style.display = 'block';
+        const previewScroll = Utils.getElement('#web-preview-scroll');
+        if (previewScroll) {
+            previewScroll.querySelectorAll('.wiki-content').forEach(el => el.remove());
+            previewScroll.scrollTop = 0;
+        }
+        const previewLoader = Utils.getElement('#loader');
+        if (previewLoader) previewLoader.style.display = 'none';
 
         // Close any open auxiliary panel to return to the default state.
         if (AuxPanelManager.currentPanel) {
-            AuxPanelManager.closePanel(false); // `false` prevents it from re-showing pinned apps.
+            await AuxPanelManager.closePanel(false); // `false` prevents it from re-showing pinned apps.
         }
 
+        await hideResultsPromise;
+
         const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
-        if (pinnedAppsContainer && AppState.settings.enablePinnedApps) {
-            pinnedAppsContainer.classList.add('visible');
+        if (pinnedAppsContainer) {
+            if (AppState.settings.enablePinnedApps) await VisibilityAnimator.show(pinnedAppsContainer);
+            else await VisibilityAnimator.hide(pinnedAppsContainer);
         }
-        
+
         AppState.searchResults = [];
         AppState.selectedIndex = -1;
         ViewManager.resizeWindow();
@@ -644,14 +763,16 @@ const SearchModule = {
     showInlinePreview: function(query) {
         const webPreviewContainer = Utils.getElement('#web-preview-container');
         const loader = Utils.getElement('#loader');
-        if (!webPreviewContainer || !loader) return;
+        const scrollArea = Utils.getElement('#web-preview-scroll');
+        if (!webPreviewContainer || !loader || !scrollArea) return;
 
         webPreviewContainer.style.display = 'block';
-        Utils.getElement('#results-container').style.display = 'none';
+        const resultsContainer = Utils.getElement('#results-container');
+        if (resultsContainer) resultsContainer.style.display = 'none';
         loader.style.display = 'block';
-        
-        const existingContent = webPreviewContainer.querySelector('.wiki-content');
-        if (existingContent) existingContent.remove();
+
+        scrollArea.querySelectorAll('.wiki-content').forEach(el => el.remove());
+        scrollArea.scrollTop = 0;
         ViewManager.resizeWindow();
 
         const lang = AppState.settings.language || 'en';
@@ -770,12 +891,15 @@ const SearchModule = {
         searchLink.addEventListener('click', (e) => { e.preventDefault(); shell.openExternal(searchUrl); });
         contentDiv.appendChild(searchLink);
 
-        webPreviewContainer.appendChild(contentDiv);
+        const scrollArea = Utils.getElement('#web-preview-scroll');
+        const targetContainer = scrollArea || webPreviewContainer;
+        targetContainer.appendChild(contentDiv);
         ViewManager.resizeWindow();
     },
 
     renderPreviewError: function(message, query) { // ПРИНИМАЕМ query
         const webPreviewContainer = Utils.getElement('#web-preview-container');
+        const scrollArea = Utils.getElement('#web-preview-scroll');
         const errorDiv = Utils.createElement('div', { className: 'wiki-content error'});
         errorDiv.textContent = LocalizationRenderer.t('error_quick_search') + message;
         
@@ -789,7 +913,8 @@ const SearchModule = {
         });
         errorDiv.appendChild(searchLink);
 
-        webPreviewContainer.appendChild(errorDiv);
+        const targetContainer = scrollArea || webPreviewContainer;
+        targetContainer.appendChild(errorDiv);
         ViewManager.resizeWindow();
     },
 
@@ -1488,15 +1613,17 @@ const AuxPanelManager = {
     openPanel: async function(type) {
         // ИСПРАВЛЕНИЕ БАГА: Всегда сбрасываем preventClose при переключении панелей
         ipcRenderer.send('set-prevent-close', false);
-        
+
         // If search results are visible, hide them before opening a panel.
         const resultsArea = Utils.getElement('#results-area');
-        if (resultsArea.classList.contains('visible')) {
-            resultsArea.classList.remove('visible');
-        }
+        const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
+        await Promise.all([
+            VisibilityAnimator.hide(resultsArea),
+            VisibilityAnimator.hide(pinnedAppsContainer)
+        ]);
 
         this.currentPanel = type;
-        
+
         try {
             const response = await fetch(`${type}.html`);
             if (!response.ok) throw new Error(`Failed to load ${type}.html`);
@@ -1513,16 +1640,11 @@ const AuxPanelManager = {
             const appsLibraryWrapper = this.panelContainer.querySelector('#apps-library-wrapper');
             
             // Apply animation class based on settings
-            if (AppState.settings.animations && AppState.settings.resultsAnimationStyle) {
-                if (auxContainer) {
-                    auxContainer.classList.add('results-anim-' + AppState.settings.resultsAnimationStyle);
-                }
-                if (appsLibraryWrapper) {
-                    appsLibraryWrapper.classList.add('results-anim-' + AppState.settings.resultsAnimationStyle);
-                }
-            }
-            
-            this.panelContainer.classList.add('visible');
+            AnimationClassManager.applyResultsAnimation(this.panelContainer);
+            AnimationClassManager.applyResultsAnimation(auxContainer);
+            AnimationClassManager.applyResultsAnimation(appsLibraryWrapper);
+
+            await VisibilityAnimator.show(this.panelContainer);
 
             if (type === 'apps-library') {
                 if (appsLibraryWrapper) {
@@ -1531,19 +1653,15 @@ const AuxPanelManager = {
                 }
                 ViewManager.resizeWindow();
             }
-            
+
             // ОПТИМИЗАЦИЯ: Используем requestAnimationFrame для более плавной анимации
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    if (auxContainer) auxContainer.classList.add('visible');
-                    if (appsLibraryWrapper) appsLibraryWrapper.classList.add('visible');
-                });
-            });
-            
-            Utils.getElement('#pinned-apps-container').classList.remove('visible');
-            
+            await Promise.all([
+                auxContainer ? VisibilityAnimator.show(auxContainer) : Promise.resolve(),
+                appsLibraryWrapper ? VisibilityAnimator.show(appsLibraryWrapper) : Promise.resolve()
+            ]);
+
             this.executePanelLogic(type);
-            
+
             setTimeout(() => {
                 if (type !== 'apps-library') {
                     ViewManager.resizeWindow();
@@ -1555,23 +1673,48 @@ const AuxPanelManager = {
         }
     },
 
-    closePanel: function(showPinnedApps = true) {
+    closePanel: async function(showPinnedApps = true) {
         // ИСПРАВЛЕНИЕ БАГА: Сбрасываем preventClose при закрытии панели
         ipcRenderer.send('set-prevent-close', false);
-        
+
         this.currentPanel = null;
+        const nestedTargets = [
+            this.panelContainer.querySelector('#aux-container'),
+            this.panelContainer.querySelector('#apps-library-wrapper')
+        ].filter(Boolean);
+
+        await Promise.all([
+            ...nestedTargets.map(element => VisibilityAnimator.hide(element)),
+            VisibilityAnimator.hide(this.panelContainer)
+        ]);
+
         this.panelContainer.innerHTML = '';
-        this.panelContainer.classList.remove('visible');
-        
-        const hasSearchQuery = Utils.getElement('#search-input').value.trim().length > 1;
-        
-        if (hasSearchQuery && AppState.searchResults.length > 0) {
-            Utils.getElement('#results-area').classList.add('visible');
-        } else if (showPinnedApps && !hasSearchQuery && AppState.settings.enablePinnedApps) {
-            Utils.getElement('#pinned-apps-container').classList.add('visible');
+        this.panelContainer.className = 'glass-element';
+
+        const resultsArea = Utils.getElement('#results-area');
+        const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
+        const searchInput = Utils.getElement('#search-input');
+        const hasSearchQuery = (searchInput?.value.trim().length || 0) > 1;
+
+        if (showPinnedApps) {
+            const animations = [];
+            if (hasSearchQuery && AppState.searchResults.length > 0 && resultsArea) {
+                AnimationClassManager.applyResultsAnimation(resultsArea);
+                animations.push(VisibilityAnimator.show(resultsArea));
+            } else if (resultsArea) {
+                animations.push(VisibilityAnimator.hide(resultsArea));
+            }
+
+            if (!hasSearchQuery && AppState.settings.enablePinnedApps && pinnedAppsContainer) {
+                animations.push(VisibilityAnimator.show(pinnedAppsContainer));
+            } else if (pinnedAppsContainer) {
+                animations.push(VisibilityAnimator.hide(pinnedAppsContainer));
+            }
+
+            await Promise.all(animations);
         }
 
-        setTimeout(() => ViewManager.resizeWindow(), 50);
+        ViewManager.resizeWindow();
     },
     
     executePanelLogic: function(type) {
@@ -2147,11 +2290,15 @@ const ViewManager = {
         
         // НОВОЕ: Применяем класс анимации для результатов
         const resultsArea = Utils.getElement('#results-area');
-        if(resultsArea) {
-            resultsArea.className = 'glass-element'; // Сбрасываем классы, оставляя базовый
-            if (AppState.settings.resultsAnimationStyle) {
-                resultsArea.classList.add('results-anim-' + AppState.settings.resultsAnimationStyle);
-            }
+        if (resultsArea) {
+            resultsArea.classList.add('glass-element');
+            AnimationClassManager.applyResultsAnimation(resultsArea);
+        }
+
+        const auxPanel = Utils.getElement('#aux-panel');
+        if (auxPanel) {
+            auxPanel.classList.add('glass-element');
+            AnimationClassManager.applyResultsAnimation(auxPanel);
         }
         
         // Управляем видимостью панели закрепленных приложений

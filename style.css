@@ -144,31 +144,176 @@ body.visible #app-container { opacity: 1; transform: translate(0) scale(1); }
 
 /* Стили для разных анимаций результатов - БЫСТРЫЕ */
 .results-anim-slide-up {
-    transform: translateY(8px);
+    transform: translateY(10px);
     opacity: 0;
-    transition: opacity 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: opacity 0.22s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.26s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
+
+.results-anim-slide-up.is-closing,
+.results-anim-slide-up:not(.visible) {
+    transform: translateY(18px);
+    opacity: 0;
+}
+
+#results-area.results-anim-slide-up.visible,
+#aux-panel.results-anim-slide-up.visible,
+#aux-container.results-anim-slide-up.visible,
+#apps-library-wrapper.results-anim-slide-up.visible {
+    transform: translateY(0);
+    opacity: 1;
+}
+
 .results-anim-fade-in {
     opacity: 0;
-    transition: opacity 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transform: translateY(6px);
+    transition: opacity 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.28s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
+
+.results-anim-fade-in.is-closing,
+.results-anim-fade-in:not(.visible) {
+    opacity: 0;
+    transform: translateY(14px);
+}
+
+#results-area.results-anim-fade-in.visible,
+#aux-panel.results-anim-fade-in.visible,
+#aux-container.results-anim-fade-in.visible,
+#apps-library-wrapper.results-anim-fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 .results-anim-scale-in {
     opacity: 0;
-    transform: scale(0.97);
-    transition: opacity 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transform: scale(0.95);
+    transition: opacity 0.22s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.28s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
+
+.results-anim-scale-in.is-closing,
+.results-anim-scale-in:not(.visible) {
+    transform: scale(0.85);
+    opacity: 0;
+}
+
+#results-area.results-anim-scale-in.visible,
+#aux-panel.results-anim-scale-in.visible,
+#aux-container.results-anim-scale-in.visible,
+#apps-library-wrapper.results-anim-scale-in.visible {
+    transform: scale(1);
+    opacity: 1;
+}
+
 .results-anim-slide-right {
     opacity: 0;
-    transform: translateX(8px);
-    transition: opacity 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transform: translateX(10px);
+    transition: opacity 0.22s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.27s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.results-anim-slide-right.is-closing,
+.results-anim-slide-right:not(.visible) {
+    transform: translateX(20px);
+    opacity: 0;
+}
+
+#results-area.results-anim-slide-right.visible,
+#aux-panel.results-anim-slide-right.visible,
+#aux-container.results-anim-slide-right.visible,
+#apps-library-wrapper.results-anim-slide-right.visible {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.results-anim-fold {
+    transform-origin: top center;
+    opacity: 0;
+    transform: scaleY(0.8);
+    transition: opacity 0.26s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.34s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.results-anim-fold.is-closing,
+.results-anim-fold:not(.visible) {
+    transform: scaleY(0.65);
+    opacity: 0;
+}
+
+#results-area.results-anim-fold.visible,
+#aux-panel.results-anim-fold.visible,
+#aux-container.results-anim-fold.visible,
+#apps-library-wrapper.results-anim-fold.visible {
+    transform: scaleY(1);
+    opacity: 1;
+}
+
+.results-anim-shrink {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.results-anim-shrink.is-closing,
+.results-anim-shrink:not(.visible) {
+    transform: scale(0.78);
+    opacity: 0;
+}
+
+#results-area.results-anim-shrink.visible,
+#aux-panel.results-anim-shrink.visible,
+#aux-container.results-anim-shrink.visible,
+#apps-library-wrapper.results-anim-shrink.visible {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.results-anim-glide {
+    opacity: 0;
+    transform: translateY(22px) scale(0.96);
+    transition: opacity 0.28s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.results-anim-glide.is-closing,
+.results-anim-glide:not(.visible) {
+    transform: translateY(32px) scale(0.9);
+    opacity: 0;
+}
+
+#results-area.results-anim-glide.visible,
+#aux-panel.results-anim-glide.visible,
+#aux-container.results-anim-glide.visible,
+#apps-library-wrapper.results-anim-glide.visible {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+.results-anim-twist {
+    opacity: 0;
+    transform-origin: top center;
+    transform: rotateX(-8deg) translateY(18px);
+    transition: opacity 0.28s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.33s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.results-anim-twist.is-closing,
+.results-anim-twist:not(.visible) {
+    transform: rotateX(-16deg) translateY(26px);
+    opacity: 0;
+}
+
+#results-area.results-anim-twist.visible,
+#aux-panel.results-anim-twist.visible,
+#aux-container.results-anim-twist.visible,
+#apps-library-wrapper.results-anim-twist.visible {
+    transform: rotateX(0) translateY(0);
+    opacity: 1;
 }
 
 
 #results-area.visible, #aux-panel.visible {
     /* display: block; УДАЛЕНО: Больше не нужно */
-    transform: translateY(0) scale(1);
     opacity: 1;
     pointer-events: auto;
+}
+
+#results-area.is-closing, #aux-panel.is-closing {
+    pointer-events: none;
 }
 
 #aux-container.visible {
@@ -308,17 +453,32 @@ body.dark-theme .aux-header {
 #pinned-apps-container {
     width: var(--dynamic-width);
     box-sizing: border-box;
-    margin: 0 auto 10px;
+    margin: 0 auto 0;
     border-radius: var(--dynamic-border-radius);
-    padding: 10px;
-    display: none; /* Initially hidden */
+    padding: 0;
+    display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    min-height: 110px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), max-height 0.35s ease, padding 0.25s ease, margin-bottom 0.25s ease;
 }
 
 #pinned-apps-container.visible {
-    display: flex;
+    margin: 0 auto 10px;
+    padding: 10px;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+    max-height: 320px;
+    min-height: 110px;
+}
+
+#pinned-apps-container.is-closing {
+    pointer-events: none;
 }
 
 #aux-panel {
@@ -326,16 +486,27 @@ body.dark-theme .aux-header {
     box-sizing: border-box;
     margin: 0 auto 0;
     border-radius: var(--dynamic-border-radius);
-    display: none;
+    display: flex;
     flex-direction: column;
     overflow: hidden; /* FIX: Clip inner content to rounded corners */
-    padding-bottom: 0; /* Убрали нижний отступ */
-    height: 600px; /* Увеличено с 500px до 600px */
-    max-height: 600px;
+    padding: 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
+    max-height: 0;
+    transition: opacity 0.32s ease, transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), max-height 0.4s ease, margin-bottom 0.3s ease;
 }
 
 #aux-panel.visible {
-    display: flex;
+    margin: 0 auto 10px;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+    max-height: 600px;
+}
+
+#aux-panel.is-closing {
+    pointer-events: none;
 }
 
 .pinned-context-menu {
@@ -558,15 +729,18 @@ body.dark-theme .aux-header {
     overflow-y: auto;
     padding-right: 6px;
     scrollbar-width: thin;
+    scrollbar-gutter: stable both-edges;
 }
 
 .folder-menu-icons::-webkit-scrollbar {
-    width: 6px;
+    width: 10px;
 }
 
 .folder-menu-icons::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.18);
-    border-radius: 10px;
+    background: var(--scrollbar-thumb);
+    border-radius: 12px;
+    border: 3px solid transparent;
+    background-clip: content-box;
 }
 
 .folder-menu-icons::-webkit-scrollbar-track {
@@ -615,17 +789,64 @@ body.dark-theme .aux-header {
 #results-area{
     width: var(--dynamic-width);
     box-sizing: border-box;
-    margin: 0 auto 10px;
+    margin: 0 auto 0;
     border-radius:var(--dynamic-border-radius);
+    max-height:0;
+    overflow:hidden;
+    opacity:0;
+    pointer-events:none;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), max-height 0.35s ease, margin-bottom 0.25s ease;
+}
+
+#results-area.visible{
+    margin: 0 auto 10px;
     max-height:600px;
-    overflow-y:auto
+    overflow-y:auto;
+    opacity:1;
+    pointer-events:auto;
+    transform: translateY(0);
+}
+
+#results-area.is-closing{
+    pointer-events:none;
 }
 #results-list{list-style:none;padding:10px 15px;margin:0}
 .result-item{padding:14px 15px;cursor:default;display:flex;align-items:center;transition:all 0.2s cubic-bezier(0.16, 1, 0.3, 1);border-radius:15px}
 .result-icon{margin-right:15px;width:24px;height:24px;color:var(--icon-color);object-fit:contain;flex-shrink:0;background-color:transparent !important;border:none !important}
 .result-item.selected{background-color:var(--selection-color);color:var(--text-color)}
 .result-item.selected .result-icon{color:var(--icon-color)}
-#web-preview-container{padding:30px;display:none}
+#web-preview-container{
+    padding:0;
+    display:none;
+    max-height:520px;
+    overflow:hidden;
+    box-sizing:border-box;
+}
+
+#web-preview-scroll{
+    padding:24px 28px;
+    max-height:520px;
+    overflow-y:auto;
+    box-sizing:border-box;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+}
+
+#web-preview-scroll::-webkit-scrollbar{
+    width:10px;
+}
+
+#web-preview-scroll::-webkit-scrollbar-thumb{
+    background:var(--scrollbar-thumb);
+    border-radius:12px;
+    border:3px solid transparent;
+    background-clip:content-box;
+}
+
+#web-preview-scroll::-webkit-scrollbar-track{
+    background:transparent;
+}
 #loader{text-align:center;padding:20px;color:var(--icon-color)}
 .wiki-content{animation:fadeInContent .4s ease-out}
 @keyframes fadeInContent{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}

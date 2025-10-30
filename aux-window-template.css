@@ -28,6 +28,7 @@ img[data-path],
 /* Базовое состояние (скрыто) */
 #aux-container {
     opacity: 0;
+    pointer-events: none;
     /* Transition будет полностью управляться классами анимаций */
 }
 
@@ -76,6 +77,14 @@ body.no-animations #aux-container {
     display: flex;
     flex-direction: column;
     overflow: hidden; /* Гарантирует скругление углов */
+}
+
+#aux-container.visible {
+    pointer-events: auto;
+}
+
+#aux-container.is-closing {
+    pointer-events: none;
 }
 
 /* --- Заголовок окна --- */
@@ -278,10 +287,22 @@ h4 {
 }
 
 /* Стилизация полосы прокрутки (Соответствует основному style.css) */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--highlight-color); }
+::-webkit-scrollbar {
+    width: 10px;
+    background: transparent;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 12px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--highlight-color);
+}
 
 /* --- СТИЛИ ДЛЯ DRAG & DROP --- */
 
