@@ -49,6 +49,8 @@
   "anim_slide_up": "Выезд снизу",
   "anim_fade_in": "Появление",
   "anim_scale_in": "Увеличение",
+  "anim_fold": "Сворачивание",
+  "anim_shrink_fade": "Сжатие и растворение",
   "settings_opacity": "Прозрачность (%)",
   "settings_blur": "Сила размытия (px)",
   "settings_width": "Ширина окна (px)",

@@ -139,7 +139,12 @@ body.visible #app-container { opacity: 1; transform: translate(0) scale(1); }
 #results-area, #aux-panel {
     opacity: 0;
     pointer-events: none;
+    visibility: hidden;
     will-change: opacity, transform; /* Оптимизация производительности */
+}
+
+.glass-element.closing {
+    pointer-events: none !important;
 }
 
 /* Стили для разных анимаций результатов - БЫСТРЫЕ */
@@ -163,17 +168,72 @@ body.visible #app-container { opacity: 1; transform: translate(0) scale(1); }
     transition: opacity 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
+.results-anim-fold {
+    opacity: 0;
+    transform-origin: top;
+    transform: perspective(600px) rotateX(-16deg) translateY(12px);
+    transition: opacity 0.28s cubic-bezier(0.25, 0.8, 0.25, 1),
+                transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.results-anim-shrink-fade {
+    opacity: 0;
+    transform: scale(0.94) translateY(12px);
+    transition: opacity 0.25s cubic-bezier(0.25, 0.8, 0.25, 1),
+                transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 
 #results-area.visible, #aux-panel.visible {
     /* display: block; УДАЛЕНО: Больше не нужно */
     transform: translateY(0) scale(1);
     opacity: 1;
     pointer-events: auto;
+    visibility: visible;
 }
 
 #aux-container.visible {
     opacity: 1;
     transform: translateY(0) scale(1);
+}
+
+.results-anim-slide-up.closing {
+    transform: translateY(-10px);
+    opacity: 0;
+}
+
+.results-anim-fade-in.closing {
+    opacity: 0;
+}
+
+.results-anim-scale-in.closing {
+    transform: scale(0.92);
+    opacity: 0;
+}
+
+.results-anim-slide-right.closing {
+    transform: translateX(12px);
+    opacity: 0;
+}
+
+.results-anim-fold.visible {
+    transform: perspective(600px) rotateX(0) translateY(0);
+    opacity: 1;
+}
+
+.results-anim-fold.closing {
+    transform: perspective(600px) rotateX(18deg) translateY(16px) scaleY(0.9);
+    opacity: 0;
+}
+
+.results-anim-shrink-fade.visible {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+.results-anim-shrink-fade.closing {
+    transform: scale(0.88) translateY(10px);
+    opacity: 0;
 }
 
 /* =================================================================================
@@ -310,15 +370,25 @@ body.dark-theme .aux-header {
     box-sizing: border-box;
     margin: 0 auto 10px;
     border-radius: var(--dynamic-border-radius);
-    padding: 10px;
-    display: none; /* Initially hidden */
+    padding: 0 10px;
+    display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    min-height: 110px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px);
+    transition: opacity 0.25s ease, transform 0.3s ease;
+    max-height: 0;
+    overflow: hidden;
 }
 
 #pinned-apps-container.visible {
-    display: flex;
+    padding: 10px;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+    max-height: 400px;
+    min-height: 110px;
 }
 
 #aux-panel {
@@ -326,16 +396,26 @@ body.dark-theme .aux-header {
     box-sizing: border-box;
     margin: 0 auto 0;
     border-radius: var(--dynamic-border-radius);
-    display: none;
+    display: flex;
     flex-direction: column;
     overflow: hidden; /* FIX: Clip inner content to rounded corners */
     padding-bottom: 0; /* Убрали нижний отступ */
-    height: 600px; /* Увеличено с 500px до 600px */
-    max-height: 600px;
+    height: auto;
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
+    transition: opacity 0.28s cubic-bezier(0.25, 0.8, 0.25, 1),
+                transform 0.32s cubic-bezier(0.25, 0.8, 0.25, 1),
+                max-height 0.36s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #aux-panel.visible {
-    display: flex;
+    max-height: 600px;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+    overflow-y: auto;
 }
 
 .pinned-context-menu {
@@ -556,17 +636,24 @@ body.dark-theme .aux-header {
     gap: 8px;
     max-height: 260px;
     overflow-y: auto;
-    padding-right: 6px;
+    padding-right: 2px;
     scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
 }
 
 .folder-menu-icons::-webkit-scrollbar {
-    width: 6px;
+    width: 8px !important;
 }
 
 .folder-menu-icons::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.18);
-    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+.folder-menu-icons::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.45);
 }
 
 .folder-menu-icons::-webkit-scrollbar-track {
@@ -617,15 +704,48 @@ body.dark-theme .aux-header {
     box-sizing: border-box;
     margin: 0 auto 10px;
     border-radius:var(--dynamic-border-radius);
-    max-height:600px;
-    overflow-y:auto
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#results-area.visible {
+    max-height: 600px;
+    overflow-y: auto;
 }
 #results-list{list-style:none;padding:10px 15px;margin:0}
 .result-item{padding:14px 15px;cursor:default;display:flex;align-items:center;transition:all 0.2s cubic-bezier(0.16, 1, 0.3, 1);border-radius:15px}
 .result-icon{margin-right:15px;width:24px;height:24px;color:var(--icon-color);object-fit:contain;flex-shrink:0;background-color:transparent !important;border:none !important}
 .result-item.selected{background-color:var(--selection-color);color:var(--text-color)}
 .result-item.selected .result-icon{color:var(--icon-color)}
-#web-preview-container{padding:30px;display:none}
+#web-preview-container{
+    padding:30px 26px 30px 30px;
+    display:none;
+    max-height:100%;
+    overflow-y:auto;
+    box-sizing:border-box;
+    scrollbar-width:thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+#web-preview-container::-webkit-scrollbar {
+    width: 10px;
+}
+
+#web-preview-container::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 10px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+}
+
+#web-preview-container::-webkit-scrollbar-thumb:hover {
+    background-color: var(--highlight-color);
+}
+
+#web-preview-container::-webkit-scrollbar-track {
+    background: transparent;
+}
 #loader{text-align:center;padding:20px;color:var(--icon-color)}
 .wiki-content{animation:fadeInContent .4s ease-out}
 @keyframes fadeInContent{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
