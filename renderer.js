@@ -66,6 +66,74 @@ const Utils = {
         const b = parseInt(clean.slice(4, 6), 16);
         if ([r, g, b].some(Number.isNaN)) return null;
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    },
+
+    showElement: (element) => {
+        if (!element) return;
+        element.classList.remove('closing');
+        element.classList.add('visible');
+    },
+
+    animateHide: (element, callback) => {
+        if (!element) {
+            if (typeof callback === 'function') callback();
+            return;
+        }
+
+        if (!element.classList.contains('visible')) {
+            element.classList.remove('closing');
+            if (typeof callback === 'function') callback();
+            return;
+        }
+
+        if (document.body.classList.contains('no-animations')) {
+            element.classList.remove('visible', 'closing');
+            if (typeof callback === 'function') callback();
+            return;
+        }
+
+        const computed = window.getComputedStyle(element);
+        const getTime = (prop) => computed[prop]
+            .split(',')
+            .reduce((sum, part) => sum + (parseFloat(part) || 0), 0);
+        const totalDuration = getTime('transitionDuration') + getTime('transitionDelay');
+
+        if (totalDuration === 0) {
+            element.classList.remove('visible', 'closing');
+            if (typeof callback === 'function') callback();
+            return;
+        }
+
+        let finished = false;
+        const cleanup = () => {
+            if (finished) return;
+            finished = true;
+            element.removeEventListener('transitionend', onTransitionEnd);
+            element.removeEventListener('transitioncancel', onTransitionCancel);
+            element.classList.remove('visible', 'closing');
+            if (typeof callback === 'function') callback();
+        };
+
+        const onTransitionEnd = (event) => {
+            if (event.target === element && event.propertyName === 'opacity') {
+                cleanup();
+            }
+        };
+
+        const onTransitionCancel = (event) => {
+            if (event.target === element) {
+                cleanup();
+            }
+        };
+
+        element.addEventListener('transitionend', onTransitionEnd);
+        element.addEventListener('transitioncancel', onTransitionCancel);
+
+        requestAnimationFrame(() => {
+            element.classList.add('closing');
+        });
+
+        setTimeout(cleanup, totalDuration * 1000 + 50);
     }
 };
 
@@ -484,7 +552,7 @@ const SearchModule = {
         const resultsArea = Utils.getElement('#results-area');
         const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
 
-        if (pinnedAppsContainer) pinnedAppsContainer.classList.remove('visible');
+        if (pinnedAppsContainer) Utils.animateHide(pinnedAppsContainer);
 
         if (AuxPanelManager.currentPanel) {
             AuxPanelManager.closePanel(false);
@@ -548,7 +616,7 @@ const SearchModule = {
         });
 
         resultsList.appendChild(fragment);
-        resultsArea.classList.add('visible'); // Добавляем класс для анимации
+        Utils.showElement(resultsArea); // Добавляем класс для анимации
         
         // УДАЛЕНО: Убираем назойливую подсказку
         // this.showAppHintIfNeeded();
@@ -598,23 +666,29 @@ const SearchModule = {
     clearResults: function() {
         const resultsList = Utils.getElement('#results-list');
         if (resultsList) resultsList.innerHTML = '';
-        
+
         const resultsArea = Utils.getElement('#results-area');
-        if (resultsArea) resultsArea.classList.remove('visible');
+        AppState.searchResults = [];
+        AppState.selectedIndex = -1;
 
         // Close any open auxiliary panel to return to the default state.
         if (AuxPanelManager.currentPanel) {
             AuxPanelManager.closePanel(false); // `false` prevents it from re-showing pinned apps.
         }
 
-        const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
-        if (pinnedAppsContainer && AppState.settings.enablePinnedApps) {
-            pinnedAppsContainer.classList.add('visible');
+        const showPinnedIfNeeded = () => {
+            const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
+            if (pinnedAppsContainer && AppState.settings.enablePinnedApps) {
+                Utils.showElement(pinnedAppsContainer);
+            }
+            ViewManager.resizeWindow();
+        };
+
+        if (resultsArea) {
+            Utils.animateHide(resultsArea, showPinnedIfNeeded);
+        } else {
+            showPinnedIfNeeded();
         }
-        
-        AppState.searchResults = [];
-        AppState.selectedIndex = -1;
-        ViewManager.resizeWindow();
     },
 
     handleResultClick: function(result, event) {
@@ -1491,8 +1565,8 @@ const AuxPanelManager = {
         
         // If search results are visible, hide them before opening a panel.
         const resultsArea = Utils.getElement('#results-area');
-        if (resultsArea.classList.contains('visible')) {
-            resultsArea.classList.remove('visible');
+        if (resultsArea) {
+            Utils.animateHide(resultsArea);
         }
 
         this.currentPanel = type;
@@ -1522,7 +1596,7 @@ const AuxPanelManager = {
                 }
             }
             
-            this.panelContainer.classList.add('visible');
+            Utils.showElement(this.panelContainer);
 
             if (type === 'apps-library') {
                 if (appsLibraryWrapper) {
@@ -1540,7 +1614,7 @@ const AuxPanelManager = {
                 });
             });
             
-            Utils.getElement('#pinned-apps-container').classList.remove('visible');
+            Utils.animateHide(Utils.getElement('#pinned-apps-container'));
             
             this.executePanelLogic(type);
             
@@ -1558,20 +1632,26 @@ const AuxPanelManager = {
     closePanel: function(showPinnedApps = true) {
         // ИСПРАВЛЕНИЕ БАГА: Сбрасываем preventClose при закрытии панели
         ipcRenderer.send('set-prevent-close', false);
-        
-        this.currentPanel = null;
-        this.panelContainer.innerHTML = '';
-        this.panelContainer.classList.remove('visible');
-        
-        const hasSearchQuery = Utils.getElement('#search-input').value.trim().length > 1;
-        
-        if (hasSearchQuery && AppState.searchResults.length > 0) {
-            Utils.getElement('#results-area').classList.add('visible');
-        } else if (showPinnedApps && !hasSearchQuery && AppState.settings.enablePinnedApps) {
-            Utils.getElement('#pinned-apps-container').classList.add('visible');
-        }
 
-        setTimeout(() => ViewManager.resizeWindow(), 50);
+        this.currentPanel = null;
+
+        const completeClose = () => {
+            this.panelContainer.innerHTML = '';
+
+            const hasSearchQuery = Utils.getElement('#search-input').value.trim().length > 1;
+            const resultsArea = Utils.getElement('#results-area');
+            const pinnedApps = Utils.getElement('#pinned-apps-container');
+
+            if (hasSearchQuery && AppState.searchResults.length > 0) {
+                Utils.showElement(resultsArea);
+            } else if (showPinnedApps && !hasSearchQuery && AppState.settings.enablePinnedApps) {
+                Utils.showElement(pinnedApps);
+            }
+
+            setTimeout(() => ViewManager.resizeWindow(), 50);
+        };
+
+        Utils.animateHide(this.panelContainer, completeClose);
     },
     
     executePanelLogic: function(type) {
@@ -2148,9 +2228,14 @@ const ViewManager = {
         // НОВОЕ: Применяем класс анимации для результатов
         const resultsArea = Utils.getElement('#results-area');
         if(resultsArea) {
+            const wasVisible = resultsArea.classList.contains('visible');
             resultsArea.className = 'glass-element'; // Сбрасываем классы, оставляя базовый
+            resultsArea.classList.remove('closing');
             if (AppState.settings.resultsAnimationStyle) {
                 resultsArea.classList.add('results-anim-' + AppState.settings.resultsAnimationStyle);
+            }
+            if (wasVisible) {
+                Utils.showElement(resultsArea);
             }
         }
         
@@ -2158,9 +2243,9 @@ const ViewManager = {
         const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
         if (pinnedAppsContainer) {
             if (AppState.settings.enablePinnedApps) {
-                pinnedAppsContainer.classList.add('visible');
+                Utils.showElement(pinnedAppsContainer);
             } else {
-                pinnedAppsContainer.classList.remove('visible');
+                Utils.animateHide(pinnedAppsContainer);
             }
         }
 

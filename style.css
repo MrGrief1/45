@@ -136,10 +136,21 @@ body.anim-fade #app-container { transition: height 0.3s cubic-bezier(0.4, 0, 0.2
 body.visible #app-container { opacity: 1; transform: translate(0) scale(1); }
 
 /* НОВОЕ: Анимация для списка результатов И ПАНЕЛЕЙ */
-#results-area, #aux-panel {
+#results-area, #aux-panel, #pinned-apps-container {
     opacity: 0;
     pointer-events: none;
+    transform: translateY(12px);
+    transition: opacity 0.28s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.32s cubic-bezier(0.25, 0.8, 0.25, 1);
     will-change: opacity, transform; /* Оптимизация производительности */
+}
+
+#results-area,
+#pinned-apps-container {
+    display: none; /* Управляется классами visible/closing */
+}
+
+#aux-panel {
+    display: none;
 }
 
 /* Стили для разных анимаций результатов - БЫСТРЫЕ */
@@ -164,11 +175,33 @@ body.visible #app-container { opacity: 1; transform: translate(0) scale(1); }
 }
 
 
-#results-area.visible, #aux-panel.visible {
-    /* display: block; УДАЛЕНО: Больше не нужно */
+#results-area.visible,
+#results-area.visible.closing {
+    display: block;
+}
+
+#pinned-apps-container.visible,
+#pinned-apps-container.visible.closing {
+    display: flex;
+}
+
+#aux-panel.visible,
+#aux-panel.visible.closing {
+    display: flex;
+}
+
+#results-area.visible, #aux-panel.visible, #pinned-apps-container.visible {
     transform: translateY(0) scale(1);
     opacity: 1;
     pointer-events: auto;
+}
+
+#results-area.visible.closing,
+#aux-panel.visible.closing,
+#pinned-apps-container.visible.closing {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px) scale(1);
 }
 
 #aux-container.visible {
@@ -311,14 +344,9 @@ body.dark-theme .aux-header {
     margin: 0 auto 10px;
     border-radius: var(--dynamic-border-radius);
     padding: 10px;
-    display: none; /* Initially hidden */
     flex-wrap: wrap;
     gap: 10px;
     min-height: 110px;
-}
-
-#pinned-apps-container.visible {
-    display: flex;
 }
 
 #aux-panel {
@@ -326,16 +354,11 @@ body.dark-theme .aux-header {
     box-sizing: border-box;
     margin: 0 auto 0;
     border-radius: var(--dynamic-border-radius);
-    display: none;
     flex-direction: column;
     overflow: hidden; /* FIX: Clip inner content to rounded corners */
     padding-bottom: 0; /* Убрали нижний отступ */
     height: 600px; /* Увеличено с 500px до 600px */
     max-height: 600px;
-}
-
-#aux-panel.visible {
-    display: flex;
 }
 
 .pinned-context-menu {
@@ -625,7 +648,15 @@ body.dark-theme .aux-header {
 .result-icon{margin-right:15px;width:24px;height:24px;color:var(--icon-color);object-fit:contain;flex-shrink:0;background-color:transparent !important;border:none !important}
 .result-item.selected{background-color:var(--selection-color);color:var(--text-color)}
 .result-item.selected .result-icon{color:var(--icon-color)}
-#web-preview-container{padding:30px;display:none}
+#web-preview-container{
+    padding:30px;
+    display:none;
+    max-height:100%;
+    overflow-y:auto;
+    box-sizing:border-box;
+    border-radius:inherit;
+    scrollbar-gutter:stable both-edges;
+}
 #loader{text-align:center;padding:20px;color:var(--icon-color)}
 .wiki-content{animation:fadeInContent .4s ease-out}
 @keyframes fadeInContent{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}

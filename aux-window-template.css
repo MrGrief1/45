@@ -11,6 +11,8 @@
     height: 100vh;
     background-color: transparent;
     overflow: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 /* ИСПРАВЛЕНИЕ: Убираем белый фон у всех иконок */
@@ -93,12 +95,13 @@ h4 {
 }
 
 /* --- Список данных --- */
-#data-list { 
-    list-style: none; 
+#data-list {
+    list-style: none;
     padding: 15px;
     margin: 0;
     overflow-y: auto; /* Полоса прокрутки только для списка */
     flex-grow: 1;
+    scrollbar-gutter: stable both-edges;
 }
 
 /* Элемент списка */
@@ -277,11 +280,24 @@ h4 {
     flex-shrink: 0;
 }
 
-/* Стилизация полосы прокрутки (Соответствует основному style.css) */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--highlight-color); }
+/* Стилизация полосы прокрутки — единый минималистичный стиль */
+::-webkit-scrollbar {
+    width: 12px;
+    background: transparent;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 8px;
+    border: 4px solid transparent;
+    background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--highlight-color);
+}
 
 /* --- СТИЛИ ДЛЯ DRAG & DROP --- */
 
