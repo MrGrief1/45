@@ -45,14 +45,16 @@
                 <!-- Auxiliary content will be loaded here -->
             </div>
 
-            <div id="results-area" class="glass-element">
-                <div id="results-container">
-                    <ul id="results-list"></ul>
-                </div>
-                <div id="web-preview-container">
-                    <div id="loader" style="display:none;">Loading...</div>
+                <div id="results-area" class="glass-element">
+                    <div id="results-container">
+                        <ul id="results-list"></ul>
                     </div>
-            </div>
+                    <div id="web-preview-container">
+                        <div id="web-preview-scroll">
+                            <div id="loader" style="display:none;">Loading...</div>
+                        </div>
+                    </div>
+                </div>
         </div>
 
         <div id="settings-view" class="view">
@@ -173,7 +175,7 @@
                             <div class="setting-item">
                                 <label data-i18n="settings_animation_style">Animation Style</label>
                                 <div class="custom-select-wrapper" data-setting-key="animationStyle" id="custom-select-animation-style">
-                                     <div class="custom-select">
+                                    <div class="custom-select">
                                         <div class="custom-select-trigger">
                                             <span data-i18n="anim_scale">Scale & Bounce</span>
                                             <i data-feather="chevron-down" class="arrow"></i>
@@ -182,6 +184,8 @@
                                             <div class="custom-option" data-value="scale"><span data-i18n="anim_scale">Scale & Bounce</span></div>
                                             <div class="custom-option" data-value="slide"><span data-i18n="anim_slide">Slide Down</span></div>
                                             <div class="custom-option" data-value="fade"><span data-i18n="anim_fade">Fade</span></div>
+                                            <div class="custom-option" data-value="spiral"><span data-i18n="anim_spiral">Spiral Unfold</span></div>
+                                            <div class="custom-option" data-value="coil"><span data-i18n="anim_coil">Coil Collapse</span></div>
                                         </div>
                                     </div>
                                 </div>
@@ -208,6 +212,8 @@
                                             <div class="custom-option" data-value="slide-right"><span data-i18n="anim_slide_right">Slide from Right</span></div>
                                             <div class="custom-option" data-value="fold"><span data-i18n="anim_fold">Fold Away</span></div>
                                             <div class="custom-option" data-value="shrink"><span data-i18n="anim_shrink">Shrink & Fade</span></div>
+                                            <div class="custom-option" data-value="twist"><span data-i18n="anim_twist">Twist Reveal</span></div>
+                                            <div class="custom-option" data-value="dissolve"><span data-i18n="anim_dissolve">Dissolve</span></div>
                                         </div>
                                     </div>
                                 </div>

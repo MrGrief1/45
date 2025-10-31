@@ -66,6 +66,64 @@ const Utils = {
         const b = parseInt(clean.slice(4, 6), 16);
         if ([r, g, b].some(Number.isNaN)) return null;
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    },
+
+    showElement: (element, { visibleClass = 'visible', closingClass = 'closing', useAnimationFrame = true } = {}) => {
+        if (!element) return;
+
+        element.classList.remove(closingClass);
+
+        if (element.classList.contains(visibleClass)) {
+            return;
+        }
+
+        const applyVisible = () => {
+            element.classList.add(visibleClass);
+        };
+
+        if (useAnimationFrame) {
+            requestAnimationFrame(applyVisible);
+        } else {
+            applyVisible();
+        }
+    },
+
+    hideElement: (element, { visibleClass = 'visible', closingClass = 'closing', timeout = 420 } = {}) => {
+        if (!element) return Promise.resolve();
+
+        return new Promise((resolve) => {
+            if (!element.classList.contains(visibleClass)) {
+                element.classList.remove(closingClass);
+                resolve();
+                return;
+            }
+
+            let finished = false;
+
+            const cleanup = () => {
+                if (finished) return;
+                finished = true;
+                element.classList.remove(visibleClass);
+                element.classList.remove(closingClass);
+                element.removeEventListener('transitionend', onEnd);
+                element.removeEventListener('animationend', onEnd);
+                resolve();
+            };
+
+            const onEnd = (event) => {
+                if (event.target !== element) return;
+                cleanup();
+            };
+
+            element.addEventListener('transitionend', onEnd);
+            element.addEventListener('animationend', onEnd);
+
+            requestAnimationFrame(() => {
+                element.classList.add(closingClass);
+            });
+
+            setTimeout(cleanup, timeout);
+        });
     }
 };
 
@@ -487,7 +545,7 @@ const SearchModule = {
         const resultsArea = Utils.getElement('#results-area');
         const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
 
-        if (pinnedAppsContainer) pinnedAppsContainer.classList.remove('visible');
+        const hidePinnedPromise = pinnedAppsContainer ? Utils.hideElement(pinnedAppsContainer) : Promise.resolve();
 
         if (AuxPanelManager.currentPanel) {
             AuxPanelManager.closePanel(false);
@@ -551,11 +609,14 @@ const SearchModule = {
         });
 
         resultsList.appendChild(fragment);
-        resultsArea.classList.add('visible'); // Добавляем класс для анимации
-        
+
+        hidePinnedPromise.then(() => {
+            Utils.showElement(resultsArea); // Добавляем класс для анимации
+            ViewManager.resizeWindow();
+        });
+
         // УДАЛЕНО: Убираем назойливую подсказку
         // this.showAppHintIfNeeded();
-        ViewManager.resizeWindow();
     },
     
     getFallbackIconDataUrl: (iconName) => (window.feather && window.feather.icons[iconName]) ? `data:image/svg+xml;base64,${btoa(window.feather.icons[iconName].toSvg())}` : '',
@@ -603,7 +664,7 @@ const SearchModule = {
         if (resultsList) resultsList.innerHTML = '';
         
         const resultsArea = Utils.getElement('#results-area');
-        if (resultsArea) resultsArea.classList.remove('visible');
+        const hideResultsPromise = resultsArea ? Utils.hideElement(resultsArea) : Promise.resolve();
 
         // Close any open auxiliary panel to return to the default state.
         if (AuxPanelManager.currentPanel) {
@@ -611,9 +672,29 @@ const SearchModule = {
         }
 
         const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
-        if (pinnedAppsContainer && AppState.settings.enablePinnedApps) {
-            pinnedAppsContainer.classList.add('visible');
-        }
+        let revealAttempts = 0;
+        const revealPinned = () => {
+            if (!pinnedAppsContainer || !AppState.settings.enablePinnedApps) {
+                return;
+            }
+
+            const hasQuery = Utils.getElement('#search-input')?.value.trim().length > 0;
+            if (hasQuery || AppState.searchResults.length > 0) {
+                return;
+            }
+
+            const panelVisible = AuxPanelManager.panelContainer?.classList.contains('visible');
+            if (panelVisible && revealAttempts < 5) {
+                revealAttempts += 1;
+                setTimeout(revealPinned, 90);
+                return;
+            }
+
+            Utils.showElement(pinnedAppsContainer);
+            ViewManager.resizeWindow();
+        };
+
+        hideResultsPromise.then(revealPinned);
         
         AppState.searchResults = [];
         AppState.selectedIndex = -1;
@@ -646,15 +727,17 @@ const SearchModule = {
     
     showInlinePreview: function(query) {
         const webPreviewContainer = Utils.getElement('#web-preview-container');
+        const scrollHost = Utils.getElement('#web-preview-scroll');
         const loader = Utils.getElement('#loader');
         if (!webPreviewContainer || !loader) return;
 
         webPreviewContainer.style.display = 'block';
         Utils.getElement('#results-container').style.display = 'none';
         loader.style.display = 'block';
-        
-        const existingContent = webPreviewContainer.querySelector('.wiki-content');
-        if (existingContent) existingContent.remove();
+
+        const contentHost = scrollHost || webPreviewContainer;
+        contentHost.querySelectorAll('.wiki-content').forEach(node => node.remove());
+        contentHost.scrollTop = 0;
         ViewManager.resizeWindow();
 
         const lang = AppState.settings.language || 'en';
@@ -743,6 +826,7 @@ const SearchModule = {
 
     renderWikipediaSummary: function(data, query) { // ПРИНИМАЕМ query
         const webPreviewContainer = Utils.getElement('#web-preview-container');
+        const scrollHost = Utils.getElement('#web-preview-scroll');
         const contentDiv = Utils.createElement('div', { className: 'wiki-content' });
         
         // ИСПРАВЛЕНО: Парсим новый формат данных
@@ -773,12 +857,14 @@ const SearchModule = {
         searchLink.addEventListener('click', (e) => { e.preventDefault(); shell.openExternal(searchUrl); });
         contentDiv.appendChild(searchLink);
 
-        webPreviewContainer.appendChild(contentDiv);
+        const targetContainer = scrollHost || webPreviewContainer;
+        targetContainer.appendChild(contentDiv);
         ViewManager.resizeWindow();
     },
 
     renderPreviewError: function(message, query) { // ПРИНИМАЕМ query
         const webPreviewContainer = Utils.getElement('#web-preview-container');
+        const scrollHost = Utils.getElement('#web-preview-scroll');
         const errorDiv = Utils.createElement('div', { className: 'wiki-content error'});
         errorDiv.textContent = LocalizationRenderer.t('error_quick_search') + message;
         
@@ -792,7 +878,8 @@ const SearchModule = {
         });
         errorDiv.appendChild(searchLink);
 
-        webPreviewContainer.appendChild(errorDiv);
+        const targetContainer = scrollHost || webPreviewContainer;
+        targetContainer.appendChild(errorDiv);
         ViewManager.resizeWindow();
     },
 
@@ -1048,7 +1135,7 @@ const FolderContextMenu = {
         this.currentFolderId = resolvedFolder.id;
         this.highlightSelection(resolvedFolder);
 
-        this.menuEl.classList.add('visible');
+        Utils.showElement(this.menuEl, { useAnimationFrame: false });
         this.menuEl.style.left = '-9999px';
         this.menuEl.style.top = '-9999px';
 
@@ -1071,8 +1158,9 @@ const FolderContextMenu = {
 
     hide() {
         if (!this.menuEl) return;
-        this.menuEl.classList.remove('visible');
-        this.currentFolderId = null;
+        Utils.hideElement(this.menuEl, { timeout: 360 }).then(() => {
+            this.currentFolderId = null;
+        });
     },
 
     handleAction(action) {
@@ -1188,7 +1276,7 @@ const PinnedContextMenu = {
 
     show(x, y) {
         if (!this.menuEl) return;
-        this.menuEl.classList.add('visible');
+        Utils.showElement(this.menuEl, { useAnimationFrame: false });
         this.menuEl.style.left = '-9999px';
         this.menuEl.style.top = '-9999px';
 
@@ -1211,7 +1299,7 @@ const PinnedContextMenu = {
 
     hide() {
         if (!this.menuEl) return;
-        this.menuEl.classList.remove('visible');
+        Utils.hideElement(this.menuEl, { timeout: 320 });
     }
 };
 
@@ -1495,7 +1583,7 @@ const AuxPanelManager = {
         // If search results are visible, hide them before opening a panel.
         const resultsArea = Utils.getElement('#results-area');
         if (resultsArea.classList.contains('visible')) {
-            resultsArea.classList.remove('visible');
+            Utils.hideElement(resultsArea);
         }
 
         this.currentPanel = type;
@@ -1525,7 +1613,7 @@ const AuxPanelManager = {
                 }
             }
             
-            this.panelContainer.classList.add('visible');
+            Utils.showElement(this.panelContainer, { useAnimationFrame: false });
 
             if (type === 'apps-library') {
                 if (appsLibraryWrapper) {
@@ -1543,7 +1631,10 @@ const AuxPanelManager = {
                 });
             });
             
-            Utils.getElement('#pinned-apps-container').classList.remove('visible');
+            const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
+            if (pinnedAppsContainer) {
+                Utils.hideElement(pinnedAppsContainer);
+            }
             
             this.executePanelLogic(type);
             
@@ -1569,11 +1660,13 @@ const AuxPanelManager = {
             this.panelContainer.classList.remove('visible');
 
             const hasSearchQuery = Utils.getElement('#search-input').value.trim().length > 1;
+            const resultsAreaEl = Utils.getElement('#results-area');
+            const pinnedContainerEl = Utils.getElement('#pinned-apps-container');
 
             if (hasSearchQuery && AppState.searchResults.length > 0) {
-                Utils.getElement('#results-area').classList.add('visible');
+                Utils.showElement(resultsAreaEl);
             } else if (showPinnedApps && !hasSearchQuery && AppState.settings.enablePinnedApps) {
-                Utils.getElement('#pinned-apps-container').classList.add('visible');
+                Utils.showElement(pinnedContainerEl);
             }
 
             setTimeout(() => ViewManager.resizeWindow(), 50);
@@ -2216,9 +2309,9 @@ const ViewManager = {
         const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
         if (pinnedAppsContainer) {
             if (AppState.settings.enablePinnedApps) {
-                pinnedAppsContainer.classList.add('visible');
+                Utils.showElement(pinnedAppsContainer, { useAnimationFrame: false });
             } else {
-                pinnedAppsContainer.classList.remove('visible');
+                Utils.hideElement(pinnedAppsContainer);
             }
         }
 
