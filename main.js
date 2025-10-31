@@ -97,7 +97,23 @@ const DEFAULT_SETTINGS = {
             color: null,
             icon: 'folder'
         }
-    ]
+    ],
+    subscription: {
+        active: true,
+        plan: 'Creator',
+        renewalDate: '2025-01-31',
+        paymentMethod: '•••• 4242',
+        seats: 1,
+        trialDaysRemaining: 0,
+        perks: [
+            'subscription_perk_clipboard',
+            'subscription_perk_blocks',
+            'subscription_perk_support'
+        ]
+    },
+    addons: {
+        installed: []
+    }
 };
 
 // =================================================================================
@@ -273,7 +289,73 @@ class SettingsManager {
                 icon: folder.icon || 'folder'
             }));
 
+        currentSettings.subscription = this.sanitizeSubscription(currentSettings.subscription);
+        currentSettings.addons = this.sanitizeAddons(currentSettings.addons);
+
         Logger.info(`App folders structure: ${JSON.stringify(currentSettings.appFolders.map(f => ({id: f.id, name: f.name, appsCount: f.apps.length})))}`);
+    }
+
+    sanitizeSubscription(data) {
+        const defaults = JSON.parse(JSON.stringify(DEFAULT_SETTINGS.subscription));
+        if (!defaults) {
+            return {
+                active: true,
+                plan: 'Creator',
+                renewalDate: null,
+                paymentMethod: '',
+                seats: 1,
+                trialDaysRemaining: 0,
+                perks: []
+            };
+        }
+
+        if (!data || typeof data !== 'object') {
+            return defaults;
+        }
+
+        const sanitized = {
+            ...defaults,
+            ...data
+        };
+
+        sanitized.active = Boolean(sanitized.active);
+        sanitized.plan = typeof sanitized.plan === 'string' && sanitized.plan.trim() !== '' ? sanitized.plan : defaults.plan;
+        sanitized.renewalDate = typeof sanitized.renewalDate === 'string' ? sanitized.renewalDate : defaults.renewalDate;
+        sanitized.paymentMethod = typeof sanitized.paymentMethod === 'string' ? sanitized.paymentMethod : defaults.paymentMethod;
+        const seats = parseInt(sanitized.seats, 10);
+        sanitized.seats = Number.isNaN(seats) ? defaults.seats : Math.max(1, seats);
+        const trialDays = parseInt(sanitized.trialDaysRemaining, 10);
+        sanitized.trialDaysRemaining = Number.isNaN(trialDays) ? defaults.trialDaysRemaining : Math.max(0, trialDays);
+        sanitized.perks = Array.isArray(data.perks)
+            ? data.perks.filter(perk => typeof perk === 'string' && perk.trim() !== '')
+            : defaults.perks.slice();
+
+        return sanitized;
+    }
+
+    sanitizeAddons(data) {
+        const sanitized = { installed: [] };
+
+        if (!data || typeof data !== 'object') {
+            return sanitized;
+        }
+
+        const installed = Array.isArray(data.installed) ? data.installed : [];
+        sanitized.installed = installed
+            .filter(addon => addon && typeof addon === 'object' && addon.id)
+            .map(addon => ({
+                id: String(addon.id),
+                templateId: addon.templateId ? String(addon.templateId) : String(addon.id),
+                title: typeof addon.title === 'string' ? addon.title : '',
+                description: typeof addon.description === 'string' ? addon.description : '',
+                blocks: Array.isArray(addon.blocks)
+                    ? addon.blocks.filter(blockId => typeof blockId === 'string')
+                    : [],
+                createdAt: Number.isFinite(Number(addon.createdAt)) ? Number(addon.createdAt) : Date.now(),
+                lastModified: Number.isFinite(Number(addon.lastModified)) ? Number(addon.lastModified) : Date.now()
+            }));
+
+        return sanitized;
     }
 
     saveSettings() {
@@ -286,9 +368,23 @@ class SettingsManager {
 
     updateSetting(key, value) {
         let requiresReindex = false;
+        let hasChanges = false;
 
-        if (key === 'indexedDirectories' || key === 'customAutomations') {
+        if (key === 'subscription') {
+            const nextSubscription = this.sanitizeSubscription(value);
+            if (JSON.stringify(currentSettings.subscription || {}) !== JSON.stringify(nextSubscription)) {
+                currentSettings.subscription = nextSubscription;
+                hasChanges = true;
+            }
+        } else if (key === 'addons') {
+            const nextAddons = this.sanitizeAddons(value);
+            if (JSON.stringify(currentSettings.addons || {}) !== JSON.stringify(nextAddons)) {
+                currentSettings.addons = nextAddons;
+                hasChanges = true;
+            }
+        } else if (key === 'indexedDirectories' || key === 'customAutomations') {
             currentSettings[key] = value;
+            hasChanges = true;
             if (key === 'indexedDirectories') requiresReindex = true;
         } else if (currentSettings[key] !== value) {
             if (['opacity', 'blurStrength', 'maxIndexDepth', 'width', 'height', 'borderRadius'].includes(key)) {
@@ -297,10 +393,11 @@ class SettingsManager {
                 if (key === 'maxIndexDepth') requiresReindex = true;
             }
             currentSettings[key] = value;
-        } else {
-            return;
+            hasChanges = true;
         }
-        
+
+        if (!hasChanges) return;
+
         this.saveSettings();
         this.applySettings(key);
         this.broadcastSettingsUpdate();

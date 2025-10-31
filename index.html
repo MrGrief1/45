@@ -71,6 +71,8 @@
                             <li data-tab="appearance" data-i18n="settings_appearance">Appearance</li>
                             <li data-tab="indexing" data-i18n="settings_indexing">Indexing</li>
                             <li data-tab="automations" data-i18n="settings_automations">Automations</li>
+                            <li data-tab="subscription" data-i18n="settings_subscription">Subscription</li>
+                            <li data-tab="addons" data-i18n="settings_addons" class="addons-tab">Add-ons</li>
                             <li data-tab="about" data-i18n="settings_about">About</li>
                         </ul>
                     </div>
@@ -282,7 +284,7 @@
                         <div id="tab-automations" class="tab-content">
                             <h4 data-i18n="settings_custom_automations">Custom Automations</h4>
                             <div id="automations-list"></div>
-                            
+
                             <div class="automation-form">
                                 <input type="text" id="new-auto-name" data-i18n-placeholder="settings_auto_name" placeholder="Name">
                                 <input type="text" id="new-auto-keyword" data-i18n-placeholder="settings_auto_keyword" placeholder="Keyword">
@@ -298,6 +300,84 @@
                                     <li data-i18n-html="auto_instructions_step2"></li>
                                     <li data-i18n-html="auto_instructions_step3"></li>
                                 </ul>
+                            </div>
+                        </div>
+
+                        <div id="tab-subscription" class="tab-content">
+                            <div class="subscription-hero glass-element">
+                                <div class="subscription-status-line">
+                                    <span id="subscription-plan" class="subscription-plan-badge">Creator</span>
+                                    <span id="subscription-status" class="subscription-status-badge status-active">Active</span>
+                                </div>
+                                <h3 id="subscription-headline" data-i18n="subscription_headline_active">Your Creator plan is active</h3>
+                                <p id="subscription-renewal" class="subscription-renewal"></p>
+                                <div id="subscription-trial" class="subscription-trial hidden"></div>
+                                <div class="subscription-actions">
+                                    <button id="subscription-manage-button" class="settings-button external-link" data-url="https://flashsearch.app/account" data-i18n="subscription_manage_button">Manage plan</button>
+                                    <button id="subscription-toggle-button" class="settings-button secondary"></button>
+                                </div>
+                            </div>
+                            <div class="subscription-details">
+                                <div class="subscription-card glass-element">
+                                    <h4 data-i18n="subscription_perks_title">Included in your plan</h4>
+                                    <ul id="subscription-perks" class="subscription-perks"></ul>
+                                </div>
+                                <div class="subscription-card glass-element">
+                                    <h4 data-i18n="subscription_overview_title">Workspace overview</h4>
+                                    <dl class="subscription-overview">
+                                        <div>
+                                            <dt data-i18n="subscription_plan_label">Plan</dt>
+                                            <dd id="subscription-plan-name">Creator</dd>
+                                        </div>
+                                        <div>
+                                            <dt data-i18n="subscription_seats_label">Seats</dt>
+                                            <dd id="subscription-seats">1</dd>
+                                        </div>
+                                        <div>
+                                            <dt data-i18n="subscription_payment_label">Payment method</dt>
+                                            <dd id="subscription-payment-method">•••• 4242</dd>
+                                        </div>
+                                        <div>
+                                            <dt data-i18n="subscription_active_addons_label">Active add-ons</dt>
+                                            <dd id="subscription-active-addons">0</dd>
+                                        </div>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tab-addons" class="tab-content">
+                            <div id="addons-locked-message" class="addons-locked hidden">
+                                <div class="addons-locked-card glass-element">
+                                    <i data-feather="lock" class="addons-locked-icon"></i>
+                                    <h3 data-i18n="addons_locked_title">Unlock creative add-ons</h3>
+                                    <p data-i18n="addons_locked_description">Activate a subscription to build custom extensions.</p>
+                                    <button id="addons-view-plans" class="settings-button tertiary" data-i18n="addons_locked_button">View subscription plans</button>
+                                </div>
+                            </div>
+                            <div id="addons-active-content" class="addons-active">
+                                <div class="addons-columns">
+                                    <section class="addons-gallery">
+                                        <header class="addons-gallery-header">
+                                            <h4 data-i18n="addons_gallery_title">Add-on gallery</h4>
+                                            <p data-i18n="addons_gallery_description">Start with a template and customize it to fit your workflow.</p>
+                                        </header>
+                                        <div id="addons-gallery" class="addon-card-grid"></div>
+                                    </section>
+                                    <section class="addons-workspace">
+                                        <div class="addons-workspace-header">
+                                            <div>
+                                                <h4 data-i18n="addons_installed_title">My add-ons</h4>
+                                                <p data-i18n="addons_workspace_hint">Blocks run top to bottom. Combine triggers, actions, and outputs to craft your automation.</p>
+                                            </div>
+                                            <button id="addons-build-from-scratch" class="settings-button tertiary">
+                                                <i data-feather="plus"></i>
+                                                <span data-i18n="addons_create_from_scratch">Build from scratch</span>
+                                            </button>
+                                        </div>
+                                        <div id="installed-addons-container" class="installed-addons"></div>
+                                    </section>
+                                </div>
                             </div>
                         </div>
 

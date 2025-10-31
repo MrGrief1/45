@@ -1386,6 +1386,25 @@ input[type="number"]:focus {
   box-shadow: none;
 }
 
+textarea {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background-color: rgba(var(--base-bg-color-rgb), 0.7);
+  color: var(--text-color);
+  min-height: 96px;
+  resize: vertical;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+textarea:focus {
+  border-color: var(--highlight-color);
+  outline: none;
+  box-shadow: none;
+}
+
 .settings-button {
   padding: 10px 20px;
   background-color: var(--highlight-color);
@@ -1412,6 +1431,23 @@ input[type="number"]:focus {
 
 .settings-button.secondary {
   background-color: var(--icon-color);
+}
+
+.settings-button.tertiary {
+  background: transparent;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+}
+
+.settings-button.tertiary:hover {
+  background: color-mix(in srgb, var(--highlight-color), transparent 85%);
+  border-color: color-mix(in srgb, var(--highlight-color), transparent 60%);
+  color: var(--highlight-color);
+}
+
+.hidden {
+  display: none !important;
 }
 
 .directory-entry,
@@ -2096,4 +2132,443 @@ input[type="range"]:active::-webkit-slider-thumb {
   font-size: 22px;
   font-weight: 600;
   color: var(--text-color);
+}
+/* Subscription & Add-ons */
+.subscription-hero {
+  margin-top: 10px;
+  padding: 24px 28px;
+  border-radius: 18px;
+  border: 1px solid var(--border-color);
+  background: rgba(var(--secondary-bg-color-rgb), 0.75);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.subscription-status-line {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.subscription-plan-badge {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 13px;
+  background: color-mix(in srgb, var(--highlight-color), transparent 82%);
+  border: 1px solid color-mix(in srgb, var(--highlight-color), transparent 65%);
+  color: var(--highlight-color);
+}
+
+.subscription-status-badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.subscription-status-badge.status-active {
+  background: color-mix(in srgb, #2ecc71, transparent 82%);
+  color: #1b8f4d;
+  border: 1px solid color-mix(in srgb, #2ecc71, transparent 65%);
+}
+
+.subscription-status-badge.status-paused {
+  background: color-mix(in srgb, #ffb020, transparent 82%);
+  color: #a56700;
+  border: 1px solid color-mix(in srgb, #ffb020, transparent 60%);
+}
+
+.subscription-status-badge.status-inactive {
+  background: color-mix(in srgb, #ff453a, transparent 82%);
+  color: #a0110a;
+  border: 1px solid color-mix(in srgb, #ff453a, transparent 60%);
+}
+
+.subscription-renewal {
+  margin: 0;
+  color: var(--icon-color);
+}
+
+.subscription-trial {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: color-mix(in srgb, #ffd60a, transparent 80%);
+  color: #7a5a00;
+  width: fit-content;
+}
+
+.subscription-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.subscription-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.subscription-card {
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  background: rgba(var(--secondary-bg-color-rgb), 0.65);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.subscription-perks {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.subscription-perks li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.subscription-perks li::before {
+  content: '✔';
+  font-size: 14px;
+  color: var(--highlight-color);
+}
+
+.subscription-overview {
+  display: grid;
+  gap: 12px;
+}
+
+.subscription-overview div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.subscription-overview dt {
+  font-size: 13px;
+  color: var(--icon-color);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.subscription-overview dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.addons-locked {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 320px;
+}
+
+.addons-locked-card {
+  padding: 32px;
+  border-radius: 18px;
+  border: 1px solid var(--border-color);
+  background: rgba(var(--secondary-bg-color-rgb), 0.72);
+  text-align: center;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: center;
+}
+
+.addons-locked-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--highlight-color);
+}
+
+.addons-locked-card p {
+  color: var(--icon-color);
+  margin: 0;
+}
+
+.addons-locked-card .settings-button {
+  margin-top: 0;
+}
+
+.addons-columns {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) 1fr;
+  gap: 28px;
+  align-items: flex-start;
+}
+
+.addons-gallery-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.addons-gallery-header p {
+  color: var(--icon-color);
+  margin: 0;
+}
+
+.addon-card-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.addon-card {
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  background: rgba(var(--secondary-bg-color-rgb), 0.6);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+}
+
+.addon-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.addon-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--highlight-color), 0.12);
+  color: var(--highlight-color);
+}
+
+.addon-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.addon-card-tagline {
+  font-size: 13px;
+  color: var(--icon-color);
+  margin: 0;
+}
+
+.addon-card-category {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  background: rgba(var(--base-bg-color-rgb), 0.55);
+  border: 1px solid var(--border-color);
+  width: fit-content;
+}
+
+.addon-card-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--icon-color);
+}
+
+.addon-card button {
+  align-self: flex-start;
+}
+
+.addons-workspace-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.installed-addons {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.addon-workspace-card {
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  background: rgba(var(--secondary-bg-color-rgb), 0.6);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.addon-workspace-header-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.addon-title-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: rgba(var(--base-bg-color-rgb), 0.7);
+  color: var(--text-color);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.addon-blocks-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.addon-block-chip {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background: rgba(var(--base-bg-color-rgb), 0.6);
+  min-width: 220px;
+}
+
+.addon-block-chip .addon-block-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--secondary-bg-color-rgb), 0.6);
+}
+
+.addon-block-chip .addon-block-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.addon-block-chip .addon-block-info span {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.addon-block-chip .addon-block-info small {
+  font-size: 12px;
+  color: var(--icon-color);
+}
+
+.addon-block-chip button {
+  border: none;
+  background: transparent;
+  color: var(--icon-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.addon-block-chip button:hover {
+  color: var(--highlight-color);
+}
+
+.addon-block-chip.addon-block-trigger {
+  border-left: 4px solid #0a84ff;
+}
+
+.addon-block-chip.addon-block-action {
+  border-left: 4px solid #ff9f0a;
+}
+
+.addon-block-chip.addon-block-output {
+  border-left: 4px solid #30d158;
+}
+
+.addon-block-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.addon-block-select {
+  min-width: 200px;
+}
+
+.addons-active .settings-button.secondary,
+.subscription-card .settings-button {
+  margin-top: 0;
+}
+
+@media (max-width: 1180px) {
+  .addons-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .subscription-hero,
+  .subscription-card,
+  .addon-card,
+  .addon-workspace-card {
+    padding: 18px;
+  }
+
+  .addons-workspace-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .subscription-status-line {
+    justify-content: flex-start;
+  }
+}
+.addon-empty-state {
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px dashed var(--border-color);
+  color: var(--icon-color);
+  text-align: center;
+}
+.addon-block-empty {
+  font-size: 13px;
+  color: var(--icon-color);
+  padding: 8px 0;
+}
+.addon-card-description {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 14px;
 }

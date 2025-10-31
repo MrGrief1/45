@@ -101,6 +101,70 @@ const AppIconFallbacks = {
     }
 };
 
+const AddonBlockDefinitions = [
+    { id: 'trigger_clipboard', type: 'trigger', icon: 'clipboard', labelKey: 'addons_block_clipboard_change', descriptionKey: 'addons_block_clipboard_change_desc' },
+    { id: 'trigger_shortcut', type: 'trigger', icon: 'command', labelKey: 'addons_block_shortcut', descriptionKey: 'addons_block_shortcut_desc' },
+    { id: 'trigger_manual', type: 'trigger', icon: 'play', labelKey: 'addons_block_manual', descriptionKey: 'addons_block_manual_desc' },
+    { id: 'action_enrich_context', type: 'action', icon: 'sliders', labelKey: 'addons_block_enrich_context', descriptionKey: 'addons_block_enrich_context_desc' },
+    { id: 'action_toggle_focus', type: 'action', icon: 'moon', labelKey: 'addons_block_toggle_focus', descriptionKey: 'addons_block_toggle_focus_desc' },
+    { id: 'action_run_script', type: 'action', icon: 'terminal', labelKey: 'addons_block_run_script', descriptionKey: 'addons_block_run_script_desc' },
+    { id: 'action_wait', type: 'action', icon: 'clock', labelKey: 'addons_block_wait', descriptionKey: 'addons_block_wait_desc' },
+    { id: 'action_replace_buffer', type: 'action', icon: 'refresh-ccw', labelKey: 'addons_block_replace_buffer', descriptionKey: 'addons_block_replace_buffer_desc' },
+    { id: 'output_notification', type: 'output', icon: 'bell', labelKey: 'addons_block_notification', descriptionKey: 'addons_block_notification_desc' },
+    { id: 'output_pin', type: 'output', icon: 'bookmark', labelKey: 'addons_block_pin', descriptionKey: 'addons_block_pin_desc' }
+];
+
+const AddonBlockTypeLabels = {
+    trigger: 'addons_block_group_trigger',
+    action: 'addons_block_group_action',
+    output: 'addons_block_group_output'
+};
+
+const AddonGalleryTemplates = [
+    {
+        id: 'smart-buffer',
+        icon: 'layers',
+        nameKey: 'addons_name_smart_buffer',
+        taglineKey: 'addons_tagline_smart_buffer',
+        descriptionKey: 'addons_desc_smart_buffer',
+        categoryKey: 'addons_category_clipboard',
+        featureKeys: [
+            'addons_feature_clipboard_stack',
+            'addons_feature_clipboard_preview',
+            'addons_feature_clipboard_cleanup'
+        ],
+        defaultBlocks: ['trigger_clipboard', 'action_enrich_context', 'action_replace_buffer', 'output_pin']
+    },
+    {
+        id: 'focus-mode',
+        icon: 'target',
+        nameKey: 'addons_name_focus_mode',
+        taglineKey: 'addons_tagline_focus_mode',
+        descriptionKey: 'addons_desc_focus_mode',
+        categoryKey: 'addons_category_productivity',
+        featureKeys: [
+            'addons_feature_focus_scene',
+            'addons_feature_focus_cleanup',
+            'addons_feature_focus_music'
+        ],
+        defaultBlocks: ['trigger_shortcut', 'action_toggle_focus', 'action_wait', 'output_notification']
+    },
+    {
+        id: 'command-blocks',
+        icon: 'cpu',
+        nameKey: 'addons_name_command_blocks',
+        taglineKey: 'addons_tagline_command_blocks',
+        descriptionKey: 'addons_desc_command_blocks',
+        categoryKey: 'addons_category_automation',
+        featureKeys: [
+            'addons_feature_command_multi',
+            'addons_feature_command_inputs',
+            'addons_feature_command_notifications'
+        ],
+        defaultBlocks: ['trigger_manual', 'action_run_script', 'output_notification']
+    }
+];
+
 // =================================================================================
 // === Система Локализации (Клиентская сторона) ===
 // =================================================================================
@@ -186,6 +250,19 @@ const SettingsModule = {
                 if (url) shell.openExternal(url);
             });
         });
+
+        const viewPlansButton = Utils.getElement('#addons-view-plans');
+        if (viewPlansButton) {
+            viewPlansButton.addEventListener('click', () => {
+                const subscriptionTab = document.querySelector('.settings-sidebar li[data-tab="subscription"]');
+                subscriptionTab?.click();
+            });
+        }
+
+        const buildFromScratchButton = Utils.getElement('#addons-build-from-scratch');
+        if (buildFromScratchButton) {
+            buildFromScratchButton.addEventListener('click', () => this.createCustomAddon());
+        }
     },
     
     bindSetting: function(elementId, settingKey) {
@@ -262,7 +339,7 @@ const SettingsModule = {
         this.setElementValue('setting-focus-highlight', AppState.settings.showFocusHighlight, true);
         this.setElementValue('setting-width', AppState.settings.width);
         this.setElementValue('setting-height', AppState.settings.height);
-        
+
         // ИСПРАВЛЕНИЕ: Правильная инициализация ползунка скругления
         const borderRadiusValue = AppState.settings.borderRadius !== undefined ? AppState.settings.borderRadius : 24;
         this.setElementValue('setting-border-radius', borderRadiusValue);
@@ -276,6 +353,8 @@ const SettingsModule = {
         if (Utils.getElement('#app-version')) {
             Utils.getElement('#app-version').textContent = AppState.appVersion;
         }
+        this.renderSubscriptionTab();
+        this.renderAddonsUI();
         this.renderIndexedDirectories();
         this.renderAutomations();
     },
@@ -370,6 +449,441 @@ const SettingsModule = {
             automations.splice(index, 1);
             ipcRenderer.send('update-setting', 'customAutomations', automations);
         }
+    },
+
+    getSubscriptionData: function() {
+        const defaults = {
+            active: true,
+            plan: 'Creator',
+            renewalDate: '',
+            paymentMethod: '',
+            seats: 1,
+            trialDaysRemaining: 0,
+            perks: []
+        };
+        const subscription = AppState.settings?.subscription || {};
+        return {
+            ...defaults,
+            ...subscription,
+            perks: Array.isArray(subscription.perks) ? subscription.perks : defaults.perks
+        };
+    },
+
+    isSubscriptionActive: function() {
+        const subscription = this.getSubscriptionData();
+        return subscription.active !== false;
+    },
+
+    renderSubscriptionTab: function() {
+        const planBadge = Utils.getElement('#subscription-plan');
+        const planName = Utils.getElement('#subscription-plan-name');
+        const statusBadge = Utils.getElement('#subscription-status');
+        const headline = Utils.getElement('#subscription-headline');
+        const renewal = Utils.getElement('#subscription-renewal');
+        const trial = Utils.getElement('#subscription-trial');
+        const seats = Utils.getElement('#subscription-seats');
+        const payment = Utils.getElement('#subscription-payment-method');
+        const addonsCount = Utils.getElement('#subscription-active-addons');
+        const perksContainer = Utils.getElement('#subscription-perks');
+        const toggleButton = Utils.getElement('#subscription-toggle-button');
+
+        if (!planBadge || !statusBadge || !headline) {
+            this.updateSubscriptionTabVisibility();
+            return;
+        }
+
+        const subscription = this.getSubscriptionData();
+        const planKey = `subscription_plan_${String(subscription.plan || 'creator').toLowerCase()}`;
+        const planText = LocalizationRenderer.t(planKey);
+        planBadge.textContent = planText;
+        if (planName) planName.textContent = planText;
+
+        const isActive = this.isSubscriptionActive();
+        const statusKey = isActive ? 'subscription_status_active' : 'subscription_status_paused';
+        statusBadge.textContent = LocalizationRenderer.t(statusKey);
+        statusBadge.classList.remove('status-active', 'status-paused', 'status-inactive');
+        statusBadge.classList.add(isActive ? 'status-active' : 'status-paused');
+
+        const headlineKey = isActive ? 'subscription_headline_active' : 'subscription_headline_paused';
+        headline.textContent = LocalizationRenderer.t(headlineKey);
+
+        if (renewal) {
+            renewal.textContent = subscription.renewalDate
+                ? LocalizationRenderer.t('subscription_renews_on', subscription.renewalDate)
+                : '';
+        }
+
+        if (trial) {
+            if (subscription.trialDaysRemaining > 0) {
+                trial.textContent = LocalizationRenderer.t('subscription_trial_days', subscription.trialDaysRemaining);
+                trial.classList.remove('hidden');
+            } else {
+                trial.classList.add('hidden');
+            }
+        }
+
+        if (seats) {
+            seats.textContent = `${subscription.seats}`;
+        }
+
+        if (payment) {
+            payment.textContent = subscription.paymentMethod || LocalizationRenderer.t('subscription_payment_placeholder');
+        }
+
+        if (addonsCount) {
+            const installed = AppState.settings?.addons?.installed;
+            const count = Array.isArray(installed) ? installed.length : 0;
+            addonsCount.textContent = `${count}`;
+        }
+
+        if (perksContainer) {
+            perksContainer.innerHTML = '';
+            const perks = subscription.perks && subscription.perks.length > 0
+                ? subscription.perks
+                : ['subscription_perk_clipboard', 'subscription_perk_blocks', 'subscription_perk_support'];
+            perks.forEach(perkKey => {
+                const item = Utils.createElement('li');
+                item.textContent = LocalizationRenderer.t(perkKey);
+                perksContainer.appendChild(item);
+            });
+        }
+
+        if (toggleButton) {
+            toggleButton.textContent = LocalizationRenderer.t(isActive ? 'subscription_toggle_pause' : 'subscription_toggle_resume');
+            toggleButton.onclick = () => this.toggleSubscriptionActive();
+        }
+
+        this.updateSubscriptionTabVisibility();
+    },
+
+    toggleSubscriptionActive: function() {
+        const subscription = this.getSubscriptionData();
+        const nextState = {
+            ...subscription,
+            active: !subscription.active,
+            lastModified: Date.now()
+        };
+        ipcRenderer.send('update-setting', 'subscription', nextState);
+    },
+
+    updateSubscriptionTabVisibility: function() {
+        const addonsTabButton = document.querySelector('.settings-sidebar li[data-tab="addons"]');
+        const lockedMessage = Utils.getElement('#addons-locked-message');
+        const activeContent = Utils.getElement('#addons-active-content');
+        const isActive = this.isSubscriptionActive();
+
+        if (addonsTabButton) {
+            addonsTabButton.classList.toggle('hidden', !isActive);
+        }
+        if (lockedMessage && activeContent) {
+            lockedMessage.classList.toggle('hidden', isActive);
+            activeContent.classList.toggle('hidden', !isActive);
+        }
+        if (!isActive && addonsTabButton?.classList.contains('active')) {
+            const subscriptionTab = document.querySelector('.settings-sidebar li[data-tab="subscription"]');
+            subscriptionTab?.click();
+        }
+    },
+
+    renderAddonsUI: function() {
+        this.updateSubscriptionTabVisibility();
+        if (!this.isSubscriptionActive()) {
+            return;
+        }
+        this.renderAddonsGallery();
+        this.renderInstalledAddons();
+    },
+
+    renderAddonsGallery: function() {
+        const container = Utils.getElement('#addons-gallery');
+        if (!container) return;
+        container.innerHTML = '';
+
+        AddonGalleryTemplates.forEach(template => {
+            const card = Utils.createElement('div', { className: 'addon-card' });
+
+            const header = Utils.createElement('div', { className: 'addon-card-header' });
+            const iconWrapper = Utils.createElement('div', { className: 'addon-card-icon' });
+            iconWrapper.innerHTML = `<i data-feather="${template.icon}"></i>`;
+            header.appendChild(iconWrapper);
+
+            const headerInfo = Utils.createElement('div');
+            const title = Utils.createElement('h5', { className: 'addon-card-title', text: LocalizationRenderer.t(template.nameKey) });
+            const tagline = Utils.createElement('p', { className: 'addon-card-tagline', text: LocalizationRenderer.t(template.taglineKey) });
+            headerInfo.appendChild(title);
+            headerInfo.appendChild(tagline);
+            header.appendChild(headerInfo);
+            card.appendChild(header);
+
+            const category = Utils.createElement('div', { className: 'addon-card-category', text: LocalizationRenderer.t(template.categoryKey) });
+            card.appendChild(category);
+
+            const description = Utils.createElement('p', { className: 'addon-card-description', text: LocalizationRenderer.t(template.descriptionKey) });
+            card.appendChild(description);
+
+            if (Array.isArray(template.featureKeys) && template.featureKeys.length > 0) {
+                const featureList = Utils.createElement('ul', { className: 'addon-card-features' });
+                template.featureKeys.forEach(featureKey => {
+                    const item = Utils.createElement('li');
+                    item.textContent = LocalizationRenderer.t(featureKey);
+                    featureList.appendChild(item);
+                });
+                card.appendChild(featureList);
+            }
+
+            const isEnabled = this.isTemplateInstalled(template.id);
+            const button = Utils.createElement('button', {
+                className: `settings-button ${isEnabled ? 'secondary' : ''}`
+            });
+            button.textContent = LocalizationRenderer.t(isEnabled ? 'addons_card_disable' : 'addons_card_enable');
+            button.addEventListener('click', () => {
+                if (this.isTemplateInstalled(template.id)) {
+                    this.removeAddon(template.id);
+                } else {
+                    this.createAddonFromTemplate(template.id);
+                }
+            });
+            card.appendChild(button);
+
+            container.appendChild(card);
+        });
+
+        if (window.feather) window.feather.replace();
+    },
+
+    isTemplateInstalled: function(templateId) {
+        const installed = AppState.settings?.addons?.installed;
+        if (!Array.isArray(installed)) return false;
+        return installed.some(addon => addon.id === templateId || addon.templateId === templateId);
+    },
+
+    findTemplateById: function(templateId) {
+        return AddonGalleryTemplates.find(template => template.id === templateId) || null;
+    },
+
+    findBlockDefinition: function(blockId) {
+        return AddonBlockDefinitions.find(block => block.id === blockId) || null;
+    },
+
+    getCurrentAddons: function() {
+        const installed = AppState.settings?.addons?.installed;
+        if (!Array.isArray(installed)) return [];
+        return installed.map(addon => ({
+            ...addon,
+            blocks: Array.isArray(addon.blocks) ? [...addon.blocks] : []
+        }));
+    },
+
+    persistAddons: function(nextInstalled) {
+        AppState.settings.addons = { installed: nextInstalled };
+        ipcRenderer.send('update-setting', 'addons', { installed: nextInstalled });
+    },
+
+    createAddonFromTemplate: function(templateId) {
+        const template = this.findTemplateById(templateId);
+        if (!template) return;
+        if (this.isTemplateInstalled(templateId)) return;
+
+        const now = Date.now();
+        const installed = this.getCurrentAddons();
+        installed.push({
+            id: template.id,
+            templateId: template.id,
+            title: LocalizationRenderer.t(template.nameKey),
+            description: LocalizationRenderer.t(template.descriptionKey),
+            blocks: Array.isArray(template.defaultBlocks) ? [...template.defaultBlocks] : [],
+            createdAt: now,
+            lastModified: now
+        });
+        this.persistAddons(installed);
+    },
+
+    createCustomAddon: function() {
+        if (!this.isSubscriptionActive()) {
+            this.updateSubscriptionTabVisibility();
+            return;
+        }
+        const now = Date.now();
+        const installed = this.getCurrentAddons();
+        installed.push({
+            id: `custom-${now}`,
+            templateId: 'custom',
+            title: LocalizationRenderer.t('addons_custom_default_name'),
+            description: LocalizationRenderer.t('addons_custom_default_description'),
+            blocks: ['trigger_manual'],
+            createdAt: now,
+            lastModified: now
+        });
+        this.persistAddons(installed);
+    },
+
+    renderInstalledAddons: function() {
+        const container = Utils.getElement('#installed-addons-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const installed = this.getCurrentAddons();
+        if (installed.length === 0) {
+            const empty = Utils.createElement('div', { className: 'addon-empty-state', text: LocalizationRenderer.t('addons_installed_empty') });
+            container.appendChild(empty);
+            return;
+        }
+
+        installed.forEach(addon => {
+            const card = Utils.createElement('div', { className: 'addon-workspace-card', 'data-addon-id': addon.id });
+
+            const headerLine = Utils.createElement('div', { className: 'addon-workspace-header-line' });
+            const titleInput = Utils.createElement('input', { className: 'addon-title-input' });
+            titleInput.value = addon.title || LocalizationRenderer.t('addons_custom_default_name');
+            titleInput.placeholder = LocalizationRenderer.t('addons_custom_name_placeholder');
+            titleInput.addEventListener('blur', () => this.updateAddonMeta(addon.id, { title: titleInput.value.trim() }));
+            headerLine.appendChild(titleInput);
+
+            const removeButton = Utils.createElement('button', { className: 'settings-button secondary' });
+            removeButton.textContent = LocalizationRenderer.t('addons_card_disable');
+            removeButton.addEventListener('click', () => this.removeAddon(addon.id));
+            headerLine.appendChild(removeButton);
+            card.appendChild(headerLine);
+
+            const description = document.createElement('textarea');
+            description.className = 'addon-description-input';
+            description.value = addon.description || LocalizationRenderer.t('addons_custom_default_description');
+            description.placeholder = LocalizationRenderer.t('addons_custom_description_placeholder');
+            description.addEventListener('blur', () => this.updateAddonMeta(addon.id, { description: description.value.trim() }));
+            card.appendChild(description);
+
+            const blocksContainer = Utils.createElement('div', { className: 'addon-blocks-container' });
+            if (!addon.blocks || addon.blocks.length === 0) {
+                const emptyHint = Utils.createElement('p', { className: 'addon-block-empty', text: LocalizationRenderer.t('addons_no_blocks') });
+                blocksContainer.appendChild(emptyHint);
+            } else {
+                addon.blocks.forEach((blockId, index) => {
+                    const chip = this.buildBlockChip(addon.id, blockId, index);
+                    blocksContainer.appendChild(chip);
+                });
+            }
+            card.appendChild(blocksContainer);
+
+            const controls = Utils.createElement('div', { className: 'addon-block-controls' });
+            const select = this.buildBlockSelect();
+            controls.appendChild(select);
+            const addButton = Utils.createElement('button', { className: 'settings-button tertiary' });
+            addButton.textContent = LocalizationRenderer.t('addons_add_block');
+            addButton.addEventListener('click', () => {
+                const blockId = select.value;
+                if (blockId) {
+                    this.addBlockToAddon(addon.id, blockId);
+                }
+            });
+            controls.appendChild(addButton);
+            card.appendChild(controls);
+
+            container.appendChild(card);
+        });
+
+        if (window.feather) window.feather.replace();
+    },
+
+    buildBlockChip: function(addonId, blockId, index) {
+        const definition = this.findBlockDefinition(blockId);
+        const chip = Utils.createElement('div', { className: 'addon-block-chip' });
+        const typeClass = definition ? `addon-block-${definition.type}` : 'addon-block-action';
+        chip.classList.add(typeClass);
+
+        const icon = Utils.createElement('div', { className: 'addon-block-icon' });
+        icon.innerHTML = `<i data-feather="${definition?.icon || 'box'}"></i>`;
+        chip.appendChild(icon);
+
+        const info = Utils.createElement('div', { className: 'addon-block-info' });
+        info.appendChild(Utils.createElement('span', { text: definition ? LocalizationRenderer.t(definition.labelKey) : blockId }));
+        if (definition?.descriptionKey) {
+            info.appendChild(Utils.createElement('small', { text: LocalizationRenderer.t(definition.descriptionKey) }));
+        }
+        chip.appendChild(info);
+
+        const removeButton = Utils.createElement('button', { title: LocalizationRenderer.t('addons_remove_block') });
+        removeButton.innerHTML = '<i data-feather="x"></i>';
+        removeButton.addEventListener('click', () => this.removeBlockFromAddon(addonId, index));
+        chip.appendChild(removeButton);
+
+        return chip;
+    },
+
+    buildBlockSelect: function() {
+        const select = document.createElement('select');
+        select.className = 'addon-block-select';
+
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = LocalizationRenderer.t('addons_choose_block');
+        placeholder.disabled = true;
+        placeholder.selected = true;
+        select.appendChild(placeholder);
+
+        Object.entries(AddonBlockTypeLabels).forEach(([type, labelKey]) => {
+            const blocks = AddonBlockDefinitions.filter(block => block.type === type);
+            if (blocks.length === 0) return;
+            const group = document.createElement('optgroup');
+            group.label = LocalizationRenderer.t(labelKey);
+            blocks.forEach(block => {
+                const option = document.createElement('option');
+                option.value = block.id;
+                option.textContent = LocalizationRenderer.t(block.labelKey);
+                group.appendChild(option);
+            });
+            select.appendChild(group);
+        });
+
+        return select;
+    },
+
+    addBlockToAddon: function(addonId, blockId) {
+        if (!this.findBlockDefinition(blockId)) return;
+        const installed = this.getCurrentAddons();
+        const index = installed.findIndex(addon => addon.id === addonId);
+        if (index === -1) return;
+        const addon = { ...installed[index] };
+        addon.blocks = [...(addon.blocks || []), blockId];
+        addon.lastModified = Date.now();
+        installed[index] = addon;
+        this.persistAddons(installed);
+    },
+
+    removeBlockFromAddon: function(addonId, blockIndex) {
+        const installed = this.getCurrentAddons();
+        const index = installed.findIndex(addon => addon.id === addonId);
+        if (index === -1) return;
+        const addon = { ...installed[index] };
+        if (!Array.isArray(addon.blocks) || blockIndex < 0 || blockIndex >= addon.blocks.length) return;
+        addon.blocks = addon.blocks.filter((_, idx) => idx !== blockIndex);
+        addon.lastModified = Date.now();
+        installed[index] = addon;
+        this.persistAddons(installed);
+    },
+
+    updateAddonMeta: function(addonId, payload = {}) {
+        const installed = this.getCurrentAddons();
+        const index = installed.findIndex(addon => addon.id === addonId);
+        if (index === -1) return;
+        const addon = { ...installed[index] };
+        if (Object.prototype.hasOwnProperty.call(payload, 'title')) {
+            addon.title = payload.title && payload.title.length > 0
+                ? payload.title
+                : LocalizationRenderer.t('addons_custom_default_name');
+        }
+        if (Object.prototype.hasOwnProperty.call(payload, 'description')) {
+            addon.description = payload.description && payload.description.length > 0
+                ? payload.description
+                : LocalizationRenderer.t('addons_custom_default_description');
+        }
+        addon.lastModified = Date.now();
+        installed[index] = addon;
+        this.persistAddons(installed);
+    },
+
+    removeAddon: function(addonId) {
+        const installed = this.getCurrentAddons().filter(addon => addon.id !== addonId);
+        this.persistAddons(installed);
     },
 
     setupShortcutRecorder: function() {
