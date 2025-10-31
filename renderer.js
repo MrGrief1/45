@@ -144,14 +144,17 @@ const LocalizationRenderer = {
 };
 
 const RESULTS_ANIMATION_CLASSES = [
-    'results-anim-slide-up',
-    'results-anim-fade-in',
-    'results-anim-scale-in',
-    'results-anim-slide-right',
-    'results-anim-fold',
-    'results-anim-shrink',
-    'results-anim-glide',
-    'results-anim-twist'
+  'results-anim-slide-up',
+  'results-anim-fade-in',
+  'results-anim-scale-in',
+  'results-anim-slide-right',
+  'results-anim-fold',
+  'results-anim-shrink',
+  'results-anim-glide',
+  'results-anim-twist',
+  'results-anim-curl',
+  'results-anim-ribbon',
+  'results-anim-melt'
 ];
 
 const AnimationClassManager = {

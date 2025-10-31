@@ -1,50 +1,68 @@
 /* aux-window-template.css */
 
-/* 
- * Этот файл зависит от переменных (например, --dynamic-blur, --base-bg-color), 
+/*
+ * Этот файл зависит от переменных (например, --dynamic-blur, --base-bg-color),
  * определенных в style.css. Убедитесь, что style.css загружен первым.
  */
 
- body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    margin: 0;
-    height: 100vh;
-    background-color: transparent;
-    overflow: hidden;
+:root {
+  --aux-scrollbar-size: var(--scrollbar-size, 6px);
+  --aux-scrollbar-padding: var(--scrollbar-padding, 3px);
+  --aux-scrollbar-radius: var(--scrollbar-radius, 999px);
+  --aux-scrollbar-thumb: var(--scrollbar-thumb, rgba(255, 255, 255, 0.35));
+  --aux-scrollbar-hover-thumb: var(
+    --scrollbar-hover-thumb,
+    rgba(0, 122, 255, 0.55)
+  );
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin: 0;
+  height: 100vh;
+  background-color: transparent;
+  overflow: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--aux-scrollbar-thumb) transparent;
 }
 
 /* ИСПРАВЛЕНИЕ: Убираем белый фон у всех иконок */
-img.app-icon, 
+img.app-icon,
 img[data-path],
 .grid-item-icon,
 .category-app-icon {
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 /* --- Анимация открытия окна --- */
 
 /* Базовое состояние (скрыто) */
 #aux-container {
-    opacity: 0;
-    pointer-events: none;
-    /* Transition будет полностью управляться классами анимаций */
+  opacity: 0;
+  pointer-events: none;
+  /* Transition будет полностью управляться классами анимаций */
 }
 
 /* Применение стилей анимации */
 body.anim-scale #aux-container {
-    transform: scale(0.97);
-    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform: scale(0.97);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 body.anim-slide #aux-container {
-    transform: translateY(15px);
-    transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+  transform: translateY(15px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.35s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 body.anim-fade #aux-container {
-    transition: opacity 0.35s ease-in-out;
+  transition: opacity 0.35s ease-in-out;
 }
 
 /* 
@@ -54,306 +72,333 @@ body.anim-fade #aux-container {
 
 /* Отключение анимаций */
 body.no-animations #aux-container {
-    transition: none !important;
+  transition: none !important;
 }
 
 .list-item {
-    opacity: 0;
-    transform: translateY(15px);
-    transition: opacity 0.4s ease, transform 0.4s ease;
+  opacity: 0;
+  transform: translateY(15px);
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease;
 }
 
 .list-item.visible {
-    opacity: 1;
-    transform: translateY(0);
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* --- Структура и Эффект Стекла --- */
 
 #aux-container {
-    border-radius: var(--dynamic-border-radius);
-    height: 100%;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; /* Гарантирует скругление углов */
+  border-radius: var(--dynamic-border-radius);
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Гарантирует скругление углов */
 }
 
 #aux-container.visible {
-    pointer-events: auto;
+  pointer-events: auto;
 }
 
 #aux-container.is-closing {
-    pointer-events: none;
+  pointer-events: none;
 }
 
 /* --- Заголовок окна --- */
 .aux-header {
-    padding: 25px 30px 20px 30px;
-    border-bottom: 1px solid var(--border-color);
-    flex-shrink: 0;
+  padding: 25px 30px 20px 30px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 h4 {
-    margin: 0;
-    font-size: 22px;
-    font-weight: 500;
-    color: var(--text-color);
+  margin: 0;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text-color);
 }
 
 /* --- Список данных --- */
-#data-list { 
-    list-style: none; 
-    padding: 15px;
-    margin: 0;
-    overflow-y: auto; /* Полоса прокрутки только для списка */
-    flex-grow: 1;
+#data-list {
+  list-style: none;
+  padding: 15px calc(18px + var(--aux-scrollbar-padding)) 15px 15px;
+  margin: 0;
+  overflow-y: auto; /* Полоса прокрутки только для списка */
+  flex-grow: 1;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable both-edges;
+  margin-right: calc(-1 * var(--aux-scrollbar-padding));
 }
 
 /* Элемент списка */
 .list-item {
-    padding: 15px 20px;
-    border-radius: 15px;
-    margin-bottom: 12px;
-    
-    /* ИСПРАВЛЕНИЕ: Увеличена непрозрачность фона для лучшей читаемости */
-    background-color: rgba(var(--base-bg-color), 0.6);
-    color: var(--text-color);
+  padding: 15px 20px;
+  border-radius: 15px;
+  margin-bottom: 12px;
 
-    cursor: pointer;
-    border: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    transition: background-color 0.2s ease, transform 0.1s ease, color 0.2s ease;
+  /* ИСПРАВЛЕНИЕ: Увеличена непрозрачность фона для лучшей читаемости */
+  background-color: rgba(var(--base-bg-color), 0.6);
+  color: var(--text-color);
+
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease,
+    color 0.2s ease;
 }
 
 /* Эффект при наведении - серый цвет как в результатах поиска */
 .list-item:hover {
-    background-color: var(--selection-color);
-    color: var(--text-color);
-    transform: scale(1.01);
+  background-color: var(--selection-color);
+  color: var(--text-color);
+  transform: scale(1.01);
 }
 
 .item-content {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-grow: 1;
 }
 
 .item-primary {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 15px;
-    margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 15px;
+  margin-bottom: 2px;
 }
 
 .item-secondary {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 12px;
-    opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  opacity: 0.7;
 }
 
 /* Цвет иконок при наведении (для SVG) - не меняем цвет */
 .list-item:hover .item-icon svg {
-    color: var(--icon-color);
+  color: var(--icon-color);
 }
 
 /* --- НОВЫЕ СТИЛИ ДЛЯ СЕТКИ ПРИЛОЖЕНИЙ --- */
 #apps-grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 20px;
-    padding: 20px;
-    overflow-y: auto;
-    flex-grow: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 20px;
+  padding: 20px;
+  overflow-y: auto;
+  flex-grow: 1;
 }
 
 .grid-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-    border-radius: 15px;
-    cursor: default;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    text-align: center;
-    background-color: rgba(var(--secondary-bg-color-rgb), 0.5);
-    border: 1px solid transparent;
-    aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border-radius: 15px;
+  cursor: default;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
+  text-align: center;
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.5);
+  border: 1px solid transparent;
+  aspect-ratio: 1 / 1;
 }
 
 .grid-item:hover {
-    background-color: rgba(var(--secondary-bg-color-rgb), 0.9);
-    transform: translateY(-3px);
-    border-color: var(--highlight-color);
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.9);
+  transform: translateY(-3px);
+  border-color: var(--highlight-color);
 }
 
 .grid-item-icon {
-    width: 48px;
-    height: 48px;
-    object-fit: contain;
-    margin-bottom: 8px;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  margin-bottom: 8px;
 }
 
 .grid-item-name {
-    font-size: 13px;
-    color: var(--text-color);
-    /* Обрезка длинного текста */
-    width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  font-size: 13px;
+  color: var(--text-color);
+  /* Обрезка длинного текста */
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* --- НОВЫЕ СТИЛИ ДЛЯ НИЖНЕЙ ПАНЕЛИ --- */
 .apps-footer-toolbar {
-    display: flex;
-    padding: 15px;
-    gap: 10px;
-    border-top: 1px solid var(--border-color);
-    background-color: rgba(var(--base-bg-color-rgb), 0.7);
-    flex-shrink: 0;
+  display: flex;
+  padding: 15px;
+  gap: 10px;
+  border-top: 1px solid var(--border-color);
+  background-color: rgba(var(--base-bg-color-rgb), 0.7);
+  flex-shrink: 0;
 }
 
 .apps-footer-toolbar .hidden {
-    display: none;
+  display: none;
 }
 
 #create-folder-view {
-    display: flex;
-    width: 100%;
-    gap: 10px;
+  display: flex;
+  width: 100%;
+  gap: 10px;
 }
 
 .apps-footer-toolbar input {
-    flex-grow: 1;
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    background-color: rgba(var(--secondary-bg-color-rgb), 0.7);
-    color: var(--text-color);
-    outline: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  flex-grow: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.7);
+  color: var(--text-color);
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .apps-footer-toolbar input:focus {
-    border-color: var(--highlight-color);
-    box-shadow: 0 0 0 2px var(--highlight-color);
+  border-color: var(--highlight-color);
+  box-shadow: 0 0 0 2px var(--highlight-color);
 }
 
 .aux-button {
-    padding: 8px 12px;
-    background-color: rgba(var(--secondary-bg-color-rgb), 0.7);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--button-icon-color);
-    transition: background-color 0.2s ease, color 0.2s ease;
-    gap: 8px;
-    font-size: 14px;
+  padding: 8px 12px;
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.7);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--button-icon-color);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+  gap: 8px;
+  font-size: 14px;
 }
 
 .aux-button.secondary {
-    background-color: rgba(var(--secondary-bg-color-rgb), 0.4);
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.4);
 }
 .aux-button.secondary:hover {
-    background-color: var(--danger-color);
+  background-color: var(--danger-color);
 }
 
 .aux-button:hover {
-    background-color: var(--highlight-color);
-    color: white;
+  background-color: var(--highlight-color);
+  color: white;
 }
-
 
 /* Иконка в списке (SVG или IMG) */
 .list-icon {
-    margin-right: 15px;
-    width: 24px;
-    height: 24px;
-    color: var(--icon-color);
-    /* Корректное отображение реальных иконок (<img>) */
-    object-fit: contain;
-    flex-shrink: 0;
+  margin-right: 15px;
+  width: 24px;
+  height: 24px;
+  color: var(--icon-color);
+  /* Корректное отображение реальных иконок (<img>) */
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 /* Стилизация полосы прокрутки (Соответствует основному style.css) */
-::-webkit-scrollbar {
-    width: 10px;
-    background: transparent;
+body ::-webkit-scrollbar {
+  width: calc(var(--aux-scrollbar-size) + var(--aux-scrollbar-padding) * 2);
+  height: calc(var(--aux-scrollbar-size) + var(--aux-scrollbar-padding) * 2);
+  background: transparent;
 }
-::-webkit-scrollbar-track {
-    background: transparent;
+body ::-webkit-scrollbar-track {
+  background: transparent;
 }
-::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
-    border-radius: 12px;
-    border: 3px solid transparent;
-    background-clip: content-box;
+body ::-webkit-scrollbar-thumb {
+  background-color: var(--aux-scrollbar-thumb);
+  border-radius: var(--aux-scrollbar-radius);
+  border: var(--aux-scrollbar-padding) solid transparent;
+  background-clip: padding-box;
+  min-height: 24px;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
-::-webkit-scrollbar-thumb:hover {
-    background-color: var(--highlight-color);
+body ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--aux-scrollbar-hover-thumb);
+}
+body ::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* --- СТИЛИ ДЛЯ DRAG & DROP --- */
 
 /* Стили для элемента, который перетаскивается */
 .grid-item.dragging {
-    opacity: 0.7;
-    transform: scale(0.95);
-    z-index: 1000;
-    pointer-events: none;
+  opacity: 0.7;
+  transform: scale(0.95);
+  z-index: 1000;
+  pointer-events: none;
 }
 
 /* Стили для папки, над которой происходит перетаскивание */
 .grid-item.drag-over {
-    background-color: var(--highlight-color) !important;
-    border: 2px dashed rgba(255, 255, 255, 0.8) !important;
-    transform: scale(1.05);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  background-color: var(--highlight-color) !important;
+  border: 2px dashed rgba(255, 255, 255, 0.8) !important;
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 /* Анимация для плавного перехода drag & drop эффектов */
 .grid-item {
-    transition: background-color 0.2s ease, transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
 }
 
 /* Курсор при перетаскивании */
 .grid-item[draggable="true"]:active {
-    cursor: grabbing;
+  cursor: grabbing;
 }
 
 .grid-item[draggable="true"] {
-    cursor: grab;
+  cursor: grab;
 }
 
 /* Глобальная подсветка при перетаскивании из главного окна */
 #apps-grid-container.global-drag-over {
-    background-color: rgba(var(--highlight-color-rgb), 0.1);
-    border: 2px dashed var(--highlight-color);
-    border-radius: 15px;
+  background-color: rgba(var(--highlight-color-rgb), 0.1);
+  border: 2px dashed var(--highlight-color);
+  border-radius: 15px;
 }
 
 #apps-grid-container.global-drag-over::before {
-    content: "Отпустите для добавления в закрепленные";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: var(--highlight-color);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-size: 14px;
-    z-index: 1000;
-    pointer-events: none;
+  content: "Отпустите для добавления в закрепленные";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--highlight-color);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 1000;
+  pointer-events: none;
 }
