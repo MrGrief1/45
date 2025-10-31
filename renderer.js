@@ -487,7 +487,7 @@ const SearchModule = {
         const resultsArea = Utils.getElement('#results-area');
         const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
 
-        if (pinnedAppsContainer) pinnedAppsContainer.classList.remove('visible');
+        if (pinnedAppsContainer) ViewManager.animateHide(pinnedAppsContainer);
 
         if (AuxPanelManager.currentPanel) {
             AuxPanelManager.closePanel(false);
@@ -551,6 +551,7 @@ const SearchModule = {
         });
 
         resultsList.appendChild(fragment);
+        ViewManager.prepareForShow(resultsArea);
         resultsArea.classList.add('visible'); // Добавляем класс для анимации
         
         // УДАЛЕНО: Убираем назойливую подсказку
@@ -603,7 +604,7 @@ const SearchModule = {
         if (resultsList) resultsList.innerHTML = '';
         
         const resultsArea = Utils.getElement('#results-area');
-        if (resultsArea) resultsArea.classList.remove('visible');
+        if (resultsArea) ViewManager.animateHide(resultsArea);
 
         // Close any open auxiliary panel to return to the default state.
         if (AuxPanelManager.currentPanel) {
@@ -612,6 +613,7 @@ const SearchModule = {
 
         const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
         if (pinnedAppsContainer && AppState.settings.enablePinnedApps) {
+            ViewManager.prepareForShow(pinnedAppsContainer);
             pinnedAppsContainer.classList.add('visible');
         }
         
@@ -1495,7 +1497,7 @@ const AuxPanelManager = {
         // If search results are visible, hide them before opening a panel.
         const resultsArea = Utils.getElement('#results-area');
         if (resultsArea.classList.contains('visible')) {
-            resultsArea.classList.remove('visible');
+            ViewManager.animateHide(resultsArea);
         }
 
         this.currentPanel = type;
@@ -1524,6 +1526,13 @@ const AuxPanelManager = {
                     appsLibraryWrapper.classList.add('results-anim-' + AppState.settings.resultsAnimationStyle);
                 }
             }
+
+            if (auxContainer) {
+                ViewManager.prepareForShow(auxContainer);
+            }
+            if (appsLibraryWrapper) {
+                ViewManager.prepareForShow(appsLibraryWrapper);
+            }
             
             this.panelContainer.classList.add('visible');
 
@@ -1543,7 +1552,7 @@ const AuxPanelManager = {
                 });
             });
             
-            Utils.getElement('#pinned-apps-container').classList.remove('visible');
+            ViewManager.animateHide(Utils.getElement('#pinned-apps-container'));
             
             this.executePanelLogic(type);
             
@@ -1571,9 +1580,13 @@ const AuxPanelManager = {
             const hasSearchQuery = Utils.getElement('#search-input').value.trim().length > 1;
 
             if (hasSearchQuery && AppState.searchResults.length > 0) {
-                Utils.getElement('#results-area').classList.add('visible');
+                const resultsArea = Utils.getElement('#results-area');
+                ViewManager.prepareForShow(resultsArea);
+                resultsArea?.classList.add('visible');
             } else if (showPinnedApps && !hasSearchQuery && AppState.settings.enablePinnedApps) {
-                Utils.getElement('#pinned-apps-container').classList.add('visible');
+                const pinnedApps = Utils.getElement('#pinned-apps-container');
+                ViewManager.prepareForShow(pinnedApps);
+                pinnedApps?.classList.add('visible');
             }
 
             setTimeout(() => ViewManager.resizeWindow(), 50);
@@ -2186,9 +2199,55 @@ const ViewManager = {
             ipcRenderer.send('resize-window', { width: targetWidth, height: totalHeight });
         }
     },
+    prepareForShow: function(element) {
+        if (!element) return;
+        element.classList.remove('closing');
+        if (!AppState.settings || AppState.settings.animations === false) {
+            return;
+        }
+        // Force reflow to restart transitions cleanly when becoming visible again.
+        void element.offsetWidth;
+    },
+    animateHide: function(element) {
+        if (!element) return;
+        if (!element.classList.contains('visible')) {
+            element.classList.remove('closing');
+            return;
+        }
+
+        if (!AppState.settings || AppState.settings.animations === false) {
+            element.classList.remove('visible');
+            element.classList.remove('closing');
+            return;
+        }
+
+        element.classList.add('closing');
+
+        let finished = false;
+        const finalize = () => {
+            if (finished) return;
+            finished = true;
+            element.classList.remove('closing');
+            element.classList.remove('visible');
+            element.removeEventListener('transitionend', handleTransitionEnd);
+        };
+
+        const handleTransitionEnd = (event) => {
+            if (event.target !== element) return;
+            finalize();
+        };
+
+        element.addEventListener('transitionend', handleTransitionEnd);
+
+        requestAnimationFrame(() => {
+            element.classList.remove('visible');
+        });
+
+        setTimeout(finalize, 450);
+    },
     applyAppearanceSettings: function() {
         document.body.className = '';
-        
+
         // Логика для темы 'auto'
         if (AppState.settings.theme === 'auto') {
             document.body.classList.add(AppState.systemTheme + '-theme');
@@ -2216,9 +2275,10 @@ const ViewManager = {
         const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
         if (pinnedAppsContainer) {
             if (AppState.settings.enablePinnedApps) {
+                ViewManager.prepareForShow(pinnedAppsContainer);
                 pinnedAppsContainer.classList.add('visible');
             } else {
-                pinnedAppsContainer.classList.remove('visible');
+                ViewManager.animateHide(pinnedAppsContainer);
             }
         }
 

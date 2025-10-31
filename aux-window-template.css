@@ -288,7 +288,8 @@ h4 {
 #aux-container::-webkit-scrollbar,
 #apps-grid-container::-webkit-scrollbar,
 #data-list::-webkit-scrollbar {
-    width: 16px;
+    width: var(--scrollbar-size, 8px);
+    height: var(--scrollbar-size, 8px);
     background: transparent;
 }
 
@@ -296,16 +297,16 @@ h4 {
 #apps-grid-container::-webkit-scrollbar-track,
 #data-list::-webkit-scrollbar-track {
     background: transparent;
-    margin: 0 4px;
 }
 
 #aux-container::-webkit-scrollbar-thumb,
 #apps-grid-container::-webkit-scrollbar-thumb,
 #data-list::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
-    border-radius: 8px;
-    border: 5px solid transparent;
+    border-radius: 999px;
+    border: var(--scrollbar-padding, 3px) solid transparent;
     background-clip: content-box;
+    transition: background-color 0.2s ease;
 }
 
 #aux-container::-webkit-scrollbar-thumb:hover,
