@@ -133,59 +133,157 @@ body.no-animations * { transition: none !important; animation: none !important; 
 body.anim-scale #app-container { transform: scale(0.97); transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease-in-out, transform 0.25s cubic-bezier(0.23, 1, 0.32, 1); }
 body.anim-slide #app-container { transform: translateY(-15px); transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease-in-out, transform 0.25s cubic-bezier(0.23, 1, 0.32, 1); }
 body.anim-fade #app-container { transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease-in-out; }
+body.anim-soft-bounce #app-container { transform: translateY(-12px) scale(0.94); transition: height 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.22s ease-in-out, transform 0.36s cubic-bezier(0.22, 1, 0.36, 1); transform-origin: center top; }
+body.anim-glide #app-container { transform: translateY(-28px) scale(0.98); transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.24s ease-in-out, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+body.anim-flip #app-container { transform-origin: top center; transform: perspective(900px) rotateX(-14deg); transition: height 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.26s ease-in-out, transform 0.38s cubic-bezier(0.19, 1, 0.22, 1); }
 body.visible #app-container { opacity: 1; transform: translate(0) scale(1); }
 
 /* НОВОЕ: Анимация для списка результатов И ПАНЕЛЕЙ */
-#results-area, #aux-panel {
+.results-stage,
+#results-area,
+#aux-panel {
     opacity: 0;
     pointer-events: none;
     will-change: opacity, transform; /* Оптимизация производительности */
 }
 
-/* Стили для разных анимаций результатов - БЫСТРЫЕ */
-.results-anim-slide-up {
-    transform: translateY(8px);
-    opacity: 0;
-    transition: opacity 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+.results-stage.visible,
+#results-area.visible,
+#aux-panel.visible {
+    opacity: 1;
+    pointer-events: auto;
 }
+
+/* Стили для разных анимаций результатов с поддержкой закрытия */
+.results-anim-slide-up {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.28s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.32s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.results-anim-slide-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.results-anim-slide-up.closing {
+    opacity: 0;
+    transform: translateY(-14px);
+}
+
 .results-anim-fade-in {
     opacity: 0;
-    transition: opacity 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: opacity 0.28s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
+.results-anim-fade-in.visible {
+    opacity: 1;
+}
+.results-anim-fade-in.closing {
+    opacity: 0;
+}
+
 .results-anim-scale-in {
     opacity: 0;
-    transform: scale(0.97);
-    transition: opacity 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transform: scale(0.95) translateY(12px);
+    transition: opacity 0.26s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.32s cubic-bezier(0.22, 0.8, 0.35, 1);
 }
+.results-anim-scale-in.visible {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+}
+.results-anim-scale-in.closing {
+    opacity: 0;
+    transform: scale(0.88) translateY(-12px);
+}
+
 .results-anim-slide-right {
     opacity: 0;
-    transform: translateX(8px);
-    transition: opacity 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transform: translateX(16px);
+    transition: opacity 0.26s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.32s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
+.results-anim-slide-right.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+.results-anim-slide-right.closing {
+    opacity: 0;
+    transform: translateX(-18px);
+}
+
 .results-anim-fold {
     opacity: 0;
     transform-origin: top center;
-    transform: perspective(600px) rotateX(-18deg) translateY(-4px);
-    transition: opacity 0.28s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
+    transform: perspective(600px) rotateX(-22deg) translateY(-12px);
+    transition: opacity 0.3s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.36s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 .results-anim-fold.visible {
+    opacity: 1;
     transform: perspective(600px) rotateX(0deg) translateY(0);
 }
+.results-anim-fold.closing {
+    opacity: 0;
+    transform: perspective(600px) rotateX(24deg) translateY(26px);
+}
+
 .results-anim-shrink {
     opacity: 0;
-    transform: scale(0.94) translateY(6px);
-    transition: opacity 0.22s cubic-bezier(0.3, 0.7, 0.4, 1), transform 0.28s cubic-bezier(0.3, 0.7, 0.4, 1);
+    transform: scale(0.9) translateY(16px);
+    transition: opacity 0.26s cubic-bezier(0.3, 0.7, 0.4, 1), transform 0.32s cubic-bezier(0.3, 0.7, 0.4, 1);
 }
 .results-anim-shrink.visible {
+    opacity: 1;
     transform: scale(1) translateY(0);
 }
+.results-anim-shrink.closing {
+    opacity: 0;
+    transform: scale(0.82) translateY(32px);
+}
 
-
-#results-area.visible, #aux-panel.visible {
-    /* display: block; УДАЛЕНО: Больше не нужно */
-    transform: translateY(0) scale(1);
+.results-anim-curl {
+    opacity: 0;
+    transform-origin: top right;
+    transform: perspective(900px) rotateX(-26deg) rotateZ(4deg) translateY(18px);
+    transition: opacity 0.3s cubic-bezier(0.2, 0.7, 0.4, 1), transform 0.36s cubic-bezier(0.2, 0.7, 0.4, 1);
+}
+.results-anim-curl.visible {
     opacity: 1;
-    pointer-events: auto;
+    transform: perspective(900px) rotateX(0) rotateZ(0) translateY(0);
+}
+.results-anim-curl.closing {
+    opacity: 0;
+    transform: perspective(900px) rotateX(20deg) rotateZ(-6deg) translateY(-20px) scale(0.94);
+}
+
+.results-anim-tilt {
+    opacity: 0;
+    transform-origin: center top;
+    transform: skewY(6deg) translateY(22px);
+    transition: opacity 0.28s cubic-bezier(0.22, 0.7, 0.36, 1), transform 0.34s cubic-bezier(0.22, 0.7, 0.36, 1);
+}
+.results-anim-tilt.visible {
+    opacity: 1;
+    transform: skewY(0deg) translateY(0);
+}
+.results-anim-tilt.closing {
+    opacity: 0;
+    transform: skewY(-4deg) translateY(-18px) scale(0.96);
+}
+
+.results-anim-swoop {
+    opacity: 0;
+    transform: translateY(28px) scale(0.92);
+    transition: opacity 0.32s cubic-bezier(0.18, 0.88, 0.32, 1.08), transform 0.36s cubic-bezier(0.18, 0.88, 0.32, 1.08);
+}
+.results-anim-swoop.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+.results-anim-swoop.closing {
+    opacity: 0;
+    transform: translateY(44px) scale(0.85);
+}
+
+#results-area.visible,
+#aux-panel.visible {
+    transform: translateY(0) scale(1);
 }
 
 #aux-container.visible {
@@ -640,7 +738,9 @@ body.dark-theme .aux-header {
     margin: 0 auto 10px;
     border-radius:var(--dynamic-border-radius);
     max-height:600px;
-    overflow-y:auto
+    overflow-y:auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 #results-list{list-style:none;padding:10px 15px;margin:0}
 .result-item{padding:14px 15px;cursor:default;display:flex;align-items:center;transition:all 0.2s cubic-bezier(0.16, 1, 0.3, 1);border-radius:15px}
@@ -648,16 +748,38 @@ body.dark-theme .aux-header {
 .result-item.selected{background-color:var(--selection-color);color:var(--text-color)}
 .result-item.selected .result-icon{color:var(--icon-color)}
 #web-preview-container{
-    padding:30px;
+    padding:30px 26px 30px 30px;
     display:none;
     overflow-y:auto;
     max-height:70vh;
     box-sizing:border-box;
-    scrollbar-gutter:stable both-edges;
+    scrollbar-gutter:stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+    position: relative;
+    background-clip: padding-box;
+}
+
+.wiki-scroll-surface {
+    overscroll-behavior: contain;
+    border-radius: inherit;
+}
+
+#web-preview-container::-webkit-scrollbar{
+    width: 10px;
 }
 
 #web-preview-container::-webkit-scrollbar-track{
-    margin:0;
+    background: transparent;
+    margin:4px 0;
+    border-radius: 8px;
+}
+
+#web-preview-container::-webkit-scrollbar-thumb{
+    background: var(--scrollbar-thumb);
+    border-radius: 8px;
+    border: 3px solid transparent;
+    background-clip: content-box;
 }
 #loader{text-align:center;padding:20px;color:var(--icon-color)}
 .wiki-content{animation:fadeInContent .4s ease-out}
@@ -757,6 +879,33 @@ select:focus,input[type=text]:focus,input[type=number]:focus{border-color:var(--
 .external-link{color:var(--highlight-color);text-decoration:none;cursor:pointer}
 .external-link:hover{text-decoration:underline}
 hr{border:none;border-top:1px solid var(--border-color);margin:20px 0}
+/* Минималистичные полосы прокрутки */
+.minimal-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+.minimal-scrollbar::-webkit-scrollbar {
+    width: 10px;
+    background: transparent;
+}
+
+.minimal-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 0;
+}
+
+.minimal-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 8px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+}
+
+.minimal-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: var(--highlight-color);
+}
+
 /* FIX: Minimalistic scrollbar with padding */
 ::-webkit-scrollbar {
     width: 16px; /* Wider track to allow for padding */
