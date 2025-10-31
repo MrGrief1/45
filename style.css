@@ -226,13 +226,13 @@ body.visible #app-container { opacity: 1; transform: translate(0) scale(1); }
 .results-anim-fold {
     transform-origin: top center;
     opacity: 0;
-    transform: scaleY(0.8);
-    transition: opacity 0.26s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.34s cubic-bezier(0.23, 1, 0.32, 1);
+    transform: perspective(900px) rotateX(-18deg) scaleY(0.85);
+    transition: opacity 0.28s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.36s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .results-anim-fold.is-closing,
 .results-anim-fold:not(.visible) {
-    transform: scaleY(0.65);
+    transform: perspective(900px) rotateX(-32deg) scaleY(0.7) translateY(-6px);
     opacity: 0;
 }
 
@@ -240,7 +240,7 @@ body.visible #app-container { opacity: 1; transform: translate(0) scale(1); }
 #aux-panel.results-anim-fold.visible,
 #aux-container.results-anim-fold.visible,
 #apps-library-wrapper.results-anim-fold.visible {
-    transform: scaleY(1);
+    transform: perspective(900px) rotateX(0deg) scaleY(1) translateY(0);
     opacity: 1;
 }
 
@@ -302,6 +302,47 @@ body.visible #app-container { opacity: 1; transform: translate(0) scale(1); }
 #aux-container.results-anim-twist.visible,
 #apps-library-wrapper.results-anim-twist.visible {
     transform: rotateX(0) translateY(0);
+    opacity: 1;
+}
+
+.results-anim-curl {
+    opacity: 0;
+    transform-origin: top center;
+    transform: perspective(900px) rotateX(-14deg) rotateZ(-1.5deg) translateY(20px);
+    transition: opacity 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.36s cubic-bezier(0.18, 0.96, 0.28, 1);
+}
+
+.results-anim-curl.is-closing,
+.results-anim-curl:not(.visible) {
+    transform: perspective(900px) rotateX(-32deg) rotateZ(-3deg) translateY(34px) scale(0.92);
+    opacity: 0;
+}
+
+#results-area.results-anim-curl.visible,
+#aux-panel.results-anim-curl.visible,
+#aux-container.results-anim-curl.visible,
+#apps-library-wrapper.results-anim-curl.visible {
+    transform: perspective(900px) rotateX(0deg) rotateZ(0deg) translateY(0) scale(1);
+    opacity: 1;
+}
+
+.results-anim-float {
+    opacity: 0;
+    transform: translateY(28px) scale(0.9);
+    transition: opacity 0.32s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.34s cubic-bezier(0.19, 1.02, 0.28, 1);
+}
+
+.results-anim-float.is-closing,
+.results-anim-float:not(.visible) {
+    transform: translateY(42px) scale(0.82);
+    opacity: 0;
+}
+
+#results-area.results-anim-float.visible,
+#aux-panel.results-anim-float.visible,
+#aux-container.results-anim-float.visible,
+#apps-library-wrapper.results-anim-float.visible {
+    transform: translateY(0) scale(1);
     opacity: 1;
 }
 
@@ -733,18 +774,24 @@ body.dark-theme .aux-header {
 }
 
 .folder-menu-icons::-webkit-scrollbar {
-    width: 10px;
-}
-
-.folder-menu-icons::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
-    border-radius: 12px;
-    border: 3px solid transparent;
-    background-clip: content-box;
+    width: 16px;
+    background: transparent;
 }
 
 .folder-menu-icons::-webkit-scrollbar-track {
     background: transparent;
+    margin: 0 4px;
+}
+
+.folder-menu-icons::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 999px;
+    border: 5px solid transparent;
+    background-clip: content-box;
+}
+
+.folder-menu-icons::-webkit-scrollbar-thumb:hover {
+    background-color: var(--highlight-color);
 }
 
 .folder-icon-option {
@@ -825,27 +872,33 @@ body.dark-theme .aux-header {
 }
 
 #web-preview-scroll{
-    padding:24px 28px;
+    padding:24px 32px 24px 28px;
     max-height:520px;
     overflow-y:auto;
     box-sizing:border-box;
-    scrollbar-gutter: stable;
+    scrollbar-gutter: stable both-edges;
     scrollbar-width: thin;
 }
 
 #web-preview-scroll::-webkit-scrollbar{
-    width:10px;
-}
-
-#web-preview-scroll::-webkit-scrollbar-thumb{
-    background:var(--scrollbar-thumb);
-    border-radius:12px;
-    border:3px solid transparent;
-    background-clip:content-box;
+    width:16px;
+    background:transparent;
 }
 
 #web-preview-scroll::-webkit-scrollbar-track{
     background:transparent;
+    margin:0 4px;
+}
+
+#web-preview-scroll::-webkit-scrollbar-thumb{
+    background:var(--scrollbar-thumb);
+    border-radius:999px;
+    border:5px solid transparent;
+    background-clip:content-box;
+}
+
+#web-preview-scroll::-webkit-scrollbar-thumb:hover{
+    background-color:var(--highlight-color);
 }
 #loader{text-align:center;padding:20px;color:var(--icon-color)}
 .wiki-content{animation:fadeInContent .4s ease-out}

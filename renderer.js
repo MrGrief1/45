@@ -151,7 +151,9 @@ const RESULTS_ANIMATION_CLASSES = [
     'results-anim-fold',
     'results-anim-shrink',
     'results-anim-glide',
-    'results-anim-twist'
+    'results-anim-twist',
+    'results-anim-curl',
+    'results-anim-float'
 ];
 
 const AnimationClassManager = {

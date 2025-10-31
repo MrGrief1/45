@@ -110,6 +110,8 @@
     "anim_shrink": "Zusammenziehen",
     "anim_glide": "Sanft gleiten",
     "anim_twist": "Drehung",
+    "anim_curl": "Aufrollen",
+    "anim_float": "Leichtes Schweben",
     "title_clipboard": "Zwischenablageverlauf",
     "title_apps": "Installierte Apps",
     "title_files": "Zuletzt verwendete Dateien",

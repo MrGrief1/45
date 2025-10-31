@@ -110,6 +110,8 @@
     "anim_shrink": "缩小消失",
     "anim_glide": "平滑滑入",
     "anim_twist": "旋转进入",
+    "anim_curl": "卷起消失",
+    "anim_float": "轻盈上浮",
     "title_clipboard": "剪贴板历史",
     "title_apps": "已安装应用",
     "title_files": "最近的文件",

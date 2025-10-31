@@ -110,6 +110,8 @@
     "anim_shrink": "Réduction",
     "anim_glide": "Glisser en douceur",
     "anim_twist": "Rotation",
+    "anim_curl": "Enroulement",
+    "anim_float": "Flottement léger",
     "title_clipboard": "Historique du presse-papiers",
     "title_apps": "Applications installées",
     "title_files": "Fichiers récents",

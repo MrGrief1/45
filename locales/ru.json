@@ -48,6 +48,8 @@
   "anim_shrink": "Сжатие",
   "anim_glide": "Плавный подъем",
   "anim_twist": "Поворот",
+  "anim_curl": "Скручивание",
+  "anim_float": "Парение",
   "settings_focus_highlight": "Подсветка фокуса",
   "settings_results_animation_style": "Анимация результатов",
   "anim_slide_up": "Выезд снизу",

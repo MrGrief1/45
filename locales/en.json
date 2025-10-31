@@ -110,6 +110,8 @@
     "anim_shrink": "Shrink Away",
     "anim_glide": "Glide Up",
     "anim_twist": "Twist In",
+    "anim_curl": "Curl Away",
+    "anim_float": "Float Up",
     "title_clipboard": "Clipboard History",
     "title_apps": "Installed Apps",
     "title_files": "Recent Files",

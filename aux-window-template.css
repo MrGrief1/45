@@ -288,16 +288,17 @@ h4 {
 
 /* Стилизация полосы прокрутки (Соответствует основному style.css) */
 ::-webkit-scrollbar {
-    width: 10px;
+    width: 16px;
     background: transparent;
 }
 ::-webkit-scrollbar-track {
     background: transparent;
+    margin: 0 4px;
 }
 ::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
-    border-radius: 12px;
-    border: 3px solid transparent;
+    border-radius: 999px;
+    border: 5px solid transparent;
     background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
