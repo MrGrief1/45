@@ -101,6 +101,56 @@ const AppIconFallbacks = {
     }
 };
 
+const SubscriptionFeatureLabels = {
+    'addon-builder': 'subscription_feature_addon_builder',
+    'extended-gallery': 'subscription_feature_gallery',
+    'priority-support': 'subscription_feature_support',
+    default: 'subscription_feature_default'
+};
+
+const AddonLibrary = [
+    {
+        id: 'clipboard-buffer',
+        type: 'library',
+        icon: 'clipboard',
+        base: 'clipboard',
+        nameKey: 'addon_library_clipboard_name',
+        descriptionKey: 'addon_library_clipboard_description',
+        blocks: ['clipboard-filter', 'pin-items']
+    },
+    {
+        id: 'note-canvas',
+        type: 'library',
+        icon: 'edit-3',
+        base: 'note',
+        nameKey: 'addon_library_note_name',
+        descriptionKey: 'addon_library_note_description',
+        blocks: ['text-replace']
+    },
+    {
+        id: 'workflow-launcher',
+        type: 'library',
+        icon: 'zap',
+        base: 'command',
+        nameKey: 'addon_library_command_name',
+        descriptionKey: 'addon_library_command_description',
+        blocks: ['pin-items', 'sync']
+    }
+];
+
+const AddonBuilderBases = [
+    { id: 'clipboard', icon: 'clipboard', nameKey: 'addon_base_clipboard', descriptionKey: 'addon_base_clipboard_desc' },
+    { id: 'note', icon: 'edit-3', nameKey: 'addon_base_note', descriptionKey: 'addon_base_note_desc' },
+    { id: 'command', icon: 'zap', nameKey: 'addon_base_command', descriptionKey: 'addon_base_command_desc' }
+];
+
+const AddonBuilderBlocks = [
+    { id: 'clipboard-filter', icon: 'filter', nameKey: 'addon_builder_blocks_clipboard_filter', descriptionKey: 'addon_builder_blocks_clipboard_filter_desc' },
+    { id: 'text-replace', icon: 'repeat', nameKey: 'addon_builder_blocks_text_replace', descriptionKey: 'addon_builder_blocks_text_replace_desc' },
+    { id: 'pin-items', icon: 'bookmark', nameKey: 'addon_builder_blocks_pin_items', descriptionKey: 'addon_builder_blocks_pin_items_desc' },
+    { id: 'sync', icon: 'cloud', nameKey: 'addon_builder_blocks_sync', descriptionKey: 'addon_builder_blocks_sync_desc' }
+];
+
 // =================================================================================
 // === Система Локализации (Клиентская сторона) ===
 // =================================================================================
@@ -142,6 +192,9 @@ const LocalizationRenderer = {
         if (AppState.currentView === 'settings') {
             SettingsModule.renderIndexedDirectories();
             SettingsModule.renderAutomations();
+            SettingsModule.renderSubscription();
+            SettingsModule.renderAddons();
+            SettingsModule.renderAddonBuilder();
         }
     }
 };
@@ -151,6 +204,11 @@ const LocalizationRenderer = {
 // =================================================================================
 // ... existing code ...
 const SettingsModule = {
+    builderState: {
+        base: 'clipboard',
+        blocks: []
+    },
+
     init: function() {
         this.setupEventListeners();
         this.setupTabs();
@@ -186,6 +244,78 @@ const SettingsModule = {
                 if (url) shell.openExternal(url);
             });
         });
+
+        const activeAddonsList = Utils.getElement('#active-addons-list');
+        if (activeAddonsList) {
+            activeAddonsList.addEventListener('click', (event) => {
+                const removeButton = event.target.closest('[data-action="remove-addon"]');
+                if (removeButton) {
+                    const addonId = removeButton.getAttribute('data-addon-id');
+                    this.removeActiveAddon(addonId);
+                }
+            });
+        }
+
+        const addonGallery = Utils.getElement('#addon-gallery');
+        if (addonGallery) {
+            addonGallery.addEventListener('click', (event) => {
+                const deleteButton = event.target.closest('[data-action="delete-custom-addon"]');
+                if (deleteButton) {
+                    const addonId = deleteButton.getAttribute('data-addon-id');
+                    this.deleteCustomAddon(addonId);
+                    return;
+                }
+                const addButton = event.target.closest('[data-action="add-addon"]');
+                if (addButton) {
+                    const addonId = addButton.getAttribute('data-addon-id');
+                    this.addAddonFromGallery(addonId);
+                }
+            });
+        }
+
+        const builderStack = Utils.getElement('#builder-stack');
+        if (builderStack) {
+            builderStack.addEventListener('click', (event) => {
+                const removeBlock = event.target.closest('[data-action="remove-block"]');
+                if (removeBlock) {
+                    const index = parseInt(removeBlock.getAttribute('data-block-index'), 10);
+                    this.removeBuilderBlock(index);
+                }
+            });
+        }
+
+        Utils.getAllElements('.builder-base-option').forEach(button => {
+            button.addEventListener('click', () => {
+                const base = button.getAttribute('data-base');
+                if (!base) return;
+                this.builderState.base = base;
+                this.highlightBuilderBase();
+                this.renderBuilderStack();
+            });
+        });
+
+        const addBlockButton = Utils.getElement('#builder-add-block');
+        if (addBlockButton) {
+            addBlockButton.addEventListener('click', () => {
+                const select = Utils.getElement('#builder-block-select');
+                if (!select) return;
+                const blockId = select.value;
+                if (!blockId) return;
+                if (!AddonBuilderBlocks.some(block => block.id === blockId)) return;
+                this.builderState.blocks.push(blockId);
+                this.renderBuilderStack();
+            });
+        }
+
+        const resetBuilderButton = Utils.getElement('#builder-reset');
+        if (resetBuilderButton) {
+            resetBuilderButton.addEventListener('click', () => this.resetBuilder());
+        }
+
+        const saveAddonButton = Utils.getElement('#builder-save-addon');
+        if (saveAddonButton) {
+            saveAddonButton.addEventListener('click', () => this.saveCustomAddon());
+        }
     },
     
     bindSetting: function(elementId, settingKey) {
@@ -276,6 +406,10 @@ const SettingsModule = {
         if (Utils.getElement('#app-version')) {
             Utils.getElement('#app-version').textContent = AppState.appVersion;
         }
+        this.ensureSubscriptionVisibility();
+        this.renderSubscription();
+        this.renderAddons();
+        this.renderAddonBuilder();
         this.renderIndexedDirectories();
         this.renderAutomations();
     },
@@ -370,6 +504,423 @@ const SettingsModule = {
             automations.splice(index, 1);
             ipcRenderer.send('update-setting', 'customAutomations', automations);
         }
+    },
+
+    hasActiveSubscription: function() {
+        return !!(AppState.settings?.subscription?.isActive);
+    },
+
+    getSubscription: function() {
+        return AppState.settings?.subscription || { isActive: false, planName: '', renewalDate: null, features: [] };
+    },
+
+    ensureSubscriptionVisibility: function() {
+        const addonsTabButton = Utils.getElement('.settings-sidebar li[data-tab="addons"]');
+        const addonsContent = Utils.getElement('#tab-addons');
+        const isActive = this.hasActiveSubscription();
+
+        if (addonsTabButton) {
+            addonsTabButton.classList.toggle('is-hidden', !isActive);
+            if (!isActive && addonsTabButton.classList.contains('active')) {
+                Utils.getElement('.settings-sidebar li[data-tab="subscription"]')?.click()
+                    || Utils.getElement('.settings-sidebar li[data-tab="general"]')?.click();
+            }
+        }
+
+        if (addonsContent) {
+            addonsContent.classList.toggle('is-hidden', !isActive);
+            if (!isActive) addonsContent.classList.remove('active');
+        }
+    },
+
+    renderSubscription: function() {
+        const subscription = this.getSubscription();
+        const isActive = this.hasActiveSubscription();
+        const statusKey = isActive ? 'subscription_status_active' : 'subscription_status_inactive';
+
+        const statusBadge = Utils.getElement('#subscription-status-badge');
+        if (statusBadge) {
+            statusBadge.textContent = LocalizationRenderer.t(statusKey);
+            statusBadge.classList.toggle('inactive', !isActive);
+            statusBadge.classList.toggle('active', isActive);
+        }
+
+        const statusText = Utils.getElement('#subscription-status-text');
+        if (statusText) {
+            statusText.textContent = LocalizationRenderer.t(statusKey);
+        }
+
+        const planNameEl = Utils.getElement('#subscription-plan-name');
+        if (planNameEl) {
+            planNameEl.textContent = subscription.planName || LocalizationRenderer.t('subscription_unknown_plan');
+        }
+
+        const renewalEl = Utils.getElement('#subscription-renewal-date');
+        if (renewalEl) {
+            renewalEl.textContent = this.formatDateForUser(subscription.renewalDate);
+        }
+
+        const featureList = Utils.getElement('#subscription-feature-list');
+        if (featureList) {
+            featureList.innerHTML = '';
+            const features = Array.isArray(subscription.features) && subscription.features.length > 0
+                ? subscription.features
+                : ['addon-builder'];
+            features.forEach(featureKey => {
+                const item = Utils.createElement('li');
+                const translationKey = SubscriptionFeatureLabels[featureKey] || SubscriptionFeatureLabels.default;
+                item.textContent = LocalizationRenderer.t(translationKey);
+                featureList.appendChild(item);
+            });
+        }
+    },
+
+    formatDateForUser: function(value) {
+        if (!value) {
+            return LocalizationRenderer.t('subscription_next_renewal_unknown');
+        }
+        try {
+            const parsed = new Date(value);
+            if (Number.isNaN(parsed.getTime())) {
+                return LocalizationRenderer.t('subscription_next_renewal_unknown');
+            }
+            const locale = AppState.settings?.language || 'en';
+            return new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long', day: 'numeric' }).format(parsed);
+        } catch (error) {
+            return LocalizationRenderer.t('subscription_next_renewal_unknown');
+        }
+    },
+
+    renderAddons: function() {
+        const isActive = this.hasActiveSubscription();
+        const activeContainer = Utils.getElement('#active-addons-list');
+        const galleryContainer = Utils.getElement('#addon-gallery');
+
+        if (!isActive) {
+            if (activeContainer) activeContainer.innerHTML = '';
+            if (galleryContainer) galleryContainer.innerHTML = '';
+            return;
+        }
+
+        const activeIds = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
+        const activeSet = new Set(activeIds);
+
+        if (activeContainer) {
+            activeContainer.innerHTML = '';
+            if (activeIds.length === 0) {
+                const empty = Utils.createElement('div', { className: 'addons-empty', text: LocalizationRenderer.t('addons_empty_state') });
+                activeContainer.appendChild(empty);
+            } else {
+                activeIds.forEach(id => {
+                    const addon = this.findAddonDefinition(id);
+                    if (!addon) return;
+                    const card = Utils.createElement('div', { className: 'addon-card active-addon' });
+                    const iconWrap = Utils.createElement('div', { className: 'addon-card-icon' });
+                    iconWrap.innerHTML = `<i data-feather="${addon.icon || 'box'}"></i>`;
+                    card.appendChild(iconWrap);
+
+                    const info = Utils.createElement('div', { className: 'addon-card-info' });
+                    const titleRow = Utils.createElement('div', { className: 'addon-card-title-row' });
+                    const title = Utils.createElement('h4', { className: 'addon-card-title', text: this.getAddonDisplayName(addon) });
+                    titleRow.appendChild(title);
+                    const typeBadge = Utils.createElement('span', { className: 'addon-badge', text: addon.type === 'custom' ? LocalizationRenderer.t('addon_tag_custom') : LocalizationRenderer.t('addon_tag_library') });
+                    titleRow.appendChild(typeBadge);
+                    info.appendChild(titleRow);
+
+                    const description = Utils.createElement('p', { className: 'addon-card-description', text: this.getAddonDisplayDescription(addon) });
+                    info.appendChild(description);
+
+                    const blockIds = Array.isArray(addon.blocks) ? addon.blocks.map(block => (typeof block === 'string' ? block : block.id)) : [];
+                    if (blockIds.length > 0) {
+                        const chips = Utils.createElement('div', { className: 'addon-block-chips' });
+                        blockIds.forEach(blockId => {
+                            const blockDef = AddonBuilderBlocks.find(block => block.id === blockId);
+                            const chip = Utils.createElement('span', { className: 'addon-chip', text: blockDef ? LocalizationRenderer.t(blockDef.nameKey) : blockId });
+                            chips.appendChild(chip);
+                        });
+                        info.appendChild(chips);
+                    }
+
+                    const meta = Utils.createElement('div', { className: 'addon-card-meta' });
+                    const baseLabel = this.getAddonBaseLabel(addon);
+                    if (baseLabel) {
+                        meta.appendChild(Utils.createElement('span', { className: 'addon-meta-pill', text: baseLabel }));
+                    }
+                    const blockCount = Array.isArray(blockIds) ? blockIds.length : 0;
+                    meta.appendChild(Utils.createElement('span', { className: 'addon-meta-pill subtle', text: LocalizationRenderer.t('addon_block_count', blockCount) }));
+                    info.appendChild(meta);
+
+                    card.appendChild(info);
+
+                    const actions = Utils.createElement('div', { className: 'addon-card-actions' });
+                    const removeBtn = Utils.createElement('button', { className: 'addon-pill-button danger', text: LocalizationRenderer.t('addons_remove_button') });
+                    removeBtn.setAttribute('data-action', 'remove-addon');
+                    removeBtn.setAttribute('data-addon-id', id);
+                    actions.appendChild(removeBtn);
+                    card.appendChild(actions);
+
+                    activeContainer.appendChild(card);
+                });
+            }
+        }
+
+        if (galleryContainer) {
+            galleryContainer.innerHTML = '';
+            const galleryItems = [
+                ...AddonLibrary,
+                ...(Array.isArray(AppState.settings.customAddons) ? AppState.settings.customAddons.map(addon => ({ ...addon, type: 'custom' })) : [])
+            ];
+
+            galleryItems.forEach(addon => {
+                const card = Utils.createElement('div', { className: 'addon-card gallery-addon' });
+                if (addon.type === 'custom') card.classList.add('is-custom');
+                const iconWrap = Utils.createElement('div', { className: 'addon-card-icon' });
+                iconWrap.innerHTML = `<i data-feather="${addon.icon || 'box'}"></i>`;
+                card.appendChild(iconWrap);
+
+                const info = Utils.createElement('div', { className: 'addon-card-info' });
+                const titleRow = Utils.createElement('div', { className: 'addon-card-title-row' });
+                const title = Utils.createElement('h4', { className: 'addon-card-title', text: this.getAddonDisplayName(addon) });
+                titleRow.appendChild(title);
+                const typeBadge = Utils.createElement('span', { className: 'addon-badge', text: addon.type === 'custom' ? LocalizationRenderer.t('addon_tag_custom') : LocalizationRenderer.t('addon_tag_library') });
+                titleRow.appendChild(typeBadge);
+                info.appendChild(titleRow);
+
+                const description = Utils.createElement('p', { className: 'addon-card-description', text: this.getAddonDisplayDescription(addon) });
+                info.appendChild(description);
+
+                const blockIds = Array.isArray(addon.blocks) ? addon.blocks.map(block => (typeof block === 'string' ? block : block.id)) : [];
+                if (blockIds.length > 0) {
+                    const chips = Utils.createElement('div', { className: 'addon-block-chips' });
+                    blockIds.forEach(blockId => {
+                        const blockDef = AddonBuilderBlocks.find(block => block.id === blockId);
+                        const chip = Utils.createElement('span', { className: 'addon-chip', text: blockDef ? LocalizationRenderer.t(blockDef.nameKey) : blockId });
+                        chips.appendChild(chip);
+                    });
+                    info.appendChild(chips);
+                }
+
+                card.appendChild(info);
+
+                const actions = Utils.createElement('div', { className: 'addon-card-actions stacked' });
+                const isAlreadyActive = activeSet.has(addon.id);
+                const addButton = Utils.createElement('button', { className: 'addon-pill-button primary', text: LocalizationRenderer.t(isAlreadyActive ? 'addons_gallery_added' : 'addons_gallery_add') });
+                addButton.setAttribute('data-addon-id', addon.id);
+                addButton.setAttribute('data-action', 'add-addon');
+                addButton.disabled = isAlreadyActive;
+                if (isAlreadyActive) addButton.classList.add('disabled');
+                actions.appendChild(addButton);
+
+                if (addon.type === 'custom') {
+                    const deleteButton = Utils.createElement('button', { className: 'addon-pill-button subtle-danger', text: LocalizationRenderer.t('addon_delete_custom') });
+                    deleteButton.setAttribute('data-addon-id', addon.id);
+                    deleteButton.setAttribute('data-action', 'delete-custom-addon');
+                    actions.appendChild(deleteButton);
+                }
+
+                card.appendChild(actions);
+                galleryContainer.appendChild(card);
+            });
+        }
+
+        if (window.feather) window.feather.replace();
+    },
+
+    renderAddonBuilder: function() {
+        this.highlightBuilderBase();
+        this.renderBuilderStack();
+        this.refreshBuilderPlaceholders();
+    },
+
+    highlightBuilderBase: function() {
+        const buttons = Array.from(Utils.getAllElements('.builder-base-option'));
+        if (!buttons.length) return;
+        let found = false;
+        buttons.forEach(button => {
+            const base = button.getAttribute('data-base');
+            if (base === this.builderState.base) {
+                button.classList.add('active');
+                found = true;
+            } else {
+                button.classList.remove('active');
+            }
+        });
+        if (!found) {
+            const fallback = buttons[0];
+            fallback.classList.add('active');
+            this.builderState.base = fallback.getAttribute('data-base');
+        }
+    },
+
+    renderBuilderStack: function() {
+        const stack = Utils.getElement('#builder-stack');
+        if (!stack) return;
+        stack.innerHTML = '';
+
+        const base = AddonBuilderBases.find(item => item.id === this.builderState.base) || AddonBuilderBases[0];
+        if (base) {
+            const baseCard = Utils.createElement('div', { className: 'builder-block builder-block-base' });
+            const iconWrap = Utils.createElement('div', { className: 'builder-block-icon' });
+            iconWrap.innerHTML = `<i data-feather="${base.icon}"></i>`;
+            baseCard.appendChild(iconWrap);
+            const info = Utils.createElement('div', { className: 'builder-block-info' });
+            info.appendChild(Utils.createElement('div', { className: 'builder-block-title', text: LocalizationRenderer.t(base.nameKey) }));
+            info.appendChild(Utils.createElement('div', { className: 'builder-block-description', text: LocalizationRenderer.t(base.descriptionKey) }));
+            baseCard.appendChild(info);
+            stack.appendChild(baseCard);
+        }
+
+        if (!this.builderState.blocks.length) {
+            stack.appendChild(Utils.createElement('div', { className: 'builder-empty', text: LocalizationRenderer.t('addon_builder_empty_state') }));
+        } else {
+            this.builderState.blocks.forEach((blockId, index) => {
+                const block = AddonBuilderBlocks.find(item => item.id === blockId);
+                const blockCard = Utils.createElement('div', { className: 'builder-block' });
+                const iconWrap = Utils.createElement('div', { className: 'builder-block-icon' });
+                iconWrap.innerHTML = `<i data-feather="${block?.icon || 'tool'}"></i>`;
+                blockCard.appendChild(iconWrap);
+                const info = Utils.createElement('div', { className: 'builder-block-info' });
+                info.appendChild(Utils.createElement('div', { className: 'builder-block-title', text: block ? LocalizationRenderer.t(block.nameKey) : blockId }));
+                if (block?.descriptionKey) {
+                    info.appendChild(Utils.createElement('div', { className: 'builder-block-description', text: LocalizationRenderer.t(block.descriptionKey) }));
+                }
+                blockCard.appendChild(info);
+                const removeButton = Utils.createElement('button', { className: 'addon-pill-button subtle', text: LocalizationRenderer.t('addon_builder_remove_block') });
+                removeButton.setAttribute('data-action', 'remove-block');
+                removeButton.setAttribute('data-block-index', index);
+                blockCard.appendChild(removeButton);
+                stack.appendChild(blockCard);
+            });
+        }
+
+        if (window.feather) window.feather.replace();
+    },
+
+    refreshBuilderPlaceholders: function() {
+        const nameInput = Utils.getElement('#builder-addon-name');
+        if (nameInput) nameInput.placeholder = LocalizationRenderer.t('addon_builder_name_placeholder');
+        const descriptionInput = Utils.getElement('#builder-addon-description');
+        if (descriptionInput) descriptionInput.placeholder = LocalizationRenderer.t('addon_builder_description_placeholder');
+        const blockSelect = Utils.getElement('#builder-block-select');
+        if (blockSelect) {
+            Array.from(blockSelect.options).forEach(option => {
+                const key = option.getAttribute('data-i18n');
+                if (key) option.textContent = LocalizationRenderer.t(key);
+            });
+        }
+    },
+
+    findAddonDefinition: function(id) {
+        if (!id) return null;
+        const libraryAddon = AddonLibrary.find(addon => addon.id === id);
+        if (libraryAddon) return { ...libraryAddon };
+        const customAddon = (AppState.settings.customAddons || []).find(addon => addon.id === id);
+        if (customAddon) return { ...customAddon, type: 'custom' };
+        return null;
+    },
+
+    getAddonDisplayName: function(addon) {
+        if (!addon) return LocalizationRenderer.t('addon_unknown_name');
+        if (addon.nameKey) return LocalizationRenderer.t(addon.nameKey);
+        return addon.name || LocalizationRenderer.t('addon_unknown_name');
+    },
+
+    getAddonDisplayDescription: function(addon) {
+        if (!addon) return LocalizationRenderer.t('addon_default_description');
+        if (addon.descriptionKey) return LocalizationRenderer.t(addon.descriptionKey);
+        return addon.description || LocalizationRenderer.t('addon_default_description');
+    },
+
+    getAddonBaseLabel: function(addon) {
+        if (!addon) return '';
+        const base = AddonBuilderBases.find(option => option.id === addon.base);
+        return base ? LocalizationRenderer.t(base.nameKey) : '';
+    },
+
+    addAddonFromGallery: function(id) {
+        if (!id) return;
+        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
+        if (activeAddons.includes(id)) return;
+        activeAddons.push(id);
+        AppState.settings.activeAddons = activeAddons;
+        ipcRenderer.send('update-setting', 'activeAddons', activeAddons);
+        this.renderAddons();
+    },
+
+    removeActiveAddon: function(id) {
+        if (!id) return;
+        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
+        const updated = activeAddons.filter(addonId => addonId !== id);
+        if (updated.length === activeAddons.length) return;
+        AppState.settings.activeAddons = updated;
+        ipcRenderer.send('update-setting', 'activeAddons', updated);
+        this.renderAddons();
+    },
+
+    deleteCustomAddon: function(id) {
+        if (!id) return;
+        const customAddons = Array.isArray(AppState.settings.customAddons) ? [...AppState.settings.customAddons] : [];
+        if (!customAddons.some(addon => addon.id === id)) return;
+        if (!window.confirm(LocalizationRenderer.t('addon_delete_custom_confirm'))) return;
+        const updatedCustom = customAddons.filter(addon => addon.id !== id);
+        const updatedActive = (AppState.settings.activeAddons || []).filter(addonId => addonId !== id);
+        AppState.settings.customAddons = updatedCustom;
+        AppState.settings.activeAddons = updatedActive;
+        ipcRenderer.send('update-setting', 'customAddons', updatedCustom);
+        ipcRenderer.send('update-setting', 'activeAddons', updatedActive);
+        this.renderAddons();
+    },
+
+    removeBuilderBlock: function(index) {
+        if (!Number.isInteger(index)) return;
+        if (index < 0 || index >= this.builderState.blocks.length) return;
+        this.builderState.blocks.splice(index, 1);
+        this.renderBuilderStack();
+    },
+
+    resetBuilder: function() {
+        const defaultBase = AddonBuilderBases[0]?.id || 'clipboard';
+        this.builderState = { base: defaultBase, blocks: [] };
+        const nameInput = Utils.getElement('#builder-addon-name');
+        if (nameInput) nameInput.value = '';
+        const descriptionInput = Utils.getElement('#builder-addon-description');
+        if (descriptionInput) descriptionInput.value = '';
+        const blockSelect = Utils.getElement('#builder-block-select');
+        if (blockSelect) blockSelect.value = '';
+        this.renderAddonBuilder();
+    },
+
+    saveCustomAddon: function() {
+        const nameInput = Utils.getElement('#builder-addon-name');
+        const descriptionInput = Utils.getElement('#builder-addon-description');
+        const name = nameInput?.value.trim() || '';
+        if (!name) {
+            alert(LocalizationRenderer.t('addon_builder_error_name_required'));
+            return;
+        }
+        const description = descriptionInput?.value.trim() || '';
+        const baseId = this.builderState.base || (AddonBuilderBases[0]?.id || 'clipboard');
+        const base = AddonBuilderBases.find(item => item.id === baseId);
+        const blocks = this.builderState.blocks.map(blockId => ({ id: blockId }));
+        const icon = base?.icon || 'layers';
+        const customAddons = Array.isArray(AppState.settings.customAddons) ? [...AppState.settings.customAddons] : [];
+        const newAddon = {
+            id: `custom-${Date.now()}`,
+            name,
+            description,
+            base: baseId,
+            icon,
+            blocks
+        };
+        customAddons.push(newAddon);
+        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
+        activeAddons.push(newAddon.id);
+        AppState.settings.customAddons = customAddons;
+        AppState.settings.activeAddons = Array.from(new Set(activeAddons));
+        ipcRenderer.send('update-setting', 'customAddons', customAddons);
+        ipcRenderer.send('update-setting', 'activeAddons', Array.from(new Set(activeAddons)));
+        this.resetBuilder();
+        this.renderAddons();
     },
 
     setupShortcutRecorder: function() {

@@ -97,7 +97,15 @@ const DEFAULT_SETTINGS = {
             color: null,
             icon: 'folder'
         }
-    ]
+    ],
+    subscription: {
+        isActive: true,
+        planName: 'FlashSearch Studio',
+        renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        features: ['addon-builder', 'extended-gallery', 'priority-support']
+    },
+    activeAddons: ['clipboard-buffer'],
+    customAddons: []
 };
 
 // =================================================================================
@@ -273,6 +281,38 @@ class SettingsManager {
                 icon: folder.icon || 'folder'
             }));
 
+        if (!currentSettings.subscription || typeof currentSettings.subscription !== 'object') {
+            currentSettings.subscription = { ...DEFAULT_SETTINGS.subscription };
+        } else {
+            currentSettings.subscription = {
+                isActive: currentSettings.subscription.isActive !== false,
+                planName: currentSettings.subscription.planName || DEFAULT_SETTINGS.subscription.planName,
+                renewalDate: currentSettings.subscription.renewalDate || DEFAULT_SETTINGS.subscription.renewalDate,
+                features: Array.isArray(currentSettings.subscription.features) && currentSettings.subscription.features.length > 0
+                    ? currentSettings.subscription.features
+                    : [...DEFAULT_SETTINGS.subscription.features]
+            };
+        }
+
+        if (!Array.isArray(currentSettings.activeAddons)) {
+            currentSettings.activeAddons = [...DEFAULT_SETTINGS.activeAddons];
+        }
+
+        if (!Array.isArray(currentSettings.customAddons)) {
+            currentSettings.customAddons = [];
+        }
+
+        currentSettings.activeAddons = Array.from(new Set(currentSettings.activeAddons.filter(Boolean)));
+        currentSettings.customAddons = currentSettings.customAddons
+            .filter(addon => addon && typeof addon === 'object' && addon.id && addon.name)
+            .map(addon => ({
+                ...addon,
+                base: addon.base || 'clipboard',
+                icon: addon.icon || 'layers',
+                description: addon.description || '',
+                blocks: Array.isArray(addon.blocks) ? addon.blocks : []
+            }));
+
         Logger.info(`App folders structure: ${JSON.stringify(currentSettings.appFolders.map(f => ({id: f.id, name: f.name, appsCount: f.apps.length})))}`);
     }
 
@@ -287,8 +327,11 @@ class SettingsManager {
     updateSetting(key, value) {
         let requiresReindex = false;
 
-        if (key === 'indexedDirectories' || key === 'customAutomations') {
+        if (['indexedDirectories', 'customAutomations', 'customAddons', 'activeAddons', 'subscription'].includes(key)) {
             currentSettings[key] = value;
+            if (['customAddons', 'activeAddons', 'subscription'].includes(key)) {
+                this.validateSettings();
+            }
             if (key === 'indexedDirectories') requiresReindex = true;
         } else if (currentSettings[key] !== value) {
             if (['opacity', 'blurStrength', 'maxIndexDepth', 'width', 'height', 'borderRadius'].includes(key)) {

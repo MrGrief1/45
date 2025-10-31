@@ -1302,6 +1302,10 @@ body.dark-theme .aux-header {
   transform: translateX(0);
 }
 
+.settings-sidebar li.is-hidden {
+  display: none !important;
+}
+
 .settings-main {
   flex-grow: 1;
   padding: 20px 40px 20px 30px;
@@ -2096,4 +2100,495 @@ input[type="range"]:active::-webkit-slider-thumb {
   font-size: 22px;
   font-weight: 600;
   color: var(--text-color);
+}
+
+.tab-content.is-hidden {
+  display: none !important;
+}
+
+/* =================================================================================
+// === Settings: Subscription & Add-on Lab ===
+// ================================================================================= */
+.settings-section-card {
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.45);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(26px);
+}
+
+.settings-section-card:last-of-type {
+  margin-bottom: 0;
+}
+
+.subscription-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.subscription-header-text h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.subscription-subtitle {
+  margin: 6px 0 0 0;
+  color: var(--icon-color);
+  font-size: 14px;
+}
+
+.subscription-badge {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  background-color: color-mix(in srgb, var(--highlight-color), transparent 82%);
+  color: var(--highlight-color);
+  border: 1px solid color-mix(in srgb, var(--highlight-color), transparent 65%);
+  letter-spacing: 0.08em;
+}
+
+.subscription-badge.inactive {
+  background-color: rgba(255, 59, 48, 0.15);
+  color: #ff3b30;
+  border-color: rgba(255, 59, 48, 0.35);
+}
+
+.subscription-metadata {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.subscription-label {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  color: var(--icon-color);
+}
+
+.subscription-value {
+  margin: 6px 0 0 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.subscription-feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.subscription-feature-list li {
+  position: relative;
+  padding-left: 26px;
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.subscription-feature-list li::before {
+  content: '✔';
+  position: absolute;
+  left: 0;
+  top: 1px;
+  color: var(--highlight-color);
+  font-size: 13px;
+}
+
+.subscription-section .settings-button {
+  margin-top: 24px;
+}
+
+.subscription-lab-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.subscription-lab-text h4 {
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.subscription-lab-text p {
+  margin: 0;
+  color: var(--icon-color);
+  font-size: 14px;
+}
+
+.addons-section-header {
+  margin-bottom: 16px;
+}
+
+.addons-section-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.addons-section-header p {
+  margin: 6px 0 0 0;
+  color: var(--icon-color);
+  font-size: 14px;
+}
+
+.addons-active-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.addons-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.addon-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.45);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.addon-card:hover {
+  border-color: color-mix(in srgb, var(--highlight-color), transparent 70%);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18);
+}
+
+.addon-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.addon-card-icon i {
+  width: 20px;
+  height: 20px;
+  color: var(--highlight-color);
+}
+
+.addon-card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.addon-card-title {
+  margin: 0;
+  font-size: 17px;
+}
+
+.addon-card-description {
+  margin: 8px 0 0 0;
+  color: var(--icon-color);
+  font-size: 14px;
+}
+
+.addon-badge {
+  background-color: color-mix(in srgb, var(--highlight-color), transparent 85%);
+  color: var(--highlight-color);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.addon-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.addon-meta-pill {
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.65);
+  border: 1px solid color-mix(in srgb, var(--highlight-color), transparent 75%);
+}
+
+.addon-meta-pill.subtle {
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.4);
+  color: var(--icon-color);
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+.addon-block-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.addon-chip {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 8px;
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.55);
+  color: var(--text-color);
+}
+
+.addon-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.addon-card-actions.stacked {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.addon-card-actions.stacked .addon-pill-button {
+  width: 100%;
+  text-align: center;
+}
+
+.addon-pill-button {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.addon-pill-button.primary {
+  background-color: var(--highlight-color);
+  color: #fff;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--highlight-color), transparent 65%);
+}
+
+.addon-pill-button.primary.disabled {
+  opacity: 0.55;
+  cursor: default;
+  box-shadow: none;
+  transform: none;
+}
+
+.addon-pill-button.primary:not(.disabled):hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.addon-pill-button.danger {
+  background-color: rgba(255, 59, 48, 0.15);
+  color: #ff3b30;
+  border: 1px solid rgba(255, 59, 48, 0.35);
+}
+
+.addon-pill-button.subtle {
+  background-color: transparent;
+  color: var(--icon-color);
+  border: 1px solid rgba(var(--secondary-bg-color-rgb), 0.6);
+}
+
+.addon-pill-button.subtle-danger {
+  background-color: transparent;
+  color: #ff3b30;
+  border: 1px solid rgba(255, 59, 48, 0.35);
+}
+
+.addon-pill-button:disabled {
+  cursor: default;
+}
+
+.addon-pill-button:active:not(.disabled) {
+  transform: scale(0.98);
+}
+
+.addons-empty {
+  padding: 18px;
+  border-radius: 14px;
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.35);
+  border: 1px dashed var(--border-color);
+  color: var(--icon-color);
+  font-size: 14px;
+  text-align: center;
+}
+
+.addon-builder {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.builder-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 260px;
+}
+
+.builder-base-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.builder-base-option {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(var(--secondary-bg-color-rgb), 0.4);
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.32);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  text-align: left;
+}
+
+.builder-base-option.active {
+  border-color: var(--highlight-color);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.6);
+  transform: translateY(-2px);
+}
+
+.builder-base-option i {
+  width: 20px;
+  height: 20px;
+  color: var(--highlight-color);
+}
+
+.builder-base-option span {
+  font-weight: 600;
+}
+
+.builder-base-option small {
+  color: var(--icon-color);
+  font-size: 12px;
+}
+
+.builder-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.builder-controls select {
+  flex: 1 1 220px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.35);
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.builder-stack {
+  min-height: 120px;
+  border: 1px dashed color-mix(in srgb, var(--highlight-color), transparent 60%);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.25);
+}
+
+.builder-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.5);
+  border: 1px solid rgba(var(--secondary-bg-color-rgb), 0.7);
+}
+
+.builder-block-base {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--highlight-color), transparent 60%);
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.6);
+}
+
+.builder-block-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.builder-block-icon i {
+  width: 18px;
+  height: 18px;
+  color: var(--highlight-color);
+}
+
+.builder-block-info {
+  flex: 1;
+}
+
+.builder-block-title {
+  font-weight: 600;
+}
+
+.builder-block-description {
+  margin-top: 4px;
+  color: var(--icon-color);
+  font-size: 13px;
+}
+
+.builder-empty {
+  padding: 12px;
+  border-radius: 12px;
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.3);
+  color: var(--icon-color);
+  text-align: center;
+  font-size: 13px;
+}
+
+.builder-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.builder-form input,
+.builder-form textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background-color: rgba(var(--secondary-bg-color-rgb), 0.35);
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.builder-form textarea {
+  min-height: 100px;
+  resize: vertical;
 }

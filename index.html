@@ -71,6 +71,8 @@
                             <li data-tab="appearance" data-i18n="settings_appearance">Appearance</li>
                             <li data-tab="indexing" data-i18n="settings_indexing">Indexing</li>
                             <li data-tab="automations" data-i18n="settings_automations">Automations</li>
+                            <li data-tab="subscription" data-i18n="settings_subscription">Subscription</li>
+                            <li data-tab="addons" class="subscription-only" data-i18n="settings_addons">Add-on Lab</li>
                             <li data-tab="about" data-i18n="settings_about">About</li>
                         </ul>
                     </div>
@@ -282,7 +284,7 @@
                         <div id="tab-automations" class="tab-content">
                             <h4 data-i18n="settings_custom_automations">Custom Automations</h4>
                             <div id="automations-list"></div>
-                            
+
                             <div class="automation-form">
                                 <input type="text" id="new-auto-name" data-i18n-placeholder="settings_auto_name" placeholder="Name">
                                 <input type="text" id="new-auto-keyword" data-i18n-placeholder="settings_auto_keyword" placeholder="Keyword">
@@ -299,6 +301,116 @@
                                     <li data-i18n-html="auto_instructions_step3"></li>
                                 </ul>
                             </div>
+                        </div>
+
+                        <div id="tab-subscription" class="tab-content">
+                            <section class="settings-section-card subscription-section">
+                                <header class="subscription-header">
+                                    <div class="subscription-header-text">
+                                        <h3 data-i18n="subscription_overview_title">Your subscription</h3>
+                                        <p class="subscription-subtitle" data-i18n="subscription_trial_message">Your add-on tools stay unlocked while the subscription is active.</p>
+                                    </div>
+                                    <span id="subscription-status-badge" class="subscription-badge">Active</span>
+                                </header>
+                                <div class="subscription-metadata">
+                                    <div class="subscription-metadata-item">
+                                        <span class="subscription-label" data-i18n="subscription_plan_label">Plan</span>
+                                        <p id="subscription-plan-name" class="subscription-value">FlashSearch Studio</p>
+                                    </div>
+                                    <div class="subscription-metadata-item">
+                                        <span class="subscription-label" data-i18n="subscription_status_label">Status</span>
+                                        <p id="subscription-status-text" class="subscription-value">Active</p>
+                                    </div>
+                                    <div class="subscription-metadata-item">
+                                        <span class="subscription-label" data-i18n="subscription_next_renewal">Next renewal</span>
+                                        <p id="subscription-renewal-date" class="subscription-value">—</p>
+                                    </div>
+                                </div>
+                                <div class="subscription-perks">
+                                    <h4 data-i18n="subscription_perks_title">Included perks</h4>
+                                    <ul id="subscription-feature-list" class="subscription-feature-list"></ul>
+                                </div>
+                                <button id="subscription-manage-button" class="settings-button external-link" data-url="https://flashsearch.app/account" data-i18n="subscription_manage">Manage subscription</button>
+                            </section>
+                            <section class="settings-section-card subscription-lab-card">
+                                <div class="subscription-lab-text">
+                                    <h4 data-i18n="subscription_lab_title">Add-on Lab unlocked</h4>
+                                    <p data-i18n="subscription_lab_description">Use the Add-on Lab tab to combine building blocks and tailor FlashSearch to your workflow.</p>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div id="tab-addons" class="tab-content">
+                            <section class="settings-section-card addons-section">
+                                <header class="addons-section-header">
+                                    <div>
+                                        <h3 data-i18n="addons_active_title">Active workspace</h3>
+                                        <p data-i18n="addons_active_description">These add-ons are currently plugged into FlashSearch.</p>
+                                    </div>
+                                </header>
+                                <div id="active-addons-list" class="addons-active-list"></div>
+                            </section>
+                            <section class="settings-section-card addons-section">
+                                <header class="addons-section-header">
+                                    <div>
+                                        <h3 data-i18n="addons_gallery_title">Component gallery</h3>
+                                        <p data-i18n="addons_gallery_description">Start with a ready-made module and adapt it to your workflow.</p>
+                                    </div>
+                                </header>
+                                <div id="addon-gallery" class="addons-gallery"></div>
+                            </section>
+                            <section class="settings-section-card addons-section">
+                                <header class="addons-section-header">
+                                    <div>
+                                        <h3 data-i18n="addon_builder_title">Create your own add-on</h3>
+                                        <p data-i18n="addon_builder_intro">Build features from easy blocks—no coding required.</p>
+                                    </div>
+                                </header>
+                                <div class="addon-builder">
+                                    <div class="builder-column">
+                                        <h4 data-i18n="addon_builder_base_label">Choose a starting point</h4>
+                                        <div class="builder-base-options">
+                                            <button type="button" class="builder-base-option active" data-base="clipboard">
+                                                <i data-feather="clipboard"></i>
+                                                <span data-i18n="addon_base_clipboard">Clipboard buffer</span>
+                                                <small data-i18n="addon_base_clipboard_desc">Start from the classic clipboard layout.</small>
+                                            </button>
+                                            <button type="button" class="builder-base-option" data-base="note">
+                                                <i data-feather="edit-3"></i>
+                                                <span data-i18n="addon_base_note">Quick note</span>
+                                                <small data-i18n="addon_base_note_desc">Capture ideas and templates.</small>
+                                            </button>
+                                            <button type="button" class="builder-base-option" data-base="command">
+                                                <i data-feather="zap"></i>
+                                                <span data-i18n="addon_base_command">Quick command</span>
+                                                <small data-i18n="addon_base_command_desc">Trigger scripts or workflows.</small>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="builder-column">
+                                        <h4 data-i18n="addon_builder_blocks_label">Add building blocks</h4>
+                                        <div class="builder-controls">
+                                            <select id="builder-block-select">
+                                                <option value="" data-i18n="addon_builder_block_placeholder">Select block…</option>
+                                                <option value="clipboard-filter" data-i18n="addon_builder_blocks_clipboard_filter">Filter copied content</option>
+                                                <option value="text-replace" data-i18n="addon_builder_blocks_text_replace">Replace text automatically</option>
+                                                <option value="pin-items" data-i18n="addon_builder_blocks_pin_items">Pin favourite items</option>
+                                                <option value="sync" data-i18n="addon_builder_blocks_sync">Sync across devices</option>
+                                            </select>
+                                            <button type="button" id="builder-add-block" class="settings-button" data-i18n="addon_builder_add_block">Add block</button>
+                                            <button type="button" id="builder-reset" class="settings-button secondary" data-i18n="addon_builder_reset">Clear builder</button>
+                                        </div>
+                                        <div id="builder-stack" class="builder-stack"></div>
+                                        <div class="builder-form">
+                                            <label for="builder-addon-name" data-i18n="addon_builder_name_label">Name</label>
+                                            <input type="text" id="builder-addon-name" data-i18n-placeholder="addon_builder_name_placeholder" placeholder="Custom add-on">
+                                            <label for="builder-addon-description" data-i18n="addon_builder_description_label">Description</label>
+                                            <textarea id="builder-addon-description" data-i18n-placeholder="addon_builder_description_placeholder" placeholder="Explain what this add-on does..."></textarea>
+                                            <button type="button" id="builder-save-addon" class="settings-button" data-i18n="addon_builder_save">Save add-on</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
                         </div>
 
                         <div id="tab-about" class="tab-content">
