@@ -14,9 +14,62 @@ const AppState = {
     searchResults: [],
     selectedIndex: -1,
     isInitialized: false,
-    iconCache: new Map(), 
+    iconCache: new Map(),
     hintShown: false, // НОВОЕ: Флаг показа подсказки
+    subscription: { active: true, plan: 'creator', renewalDate: null },
+    extensionWorkspace: { blocks: [] }
 };
+
+const DefaultSubscriptionState = {
+    active: true,
+    plan: 'creator',
+    renewalDate: null,
+    renewalText: 'Renews automatically',
+    seats: 1
+};
+
+const DefaultExtensionWorkspace = {
+    blocks: []
+};
+
+const ExtensionTemplates = [
+    {
+        id: 'clipboard-stack',
+        icon: '🗂️',
+        titleKey: 'extension_clipboard_stack_title',
+        descriptionKey: 'extension_clipboard_stack_desc',
+        tags: ['extension_tag_clipboard', 'extension_complexity_easy'],
+        ports: [
+            { type: 'input', labelKey: 'extension_port_listen' },
+            { type: 'process', labelKey: 'extension_port_transform' },
+            { type: 'output', labelKey: 'extension_port_output' }
+        ]
+    },
+    {
+        id: 'search-cards',
+        icon: '🪄',
+        titleKey: 'extension_search_cards_title',
+        descriptionKey: 'extension_search_cards_desc',
+        tags: ['extension_tag_interface', 'extension_complexity_medium'],
+        ports: [
+            { type: 'input', labelKey: 'extension_port_query' },
+            { type: 'process', labelKey: 'extension_port_enrich' },
+            { type: 'output', labelKey: 'extension_port_render' }
+        ]
+    },
+    {
+        id: 'automation-macro',
+        icon: '⚙️',
+        titleKey: 'extension_macro_blocks_title',
+        descriptionKey: 'extension_macro_blocks_desc',
+        tags: ['extension_tag_automation', 'extension_complexity_advanced'],
+        ports: [
+            { type: 'input', labelKey: 'extension_port_trigger' },
+            { type: 'process', labelKey: 'extension_port_actions' },
+            { type: 'output', labelKey: 'extension_port_result' }
+        ]
+    }
+];
 
 const Utils = {
     getElement: (selector) => document.querySelector(selector),
@@ -142,6 +195,10 @@ const LocalizationRenderer = {
         if (AppState.currentView === 'settings') {
             SettingsModule.renderIndexedDirectories();
             SettingsModule.renderAutomations();
+            SettingsModule.renderSubscriptionState();
+            SettingsModule.renderExtensionsGallery();
+            SettingsModule.renderExtensionsWorkspace();
+            SettingsModule.updateExtensionsTabVisibility();
         }
     }
 };
@@ -151,6 +208,7 @@ const LocalizationRenderer = {
 // =================================================================================
 // ... existing code ...
 const SettingsModule = {
+    workspaceSaveTimer: null,
     init: function() {
         this.setupEventListeners();
         this.setupTabs();
@@ -186,6 +244,26 @@ const SettingsModule = {
                 if (url) shell.openExternal(url);
             });
         });
+
+        const subscriptionToggle = Utils.getElement('#subscription-toggle');
+        if (subscriptionToggle) {
+            subscriptionToggle.addEventListener('click', () => this.toggleSubscription());
+        }
+        const subscriptionManage = Utils.getElement('#subscription-manage');
+        if (subscriptionManage) {
+            subscriptionManage.addEventListener('click', (event) => {
+                event.preventDefault();
+                shell.openExternal('https://flashsearch.app/billing');
+            });
+        }
+        const clearWorkspaceButton = Utils.getElement('#extensions-clear');
+        if (clearWorkspaceButton) {
+            clearWorkspaceButton.addEventListener('click', () => this.clearWorkspace());
+        }
+        const saveWorkspaceButton = Utils.getElement('#extensions-save');
+        if (saveWorkspaceButton) {
+            saveWorkspaceButton.addEventListener('click', () => this.saveWorkspace());
+        }
     },
     
     bindSetting: function(elementId, settingKey) {
@@ -238,13 +316,30 @@ const SettingsModule = {
         Utils.getAllElements('.settings-sidebar li').forEach(tabButton => {
             tabButton.addEventListener('click', () => {
                 const tabId = tabButton.getAttribute('data-tab');
-                document.querySelector('.settings-sidebar li.active')?.classList.remove('active');
-                document.querySelector('.tab-content.active')?.classList.remove('active');
-                tabButton.classList.add('active');
-                const newTab = Utils.getElement(`#tab-${tabId}`);
-                if (newTab) newTab.classList.add('active');
+                this.switchTab(tabId);
             });
         });
+    },
+
+    switchTab: function(tabId) {
+        const targetButton = Utils.getElement(`.settings-sidebar li[data-tab="${tabId}"]`);
+        const targetTab = Utils.getElement(`#tab-${tabId}`);
+
+        if (!targetButton || targetButton.classList.contains('hidden') || !targetTab || targetTab.classList.contains('hidden')) {
+            const fallbackButton = Utils.getElement('.settings-sidebar li[data-tab="general"]');
+            const fallbackTab = Utils.getElement('#tab-general');
+            document.querySelector('.settings-sidebar li.active')?.classList.remove('active');
+            document.querySelector('.tab-content.active')?.classList.remove('active');
+            fallbackButton?.classList.add('active');
+            fallbackTab?.classList.add('active');
+            return;
+        }
+
+        document.querySelector('.settings-sidebar li.active')?.classList.remove('active');
+        document.querySelector('.tab-content.active')?.classList.remove('active');
+        targetButton.classList.add('active');
+        targetTab.classList.remove('hidden');
+        targetTab.classList.add('active');
     },
 
     populateSettingsUI: function() {
@@ -278,8 +373,249 @@ const SettingsModule = {
         }
         this.renderIndexedDirectories();
         this.renderAutomations();
+        this.renderSubscriptionState();
+        this.renderExtensionsGallery();
+        this.renderExtensionsWorkspace();
+        this.updateExtensionsTabVisibility();
     },
-    
+
+    getSubscriptionState: function() {
+        const raw = (AppState.settings && AppState.settings.subscription) || {};
+        const subscription = { ...DefaultSubscriptionState, ...raw };
+        AppState.subscription = subscription;
+        return subscription;
+    },
+
+    isSubscriptionActive: function() {
+        const subscription = this.getSubscriptionState();
+        return subscription.active !== false;
+    },
+
+    renderSubscriptionState: function() {
+        const subscription = this.getSubscriptionState();
+        const badge = Utils.getElement('#subscription-status-badge');
+        if (badge) {
+            badge.textContent = LocalizationRenderer.t(subscription.active ? 'settings_subscription_status_active' : 'settings_subscription_status_inactive');
+            badge.classList.toggle('inactive', !subscription.active);
+        }
+        const note = Utils.getElement('#subscription-status-note');
+        if (note) {
+            const noteKey = subscription.active ? 'settings_subscription_status_note_active' : 'settings_subscription_status_note_inactive';
+            note.textContent = LocalizationRenderer.t(noteKey);
+        }
+        const planLabel = Utils.getElement('#subscription-plan-label');
+        if (planLabel) {
+            planLabel.textContent = LocalizationRenderer.t('settings_subscription_plan_value');
+        }
+        const renewalLabel = Utils.getElement('#subscription-renewal-label');
+        if (renewalLabel) {
+            if (subscription.renewalDate) {
+                renewalLabel.textContent = LocalizationRenderer.t('settings_subscription_renewal_value_date', subscription.renewalDate);
+            } else {
+                renewalLabel.textContent = LocalizationRenderer.t('settings_subscription_renewal_value_auto');
+            }
+        }
+        const toggleButton = Utils.getElement('#subscription-toggle');
+        if (toggleButton) {
+            toggleButton.textContent = LocalizationRenderer.t(subscription.active ? 'settings_subscription_deactivate' : 'settings_subscription_activate');
+        }
+    },
+
+    updateExtensionsTabVisibility: function() {
+        const active = this.isSubscriptionActive();
+        const tabButton = Utils.getElement('#extensions-tab-button');
+        const tabContent = Utils.getElement('#tab-extensions');
+        if (tabButton) {
+            tabButton.classList.toggle('hidden', !active);
+        }
+        if (tabContent) {
+            if (!active) {
+                tabContent.classList.add('hidden');
+                tabContent.classList.remove('active');
+                const currentActive = document.querySelector('.settings-sidebar li.active');
+                if (currentActive && currentActive.getAttribute('data-tab') === 'extensions') {
+                    this.switchTab('subscription');
+                }
+            } else {
+                tabContent.classList.remove('hidden');
+            }
+        }
+    },
+
+    renderExtensionsGallery: function() {
+        const container = Utils.getElement('#extensions-gallery-list');
+        if (!container) return;
+        container.innerHTML = '';
+
+        ExtensionTemplates.forEach(template => {
+            const card = Utils.createElement('div', { className: 'extension-card glass-element' });
+            const icon = Utils.createElement('div', { className: 'extension-card-icon', text: template.icon });
+            card.appendChild(icon);
+
+            const body = Utils.createElement('div', { className: 'extension-card-body' });
+            const title = Utils.createElement('div', { className: 'extension-card-title', text: LocalizationRenderer.t(template.titleKey) });
+            const description = Utils.createElement('div', { className: 'extension-card-description', text: LocalizationRenderer.t(template.descriptionKey) });
+            const tags = Utils.createElement('div', { className: 'extension-card-tags' });
+            template.tags.forEach(tagKey => {
+                const tag = Utils.createElement('span', { className: 'extension-tag', text: LocalizationRenderer.t(tagKey) });
+                tags.appendChild(tag);
+            });
+            body.appendChild(title);
+            body.appendChild(description);
+            body.appendChild(tags);
+            card.appendChild(body);
+
+            const addButton = Utils.createElement('button', { className: 'settings-button tertiary', text: LocalizationRenderer.t('settings_extensions_add') });
+            addButton.addEventListener('click', () => this.addTemplateToWorkspace(template.id));
+            card.appendChild(addButton);
+
+            container.appendChild(card);
+        });
+    },
+
+    getWorkspaceState: function() {
+        const raw = (AppState.settings && AppState.settings.extensionWorkspace) || {};
+        const blocks = Array.isArray(raw.blocks) ? raw.blocks : [];
+        const workspace = { ...DefaultExtensionWorkspace, ...raw, blocks };
+        AppState.extensionWorkspace = workspace;
+        return workspace;
+    },
+
+    renderExtensionsWorkspace: function() {
+        const workspace = this.getWorkspaceState();
+        const list = Utils.getElement('#extensions-workspace-list');
+        const emptyState = Utils.getElement('#extensions-workspace-empty');
+        if (!list || !emptyState) return;
+
+        list.innerHTML = '';
+
+        if (!workspace.blocks.length) {
+            emptyState.classList.remove('hidden');
+            return;
+        }
+        emptyState.classList.add('hidden');
+
+        workspace.blocks.forEach((block, index) => {
+            const template = ExtensionTemplates.find(t => t.id === block.templateId);
+            if (!template) return;
+
+            const blockElement = Utils.createElement('div', { className: 'extension-block glass-element' });
+
+            const header = Utils.createElement('div', { className: 'extension-block-header' });
+            const icon = Utils.createElement('div', { className: 'extension-block-icon', text: template.icon });
+            const titleWrapper = Utils.createElement('div', { className: 'extension-block-title' });
+            const name = Utils.createElement('div', { className: 'extension-block-name', text: LocalizationRenderer.t(template.titleKey) });
+            const description = Utils.createElement('div', { className: 'extension-block-description', text: LocalizationRenderer.t(template.descriptionKey) });
+            titleWrapper.appendChild(name);
+            titleWrapper.appendChild(description);
+            header.appendChild(icon);
+            header.appendChild(titleWrapper);
+
+            const controls = Utils.createElement('div', { className: 'extension-block-controls' });
+            const upButton = Utils.createElement('button', { className: 'extension-block-action', text: '▲' });
+            upButton.title = LocalizationRenderer.t('settings_extensions_move_up');
+            upButton.disabled = index === 0;
+            upButton.addEventListener('click', () => this.moveWorkspaceBlock(block.id, -1));
+            const downButton = Utils.createElement('button', { className: 'extension-block-action', text: '▼' });
+            downButton.title = LocalizationRenderer.t('settings_extensions_move_down');
+            downButton.disabled = index === workspace.blocks.length - 1;
+            downButton.addEventListener('click', () => this.moveWorkspaceBlock(block.id, 1));
+            const removeButton = Utils.createElement('button', { className: 'extension-block-action danger', text: LocalizationRenderer.t('settings_extensions_remove') });
+            removeButton.addEventListener('click', () => this.removeWorkspaceBlock(block.id));
+            controls.appendChild(upButton);
+            controls.appendChild(downButton);
+            controls.appendChild(removeButton);
+            header.appendChild(controls);
+
+            blockElement.appendChild(header);
+
+            const portsWrapper = Utils.createElement('div', { className: 'extension-block-ports' });
+            template.ports.forEach(port => {
+                const portElement = Utils.createElement('div', { className: `extension-port extension-port-${port.type}` });
+                const dot = Utils.createElement('span', { className: 'extension-port-dot' });
+                const label = Utils.createElement('span', { className: 'extension-port-label', text: LocalizationRenderer.t(port.labelKey) });
+                portElement.appendChild(dot);
+                portElement.appendChild(label);
+                portsWrapper.appendChild(portElement);
+            });
+            blockElement.appendChild(portsWrapper);
+
+            list.appendChild(blockElement);
+        });
+    },
+
+    updateWorkspaceSetting: function(blocks) {
+        const normalized = Array.isArray(blocks) ? blocks : [];
+        const workspace = { ...this.getWorkspaceState(), blocks: normalized };
+        AppState.settings.extensionWorkspace = workspace;
+        AppState.extensionWorkspace = workspace;
+        ipcRenderer.send('update-setting', 'extensionWorkspace', workspace);
+        this.renderExtensionsWorkspace();
+    },
+
+    addTemplateToWorkspace: function(templateId) {
+        const template = ExtensionTemplates.find(t => t.id === templateId);
+        if (!template) return;
+        const workspace = this.getWorkspaceState();
+        const newBlock = {
+            id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            templateId: template.id
+        };
+        const updatedBlocks = [...workspace.blocks, newBlock];
+        this.updateWorkspaceSetting(updatedBlocks);
+    },
+
+    removeWorkspaceBlock: function(blockId) {
+        const workspace = this.getWorkspaceState();
+        const updatedBlocks = workspace.blocks.filter(block => block.id !== blockId);
+        this.updateWorkspaceSetting(updatedBlocks);
+    },
+
+    moveWorkspaceBlock: function(blockId, direction) {
+        const workspace = this.getWorkspaceState();
+        const currentIndex = workspace.blocks.findIndex(block => block.id === blockId);
+        if (currentIndex === -1) return;
+        const newIndex = currentIndex + direction;
+        if (newIndex < 0 || newIndex >= workspace.blocks.length) return;
+        const updatedBlocks = [...workspace.blocks];
+        const [moved] = updatedBlocks.splice(currentIndex, 1);
+        updatedBlocks.splice(newIndex, 0, moved);
+        this.updateWorkspaceSetting(updatedBlocks);
+    },
+
+    clearWorkspace: function() {
+        this.updateWorkspaceSetting([]);
+        this.showWorkspaceSavedIndicator();
+    },
+
+    saveWorkspace: function() {
+        const workspace = this.getWorkspaceState();
+        ipcRenderer.send('update-setting', 'extensionWorkspace', workspace);
+        this.showWorkspaceSavedIndicator();
+    },
+
+    showWorkspaceSavedIndicator: function() {
+        const indicator = Utils.getElement('#extensions-save-state');
+        if (!indicator) return;
+        indicator.classList.remove('hidden');
+        if (this.workspaceSaveTimer) {
+            clearTimeout(this.workspaceSaveTimer);
+        }
+        this.workspaceSaveTimer = setTimeout(() => {
+            indicator.classList.add('hidden');
+        }, 2000);
+    },
+
+    toggleSubscription: function() {
+        const subscription = this.getSubscriptionState();
+        const updated = { ...subscription, active: !subscription.active };
+        AppState.settings.subscription = updated;
+        AppState.subscription = updated;
+        ipcRenderer.send('update-setting', 'subscription', updated);
+        this.renderSubscriptionState();
+        this.updateExtensionsTabVisibility();
+    },
+
     setElementValue: function(elementId, value, isCheckbox = false) {
         const element = Utils.getElement(`#${elementId}`);
         if (element) {

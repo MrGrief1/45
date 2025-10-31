@@ -97,7 +97,17 @@ const DEFAULT_SETTINGS = {
             color: null,
             icon: 'folder'
         }
-    ]
+    ],
+    subscription: {
+        active: true,
+        plan: 'creator',
+        renewalDate: null,
+        renewalText: 'Renews automatically',
+        seats: 1
+    },
+    extensionWorkspace: {
+        blocks: []
+    }
 };
 
 // =================================================================================
@@ -250,7 +260,26 @@ class SettingsManager {
         if (!Array.isArray(currentSettings.appFolders) || currentSettings.appFolders.length === 0) {
             currentSettings.appFolders = DEFAULT_SETTINGS.appFolders;
         }
-        
+
+        if (!currentSettings.subscription || typeof currentSettings.subscription !== 'object') {
+            currentSettings.subscription = { ...DEFAULT_SETTINGS.subscription };
+        } else {
+            currentSettings.subscription = { ...DEFAULT_SETTINGS.subscription, ...currentSettings.subscription };
+        }
+
+        if (!currentSettings.extensionWorkspace || typeof currentSettings.extensionWorkspace !== 'object') {
+            currentSettings.extensionWorkspace = { ...DEFAULT_SETTINGS.extensionWorkspace };
+        } else {
+            const blocks = Array.isArray(currentSettings.extensionWorkspace.blocks)
+                ? currentSettings.extensionWorkspace.blocks
+                : [];
+            currentSettings.extensionWorkspace = {
+                ...DEFAULT_SETTINGS.extensionWorkspace,
+                ...currentSettings.extensionWorkspace,
+                blocks
+            };
+        }
+
         // ИСПРАВЛЕНИЕ: Убеждаемся что папка pinned существует
         const pinnedFolder = currentSettings.appFolders.find(f => f.id === 'pinned');
         if (!pinnedFolder) {

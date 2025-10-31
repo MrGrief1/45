@@ -69,6 +69,8 @@
                         <ul>
                             <li data-tab="general" class="active" data-i18n="settings_general">General</li>
                             <li data-tab="appearance" data-i18n="settings_appearance">Appearance</li>
+                            <li data-tab="subscription" data-i18n="settings_subscription">Subscription</li>
+                            <li data-tab="extensions" id="extensions-tab-button" class="hidden" data-i18n="settings_extensions">Add-on Studio</li>
                             <li data-tab="indexing" data-i18n="settings_indexing">Indexing</li>
                             <li data-tab="automations" data-i18n="settings_automations">Automations</li>
                             <li data-tab="about" data-i18n="settings_about">About</li>
@@ -298,6 +300,90 @@
                                     <li data-i18n-html="auto_instructions_step2"></li>
                                     <li data-i18n-html="auto_instructions_step3"></li>
                                 </ul>
+                            </div>
+                        </div>
+
+                        <div id="tab-subscription" class="tab-content">
+                            <div class="subscription-layout">
+                                <div class="subscription-card glass-element">
+                                    <div class="subscription-card-header">
+                                        <div>
+                                            <div class="subscription-plan" data-i18n="settings_subscription_plan_name">FlashSearch Creator</div>
+                                            <div class="subscription-plan-description" data-i18n="settings_subscription_plan_description">Full toolkit for power users to craft their own enhancements.</div>
+                                        </div>
+                                        <div class="subscription-status-group">
+                                            <span id="subscription-status-badge" class="status-badge">Active</span>
+                                            <span id="subscription-status-note" class="subscription-status-note"></span>
+                                        </div>
+                                    </div>
+                                    <div class="subscription-grid">
+                                        <div class="subscription-highlight">
+                                            <h4 data-i18n="settings_subscription_trial_title">Creator access is enabled for testing</h4>
+                                            <p data-i18n="settings_subscription_trial_description">Your workspace is unlocked so you can explore the add-on studio without waiting for billing.</p>
+                                        </div>
+                                        <div class="subscription-perks">
+                                            <h4 data-i18n="settings_subscription_perks_title">What’s included</h4>
+                                            <ul>
+                                                <li><span class="perk-icon">🧩</span><span data-i18n="settings_subscription_perk_blocks">Visual block builder for custom features.</span></li>
+                                                <li><span class="perk-icon">🎛️</span><span data-i18n="settings_subscription_perk_gallery">Gallery of ready-made replacements for core tools.</span></li>
+                                                <li><span class="perk-icon">⚡</span><span data-i18n="settings_subscription_perk_updates">Priority access to new beta components.</span></li>
+                                            </ul>
+                                        </div>
+                                        <div class="subscription-tips">
+                                            <h4 data-i18n="settings_subscription_tips_title">Quick tips</h4>
+                                            <ul>
+                                                <li data-i18n="settings_subscription_tip_blocks">Combine blocks by stacking inputs → processors → outputs.</li>
+                                                <li data-i18n="settings_subscription_tip_save">Save the workspace when you’re happy with your setup.</li>
+                                                <li data-i18n="settings_subscription_tip_restore">You can clear the workspace at any time to start fresh.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="subscription-actions">
+                                        <button id="subscription-toggle" class="settings-button" data-i18n="settings_subscription_deactivate">Deactivate subscription</button>
+                                        <button id="subscription-manage" class="settings-button secondary" data-i18n="settings_subscription_manage">Manage payment</button>
+                                    </div>
+                                </div>
+                                <div class="subscription-summary">
+                                    <div class="summary-header" data-i18n="settings_subscription_summary_title">Status overview</div>
+                                    <div class="summary-row">
+                                        <span data-i18n="settings_subscription_plan_label">Plan</span>
+                                        <strong id="subscription-plan-label">Creator</strong>
+                                    </div>
+                                    <div class="summary-row">
+                                        <span data-i18n="settings_subscription_renewal_label">Renewal</span>
+                                        <strong id="subscription-renewal-label"></strong>
+                                    </div>
+                                    <div class="summary-row">
+                                        <span data-i18n="settings_subscription_workspace_label">Workspace</span>
+                                        <strong id="subscription-workspace-label" data-i18n="settings_subscription_workspace_value">Add-on studio unlocked</strong>
+                                    </div>
+                                    <p class="summary-note" data-i18n="settings_subscription_summary_note">Subscriptions sync across devices linked to your account.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tab-extensions" class="tab-content hidden">
+                            <div class="extensions-layout">
+                                <div class="extensions-gallery">
+                                    <div class="extensions-section-header">
+                                        <h3 data-i18n="settings_extensions_gallery_title">Available blocks</h3>
+                                        <p data-i18n="settings_extensions_gallery_description">Pick a block to replace or enhance parts of FlashSearch. You can always tweak the order later.</p>
+                                    </div>
+                                    <div id="extensions-gallery-list" class="extensions-gallery-list"></div>
+                                </div>
+                                <div class="extensions-workspace">
+                                    <div class="extensions-section-header">
+                                        <h3 data-i18n="settings_extensions_workspace_title">Your workspace</h3>
+                                        <p data-i18n="settings_extensions_workspace_description">Drag the pieces conceptually: input → transforms → output. We made it as simple as stacking cards.</p>
+                                    </div>
+                                    <div class="extensions-workspace-toolbar">
+                                        <button id="extensions-clear" class="settings-button secondary" data-i18n="settings_extensions_clear">Clear workspace</button>
+                                        <button id="extensions-save" class="settings-button" data-i18n="settings_extensions_save">Save workspace</button>
+                                        <span id="extensions-save-state" class="extensions-save-state hidden" data-i18n="settings_extensions_saved">Saved!</span>
+                                    </div>
+                                    <div id="extensions-workspace-empty" class="extensions-workspace-empty" data-i18n="settings_extensions_empty">Click a block to start building. You can reorder or remove it later.</div>
+                                    <div id="extensions-workspace-list" class="extensions-workspace-list"></div>
+                                </div>
                             </div>
                         </div>
 
