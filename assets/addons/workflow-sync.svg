@@ -1,0 +1,15 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="syncGradient" x1="18" y1="18" x2="62" y2="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4ADE80"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+  </defs>
+  <rect x="18" y="20" width="44" height="40" rx="14" fill="url(#syncGradient)"/>
+  <path d="M28 34H52" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+  <path d="M28 44H40" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+  <path d="M28 54H36" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.55"/>
+  <circle cx="58" cy="28" r="10" fill="#E7FFF6"/>
+  <path d="M52 28C52 24.6863 54.6863 22 58 22C59.8497 22 61.5082 22.8653 62.5719 24.2148L60.8 25.6C60.192 24.7181 59.1494 24.1429 58 24.1429C55.969 24.1429 54.2857 25.8261 54.2857 27.8571H52ZM64 28C64 31.3137 61.3137 34 58 34C56.1503 34 54.4918 33.1347 53.4281 31.7852L55.2 30.4C55.808 31.2819 56.8506 31.8571 58 31.8571C60.031 31.8571 61.7143 30.1739 61.7143 28H64Z" fill="#22D3EE"/>
+  <path d="M34 22L38 16H26L30 22H34Z" fill="#E7FFF6"/>
+</svg>

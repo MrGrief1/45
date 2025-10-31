@@ -71,6 +71,8 @@
                             <li data-tab="appearance" data-i18n="settings_appearance">Appearance</li>
                             <li data-tab="indexing" data-i18n="settings_indexing">Indexing</li>
                             <li data-tab="automations" data-i18n="settings_automations">Automations</li>
+                            <li data-tab="subscription" data-i18n="settings_subscription">Subscription</li>
+                            <li data-tab="addons" class="hidden" data-i18n="settings_addons">Add-ons</li>
                             <li data-tab="about" data-i18n="settings_about">About</li>
                         </ul>
                     </div>
@@ -282,7 +284,7 @@
                         <div id="tab-automations" class="tab-content">
                             <h4 data-i18n="settings_custom_automations">Custom Automations</h4>
                             <div id="automations-list"></div>
-                            
+
                             <div class="automation-form">
                                 <input type="text" id="new-auto-name" data-i18n-placeholder="settings_auto_name" placeholder="Name">
                                 <input type="text" id="new-auto-keyword" data-i18n-placeholder="settings_auto_keyword" placeholder="Keyword">
@@ -298,6 +300,95 @@
                                     <li data-i18n-html="auto_instructions_step2"></li>
                                     <li data-i18n-html="auto_instructions_step3"></li>
                                 </ul>
+                            </div>
+                        </div>
+
+                        <div id="tab-subscription" class="tab-content">
+                            <div class="subscription-status-card glass-element">
+                                <div class="subscription-status-header">
+                                    <div>
+                                        <span class="subscription-status-label" data-i18n="subscription_status_label">Subscription status</span>
+                                        <div id="subscription-status-badge" class="subscription-status-badge">—</div>
+                                    </div>
+                                    <button id="subscription-manage-button" class="settings-button primary" data-i18n="subscription_manage_button">Manage subscription</button>
+                                </div>
+                                <div class="subscription-plan-details">
+                                    <div class="subscription-plan-row">
+                                        <span data-i18n="subscription_plan_label">Plan</span>
+                                        <strong id="subscription-plan-value">—</strong>
+                                    </div>
+                                    <div class="subscription-plan-row">
+                                        <span data-i18n="subscription_next_renewal">Next renewal</span>
+                                        <strong id="subscription-renewal-value">—</strong>
+                                    </div>
+                                </div>
+                                <p id="subscription-hint-text" class="subscription-hint" data-i18n="subscription_active_hint">Your subscription is active. Explore add-ons and craft your own tools.</p>
+                            </div>
+
+                            <div class="subscription-benefits">
+                                <h4 data-i18n="subscription_benefits_title">Included in your plan</h4>
+                                <ul>
+                                    <li data-i18n="subscription_benefit_addons">Creator add-ons workshop with visual builder.</li>
+                                    <li data-i18n="subscription_benefit_updates">Priority updates and early feature access.</li>
+                                    <li data-i18n="subscription_benefit_support">Premium support channel.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div id="tab-addons" class="tab-content">
+                            <div class="addons-active card glass-element">
+                                <div class="addons-active-text">
+                                    <span data-i18n="addons_active_label">Active buffer add-on:</span>
+                                    <strong id="addons-active-name">—</strong>
+                                    <p id="addons-active-description" class="addons-active-description">—</p>
+                                </div>
+                                <button id="addons-reset-button" class="settings-button secondary" data-i18n="addons_reset_button">Use classic buffer</button>
+                            </div>
+
+                            <div class="addons-gallery card glass-element">
+                                <div class="addons-gallery-header">
+                                    <div>
+                                        <h4 data-i18n="addons_gallery_title">Add-on gallery</h4>
+                                        <p data-i18n="addons_gallery_description">Switch between curated modules or replace existing tools.</p>
+                                    </div>
+                                </div>
+                                <div id="available-addons-list" class="addon-card-grid"></div>
+                            </div>
+
+                            <div class="addons-builder card glass-element">
+                                <div class="addons-builder-header">
+                                    <h4 data-i18n="addons_builder_title">Build your own add-on</h4>
+                                    <p data-i18n="addons_builder_description">Combine building blocks: trigger → action → output.</p>
+                                </div>
+                                <div id="addon-block-library" class="block-library"></div>
+                                <div class="block-workspace-wrapper">
+                                    <div class="block-workspace-header">
+                                        <h5 data-i18n="addons_workspace_title">Your flow</h5>
+                                        <button id="addons-clear-workspace" class="settings-button tertiary" data-i18n="addons_clear_workspace">Clear flow</button>
+                                    </div>
+                                    <div id="addon-block-workspace" class="block-workspace" data-i18n-placeholder="addons_workspace_empty">
+                                        <span class="block-workspace-empty" data-i18n="addons_workspace_empty">Add blocks from the library to start.</span>
+                                    </div>
+                                </div>
+                                <form id="addons-save-form" class="addons-form">
+                                    <div class="addons-form-row">
+                                        <label for="addons-name-input" data-i18n="addons_name_label">Add-on name</label>
+                                        <input type="text" id="addons-name-input" class="settings-input" placeholder="Smart Clipboard" required>
+                                    </div>
+                                    <div class="addons-form-row">
+                                        <label for="addons-description-input" data-i18n="addons_description_label">Short description</label>
+                                        <textarea id="addons-description-input" class="settings-textarea" rows="2" placeholder="Keeps track of everything you copy."></textarea>
+                                    </div>
+                                    <button id="addons-save-button" type="submit" class="settings-button primary" data-i18n="addons_save_button">Save add-on</button>
+                                </form>
+                            </div>
+
+                            <div class="addons-custom card glass-element">
+                                <div class="addons-custom-header">
+                                    <h4 data-i18n="addons_saved_list_title">My add-ons</h4>
+                                </div>
+                                <div id="custom-addons-list" class="custom-addon-list"></div>
+                                <p id="custom-addons-empty" class="custom-addons-empty" data-i18n="addons_saved_empty">You haven't created add-ons yet.</p>
                             </div>
                         </div>
 

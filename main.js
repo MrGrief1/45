@@ -86,6 +86,15 @@ const DEFAULT_SETTINGS = {
     ].filter(Boolean),
     maxIndexDepth: 5, // Оптимальная глубина для меню "Пуск"
     customAutomations: [],
+    subscription: {
+        status: 'active',
+        planId: 'creator',
+        renewalDate: '2025-12-31',
+        startedAt: '2024-01-01'
+    },
+    activeBufferAddon: 'default',
+    installedAddOns: [],
+    customAddOns: [],
     autoLaunch: false,
     // НОВАЯ СТРУКТРУРА ДЛЯ ПРИЛОЖЕНИЙ
     migratedToV5: true, // Для новых установок
@@ -246,6 +255,20 @@ class SettingsManager {
         if (!Array.isArray(currentSettings.customAutomations)) {
             currentSettings.customAutomations = DEFAULT_SETTINGS.customAutomations;
         }
+        if (!Array.isArray(currentSettings.customAddOns)) {
+            currentSettings.customAddOns = [...DEFAULT_SETTINGS.customAddOns];
+        }
+        if (!Array.isArray(currentSettings.installedAddOns)) {
+            currentSettings.installedAddOns = [...DEFAULT_SETTINGS.installedAddOns];
+        }
+        if (!currentSettings.subscription || typeof currentSettings.subscription !== 'object') {
+            currentSettings.subscription = { ...DEFAULT_SETTINGS.subscription };
+        } else {
+            currentSettings.subscription = { ...DEFAULT_SETTINGS.subscription, ...currentSettings.subscription };
+        }
+        if (!currentSettings.activeBufferAddon) {
+            currentSettings.activeBufferAddon = DEFAULT_SETTINGS.activeBufferAddon;
+        }
         // НОВОЕ: Проверка для папок приложений
         if (!Array.isArray(currentSettings.appFolders) || currentSettings.appFolders.length === 0) {
             currentSettings.appFolders = DEFAULT_SETTINGS.appFolders;
@@ -287,7 +310,7 @@ class SettingsManager {
     updateSetting(key, value) {
         let requiresReindex = false;
 
-        if (key === 'indexedDirectories' || key === 'customAutomations') {
+        if (['indexedDirectories', 'customAutomations', 'customAddOns', 'installedAddOns'].includes(key)) {
             currentSettings[key] = value;
             if (key === 'indexedDirectories') requiresReindex = true;
         } else if (currentSettings[key] !== value) {
