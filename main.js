@@ -2313,7 +2313,7 @@ const WindowManager = {
                  mainWindow.hide();
             }
             isHiding = false;
-        }, 200); // УМЕНЬШЕНО: 350ms -> 200ms для более быстрого отклика
+        }, 380); // Подстраиваем таймер под расширенные анимации закрытия
     },
 
     openAuxiliaryWindow: function(type) {

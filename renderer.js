@@ -2229,8 +2229,14 @@ const ViewManager = {
         this.handleStartupAnimation();
     },
     handleStartupAnimation: function() {
-        if (!AppState.isInitialized) setTimeout(() => document.body.classList.add('visible'), 50);
-        else if (!document.body.classList.contains('visible')) document.body.classList.add('visible');
+        const makeVisible = () => {
+            document.body.classList.remove('closing');
+            if (!document.body.classList.contains('visible')) {
+                document.body.classList.add('visible');
+            }
+        };
+        if (!AppState.isInitialized) setTimeout(makeVisible, 50);
+        else makeVisible();
     },
     updateDynamicStyles: function(settingKey, value) {
         if (settingKey === 'opacity') {
@@ -2329,7 +2335,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ipcRenderer.on('navigate-view', (event, viewName) => ViewManager.switchView(viewName));
     ipcRenderer.on('indexing-status-update', (event, state) => SettingsModule.updateIndexingStatus(state));
-    ipcRenderer.on('start-hide-animation', () => document.body.classList.remove('visible'));
+ipcRenderer.on('start-hide-animation', () => {
+  if (!document.body.classList.contains('closing')) {
+    document.body.classList.add('closing');
+  }
+
+  requestAnimationFrame(() => {
+    document.body.classList.remove('visible');
+  });
+});
+
+function setupCloseAnimationReset() {
+  const rootContainer = document.getElementById('app-container');
+  if (!rootContainer) return;
+
+  rootContainer.addEventListener('transitionend', (event) => {
+    if (
+      event.propertyName === 'transform' ||
+      event.propertyName === 'opacity'
+    ) {
+      if (
+        document.body.classList.contains('closing') &&
+        !document.body.classList.contains('visible')
+      ) {
+        document.body.classList.remove('closing');
+      }
+    }
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupCloseAnimationReset, {
+    once: true,
+  });
+} else {
+  setupCloseAnimationReset();
+}
     ipcRenderer.on('recalculate-size', () => ViewManager.resizeWindow());
     ipcRenderer.on('trigger-show-animation', () => {
         if (!document.body.classList.contains('visible')) document.body.classList.add('visible');
