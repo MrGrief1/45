@@ -104,8 +104,13 @@ const DEFAULT_SETTINGS = {
         renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         features: ['addon-builder', 'extended-gallery', 'priority-support']
     },
-    activeAddons: ['clipboard-buffer'],
-    customAddons: []
+    quickActions: [
+        { id: 'apps-library', enabled: true, source: 'builtin' },
+        { id: 'files', enabled: true, source: 'builtin' },
+        { id: 'commands', enabled: true, source: 'builtin' },
+        { id: 'clipboard', enabled: true, source: 'builtin' }
+    ],
+    customQuickActions: []
 };
 
 // =================================================================================
@@ -294,24 +299,61 @@ class SettingsManager {
             };
         }
 
-        if (!Array.isArray(currentSettings.activeAddons)) {
-            currentSettings.activeAddons = [...DEFAULT_SETTINGS.activeAddons];
+        if (!Array.isArray(currentSettings.quickActions)) {
+            if (Array.isArray(currentSettings.activeAddons)) {
+                currentSettings.quickActions = currentSettings.activeAddons
+                    .filter(Boolean)
+                    .map(id => ({ id, enabled: true, source: 'legacy' }));
+            } else {
+                currentSettings.quickActions = DEFAULT_SETTINGS.quickActions.map(action => ({ ...action }));
+            }
         }
 
-        if (!Array.isArray(currentSettings.customAddons)) {
-            currentSettings.customAddons = [];
+        if (!Array.isArray(currentSettings.customQuickActions)) {
+            if (Array.isArray(currentSettings.customAddons)) {
+                currentSettings.customQuickActions = currentSettings.customAddons
+                    .filter(addon => addon && typeof addon === 'object')
+                    .map(addon => ({
+                        id: addon.id || `legacy-${Date.now()}`,
+                        name: addon.name || addon.id || 'Legacy add-on',
+                        icon: addon.icon || 'zap',
+                        color: '#6366F1',
+                        description: addon.description || '',
+                        nodes: [],
+                        edges: [],
+                        metadata: { migratedFromAddon: true }
+                    }));
+            } else {
+                currentSettings.customQuickActions = [];
+            }
         }
 
-        currentSettings.activeAddons = Array.from(new Set(currentSettings.activeAddons.filter(Boolean)));
-        currentSettings.customAddons = currentSettings.customAddons
-            .filter(addon => addon && typeof addon === 'object' && addon.id && addon.name)
-            .map(addon => ({
-                ...addon,
-                base: addon.base || 'clipboard',
-                icon: addon.icon || 'layers',
-                description: addon.description || '',
-                blocks: Array.isArray(addon.blocks) ? addon.blocks : []
+        const seenQuickActions = new Set();
+        currentSettings.quickActions = currentSettings.quickActions
+            .filter(entry => entry && entry.id)
+            .map(entry => ({
+                id: entry.id,
+                enabled: entry.enabled !== false,
+                source: entry.source || 'builtin'
+            }))
+            .filter(entry => {
+                if (seenQuickActions.has(entry.id)) return false;
+                seenQuickActions.add(entry.id);
+                return true;
+            });
+
+        currentSettings.customQuickActions = currentSettings.customQuickActions
+            .filter(action => action && action.id)
+            .map(action => ({
+                ...action,
+                nodes: Array.isArray(action.nodes) ? action.nodes : [],
+                edges: Array.isArray(action.edges) ? action.edges : [],
+                icon: action.icon || 'zap',
+                color: action.color || '#6366F1'
             }));
+
+        delete currentSettings.activeAddons;
+        delete currentSettings.customAddons;
 
         Logger.info(`App folders structure: ${JSON.stringify(currentSettings.appFolders.map(f => ({id: f.id, name: f.name, appsCount: f.apps.length})))}`);
     }
@@ -327,9 +369,9 @@ class SettingsManager {
     updateSetting(key, value) {
         let requiresReindex = false;
 
-        if (['indexedDirectories', 'customAutomations', 'customAddons', 'activeAddons', 'subscription'].includes(key)) {
+        if (['indexedDirectories', 'customAutomations', 'quickActions', 'customQuickActions', 'subscription'].includes(key)) {
             currentSettings[key] = value;
-            if (['customAddons', 'activeAddons', 'subscription'].includes(key)) {
+            if (['quickActions', 'customQuickActions', 'subscription'].includes(key)) {
                 this.validateSettings();
             }
             if (key === 'indexedDirectories') requiresReindex = true;
@@ -2994,6 +3036,20 @@ ipcMain.handle('search-all', (event, query) => {
 
     Logger.info(`IPC search-all: Query "${query}" - Found ${fileResults.length} files, ${commandResults.length} commands. After dedup: ${unique.length} results.`);
     return unique;
+});
+ipcMain.handle('run-custom-command', async (event, payload = {}) => {
+    const command = payload.command;
+    const args = Array.isArray(payload.args) ? payload.args : [];
+    if (!command || typeof command !== 'string') {
+        return { stdout: '', stderr: 'Missing command' };
+    }
+    try {
+        const result = await execFilePromise(command, args, { windowsHide: true });
+        return { stdout: result.stdout, stderr: result.stderr };
+    } catch (error) {
+        Logger.error(`Custom command failed: ${error.message}`);
+        return { stdout: '', stderr: error.message };
+    }
 });
 ipcMain.on('execute-command', (event, actionId) => {
     // === УЛУЧШЕНО: Сначала скрываем окно, потом выполняем команду ===

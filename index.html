@@ -16,22 +16,10 @@
                 <div id="search-box" class="glass-element">
                     <i data-feather="search" class="icon search-icon"></i>
                     <input type="text" id="search-input" placeholder="FlashSearch" autofocus>
-                </div>
-
-                <div id="action-buttons">
-                    <button class="action-button glass-element" data-window-type="apps-library" data-i18n-title="title_apps_library">
-                        <i data-feather="grid" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="files" data-i18n-title="title_files">
-                        <i data-feather="folder" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="commands" data-i18n-title="title_commands">
-                        <i data-feather="command" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="clipboard" data-i18n-title="title_clipboard">
-                        <i data-feather="copy" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element settings-gear" id="settings-button" data-i18n-title="context_settings">
+                    <div id="quick-actions-bar" class="quick-actions-bar" aria-label="Quick actions toolbar" role="toolbar">
+                        <!-- Quick action buttons rendered dynamically -->
+                    </div>
+                    <button class="action-button glass-element settings-gear" id="settings-button" data-i18n-title="context_settings" aria-label="Settings">
                         <i data-feather="settings" class="icon"></i>
                     </button>
                 </div>
@@ -341,73 +329,41 @@
                         </div>
 
                         <div id="tab-addons" class="tab-content">
-                            <section class="settings-section-card addons-section">
-                                <header class="addons-section-header">
+                            <section class="settings-section-card quick-actions-section">
+                                <header class="quick-actions-header">
                                     <div>
-                                        <h3 data-i18n="addons_active_title">Active workspace</h3>
-                                        <p data-i18n="addons_active_description">These add-ons are currently plugged into FlashSearch.</p>
+                                        <h3 data-i18n="quick_actions_active_title">Active quick actions</h3>
+                                        <p data-i18n="quick_actions_active_description">Choose which buttons appear beside the search bar.</p>
+                                    </div>
+                                    <div class="quick-actions-toolbar">
+                                        <button type="button" class="settings-button secondary" id="quick-actions-reset" data-i18n="quick_actions_reset">Reset order</button>
+                                        <button type="button" class="settings-button" id="quick-actions-create" data-i18n="quick_actions_create">Create custom action</button>
                                     </div>
                                 </header>
-                                <div id="active-addons-list" class="addons-active-list"></div>
+                                <div id="quick-actions-active-list" class="quick-actions-active-list" aria-live="polite"></div>
                             </section>
-                            <section class="settings-section-card addons-section">
-                                <header class="addons-section-header">
+                            <section class="settings-section-card quick-actions-section">
+                                <header class="quick-actions-header">
                                     <div>
-                                        <h3 data-i18n="addons_gallery_title">Component gallery</h3>
-                                        <p data-i18n="addons_gallery_description">Start with a ready-made module and adapt it to your workflow.</p>
+                                        <h3 data-i18n="quick_actions_library_title">Available buttons</h3>
+                                        <p data-i18n="quick_actions_library_description">Drag to arrange or enable additional controls.</p>
                                     </div>
                                 </header>
-                                <div id="addon-gallery" class="addons-gallery"></div>
+                                <div id="quick-actions-library" class="quick-actions-library"></div>
                             </section>
-                            <section class="settings-section-card addons-section">
-                                <header class="addons-section-header">
+                            <section class="settings-section-card quick-actions-section">
+                                <header class="quick-actions-header">
                                     <div>
-                                        <h3 data-i18n="addon_builder_title">Create your own add-on</h3>
-                                        <p data-i18n="addon_builder_intro">Build features from easy blocks—no coding required.</p>
+                                        <h3 data-i18n="quick_actions_flow_title">Visual flow designer</h3>
+                                        <p data-i18n="quick_actions_flow_description">Combine triggers, processors, and outputs in a node-based canvas inspired by n8n.</p>
                                     </div>
                                 </header>
-                                <div class="addon-builder">
-                                    <div class="builder-column">
-                                        <h4 data-i18n="addon_builder_base_label">Choose a starting point</h4>
-                                        <div class="builder-base-options">
-                                            <button type="button" class="builder-base-option active" data-base="clipboard">
-                                                <i data-feather="clipboard"></i>
-                                                <span data-i18n="addon_base_clipboard">Clipboard buffer</span>
-                                                <small data-i18n="addon_base_clipboard_desc">Start from the classic clipboard layout.</small>
-                                            </button>
-                                            <button type="button" class="builder-base-option" data-base="note">
-                                                <i data-feather="edit-3"></i>
-                                                <span data-i18n="addon_base_note">Quick note</span>
-                                                <small data-i18n="addon_base_note_desc">Capture ideas and templates.</small>
-                                            </button>
-                                            <button type="button" class="builder-base-option" data-base="command">
-                                                <i data-feather="zap"></i>
-                                                <span data-i18n="addon_base_command">Quick command</span>
-                                                <small data-i18n="addon_base_command_desc">Trigger scripts or workflows.</small>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="builder-column">
-                                        <h4 data-i18n="addon_builder_blocks_label">Add building blocks</h4>
-                                        <div class="builder-controls">
-                                            <select id="builder-block-select">
-                                                <option value="" data-i18n="addon_builder_block_placeholder">Select block…</option>
-                                                <option value="clipboard-filter" data-i18n="addon_builder_blocks_clipboard_filter">Filter copied content</option>
-                                                <option value="text-replace" data-i18n="addon_builder_blocks_text_replace">Replace text automatically</option>
-                                                <option value="pin-items" data-i18n="addon_builder_blocks_pin_items">Pin favourite items</option>
-                                                <option value="sync" data-i18n="addon_builder_blocks_sync">Sync across devices</option>
-                                            </select>
-                                            <button type="button" id="builder-add-block" class="settings-button" data-i18n="addon_builder_add_block">Add block</button>
-                                            <button type="button" id="builder-reset" class="settings-button secondary" data-i18n="addon_builder_reset">Clear builder</button>
-                                        </div>
-                                        <div id="builder-stack" class="builder-stack"></div>
-                                        <div class="builder-form">
-                                            <label for="builder-addon-name" data-i18n="addon_builder_name_label">Name</label>
-                                            <input type="text" id="builder-addon-name" data-i18n-placeholder="addon_builder_name_placeholder" placeholder="Custom add-on">
-                                            <label for="builder-addon-description" data-i18n="addon_builder_description_label">Description</label>
-                                            <textarea id="builder-addon-description" data-i18n-placeholder="addon_builder_description_placeholder" placeholder="Explain what this add-on does..."></textarea>
-                                            <button type="button" id="builder-save-addon" class="settings-button" data-i18n="addon_builder_save">Save add-on</button>
-                                        </div>
+                                <div class="quick-actions-flow-preview">
+                                    <div class="flow-preview-canvas" id="quick-actions-flow-preview"></div>
+                                    <div class="flow-preview-empty" data-i18n="quick_actions_flow_empty">No custom flows yet. Create one to see it here.</div>
+                                    <div class="flow-preview-meta">
+                                        <p data-i18n="quick_actions_flow_hint">Click "Create custom action" to open the full-screen designer and build unique automations.</p>
+                                        <button type="button" class="settings-button" id="quick-actions-open-designer" data-i18n="quick_actions_open_designer">Open designer</button>
                                     </div>
                                 </div>
                             </section>
@@ -453,6 +409,101 @@
     <div id="pinned-context-menu" class="pinned-context-menu" role="menu">
         <button type="button" data-action="create-folder" data-i18n="context_create_folder">Create Folder</button>
     </div>
+
+    <div id="quick-action-designer" class="designer-overlay" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="designer-window">
+            <header class="designer-header">
+                <div class="designer-title">
+                    <span class="designer-icon" aria-hidden="true"><i data-feather="zap"></i></span>
+                    <div>
+                        <h2 data-i18n="quick_actions_designer_title">Quick action designer</h2>
+                        <p data-i18n="quick_actions_designer_subtitle">Build button-based flows visually. Connect modules like triggers, transformers, and outputs.</p>
+                    </div>
+                </div>
+                <div class="designer-actions">
+                    <button type="button" class="designer-button secondary" data-action="preview" data-i18n="quick_actions_designer_preview">Preview</button>
+                    <button type="button" class="designer-button primary" data-action="save" data-i18n="quick_actions_designer_save">Save action</button>
+                    <button type="button" class="designer-button ghost" data-action="close" aria-label="Close designer">
+                        <i data-feather="x"></i>
+                    </button>
+                </div>
+            </header>
+            <div class="designer-body">
+                <aside class="designer-sidebar" aria-label="Module palette">
+                    <div class="sidebar-section">
+                        <h3 data-i18n="quick_actions_palette_triggers">Triggers</h3>
+                        <ul class="palette-list" data-palette="triggers"></ul>
+                    </div>
+                    <div class="sidebar-section">
+                        <h3 data-i18n="quick_actions_palette_processors">Processors</h3>
+                        <ul class="palette-list" data-palette="processors"></ul>
+                    </div>
+                    <div class="sidebar-section">
+                        <h3 data-i18n="quick_actions_palette_outputs">Outputs</h3>
+                        <ul class="palette-list" data-palette="outputs"></ul>
+                    </div>
+                    <div class="sidebar-section">
+                        <h3 data-i18n="quick_actions_palette_utilities">Utilities</h3>
+                        <ul class="palette-list" data-palette="utilities"></ul>
+                    </div>
+                </aside>
+                <section class="designer-canvas" aria-label="Canvas">
+                    <div class="canvas-toolbar">
+                        <button type="button" class="designer-button ghost" data-action="zoom-in" aria-label="Zoom in">
+                            <i data-feather="zoom-in"></i>
+                        </button>
+                        <button type="button" class="designer-button ghost" data-action="zoom-out" aria-label="Zoom out">
+                            <i data-feather="zoom-out"></i>
+                        </button>
+                        <button type="button" class="designer-button ghost" data-action="fit" data-i18n="quick_actions_designer_fit">Fit flow</button>
+                        <button type="button" class="designer-button ghost" data-action="grid" data-i18n="quick_actions_designer_grid">Toggle grid</button>
+                    </div>
+                    <div class="canvas-stage">
+                        <svg class="canvas-connections" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+                        <div class="canvas-nodes" tabindex="0"></div>
+                        <div class="canvas-empty" data-i18n="quick_actions_canvas_empty">Drop modules here to start building.</div>
+                    </div>
+                </section>
+                <aside class="designer-inspector" aria-label="Inspector">
+                    <div class="inspector-section">
+                        <h3 data-i18n="quick_actions_inspector_general">General</h3>
+                        <label for="designer-action-name" data-i18n="quick_actions_inspector_name">Button title</label>
+                        <input type="text" id="designer-action-name" maxlength="50" data-i18n-placeholder="quick_actions_inspector_name_placeholder" placeholder="Name on the button">
+                        <label for="designer-action-icon" data-i18n="quick_actions_inspector_icon">Icon</label>
+                        <input type="text" id="designer-action-icon" data-i18n-placeholder="quick_actions_inspector_icon_placeholder" placeholder="Feather icon name">
+                        <label for="designer-action-color" data-i18n="quick_actions_inspector_color">Accent color</label>
+                        <input type="color" id="designer-action-color" value="#7c3aed">
+                    </div>
+                    <div class="inspector-section">
+                        <h3 data-i18n="quick_actions_inspector_module">Module settings</h3>
+                        <div id="designer-module-settings" class="module-settings-empty" data-i18n="quick_actions_inspector_select">Select a node to edit its configuration.</div>
+                    </div>
+                    <div class="inspector-section">
+                        <h3 data-i18n="quick_actions_inspector_history">History</h3>
+                        <div class="history-controls">
+                            <button type="button" class="designer-button ghost" data-action="undo" aria-label="Undo">
+                                <i data-feather="rotate-ccw"></i>
+                            </button>
+                            <button type="button" class="designer-button ghost" data-action="redo" aria-label="Redo">
+                                <i data-feather="rotate-cw"></i>
+                            </button>
+                        </div>
+                        <ul id="designer-history" class="history-list"></ul>
+                    </div>
+                </aside>
+            </div>
+            <footer class="designer-footer">
+                <div class="designer-status" aria-live="polite"></div>
+                <div class="designer-shortcuts">
+                    <span><kbd>Ctrl</kbd> + <kbd>S</kbd> — <span data-i18n="quick_actions_shortcut_save">Save</span></span>
+                    <span><kbd>Ctrl</kbd> + <kbd>Z</kbd> — <span data-i18n="quick_actions_shortcut_undo">Undo</span></span>
+                    <span><kbd>Ctrl</kbd> + <kbd>Y</kbd> — <span data-i18n="quick_actions_shortcut_redo">Redo</span></span>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="quick-actions-designer.js"></script>
     <script src="renderer.js"></script>
 </body>
 </html>
