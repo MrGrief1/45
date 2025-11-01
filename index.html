@@ -241,7 +241,7 @@
                             <hr>
                             <div class="setting-item">
                                 <label data-i18n="settings_width">Window Width (px)</label>
-                                <input type="range" id="setting-width" min="600" max="1600" step="10">
+                                <input type="range" id="setting-width" min="420" max="1600" step="10">
                             </div>
                             <div class="setting-item">
                                 <label data-i18n="settings_height">Bar Height (px)</label>
@@ -448,7 +448,9 @@
                             <label for="builder-action-icon">Icon</label>
                             <div class="inspector-icon-picker">
                                 <input type="text" id="builder-action-icon" placeholder="feather icon name">
-                                <div id="builder-icon-preview" class="icon-preview"></div>
+                                <button type="button" id="builder-open-icon-picker" class="icon-preview-button" title="Choose icon" data-i18n-title="icon_picker_open">
+                                    <div id="builder-icon-preview" class="icon-preview"></div>
+                                </button>
                             </div>
                             <label for="builder-action-color">Accent colour</label>
                             <input type="color" id="builder-action-color" value="#5865f2">
@@ -474,6 +476,27 @@
           feather.replace();
       }
     </script>
+    <div id="icon-picker-overlay" class="icon-picker-overlay" aria-hidden="true">
+        <div class="icon-picker-backdrop" data-icon-picker-close></div>
+        <div class="icon-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="icon-picker-title">
+            <header class="icon-picker-header">
+                <div class="icon-picker-title-group">
+                    <h2 id="icon-picker-title" data-i18n="icon_picker_title">Select an icon</h2>
+                    <p data-i18n="icon_picker_hint">Browse the Feather icon set or search by name.</p>
+                </div>
+                <button type="button" class="icon-picker-close" id="icon-picker-close" title="Close" data-i18n-title="icon_picker_close">
+                    <i data-feather="x"></i>
+                </button>
+            </header>
+            <div class="icon-picker-search">
+                <i data-feather="search"></i>
+                <input type="search" id="icon-picker-search" placeholder="Search icons" data-i18n-placeholder="icon_picker_search_placeholder">
+            </div>
+            <div id="icon-picker-grid" class="icon-picker-grid" role="listbox" aria-label="Icon options">
+                <!-- Icon buttons rendered dynamically -->
+            </div>
+        </div>
+    </div>
     <div id="folder-context-menu" class="folder-context-menu">
         <div class="folder-menu-actions">
             <button type="button" class="folder-menu-action" data-action="rename" data-i18n="context_rename_folder">Rename</button>

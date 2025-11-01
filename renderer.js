@@ -1,5 +1,6 @@
 // renderer.js
 const { ipcRenderer, shell } = require('electron');
+const { IconCatalog } = require('./assets/icon-catalog');
 
 // =================================================================================
 // === Глобальное Состояние и Утилиты ===
@@ -113,7 +114,7 @@ const QuickActionCatalog = [
         id: 'apps-library',
         icon: 'grid',
         nameKey: 'title_apps_library',
-        description: 'Open the application library panel.',
+        descriptionKey: 'quick_actions_catalog_apps_desc',
         type: 'panel',
         payload: { panel: 'apps-library' },
         accent: '#38bdf8',
@@ -123,7 +124,7 @@ const QuickActionCatalog = [
         id: 'files',
         icon: 'folder',
         nameKey: 'title_files',
-        description: 'Browse indexed files and folders.',
+        descriptionKey: 'quick_actions_catalog_files_desc',
         type: 'panel',
         payload: { panel: 'files' },
         accent: '#22d3ee',
@@ -133,7 +134,7 @@ const QuickActionCatalog = [
         id: 'commands',
         icon: 'command',
         nameKey: 'title_commands',
-        description: 'Trigger saved commands and automations.',
+        descriptionKey: 'quick_actions_catalog_commands_desc',
         type: 'panel',
         payload: { panel: 'commands' },
         accent: '#f97316',
@@ -143,7 +144,7 @@ const QuickActionCatalog = [
         id: 'clipboard',
         icon: 'copy',
         nameKey: 'title_clipboard',
-        description: 'Review your clipboard buffer.',
+        descriptionKey: 'quick_actions_catalog_clipboard_desc',
         type: 'panel',
         payload: { panel: 'clipboard' },
         accent: '#a855f7',
@@ -153,7 +154,7 @@ const QuickActionCatalog = [
         id: 'settings',
         icon: 'settings',
         nameKey: 'context_settings',
-        description: 'Jump straight to FlashSearch settings.',
+        descriptionKey: 'quick_actions_catalog_settings_desc',
         type: 'view',
         payload: { view: 'settings' },
         accent: '#facc15',
@@ -163,7 +164,7 @@ const QuickActionCatalog = [
         id: 'pinned-apps',
         icon: 'bookmark',
         name: 'Pinned applications',
-        description: 'Open the pinned applications panel instantly.',
+        descriptionKey: 'quick_actions_catalog_pinned_desc',
         type: 'panel',
         payload: { panel: 'apps-library', anchor: 'pinned' },
         accent: '#34d399',
@@ -178,7 +179,7 @@ const QuickActionModuleDefinitions = [
         id: 'manual-trigger',
         category: 'trigger',
         name: 'Manual trigger',
-        description: 'Starts when you press the quick action button.',
+        descriptionKey: 'quick_actions_module_manual_trigger_desc',
         icon: 'play-circle',
         accent: '#38bdf8',
         inputs: [],
@@ -192,7 +193,7 @@ const QuickActionModuleDefinitions = [
         id: 'open-panel',
         category: 'action',
         name: 'Open panel',
-        description: 'Show one of the auxiliary panels such as clipboard or files.',
+        descriptionKey: 'quick_actions_module_open_panel_desc',
         icon: 'layout',
         accent: '#38bdf8',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -223,7 +224,7 @@ const QuickActionModuleDefinitions = [
         id: 'open-url',
         category: 'action',
         name: 'Open website',
-        description: 'Launch a URL in your default browser.',
+        descriptionKey: 'quick_actions_module_open_url_desc',
         icon: 'globe',
         accent: '#22d3ee',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -248,7 +249,7 @@ const QuickActionModuleDefinitions = [
         id: 'copy-text',
         category: 'action',
         name: 'Copy text',
-        description: 'Copy prepared text into the clipboard.',
+        descriptionKey: 'quick_actions_module_copy_text_desc',
         icon: 'clipboard',
         accent: '#a855f7',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -270,7 +271,7 @@ const QuickActionModuleDefinitions = [
         id: 'run-command',
         category: 'action',
         name: 'Run shell command',
-        description: 'Execute a terminal command on your system.',
+        descriptionKey: 'quick_actions_module_run_command_desc',
         icon: 'terminal',
         accent: '#f97316',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -293,7 +294,7 @@ const QuickActionModuleDefinitions = [
         id: 'show-notification',
         category: 'action',
         name: 'Show notification',
-        description: 'Display a desktop notification with custom text.',
+        descriptionKey: 'quick_actions_module_show_notification_desc',
         icon: 'bell',
         accent: '#facc15',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -318,7 +319,7 @@ const QuickActionModuleDefinitions = [
         id: 'delay',
         category: 'utility',
         name: 'Delay',
-        description: 'Pause the workflow for a specified time.',
+        descriptionKey: 'quick_actions_module_delay_desc',
         icon: 'clock',
         accent: '#fbbf24',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -340,7 +341,7 @@ const QuickActionModuleDefinitions = [
         id: 'set-payload',
         category: 'utility',
         name: 'Set payload',
-        description: 'Store a value that can be reused by next blocks.',
+        descriptionKey: 'quick_actions_module_set_payload_desc',
         icon: 'edit-3',
         accent: '#60a5fa',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -359,7 +360,7 @@ const QuickActionModuleDefinitions = [
         id: 'use-payload-as-text',
         category: 'action',
         name: 'Use payload as text',
-        description: 'Copy the current payload value to the clipboard.',
+        descriptionKey: 'quick_actions_module_use_payload_desc',
         icon: 'clipboard',
         accent: '#22c55e',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -377,7 +378,7 @@ const QuickActionModuleDefinitions = [
         id: 'fetch-json',
         category: 'utility',
         name: 'Fetch JSON',
-        description: 'Request JSON data and store it as the workflow payload.',
+        descriptionKey: 'quick_actions_module_fetch_json_desc',
         icon: 'download-cloud',
         accent: '#38bdf8',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -421,7 +422,7 @@ const QuickActionModuleDefinitions = [
         id: 'transform-payload',
         category: 'utility',
         name: 'Transform text',
-        description: 'Apply quick text transformations to the payload.',
+        descriptionKey: 'quick_actions_module_transform_payload_desc',
         icon: 'type',
         accent: '#34d399',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -473,7 +474,7 @@ const QuickActionModuleDefinitions = [
         id: 'store-variable',
         category: 'utility',
         name: 'Store variable',
-        description: 'Save a named value in the workflow context.',
+        descriptionKey: 'quick_actions_module_store_variable_desc',
         icon: 'database',
         accent: '#f472b6',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -622,16 +623,18 @@ const QuickActionStore = {
         const size = AppState.settings.quickActions.preferences?.builderSize || {};
         const width = Number(size.width) || 1280;
         const height = Number(size.height) || 820;
+        const safeWidth = Math.max(720, Math.min(Math.round(width), 1920));
+        const safeHeight = Math.max(560, Math.min(Math.round(height), 1200));
         return {
-            width: Math.max(960, Math.min(Math.round(width), 1600)),
-            height: Math.max(640, Math.min(Math.round(height), 1000))
+            width: safeWidth,
+            height: safeHeight
         };
     },
 
     setBuilderSize(width, height) {
         this.ensureStructure();
-        const safeWidth = Math.max(960, Math.min(Math.round(width), 1600));
-        const safeHeight = Math.max(640, Math.min(Math.round(height), 1000));
+        const safeWidth = Math.max(720, Math.min(Math.round(width), 1920));
+        const safeHeight = Math.max(560, Math.min(Math.round(height), 1200));
         AppState.settings.quickActions.preferences.builderSize = { width: safeWidth, height: safeHeight };
         this.persist();
     },
@@ -762,6 +765,148 @@ const QuickActionExecutor = {
     }
 };
 
+const IconPicker = {
+    overlay: null,
+    grid: null,
+    searchInput: null,
+    closeButton: null,
+    buttons: [],
+    emptyState: null,
+    activeIcon: 'zap',
+    onSelect: null,
+    initialized: false,
+
+    init() {
+        if (this.initialized) return;
+        this.overlay = Utils.getElement('#icon-picker-overlay');
+        this.grid = Utils.getElement('#icon-picker-grid');
+        this.searchInput = Utils.getElement('#icon-picker-search');
+        this.closeButton = Utils.getElement('#icon-picker-close');
+
+        if (!this.overlay || !this.grid) {
+            return;
+        }
+
+        this.renderButtons();
+        this.attachEvents();
+        this.initialized = true;
+    },
+
+    attachEvents() {
+        this.closeButton?.addEventListener('click', () => this.close());
+        this.overlay?.addEventListener('click', (event) => {
+            if (event.target === this.overlay || event.target?.dataset?.iconPickerClose !== undefined) {
+                this.close();
+            }
+        });
+        this.searchInput?.addEventListener('input', (event) => this.filter(event.target.value));
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && this.isOpen()) {
+                this.close();
+            }
+        });
+    },
+
+    renderButtons() {
+        if (!this.grid) return;
+        const fragment = document.createDocumentFragment();
+        this.buttons = [];
+        IconCatalog.forEach(icon => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'icon-picker-button';
+            button.setAttribute('data-icon-name', icon.name);
+            button.setAttribute('role', 'option');
+            button.setAttribute('aria-label', icon.label || icon.name);
+
+            if (window.feather?.icons?.[icon.name]) {
+                button.innerHTML = `${window.feather.icons[icon.name].toSvg({ class: 'icon' })}<span>${icon.label || icon.name}</span>`;
+            } else {
+                button.innerHTML = `<span class="icon-fallback">${icon.label || icon.name}</span>`;
+            }
+
+            button.addEventListener('click', () => {
+                this.select(icon.name);
+            });
+
+            this.buttons.push({ element: button, data: icon });
+            fragment.appendChild(button);
+        });
+        this.grid.innerHTML = '';
+        this.grid.appendChild(fragment);
+    },
+
+    open(currentIcon = 'zap', onSelect = null) {
+        if (!this.overlay) return;
+        this.onSelect = typeof onSelect === 'function' ? onSelect : null;
+        this.activeIcon = currentIcon || 'zap';
+        this.highlight(this.activeIcon);
+        this.overlay.classList.add('active');
+        this.overlay.setAttribute('aria-hidden', 'false');
+        if (this.searchInput) {
+            this.searchInput.value = '';
+        }
+        this.filter('');
+        setTimeout(() => this.searchInput?.focus(), 60);
+    },
+
+    close() {
+        if (!this.overlay) return;
+        this.overlay.classList.remove('active');
+        this.overlay.setAttribute('aria-hidden', 'true');
+        this.onSelect = null;
+    },
+
+    isOpen() {
+        return this.overlay?.classList.contains('active');
+    },
+
+    filter(query = '') {
+        const normalized = query.trim().toLowerCase();
+        this.buttons.forEach(({ element, data }) => {
+            const text = `${data.name} ${data.label || ''} ${(data.keywords || []).join(' ')}`.toLowerCase();
+            const match = normalized.length === 0 || text.includes(normalized);
+            element.toggleAttribute('hidden', !match);
+        });
+        if (this.grid) {
+            const hasVisible = this.buttons.some(({ element }) => !element.hasAttribute('hidden'));
+            if (!hasVisible) {
+                if (!this.emptyState) {
+                    this.emptyState = document.createElement('div');
+                    this.emptyState.className = 'icon-picker-empty';
+                    this.emptyState.setAttribute('data-i18n', 'icon_picker_empty');
+                    this.emptyState.textContent = LocalizationRenderer.t('icon_picker_empty') || 'No icons match your search.';
+                }
+                if (!this.emptyState.isConnected) {
+                    this.grid.appendChild(this.emptyState);
+                }
+            } else if (this.emptyState?.isConnected) {
+                this.emptyState.remove();
+            }
+        }
+    },
+
+    highlight(iconName) {
+        this.buttons.forEach(({ element, data }) => {
+            if (data.name === iconName) {
+                element.classList.add('is-active');
+                element.setAttribute('aria-selected', 'true');
+            } else {
+                element.classList.remove('is-active');
+                element.removeAttribute('aria-selected');
+            }
+        });
+    },
+
+    select(iconName) {
+        this.activeIcon = iconName;
+        if (typeof this.onSelect === 'function') {
+            this.onSelect(iconName);
+        }
+        this.close();
+    }
+};
+
 const QuickActionManager = {
     container: null,
 
@@ -875,7 +1020,8 @@ const QuickActionLab = {
             actionLabelInput: Utils.getElement('#builder-action-label'),
             actionIconInput: Utils.getElement('#builder-action-icon'),
             actionColorInput: Utils.getElement('#builder-action-color'),
-            iconPreview: Utils.getElement('#builder-icon-preview')
+            iconPreview: Utils.getElement('#builder-icon-preview'),
+            iconPickerTrigger: Utils.getElement('#builder-open-icon-picker')
         };
 
         this.elements.dialog = document.querySelector('#quick-action-builder-modal .builder-dialog');
@@ -886,6 +1032,7 @@ const QuickActionLab = {
         }
 
         QuickActionStore.ensureStructure();
+        IconPicker.init();
         this.attachEvents();
         this.initialized = true;
         this.renderAll();
@@ -910,10 +1057,18 @@ const QuickActionLab = {
         this.elements.resizeHandle?.addEventListener('pointerdown', (event) => this.startResize(event));
 
         this.elements.actionIconInput?.addEventListener('input', (event) => {
-            if (!this.builderState) return;
-            this.builderState.metadata.icon = event.target.value.trim() || 'zap';
-            this.updateIconPreview();
+            this.setActionIcon(event.target.value);
         });
+
+        this.elements.actionIconInput?.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                this.openIconPicker();
+            }
+        });
+
+        this.elements.iconPickerTrigger?.addEventListener('click', () => this.openIconPicker());
+        this.elements.iconPreview?.addEventListener('click', () => this.openIconPicker());
 
         this.elements.actionColorInput?.addEventListener('input', (event) => {
             if (!this.builderState) return;
@@ -1186,10 +1341,10 @@ const QuickActionLab = {
         event.preventDefault();
         const deltaX = event.clientX - this.resizing.startX;
         const deltaY = event.clientY - this.resizing.startY;
-        const minWidth = 960;
-        const minHeight = 640;
-        const maxWidth = Math.min(window.innerWidth - 80, 1600);
-        const maxHeight = Math.min(window.innerHeight - 80, 1000);
+        const minWidth = 720;
+        const minHeight = 560;
+        const maxWidth = Math.min(window.innerWidth - 80, 1920);
+        const maxHeight = Math.min(window.innerHeight - 80, 1200);
         const width = Math.max(minWidth, Math.min(this.resizing.startWidth + deltaX, maxWidth));
         const height = Math.max(minHeight, Math.min(this.resizing.startHeight + deltaY, maxHeight));
         this.elements.dialog.style.setProperty('--builder-dialog-width', `${width}px`);
@@ -1269,9 +1424,8 @@ const QuickActionLab = {
     renderBuilder() {
         if (!this.builderState) return;
         this.elements.actionLabelInput.value = this.builderState.metadata.label;
-        this.elements.actionIconInput.value = this.builderState.metadata.icon;
+        this.setActionIcon(this.builderState.metadata.icon);
         this.elements.actionColorInput.value = this.builderState.metadata.accent;
-        this.updateIconPreview();
         this.renderModuleList();
         this.renderCanvas();
         this.renderInspector();
@@ -1673,14 +1827,36 @@ const QuickActionLab = {
         return node?.moduleId === 'manual-trigger';
     },
 
+    openIconPicker() {
+        if (!this.builderState) return;
+        IconPicker.init();
+        const currentIcon = this.builderState.metadata.icon || this.elements.actionIconInput?.value || 'zap';
+        IconPicker.open(currentIcon, (iconName) => {
+            this.setActionIcon(iconName);
+        });
+    },
+
+    setActionIcon(iconName) {
+        if (!this.builderState) return;
+        const normalized = (iconName || '').trim().toLowerCase();
+        const finalName = normalized || 'zap';
+        this.builderState.metadata.icon = finalName;
+        if (this.elements.actionIconInput && this.elements.actionIconInput.value !== finalName) {
+            this.elements.actionIconInput.value = finalName;
+        }
+        this.updateIconPreview();
+    },
+
     updateIconPreview() {
         if (!this.elements.iconPreview || !this.builderState) return;
         const iconName = this.builderState.metadata.icon || 'zap';
         if (window.feather?.icons?.[iconName]) {
-            this.elements.iconPreview.innerHTML = window.feather.icons[iconName].toSvg();
+            this.elements.iconPreview.innerHTML = window.feather.icons[iconName].toSvg({ width: 28, height: 28 });
         } else {
-            this.elements.iconPreview.textContent = '⚡';
+            this.elements.iconPreview.textContent = iconName.slice(0, 2).toUpperCase();
         }
+        this.elements.iconPreview.setAttribute('data-icon-name', iconName);
+        IconPicker.highlight(iconName);
     },
 
     saveAction() {
@@ -1716,7 +1892,7 @@ const QuickActionLab = {
             name: this.builderState.metadata.label.trim(),
             icon: this.builderState.metadata.icon || 'zap',
             accent: this.builderState.metadata.accent || '#5865f2',
-            description: this.builderState.metadata.description || 'Custom quick action',
+            description: this.builderState.metadata.description || LocalizationRenderer.t('quick_actions_custom_description') || 'Custom quick action',
             workflow: {
                 nodes,
                 connections,
