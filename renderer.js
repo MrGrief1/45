@@ -1460,9 +1460,15 @@ const QuickActionLab = {
         connectionLayer.innerHTML = '';
 
         const canvasRect = this.elements.canvas.getBoundingClientRect();
-        connectionLayer.setAttribute('width', `${canvasRect.width}`);
-        connectionLayer.setAttribute('height', `${canvasRect.height}`);
-        connectionLayer.setAttribute('viewBox', `0 0 ${canvasRect.width} ${canvasRect.height}`);
+        const zoom = this.builderState.zoom || 1;
+        const baseWidth = canvasRect.width / zoom;
+        const baseHeight = canvasRect.height / zoom;
+        connectionLayer.setAttribute('width', `${baseWidth}`);
+        connectionLayer.setAttribute('height', `${baseHeight}`);
+        connectionLayer.setAttribute('viewBox', `0 0 ${baseWidth} ${baseHeight}`);
+
+        const canvasLeft = canvasRect.left;
+        const canvasTop = canvasRect.top;
 
         this.builderState.connections.forEach(connection => {
             const fromPort = this.findPortElement(connection.from?.nodeId, connection.from?.portId, 'output');
@@ -1471,11 +1477,10 @@ const QuickActionLab = {
 
             const fromRect = fromPort.getBoundingClientRect();
             const toRect = toPort.getBoundingClientRect();
-            const zoom = this.builderState.zoom || 1;
-            const startX = (fromRect.left + fromRect.width / 2 - canvasRect.left) / zoom;
-            const startY = (fromRect.top + fromRect.height / 2 - canvasRect.top) / zoom;
-            const endX = (toRect.left + toRect.width / 2 - canvasRect.left) / zoom;
-            const endY = (toRect.top + toRect.height / 2 - canvasRect.top) / zoom;
+            const startX = (fromRect.left + fromRect.width / 2 - canvasLeft) / zoom;
+            const startY = (fromRect.top + fromRect.height / 2 - canvasTop) / zoom;
+            const endX = (toRect.left + toRect.width / 2 - canvasLeft) / zoom;
+            const endY = (toRect.top + toRect.height / 2 - canvasTop) / zoom;
             const delta = Math.max(60, Math.abs(endX - startX) * 0.5);
             const pathData = `M ${startX} ${startY} C ${startX + delta} ${startY}, ${endX - delta} ${endY}, ${endX} ${endY}`;
 
@@ -1512,6 +1517,36 @@ const QuickActionLab = {
         if (!moduleDef || !Array.isArray(moduleDef.form)) {
             container.appendChild(Utils.createElement('p', { text: LocalizationRenderer.t('quick_actions_no_settings') || 'This block has no configurable options.' }));
             return;
+        }
+
+        const description = (this.getModuleDescription(moduleDef) || '').trim();
+        if (description) {
+            const infoWrapper = document.createElement('div');
+            infoWrapper.className = 'inspector-node-info';
+
+            const toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'inspector-node-info-toggle';
+            toggle.setAttribute('aria-expanded', 'false');
+            const descriptionId = `inspector-node-desc-${node.id}`;
+            toggle.setAttribute('aria-controls', descriptionId);
+            toggle.textContent = LocalizationRenderer.t('quick_actions_block_info_toggle') || 'About this block';
+
+            const descriptionEl = document.createElement('p');
+            descriptionEl.className = 'inspector-node-info-text';
+            descriptionEl.id = descriptionId;
+            descriptionEl.textContent = description;
+            descriptionEl.hidden = true;
+
+            toggle.addEventListener('click', () => {
+                const expanded = toggle.getAttribute('aria-expanded') === 'true';
+                toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                descriptionEl.hidden = expanded;
+            });
+
+            infoWrapper.appendChild(toggle);
+            infoWrapper.appendChild(descriptionEl);
+            container.appendChild(infoWrapper);
         }
 
         moduleDef.form.forEach(field => {

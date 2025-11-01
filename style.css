@@ -17,10 +17,13 @@
   --base-bg-color-rgb: 245, 245, 247;
   --secondary-bg-color-rgb: 229, 229, 234;
   --text-color: #1d1d1f;
+  --text-color-rgb: 29, 29, 31;
   --icon-color: #8a8a8e;
+  --icon-color-rgb: 138, 138, 142;
   --highlight-color: #007aff;
   --danger-color: #ff3b30;
   --border-color: rgba(0, 0, 0, 0.1);
+  --border-color-rgb: 0, 0, 0;
   --shadow: 0 15px 45px rgba(0, 0, 0, 0.15);
   --scrollbar-thumb: rgba(0, 0, 0, 0.3);
   --scrollbar-size: 8px;
@@ -31,6 +34,7 @@
   --context-menu-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
   --context-menu-button-bg: rgba(229, 229, 234, 0.85);
   --context-menu-button-hover: rgba(0, 122, 255, 0.18);
+  --caret-color: #ffffff;
   /* Стили для ползунка */
   --slider-track-bg: rgba(0, 0, 0, 0.1);
   --slider-thumb-bg: #ffffff;
@@ -49,9 +53,12 @@ body.dark-theme {
   --base-bg-color-rgb: 44, 44, 46;
   --secondary-bg-color-rgb: 58, 58, 60;
   --text-color: #f5f5f7;
+  --text-color-rgb: 245, 245, 247;
   --icon-color: #98989d;
+  --icon-color-rgb: 152, 152, 157;
   --highlight-color: #0a84ff;
   --border-color: rgba(255, 255, 255, 0.15);
+  --border-color-rgb: 255, 255, 255;
   --shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
   --scrollbar-thumb: rgba(255, 255, 255, 0.3);
   --button-icon-color: #f5f5f7;
@@ -65,6 +72,7 @@ body.dark-theme {
   --slider-thumb-border: rgba(255, 255, 255, 0.2);
   --action-button-bg: rgba(58, 58, 60, 0.8);
   --action-button-hover-bg: rgba(72, 72, 74, 1);
+  --caret-color: #ffffff;
 }
 
 /* ... другие темы ... */
@@ -72,22 +80,28 @@ body.liquid_glass_blue-theme {
   --base-bg-color-rgb: 230, 245, 255;
   --secondary-bg-color-rgb: 200, 230, 250;
   --text-color: #102a43;
+  --text-color-rgb: 16, 42, 67;
   --highlight-color: #007aff;
   --button-icon-color: #243b53;
   --shadow: 0 30px 90px rgba(0, 50, 100, 0.2);
   --border-color: rgba(255, 255, 255, 0.6);
+  --border-color-rgb: 255, 255, 255;
   --context-menu-bg: rgba(230, 245, 255, 0.95);
   --context-menu-border: rgba(0, 40, 80, 0.08);
   --context-menu-shadow: 0 30px 60px rgba(0, 50, 100, 0.25);
   --context-menu-button-bg: rgba(200, 230, 250, 0.85);
   --context-menu-button-hover: rgba(0, 122, 255, 0.18);
+  --icon-color-rgb: 36, 59, 83;
+  --caret-color: #0f172a;
 }
 body.ocean_depths-theme {
   --base-bg-color-rgb: 10, 30, 70;
   --secondary-bg-color-rgb: 20, 50, 100;
   --text-color: #ffffff;
+  --text-color-rgb: 255, 255, 255;
   --highlight-color: #1e90ff;
   --border-color: rgba(255, 255, 255, 0.2);
+  --border-color-rgb: 255, 255, 255;
   --shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
   --scrollbar-thumb: rgba(255, 255, 255, 0.4);
   --context-menu-bg: rgba(16, 38, 82, 0.95);
@@ -95,6 +109,14 @@ body.ocean_depths-theme {
   --context-menu-shadow: 0 34px 80px rgba(0, 0, 0, 0.55);
   --context-menu-button-bg: rgba(24, 60, 120, 0.82);
   --context-menu-button-hover: rgba(30, 144, 255, 0.24);
+  --icon-color-rgb: 176, 208, 255;
+  --caret-color: #ffffff;
+}
+body.sunset-theme {
+  --text-color-rgb: 32, 21, 11;
+  --caret-color: #20150b;
+  --icon-color-rgb: 120, 70, 30;
+  --border-color-rgb: 255, 240, 220;
 }
 body.sunset-theme .glass-element {
   background: linear-gradient(
@@ -684,7 +706,7 @@ body.dark-theme .aux-header {
   );
   width: 100%;
   color: var(--text-color);
-  caret-color: var(--highlight-color);
+  caret-color: var(--caret-color, var(--text-color));
   pointer-events: auto;
 }
 
@@ -777,9 +799,9 @@ body.dark-theme .aux-header {
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  border-radius: 999px;
+  border-radius: max(14px, calc(var(--dynamic-border-radius) - 6px));
   position: relative;
-  background-color: rgba(var(--base-bg-color-rgb), 0.92);
+  background-color: rgba(var(--secondary-bg-color-rgb), var(--dynamic-opacity));
   border: 1px solid rgba(var(--border-color-rgb, 148, 163, 184), 0.45);
   box-shadow: 0 14px 28px rgba(15, 23, 42, 0.22);
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
@@ -789,7 +811,7 @@ body.dark-theme .aux-header {
 .quick-action-button:focus-visible {
   transform: translateY(-2px);
   box-shadow: 0 18px 34px rgba(15, 23, 42, 0.28);
-  background-color: rgba(var(--base-bg-color-rgb), 0.98);
+  background-color: rgba(var(--secondary-bg-color-rgb), calc(var(--dynamic-opacity) + 0.08));
   border-color: rgba(var(--highlight-color-rgb, 94, 234, 212), 0.55);
 }
 
@@ -2799,6 +2821,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   border: 1px solid var(--border-color);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
   overflow: hidden;
+  color: rgba(var(--text-color-rgb, 29, 29, 31), 0.9);
 }
 
 .builder-dialog-header {
@@ -2862,6 +2885,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   overflow-y: auto;
   background: rgba(var(--secondary-bg-color-rgb), 0.72);
   min-width: 0;
+  color: rgba(var(--text-color-rgb, 29, 29, 31), 0.82);
 }
 
 .builder-sidebar-section + .builder-sidebar-section {
@@ -2909,7 +2933,7 @@ input[type="range"]:active::-webkit-slider-thumb {
 .builder-module-item span {
   font-size: 12px;
   line-height: 1.4;
-  color: rgba(var(--text-color-rgb, 29, 29, 31), 0.88);
+  color: rgba(var(--text-color-rgb, 29, 29, 31), 0.82);
 }
 
 .builder-canvas-wrapper {
@@ -2970,6 +2994,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  transform-origin: 0 0;
 }
 
 .builder-connection-layer path {
@@ -3012,6 +3037,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   box-shadow: 0 20px 38px rgba(0, 0, 0, 0.25);
   cursor: grab;
   user-select: none;
+  overflow: hidden;
 }
 
 .builder-node.selected {
@@ -3026,6 +3052,8 @@ input[type="range"]:active::-webkit-slider-thumb {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-color);
   background: rgba(var(--secondary-bg-color-rgb), 0.85);
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
 }
 
 .builder-node-header h4 {
@@ -3045,6 +3073,8 @@ input[type="range"]:active::-webkit-slider-thumb {
   border-top: 1px solid var(--border-color);
   display: flex;
   gap: 8px;
+  border-bottom-left-radius: inherit;
+  border-bottom-right-radius: inherit;
 }
 
 .builder-port {
@@ -3086,6 +3116,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   min-width: 0;
   position: relative;
   overflow: visible;
+  color: rgba(var(--text-color-rgb, 29, 29, 31), 0.85);
 }
 
 .builder-inspector-scroll {
@@ -3110,10 +3141,50 @@ input[type="range"]:active::-webkit-slider-thumb {
   color: rgba(var(--text-color-rgb, 29, 29, 31), 0.65);
 }
 
-.inspector-content {
+.inspector-node-info {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+  padding: 12px;
+  border-radius: max(12px, calc(var(--dynamic-border-radius) - 6px));
+  border: 1px solid rgba(var(--border-color-rgb, 148, 163, 184), 0.35);
+  background: rgba(var(--secondary-bg-color-rgb), calc(var(--dynamic-opacity) + 0.05));
+}
+
+.inspector-node-info-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-color);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+
+.inspector-node-info-toggle::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.inspector-node-info-toggle[aria-expanded='true']::after {
+  transform: rotate(-135deg);
+}
+
+.inspector-node-info-text {
+  margin: 0;
+  color: rgba(var(--text-color-rgb, 29, 29, 31), 0.75);
+  line-height: 1.5;
 }
 
 .inspector-icon-picker {
@@ -3144,8 +3215,8 @@ input[type="range"]:active::-webkit-slider-thumb {
 }
 
 .icon-picker-toggle {
-  border: 1px solid var(--border-color);
-  background: rgba(var(--base-bg-color-rgb), 0.92);
+  border: 1px solid rgba(var(--border-color-rgb, 148, 163, 184), 0.45);
+  background: rgba(var(--secondary-bg-color-rgb), var(--dynamic-opacity));
   border-radius: max(12px, calc(var(--dynamic-border-radius) - 6px));
   display: inline-flex;
   align-items: center;
@@ -3161,7 +3232,7 @@ input[type="range"]:active::-webkit-slider-thumb {
 .icon-picker-toggle:focus-visible {
   transform: translateY(-1px);
   border-color: var(--highlight-color);
-  background: rgba(var(--secondary-bg-color-rgb), 0.95);
+  background: rgba(var(--secondary-bg-color-rgb), calc(var(--dynamic-opacity) + 0.08));
 }
 
 .icon-picker-toggle:focus-visible {
