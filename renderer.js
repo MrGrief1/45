@@ -1551,35 +1551,142 @@ const QuickActionLab = {
 
         moduleDef.form.forEach(field => {
             const label = Utils.createElement('label', { text: field.label || field.key });
+            container.appendChild(label);
+
+            if (field.type === 'select') {
+                const currentValue = node.config?.[field.key]
+                    ?? moduleDef.defaultConfig?.[field.key]
+                    ?? field.options?.[0]?.value
+                    ?? '';
+                const selectComponent = this.createInspectorSelect(field, currentValue, (value) => {
+                    this.updateNodeConfig(node.id, field.key, value);
+                });
+                container.appendChild(selectComponent);
+                return;
+            }
+
             let input;
             if (field.type === 'textarea') {
                 input = document.createElement('textarea');
                 if (field.rows) input.rows = field.rows;
-            } else if (field.type === 'select') {
-                input = document.createElement('select');
-                (field.options || []).forEach(option => {
-                    const optionEl = document.createElement('option');
-                    optionEl.value = option.value;
-                    optionEl.textContent = option.label || option.value;
-                    input.appendChild(optionEl);
-                });
             } else {
                 input = document.createElement('input');
                 input.type = field.type || 'text';
                 if (field.min !== undefined) input.min = field.min;
             }
             input.value = node.config?.[field.key] ?? moduleDef.defaultConfig?.[field.key] ?? '';
-            if (field.placeholder) input.placeholder = field.placeholder;
+            if (field.placeholder && 'placeholder' in input) input.placeholder = field.placeholder;
             input.addEventListener('input', () => this.updateNodeConfig(node.id, field.key, input.value));
-            container.appendChild(label);
             container.appendChild(input);
         });
+
+        if (window.feather) {
+            window.feather.replace();
+        }
 
         if (!this.isManualNode(node.id)) {
             const deleteBtn = Utils.createElement('button', { className: 'settings-button secondary', text: LocalizationRenderer.t('quick_actions_remove_node') || 'Remove node' });
             deleteBtn.addEventListener('click', () => this.removeNode(node.id));
             container.appendChild(deleteBtn);
         }
+    },
+
+    createInspectorSelect(field, currentValue, onChange) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'custom-select-wrapper inspector-select';
+        wrapper.dataset.fieldKey = field.key;
+
+        const customSelect = document.createElement('div');
+        customSelect.className = 'custom-select';
+
+        const trigger = document.createElement('div');
+        trigger.className = 'custom-select-trigger';
+        trigger.setAttribute('role', 'button');
+        trigger.setAttribute('tabindex', '0');
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.setAttribute('aria-expanded', 'false');
+
+        const triggerLabel = document.createElement('span');
+        trigger.appendChild(triggerLabel);
+
+        const arrowIcon = document.createElement('i');
+        arrowIcon.dataset.feather = 'chevron-down';
+        arrowIcon.className = 'arrow';
+        trigger.appendChild(arrowIcon);
+
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'custom-options';
+        optionsContainer.setAttribute('role', 'listbox');
+
+        const options = field.options || [];
+        let selectedValue = currentValue;
+
+        if (!options.some(option => option.value === selectedValue) && options.length > 0) {
+            selectedValue = options[0].value;
+        }
+
+        options.forEach(option => {
+            const optionEl = document.createElement('div');
+            optionEl.className = 'custom-option';
+            optionEl.dataset.value = option.value;
+            optionEl.setAttribute('role', 'option');
+            optionEl.innerHTML = `<span>${Utils.escapeHtml(option.label || option.value || '')}</span>`;
+            if (option.value === selectedValue) {
+                optionEl.classList.add('selected');
+                triggerLabel.textContent = option.label || option.value || '';
+            }
+            optionEl.addEventListener('click', () => {
+                if (optionEl.classList.contains('selected')) {
+                    wrapper.classList.remove('open');
+                    trigger.setAttribute('aria-expanded', 'false');
+                    return;
+                }
+                optionsContainer.querySelector('.custom-option.selected')?.classList.remove('selected');
+                optionEl.classList.add('selected');
+                triggerLabel.textContent = option.label || option.value || '';
+                selectedValue = option.value;
+                wrapper.classList.remove('open');
+                trigger.setAttribute('aria-expanded', 'false');
+                if (typeof onChange === 'function') {
+                    onChange(option.value);
+                }
+            });
+            optionsContainer.appendChild(optionEl);
+        });
+
+        if (!triggerLabel.textContent) {
+            triggerLabel.textContent = field.placeholder || '';
+        }
+
+        const toggleOpen = () => {
+            const isOpen = wrapper.classList.contains('open');
+            CustomSelect.closeAllSelects();
+            if (!isOpen) {
+                wrapper.classList.add('open');
+                trigger.setAttribute('aria-expanded', 'true');
+            } else {
+                wrapper.classList.remove('open');
+                trigger.setAttribute('aria-expanded', 'false');
+            }
+        };
+
+        trigger.addEventListener('click', (event) => {
+            event.stopPropagation();
+            toggleOpen();
+        });
+
+        trigger.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                toggleOpen();
+            }
+        });
+
+        wrapper.appendChild(customSelect);
+        customSelect.appendChild(trigger);
+        customSelect.appendChild(optionsContainer);
+
+        return wrapper;
     },
 
     updateNodeConfig(nodeId, key, value) {
@@ -4167,12 +4274,21 @@ const CustomSelect = {
         const options = wrapper.querySelectorAll('.custom-option');
         const settingKey = wrapper.dataset.settingKey;
 
+        if (trigger) {
+            trigger.setAttribute('role', 'button');
+            trigger.setAttribute('aria-haspopup', 'listbox');
+            trigger.setAttribute('aria-expanded', 'false');
+        }
+
         trigger.addEventListener('click', (e) => {
             e.stopPropagation();
             const isOpen = wrapper.classList.contains('open');
             this.closeAllSelects();
             if (!isOpen) {
                 wrapper.classList.add('open');
+                trigger.setAttribute('aria-expanded', 'true');
+            } else {
+                trigger.setAttribute('aria-expanded', 'false');
             }
         });
 
@@ -4184,6 +4300,8 @@ const CustomSelect = {
                 trigger.querySelector('span').textContent = selectedText;
                 wrapper.querySelector('.custom-option.selected')?.classList.remove('selected');
                 option.classList.add('selected');
+                wrapper.classList.remove('open');
+                trigger.setAttribute('aria-expanded', 'false');
 
                 if (settingKey && selectedValue !== AppState.settings[settingKey]) {
                     ipcRenderer.send('update-setting', settingKey, selectedValue);
@@ -4198,6 +4316,10 @@ const CustomSelect = {
                 return;
             }
             wrapper.classList.remove('open');
+            const trigger = wrapper.querySelector('.custom-select-trigger');
+            if (trigger) {
+                trigger.setAttribute('aria-expanded', 'false');
+            }
         });
     },
 
