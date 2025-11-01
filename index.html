@@ -13,27 +13,19 @@
         
         <div id="search-view" class="view active">
             <div id="main-layout">
-                <div id="search-box" class="glass-element">
-                    <i data-feather="search" class="icon search-icon"></i>
-                    <input type="text" id="search-input" placeholder="FlashSearch" autofocus>
-                </div>
-
-                <div id="action-buttons">
-                    <button class="action-button glass-element" data-window-type="apps-library" data-i18n-title="title_apps_library">
-                        <i data-feather="grid" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="files" data-i18n-title="title_files">
-                        <i data-feather="folder" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="commands" data-i18n-title="title_commands">
-                        <i data-feather="command" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="clipboard" data-i18n-title="title_clipboard">
-                        <i data-feather="copy" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element settings-gear" id="settings-button" data-i18n-title="context_settings">
-                        <i data-feather="settings" class="icon"></i>
-                    </button>
+                <div id="search-toolbar" class="glass-element">
+                    <div id="search-box">
+                        <i data-feather="search" class="icon search-icon"></i>
+                        <input type="text" id="search-input" placeholder="FlashSearch" autofocus>
+                    </div>
+                    <div id="action-buttons" class="action-dock">
+                        <div class="action-dock-scroll">
+                            <div id="action-dock-buttons" class="action-dock-buttons"></div>
+                            <button class="action-button glass-element action-dock-trigger" id="action-dock-manager" data-i18n-title="dock_manage" title="Manage shortcuts">
+                                <i data-feather="plus-circle" class="icon"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -344,70 +336,34 @@
                             <section class="settings-section-card addons-section">
                                 <header class="addons-section-header">
                                     <div>
-                                        <h3 data-i18n="addons_active_title">Active workspace</h3>
-                                        <p data-i18n="addons_active_description">These add-ons are currently plugged into FlashSearch.</p>
+                                        <h3 data-i18n="dock_active_title">Pinned shortcuts</h3>
+                                        <p data-i18n="dock_active_description">Buttons shown next to the search bar.</p>
+                                    </div>
+                                    <div class="addons-header-actions">
+                                        <button type="button" class="settings-button ghost" id="dock-open-workshop" data-i18n="dock_open_workshop">Open Extension Workshop</button>
+                                        <button type="button" class="settings-button secondary" id="dock-reset-defaults" data-i18n="dock_reset_defaults">Reset defaults</button>
                                     </div>
                                 </header>
-                                <div id="active-addons-list" class="addons-active-list"></div>
+                                <div id="dock-active-list" class="dock-active-list"></div>
                             </section>
                             <section class="settings-section-card addons-section">
                                 <header class="addons-section-header">
                                     <div>
-                                        <h3 data-i18n="addons_gallery_title">Component gallery</h3>
-                                        <p data-i18n="addons_gallery_description">Start with a ready-made module and adapt it to your workflow.</p>
+                                        <h3 data-i18n="dock_library_title">Available shortcuts</h3>
+                                        <p data-i18n="dock_library_description">Toggle default modules or import presets.</p>
                                     </div>
                                 </header>
-                                <div id="addon-gallery" class="addons-gallery"></div>
+                                <div id="dock-library-list" class="dock-library-list"></div>
                             </section>
                             <section class="settings-section-card addons-section">
-                                <header class="addons-section-header">
-                                    <div>
-                                        <h3 data-i18n="addon_builder_title">Create your own add-on</h3>
-                                        <p data-i18n="addon_builder_intro">Build features from easy blocks—no coding required.</p>
+                                <div class="dock-workshop-callout">
+                                    <div class="dock-workshop-copy">
+                                        <h3 data-i18n="dock_workshop_title">Build your own workflow</h3>
+                                        <p data-i18n="dock_workshop_description">Design visual automations and publish them as buttons.</p>
                                     </div>
-                                </header>
-                                <div class="addon-builder">
-                                    <div class="builder-column">
-                                        <h4 data-i18n="addon_builder_base_label">Choose a starting point</h4>
-                                        <div class="builder-base-options">
-                                            <button type="button" class="builder-base-option active" data-base="clipboard">
-                                                <i data-feather="clipboard"></i>
-                                                <span data-i18n="addon_base_clipboard">Clipboard buffer</span>
-                                                <small data-i18n="addon_base_clipboard_desc">Start from the classic clipboard layout.</small>
-                                            </button>
-                                            <button type="button" class="builder-base-option" data-base="note">
-                                                <i data-feather="edit-3"></i>
-                                                <span data-i18n="addon_base_note">Quick note</span>
-                                                <small data-i18n="addon_base_note_desc">Capture ideas and templates.</small>
-                                            </button>
-                                            <button type="button" class="builder-base-option" data-base="command">
-                                                <i data-feather="zap"></i>
-                                                <span data-i18n="addon_base_command">Quick command</span>
-                                                <small data-i18n="addon_base_command_desc">Trigger scripts or workflows.</small>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="builder-column">
-                                        <h4 data-i18n="addon_builder_blocks_label">Add building blocks</h4>
-                                        <div class="builder-controls">
-                                            <select id="builder-block-select">
-                                                <option value="" data-i18n="addon_builder_block_placeholder">Select block…</option>
-                                                <option value="clipboard-filter" data-i18n="addon_builder_blocks_clipboard_filter">Filter copied content</option>
-                                                <option value="text-replace" data-i18n="addon_builder_blocks_text_replace">Replace text automatically</option>
-                                                <option value="pin-items" data-i18n="addon_builder_blocks_pin_items">Pin favourite items</option>
-                                                <option value="sync" data-i18n="addon_builder_blocks_sync">Sync across devices</option>
-                                            </select>
-                                            <button type="button" id="builder-add-block" class="settings-button" data-i18n="addon_builder_add_block">Add block</button>
-                                            <button type="button" id="builder-reset" class="settings-button secondary" data-i18n="addon_builder_reset">Clear builder</button>
-                                        </div>
-                                        <div id="builder-stack" class="builder-stack"></div>
-                                        <div class="builder-form">
-                                            <label for="builder-addon-name" data-i18n="addon_builder_name_label">Name</label>
-                                            <input type="text" id="builder-addon-name" data-i18n-placeholder="addon_builder_name_placeholder" placeholder="Custom add-on">
-                                            <label for="builder-addon-description" data-i18n="addon_builder_description_label">Description</label>
-                                            <textarea id="builder-addon-description" data-i18n-placeholder="addon_builder_description_placeholder" placeholder="Explain what this add-on does..."></textarea>
-                                            <button type="button" id="builder-save-addon" class="settings-button" data-i18n="addon_builder_save">Save add-on</button>
-                                        </div>
+                                    <div class="dock-workshop-actions">
+                                        <button type="button" class="settings-button primary" id="dock-create-workflow" data-i18n="dock_create_workflow">Create workflow</button>
+                                        <button type="button" class="settings-button ghost" id="dock-import-workflow" data-i18n="dock_import_workflow">Import JSON</button>
                                     </div>
                                 </div>
                             </section>
@@ -434,6 +390,78 @@
           feather.replace();
       }
     </script>
+    <div id="dock-overlay" class="dock-overlay hidden">
+        <div class="dock-overlay-backdrop"></div>
+        <div class="dock-overlay-surface glass-element">
+            <header class="dock-overlay-header">
+                <div class="dock-overlay-title">
+                    <h2 data-i18n="workshop_title">Extension Workshop</h2>
+                    <p data-i18n="workshop_subtitle">Compose visual workflows and publish them as dock buttons.</p>
+                </div>
+                <div class="dock-overlay-header-actions">
+                    <button type="button" class="settings-button ghost" id="dock-close-overlay" data-i18n="workshop_close">Close</button>
+                    <button type="button" class="settings-button primary" id="dock-save-overlay" data-i18n="workshop_publish">Publish to dock</button>
+                </div>
+            </header>
+            <div class="dock-overlay-body">
+                <aside class="workshop-pane workshop-palette">
+                    <div class="workshop-pane-header">
+                        <h3 data-i18n="workshop_palette_title">Modules</h3>
+                        <div class="workshop-search">
+                            <i data-feather="search" class="icon"></i>
+                            <input type="search" id="workshop-module-search" data-i18n-placeholder="workshop_search_placeholder" placeholder="Search modules">
+                        </div>
+                    </div>
+                    <div class="workshop-palette-groups" id="workshop-palette"></div>
+                </aside>
+                <section class="workshop-canvas-shell">
+                    <div class="workshop-toolbar" id="workshop-toolbar">
+                        <button type="button" class="workshop-tool" data-action="zoom-in" data-i18n-title="workshop_zoom_in">
+                            <i data-feather="zoom-in"></i>
+                        </button>
+                        <button type="button" class="workshop-tool" data-action="zoom-out" data-i18n-title="workshop_zoom_out">
+                            <i data-feather="zoom-out"></i>
+                        </button>
+                        <button type="button" class="workshop-tool" data-action="fit" data-i18n-title="workshop_fit_view">
+                            <i data-feather="maximize"></i>
+                        </button>
+                        <div class="workshop-toolbar-divider"></div>
+                        <button type="button" class="workshop-tool" data-action="snap-grid" data-i18n-title="workshop_toggle_grid">
+                            <i data-feather="grid"></i>
+                        </button>
+                        <button type="button" class="workshop-tool" data-action="simulate" data-i18n-title="workshop_simulate">
+                            <i data-feather="play"></i>
+                        </button>
+                    </div>
+                    <div class="workshop-canvas" id="workshop-canvas">
+                        <svg class="workshop-connection-layer" id="workshop-connections"></svg>
+                        <div class="workshop-grid"></div>
+                    </div>
+                    <div class="workshop-minimap" id="workshop-minimap"></div>
+                </section>
+                <aside class="workshop-pane workshop-inspector">
+                    <div class="workshop-pane-header">
+                        <h3 data-i18n="workshop_inspector_title">Inspector</h3>
+                    </div>
+                    <div class="workshop-inspector-body" id="workshop-inspector"></div>
+                </aside>
+            </div>
+            <footer class="dock-overlay-footer">
+                <div class="workshop-meta">
+                    <label for="workshop-name" data-i18n="workshop_name_label">Name</label>
+                    <input type="text" id="workshop-name" data-i18n-placeholder="workshop_name_placeholder" placeholder="Name your workflow">
+                    <label for="workshop-description" data-i18n="workshop_description_label">Description</label>
+                    <textarea id="workshop-description" data-i18n-placeholder="workshop_description_placeholder" placeholder="Describe how this workflow works"></textarea>
+                </div>
+                <div class="workshop-meta-secondary">
+                    <label data-i18n="workshop_icon_label">Icon</label>
+                    <div class="workshop-icon-picker" id="workshop-icon-picker"></div>
+                    <label data-i18n="workshop_color_label">Accent</label>
+                    <input type="color" id="workshop-color" value="#6366f1">
+                </div>
+            </footer>
+        </div>
+    </div>
     <div id="folder-context-menu" class="folder-context-menu">
         <div class="folder-menu-actions">
             <button type="button" class="folder-menu-action" data-action="rename" data-i18n="context_rename_folder">Rename</button>
@@ -453,6 +481,7 @@
     <div id="pinned-context-menu" class="pinned-context-menu" role="menu">
         <button type="button" data-action="create-folder" data-i18n="context_create_folder">Create Folder</button>
     </div>
+    <script src="workflow-builder.js"></script>
     <script src="renderer.js"></script>
 </body>
 </html>

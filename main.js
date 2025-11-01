@@ -105,7 +105,15 @@ const DEFAULT_SETTINGS = {
         features: ['addon-builder', 'extended-gallery', 'priority-support']
     },
     activeAddons: ['clipboard-buffer'],
-    customAddons: []
+    customAddons: [],
+    actionDock: [
+        { id: 'apps-library', source: 'builtin' },
+        { id: 'files', source: 'builtin' },
+        { id: 'commands', source: 'builtin' },
+        { id: 'clipboard', source: 'builtin' },
+        { id: 'settings', source: 'builtin' }
+    ],
+    customWorkflows: []
 };
 
 // =================================================================================
@@ -313,6 +321,37 @@ class SettingsManager {
                 blocks: Array.isArray(addon.blocks) ? addon.blocks : []
             }));
 
+        if (!Array.isArray(currentSettings.actionDock)) {
+            currentSettings.actionDock = [...DEFAULT_SETTINGS.actionDock];
+        } else {
+            currentSettings.actionDock = currentSettings.actionDock
+                .filter(entry => entry && typeof entry === 'object' && entry.id)
+                .map(entry => ({
+                    id: entry.id,
+                    source: entry.source || 'builtin',
+                    icon: entry.icon || null,
+                    name: entry.name || null,
+                    color: entry.color || null,
+                    workflowId: entry.workflowId || null
+                }));
+        }
+
+        if (!Array.isArray(currentSettings.customWorkflows)) {
+            currentSettings.customWorkflows = [];
+        } else {
+            currentSettings.customWorkflows = currentSettings.customWorkflows
+                .filter(workflow => workflow && typeof workflow === 'object' && workflow.id && workflow.graph)
+                .map(workflow => ({
+                    ...workflow,
+                    name: workflow.name || 'Untitled Workflow',
+                    icon: workflow.icon || 'git-branch',
+                    color: workflow.color || '#6366f1',
+                    description: workflow.description || '',
+                    createdAt: workflow.createdAt || new Date().toISOString(),
+                    updatedAt: workflow.updatedAt || new Date().toISOString()
+                }));
+        }
+
         Logger.info(`App folders structure: ${JSON.stringify(currentSettings.appFolders.map(f => ({id: f.id, name: f.name, appsCount: f.apps.length})))}`);
     }
 
@@ -327,9 +366,9 @@ class SettingsManager {
     updateSetting(key, value) {
         let requiresReindex = false;
 
-        if (['indexedDirectories', 'customAutomations', 'customAddons', 'activeAddons', 'subscription'].includes(key)) {
+        if (['indexedDirectories', 'customAutomations', 'customAddons', 'activeAddons', 'subscription', 'customWorkflows', 'actionDock'].includes(key)) {
             currentSettings[key] = value;
-            if (['customAddons', 'activeAddons', 'subscription'].includes(key)) {
+            if (['customAddons', 'activeAddons', 'subscription', 'customWorkflows', 'actionDock'].includes(key)) {
                 this.validateSettings();
             }
             if (key === 'indexedDirectories') requiresReindex = true;

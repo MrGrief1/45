@@ -14,8 +14,10 @@ const AppState = {
     searchResults: [],
     selectedIndex: -1,
     isInitialized: false,
-    iconCache: new Map(), 
+    iconCache: new Map(),
     hintShown: false, // НОВОЕ: Флаг показа подсказки
+    actionDock: [],
+    customWorkflows: []
 };
 
 const Utils = {
@@ -108,49 +110,6 @@ const SubscriptionFeatureLabels = {
     default: 'subscription_feature_default'
 };
 
-const AddonLibrary = [
-    {
-        id: 'clipboard-buffer',
-        type: 'library',
-        icon: 'clipboard',
-        base: 'clipboard',
-        nameKey: 'addon_library_clipboard_name',
-        descriptionKey: 'addon_library_clipboard_description',
-        blocks: ['clipboard-filter', 'pin-items']
-    },
-    {
-        id: 'note-canvas',
-        type: 'library',
-        icon: 'edit-3',
-        base: 'note',
-        nameKey: 'addon_library_note_name',
-        descriptionKey: 'addon_library_note_description',
-        blocks: ['text-replace']
-    },
-    {
-        id: 'workflow-launcher',
-        type: 'library',
-        icon: 'zap',
-        base: 'command',
-        nameKey: 'addon_library_command_name',
-        descriptionKey: 'addon_library_command_description',
-        blocks: ['pin-items', 'sync']
-    }
-];
-
-const AddonBuilderBases = [
-    { id: 'clipboard', icon: 'clipboard', nameKey: 'addon_base_clipboard', descriptionKey: 'addon_base_clipboard_desc' },
-    { id: 'note', icon: 'edit-3', nameKey: 'addon_base_note', descriptionKey: 'addon_base_note_desc' },
-    { id: 'command', icon: 'zap', nameKey: 'addon_base_command', descriptionKey: 'addon_base_command_desc' }
-];
-
-const AddonBuilderBlocks = [
-    { id: 'clipboard-filter', icon: 'filter', nameKey: 'addon_builder_blocks_clipboard_filter', descriptionKey: 'addon_builder_blocks_clipboard_filter_desc' },
-    { id: 'text-replace', icon: 'repeat', nameKey: 'addon_builder_blocks_text_replace', descriptionKey: 'addon_builder_blocks_text_replace_desc' },
-    { id: 'pin-items', icon: 'bookmark', nameKey: 'addon_builder_blocks_pin_items', descriptionKey: 'addon_builder_blocks_pin_items_desc' },
-    { id: 'sync', icon: 'cloud', nameKey: 'addon_builder_blocks_sync', descriptionKey: 'addon_builder_blocks_sync_desc' }
-];
-
 // =================================================================================
 // === Система Локализации (Клиентская сторона) ===
 // =================================================================================
@@ -194,8 +153,762 @@ const LocalizationRenderer = {
             SettingsModule.renderAutomations();
             SettingsModule.renderSubscription();
             SettingsModule.renderAddons();
-            SettingsModule.renderAddonBuilder();
         }
+    }
+};
+
+const DockManager = {
+    builtinActions: [
+        {
+            id: 'apps-library',
+            icon: 'grid',
+            labelKey: 'title_apps_library',
+            descriptionKey: 'dock_builtin_apps_library',
+            type: 'panel',
+            target: 'apps-library'
+        },
+        {
+            id: 'files',
+            icon: 'folder',
+            labelKey: 'title_files',
+            descriptionKey: 'dock_builtin_files',
+            type: 'panel',
+            target: 'files'
+        },
+        {
+            id: 'commands',
+            icon: 'command',
+            labelKey: 'title_commands',
+            descriptionKey: 'dock_builtin_commands',
+            type: 'panel',
+            target: 'commands'
+        },
+        {
+            id: 'clipboard',
+            icon: 'copy',
+            labelKey: 'title_clipboard',
+            descriptionKey: 'dock_builtin_clipboard',
+            type: 'panel',
+            target: 'clipboard'
+        },
+        {
+            id: 'settings',
+            icon: 'settings',
+            labelKey: 'context_settings',
+            descriptionKey: 'dock_builtin_settings',
+            type: 'settings'
+        }
+    ],
+
+    templateWorkflows: [
+        {
+            id: 'template.clipboard-notes',
+            nameKey: 'dock_template_clipboard_notes',
+            descriptionKey: 'dock_template_clipboard_notes_desc',
+            icon: 'edit-3',
+            color: '#22d3ee',
+            workflow: {
+                meta: { icon: 'edit-3', color: '#22d3ee' },
+                nodes: [
+                    { id: 'n1', moduleId: 'trigger.app-launch', position: { x: 80, y: 140 }, data: { application: 'notepad.exe', debounce: 1000 }, label: 'Launch trigger' },
+                    { id: 'n2', moduleId: 'action.clipboard-set', position: { x: 380, y: 140 }, data: { content: 'Meeting notes template' }, label: 'Prepare template' }
+                ],
+                connections: [
+                    { id: 'c1', source: 'n1', sourcePort: 'next', target: 'n2', targetPort: 'input' }
+                ]
+            }
+        },
+        {
+            id: 'template.break-reminder',
+            nameKey: 'dock_template_break_reminder',
+            descriptionKey: 'dock_template_break_reminder_desc',
+            icon: 'coffee',
+            color: '#f97316',
+            workflow: {
+                meta: { icon: 'coffee', color: '#f97316' },
+                nodes: [
+                    { id: 'n1', moduleId: 'trigger.schedule', position: { x: 60, y: 120 }, data: { cron: '0 */2 * * *', timezone: 'local' }, label: 'Every 2 hours' },
+                    { id: 'n2', moduleId: 'logic.delay', position: { x: 360, y: 80 }, data: { duration: 1000 }, label: 'Delay' },
+                    { id: 'n3', moduleId: 'action.clipboard-set', position: { x: 360, y: 220 }, data: { content: 'Time to stretch and hydrate!' }, label: 'Notify message' }
+                ],
+                connections: [
+                    { id: 'c1', source: 'n1', sourcePort: 'next', target: 'n2', targetPort: 'input' },
+                    { id: 'c2', source: 'n2', sourcePort: 'next', target: 'n3', targetPort: 'input' }
+                ]
+            }
+        }
+    ],
+
+    init() {
+        this.toolbarElement = Utils.getElement('#action-dock-buttons');
+        this.managerButton = Utils.getElement('#action-dock-manager');
+        this.overlay = Utils.getElement('#dock-overlay');
+        this.quickPanel = null;
+        this.currentWorkshopContext = null;
+        this.toastElement = null;
+        this.quickDragIndex = null;
+
+        this.bindToolbar();
+        this.setupOverlay();
+        this.syncStateFromSettings();
+        this.renderDockButtons();
+    },
+
+    bindToolbar() {
+        if (this.managerButton) {
+            this.managerButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                this.toggleQuickPanel();
+            });
+        }
+        document.addEventListener('click', (event) => {
+            if (this.quickPanel && !this.quickPanel.contains(event.target) && event.target !== this.managerButton) {
+                this.closeQuickPanel();
+            }
+        });
+    },
+
+    setupOverlay() {
+        if (!this.overlay) return;
+        const canvasShell = this.overlay.querySelector('.workshop-canvas-shell');
+        const canvas = this.overlay.querySelector('#workshop-canvas');
+        const nodeLayer = document.createElement('div');
+        nodeLayer.className = 'workshop-node-layer';
+        canvas.appendChild(nodeLayer);
+        const simulationPanel = document.createElement('div');
+        simulationPanel.className = 'workshop-simulation-panel';
+        simulationPanel.id = 'workshop-simulation-panel';
+        canvasShell.appendChild(simulationPanel);
+
+        const toast = document.createElement('div');
+        toast.className = 'workshop-toast';
+        toast.id = 'workshop-toast';
+        canvasShell.appendChild(toast);
+        this.toastElement = toast;
+
+        this.builder = window.WorkflowBuilder?.create({
+            root: this.overlay,
+            canvas,
+            connectionLayer: this.overlay.querySelector('#workshop-connections'),
+            canvasContent: nodeLayer,
+            palette: this.overlay.querySelector('#workshop-palette'),
+            inspector: this.overlay.querySelector('#workshop-inspector'),
+            minimap: this.overlay.querySelector('#workshop-minimap'),
+            toolbar: this.overlay.querySelector('#workshop-toolbar'),
+            iconPicker: this.overlay.querySelector('#workshop-icon-picker'),
+            nameInput: this.overlay.querySelector('#workshop-name'),
+            descriptionInput: this.overlay.querySelector('#workshop-description'),
+            colorInput: this.overlay.querySelector('#workshop-color'),
+            simulationPanel,
+            translate: (key, fallback) => {
+                const translator = LocalizationRenderer?.t?.bind(LocalizationRenderer);
+                if (typeof translator !== 'function') {
+                    return fallback ?? key;
+                }
+                const value = translator(key);
+                if (!value || value.startsWith('Missing')) {
+                    return fallback ?? key;
+                }
+                return value;
+            }
+        });
+
+        const closeButton = this.overlay.querySelector('#dock-close-overlay');
+        const saveButton = this.overlay.querySelector('#dock-save-overlay');
+        closeButton?.addEventListener('click', () => this.closeWorkshop());
+        saveButton?.addEventListener('click', () => this.publishWorkflow());
+
+        const openButtons = [
+            '#dock-open-workshop',
+            '#dock-create-workflow'
+        ];
+        openButtons.forEach(selector => {
+            Utils.getElement(selector)?.addEventListener('click', () => this.openWorkshop());
+        });
+
+        Utils.getElement('#dock-import-workflow')?.addEventListener('click', () => this.importWorkflow());
+        Utils.getElement('#dock-reset-defaults')?.addEventListener('click', () => this.resetToDefaults());
+
+        this.builder?.on('meta:change', () => this.updateWorkshopPublishState());
+    },
+
+    syncStateFromSettings() {
+        const dock = Array.isArray(AppState.settings.actionDock) ? AppState.settings.actionDock : this.getDefaultLayout();
+        const workflows = Array.isArray(AppState.settings.customWorkflows) ? AppState.settings.customWorkflows : [];
+        AppState.actionDock = dock.map(entry => ({
+            id: entry.id,
+            source: entry.source || 'builtin',
+            icon: entry.icon || null,
+            name: entry.name || null,
+            color: entry.color || null,
+            workflowId: entry.workflowId || null
+        }));
+        AppState.customWorkflows = workflows.map(item => ({ ...item }));
+    },
+
+    getDefaultLayout() {
+        return [
+            { id: 'apps-library', source: 'builtin' },
+            { id: 'files', source: 'builtin' },
+            { id: 'commands', source: 'builtin' },
+            { id: 'clipboard', source: 'builtin' },
+            { id: 'settings', source: 'builtin' }
+        ];
+    },
+
+    getActionDefinition(id) {
+        return this.builtinActions.find(action => action.id === id) || null;
+    },
+
+    getWorkflowById(id) {
+        return AppState.customWorkflows.find(item => item.id === id) || null;
+    },
+
+    renderDockButtons() {
+        if (!this.toolbarElement) return;
+        this.toolbarElement.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+        AppState.actionDock.forEach(entry => {
+            const button = this.createDockButton(entry);
+            if (button) fragment.appendChild(button);
+        });
+        this.toolbarElement.appendChild(fragment);
+        if (window.feather) window.feather.replace();
+    },
+
+    createDockButton(entry) {
+        const meta = this.resolveEntryMetadata(entry);
+        if (!meta) return null;
+        const button = document.createElement('button');
+        button.className = 'action-button glass-element';
+        button.setAttribute('data-dock-id', entry.id);
+        button.setAttribute('title', meta.title);
+        button.innerHTML = window.feather?.icons?.[meta.icon]?.toSvg() || `<span>${meta.label}</span>`;
+        button.addEventListener('click', () => this.handleDockAction(entry));
+        return button;
+    },
+
+    resolveEntryMetadata(entry) {
+        if (entry.source === 'builtin') {
+            const def = this.getActionDefinition(entry.id);
+            if (!def) return null;
+            return {
+                title: LocalizationRenderer.t(def.labelKey),
+                label: LocalizationRenderer.t(def.labelKey),
+                icon: def.icon,
+                description: LocalizationRenderer.t(def.descriptionKey || def.labelKey),
+                type: def.type,
+                target: def.target
+            };
+        }
+        if (entry.source === 'workflow') {
+            const workflow = this.getWorkflowById(entry.workflowId || entry.id);
+            if (!workflow) return null;
+            return {
+                title: workflow.name,
+                label: workflow.name,
+                icon: workflow.icon || entry.icon || 'zap',
+                description: workflow.description || '',
+                type: 'workflow',
+                workflow
+            };
+        }
+        return null;
+    },
+
+    handleDockAction(entry) {
+        const meta = this.resolveEntryMetadata(entry);
+        if (!meta) return;
+        if (meta.type === 'panel') {
+            AuxPanelManager.togglePanel(meta.target);
+        } else if (meta.type === 'settings') {
+            ViewManager.switchView('settings');
+        } else if (meta.type === 'workflow') {
+            this.executeWorkflow(meta.workflow);
+        }
+    },
+
+    executeWorkflow(workflow) {
+        if (!workflow) return;
+        const toast = this.toastElement;
+        const showToast = (message) => {
+            if (!toast) {
+                console.log('[Workflow]', message);
+                return;
+            }
+            toast.textContent = message;
+            toast.classList.add('visible');
+            clearTimeout(this.toastTimer);
+            this.toastTimer = setTimeout(() => toast.classList.remove('visible'), 2800);
+        };
+        showToast(LocalizationRenderer.t('dock_workflow_running', workflow.name));
+        setTimeout(() => {
+            showToast(LocalizationRenderer.t('dock_workflow_completed', workflow.name));
+        }, 900);
+    },
+
+    toggleQuickPanel() {
+        if (this.quickPanel && this.quickPanel.classList.contains('visible')) {
+            this.closeQuickPanel();
+        } else {
+            this.openQuickPanel();
+        }
+    },
+
+    openQuickPanel() {
+        if (!this.managerButton) return;
+        if (!this.quickPanel) {
+            this.quickPanel = document.createElement('div');
+            this.quickPanel.className = 'dock-quick-panel';
+            document.body.appendChild(this.quickPanel);
+        }
+        this.renderQuickPanel();
+        const rect = this.managerButton.getBoundingClientRect();
+        this.quickPanel.style.top = `${rect.bottom + 8}px`;
+        this.quickPanel.style.left = `${rect.right - 220}px`;
+        this.quickPanel.classList.add('visible');
+    },
+
+    closeQuickPanel() {
+        if (this.quickPanel) {
+            this.quickPanel.classList.remove('visible');
+        }
+    },
+
+    renderQuickPanel() {
+        if (!this.quickPanel) return;
+        const listItems = AppState.actionDock.map((entry, index) => {
+            const meta = this.resolveEntryMetadata(entry);
+            if (!meta) return '';
+            const isWorkflow = entry.source === 'workflow' || meta.type === 'workflow';
+            const dragIcon = window.feather?.icons?.menu?.toSvg({ width: 16, height: 16 }) || '::';
+            const editIcon = window.feather?.icons?.['edit-3']?.toSvg({ width: 16, height: 16 }) || '';
+            return `
+                <div class="dock-quick-row" data-entry-id="${entry.id}" data-source="${entry.source}" data-entry-index="${index}" draggable="true">
+                    <div class="dock-quick-row-info">
+                        <button type="button" class="dock-quick-handle" data-action="reorder" title="${LocalizationRenderer.t('dock_quick_move_hint')}">${dragIcon}</button>
+                        <span class="dock-quick-icon">${window.feather?.icons?.[meta.icon]?.toSvg() || ''}</span>
+                        <div>
+                            <strong>${meta.label}</strong>
+                            <p>${meta.description || ''}</p>
+                        </div>
+                    </div>
+                    <div class="dock-quick-row-actions">
+                        ${isWorkflow ? `<button type="button" class="dock-quick-edit" data-action="edit" title="${LocalizationRenderer.t('dock_quick_edit')}">${editIcon}</button>` : ''}
+                        <button type="button" class="dock-quick-remove" data-action="remove" title="${LocalizationRenderer.t('dock_quick_remove')}">&times;</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        const addLibrary = this.builtinActions.map(action => {
+            const isActive = AppState.actionDock.some(entry => entry.id === action.id);
+            return `
+                <button type="button" class="dock-quick-add" data-action="toggle" data-target="${action.id}" data-active="${isActive}">
+                    ${window.feather?.icons?.[action.icon]?.toSvg() || ''}
+                    <span>${LocalizationRenderer.t(action.labelKey)}</span>
+                    <span class="dock-quick-status">${LocalizationRenderer.t(isActive ? 'dock_quick_added' : 'dock_quick_add')}</span>
+                </button>
+            `;
+        }).join('');
+        this.quickPanel.innerHTML = `
+            <header>
+                <strong>${LocalizationRenderer.t('dock_quick_title')}</strong>
+                <button type="button" class="dock-quick-close" data-action="close">&times;</button>
+            </header>
+            <div class="dock-quick-section">
+                <h4>${LocalizationRenderer.t('dock_quick_active')}</h4>
+                <div class="dock-quick-list">${listItems || `<p class="dock-quick-empty">${LocalizationRenderer.t('dock_quick_empty')}</p>`}</div>
+            </div>
+            <div class="dock-quick-section">
+                <h4>${LocalizationRenderer.t('dock_quick_library')}</h4>
+                <div class="dock-quick-library">${addLibrary}</div>
+            </div>
+            <div class="dock-quick-actions">
+                <button type="button" class="settings-button primary" data-action="open-workshop">${LocalizationRenderer.t('dock_quick_create')}</button>
+            </div>
+        `;
+        this.quickPanel.querySelector('[data-action="close"]').addEventListener('click', () => this.closeQuickPanel());
+        this.quickPanel.querySelectorAll('[data-action="remove"]').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const row = event.currentTarget.closest('.dock-quick-row');
+                const entryId = row?.getAttribute('data-entry-id');
+                if (entryId) {
+                    this.removeAction(entryId);
+                    this.renderDockButtons();
+                    this.renderQuickPanel();
+                    this.renderSettings();
+                }
+            });
+        });
+        this.quickPanel.querySelectorAll('[data-action="edit"]').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const row = event.currentTarget.closest('.dock-quick-row');
+                const entryId = row?.getAttribute('data-entry-id');
+                const entry = AppState.actionDock.find(item => item.id === entryId);
+                if (entry && entry.source === 'workflow') {
+                    this.openWorkshop(entry.workflowId || entry.id);
+                    this.closeQuickPanel();
+                }
+            });
+        });
+        this.quickPanel.querySelectorAll('[data-action="toggle"]').forEach(button => {
+            button.addEventListener('click', () => {
+                const id = button.getAttribute('data-target');
+                const active = button.getAttribute('data-active') === 'true';
+                if (active) {
+                    this.removeAction(id);
+                } else {
+                    this.addAction({ id, source: 'builtin' });
+                }
+                this.renderDockButtons();
+                this.renderQuickPanel();
+                this.renderSettings();
+            });
+        });
+        this.quickPanel.querySelector('[data-action="open-workshop"]').addEventListener('click', () => {
+            this.openWorkshop();
+            this.closeQuickPanel();
+        });
+        this.bindQuickPanelDrag();
+    },
+
+    bindQuickPanelDrag() {
+        if (!this.quickPanel) return;
+        const rows = Array.from(this.quickPanel.querySelectorAll('.dock-quick-row'));
+        const list = this.quickPanel.querySelector('.dock-quick-list');
+        rows.forEach(row => {
+            row.addEventListener('dragstart', (event) => this.onQuickDragStart(event));
+            row.addEventListener('dragenter', (event) => this.onQuickDragEnter(event));
+            row.addEventListener('dragover', (event) => this.onQuickDragOver(event));
+            row.addEventListener('dragleave', (event) => this.onQuickDragLeave(event));
+            row.addEventListener('drop', (event) => this.onQuickDrop(event));
+            row.addEventListener('dragend', (event) => this.onQuickDragEnd(event));
+        });
+        if (list) {
+            list.addEventListener('dragover', (event) => event.preventDefault());
+            list.addEventListener('drop', (event) => {
+                event.preventDefault();
+                if (this.quickDragIndex === null) return;
+                const toIndex = rows.length;
+                this.reorderAction(this.quickDragIndex, toIndex);
+                this.renderDockButtons();
+                this.renderQuickPanel();
+            });
+        }
+    },
+
+    onQuickDragStart(event) {
+        const row = event.currentTarget;
+        const index = Number(row.getAttribute('data-entry-index'));
+        this.quickDragIndex = Number.isInteger(index) ? index : null;
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', String(index));
+        row.classList.add('dragging');
+    },
+
+    onQuickDragEnter(event) {
+        event.preventDefault();
+        const row = event.currentTarget;
+        row.classList.add('drag-over');
+    },
+
+    onQuickDragOver(event) {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+    },
+
+    onQuickDragLeave(event) {
+        const row = event.currentTarget;
+        row.classList.remove('drag-over');
+    },
+
+    onQuickDrop(event) {
+        event.preventDefault();
+        const row = event.currentTarget;
+        const toIndex = Number(row.getAttribute('data-entry-index'));
+        const fromIndex = this.quickDragIndex ?? Number(event.dataTransfer.getData('text/plain'));
+        row.classList.remove('drag-over');
+        if (!Number.isInteger(fromIndex) || !Number.isInteger(toIndex)) return;
+        this.reorderAction(fromIndex, toIndex);
+        this.renderDockButtons();
+        this.renderQuickPanel();
+    },
+
+    onQuickDragEnd(event) {
+        const row = event.currentTarget;
+        row.classList.remove('dragging');
+        this.quickDragIndex = null;
+    },
+
+    reorderAction(fromIndex, toIndex) {
+        if (fromIndex === toIndex) return;
+        const maxIndex = AppState.actionDock.length - 1;
+        const normalizedFrom = Math.max(0, Math.min(fromIndex, maxIndex));
+        let normalizedTo = Math.max(0, Math.min(toIndex, maxIndex));
+        const listCopy = [...AppState.actionDock];
+        const [moved] = listCopy.splice(normalizedFrom, 1);
+        if (!moved) return;
+        if (toIndex >= AppState.actionDock.length) {
+            listCopy.push(moved);
+        } else {
+            listCopy.splice(normalizedTo, 0, moved);
+        }
+        AppState.actionDock = listCopy;
+        this.persist();
+        this.renderSettings();
+    },
+
+    renderSettings() {
+        const activeContainer = Utils.getElement('#dock-active-list');
+        const libraryContainer = Utils.getElement('#dock-library-list');
+        if (activeContainer) {
+            activeContainer.innerHTML = '';
+            if (AppState.actionDock.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'dock-card';
+                empty.innerHTML = `<p style="margin:0;color:var(--icon-color);">${LocalizationRenderer.t('dock_empty_state')}</p>`;
+                activeContainer.appendChild(empty);
+            } else {
+                AppState.actionDock.forEach(entry => {
+                    const card = this.createActiveCard(entry);
+                    if (card) activeContainer.appendChild(card);
+                });
+            }
+        }
+
+        if (libraryContainer) {
+            libraryContainer.innerHTML = '';
+            const fragment = document.createDocumentFragment();
+            this.builtinActions.forEach(action => {
+                fragment.appendChild(this.createLibraryCard(action));
+            });
+            this.templateWorkflows.forEach(template => {
+                fragment.appendChild(this.createTemplateCard(template));
+            });
+            libraryContainer.appendChild(fragment);
+        }
+        if (window.feather) window.feather.replace();
+    },
+
+    createActiveCard(entry) {
+        const meta = this.resolveEntryMetadata(entry);
+        if (!meta) return null;
+        const card = document.createElement('div');
+        card.className = 'dock-card';
+        card.innerHTML = `
+            <div class="dock-card-header">
+                <div class="dock-card-icon">${window.feather?.icons?.[meta.icon]?.toSvg() || ''}</div>
+                <div class="dock-card-title">
+                    <h4>${meta.label}</h4>
+                    <span>${meta.description || ''}</span>
+                </div>
+                <span class="dock-badge">${entry.source === 'builtin' ? LocalizationRenderer.t('dock_badge_builtin') : LocalizationRenderer.t('dock_badge_custom')}</span>
+            </div>
+            <div class="dock-card-actions">
+                ${entry.source === 'workflow' ? `<button type="button" class="settings-button secondary" data-action="edit" data-id="${entry.workflowId || entry.id}">${LocalizationRenderer.t('dock_action_edit')}</button>` : ''}
+                <button type="button" class="settings-button ghost" data-action="remove" data-id="${entry.id}">${LocalizationRenderer.t('dock_action_remove')}</button>
+            </div>
+        `;
+        card.querySelector('[data-action="remove"]').addEventListener('click', () => {
+            this.removeAction(entry.id);
+            this.renderDockButtons();
+            this.renderSettings();
+            this.persist();
+        });
+        if (entry.source === 'workflow') {
+            card.querySelector('[data-action="edit"]').addEventListener('click', () => this.openWorkshop(entry.workflowId || entry.id));
+        }
+        return card;
+    },
+
+    createLibraryCard(action) {
+        const isActive = AppState.actionDock.some(entry => entry.id === action.id);
+        const card = document.createElement('div');
+        card.className = 'dock-card';
+        card.innerHTML = `
+            <div class="dock-card-header">
+                <div class="dock-card-icon">${window.feather?.icons?.[action.icon]?.toSvg() || ''}</div>
+                <div class="dock-card-title">
+                    <h4>${LocalizationRenderer.t(action.labelKey)}</h4>
+                    <span>${LocalizationRenderer.t(action.descriptionKey)}</span>
+                </div>
+                <span class="dock-badge">${LocalizationRenderer.t('dock_badge_builtin')}</span>
+            </div>
+            <div class="dock-card-actions">
+                <button type="button" class="settings-button primary" data-action="toggle" data-id="${action.id}">${LocalizationRenderer.t(isActive ? 'dock_action_added' : 'dock_action_add')}</button>
+            </div>
+        `;
+        card.querySelector('[data-action="toggle"]').addEventListener('click', () => {
+            if (isActive) {
+                this.removeAction(action.id);
+            } else {
+                this.addAction({ id: action.id, source: 'builtin' });
+            }
+            this.renderDockButtons();
+            this.renderSettings();
+            this.persist();
+        });
+        return card;
+    },
+
+    createTemplateCard(template) {
+        const card = document.createElement('div');
+        card.className = 'dock-card';
+        card.innerHTML = `
+            <div class="dock-card-header">
+                <div class="dock-card-icon">${window.feather?.icons?.[template.icon]?.toSvg() || ''}</div>
+                <div class="dock-card-title">
+                    <h4>${LocalizationRenderer.t(template.nameKey)}</h4>
+                    <span>${LocalizationRenderer.t(template.descriptionKey)}</span>
+                </div>
+                <span class="dock-badge">${LocalizationRenderer.t('dock_badge_template')}</span>
+            </div>
+            <div class="dock-card-actions">
+                <button type="button" class="settings-button primary" data-action="use-template" data-id="${template.id}">${LocalizationRenderer.t('dock_action_use_template')}</button>
+            </div>
+        `;
+        card.querySelector('[data-action="use-template"]').addEventListener('click', () => {
+            this.openWorkshop(null, template.workflow);
+        });
+        return card;
+    },
+
+    addAction(entry) {
+        if (AppState.actionDock.some(item => item.id === entry.id)) return;
+        AppState.actionDock.push(entry);
+        this.persist();
+    },
+
+    removeAction(id) {
+        AppState.actionDock = AppState.actionDock.filter(entry => entry.id !== id);
+        this.persist();
+    },
+
+    openWorkshop(workflowId = null, templateWorkflow = null) {
+        this.currentWorkshopContext = workflowId ? { mode: 'edit', workflowId } : { mode: 'create' };
+        this.overlay.classList.remove('hidden');
+        document.body.classList.add('workshop-open');
+        if (workflowId) {
+            const workflow = this.getWorkflowById(workflowId);
+            if (workflow) {
+                this.builder.load({
+                    meta: workflow,
+                    nodes: workflow.graph?.nodes || [],
+                    connections: workflow.graph?.connections || []
+                });
+                this.builder.meta.nameInput.value = workflow.name || '';
+                this.builder.meta.descriptionInput.value = workflow.description || '';
+                this.builder.meta.colorInput.value = workflow.color || '#6366f1';
+            }
+        } else if (templateWorkflow) {
+            this.builder.load(templateWorkflow);
+        } else {
+            this.builder.clear();
+        }
+        this.updateWorkshopPublishState();
+    },
+
+    closeWorkshop() {
+        this.overlay.classList.add('hidden');
+        document.body.classList.remove('workshop-open');
+        this.currentWorkshopContext = null;
+    },
+
+    updateWorkshopPublishState() {
+        const saveButton = this.overlay.querySelector('#dock-save-overlay');
+        if (!saveButton) return;
+        const meta = this.builder.getMetadata();
+        const isValid = !!meta.name;
+        saveButton.disabled = !isValid;
+    },
+
+    publishWorkflow() {
+        const serialized = this.builder.serialize();
+        const meta = this.builder.getMetadata();
+        if (!serialized) return;
+        const graph = {
+            nodes: serialized.nodes,
+            connections: serialized.connections
+        };
+        if (this.currentWorkshopContext && this.currentWorkshopContext.mode === 'edit') {
+            const target = this.getWorkflowById(this.currentWorkshopContext.workflowId);
+            if (target) {
+                target.name = meta.name;
+                target.description = meta.description;
+                target.icon = meta.icon;
+                target.color = meta.color;
+                target.updatedAt = new Date().toISOString();
+                target.graph = graph;
+            }
+        } else {
+            const id = `workflow-${Date.now()}`;
+            const entry = {
+                id,
+                name: meta.name,
+                description: meta.description,
+                icon: meta.icon,
+                color: meta.color,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                graph
+            };
+            AppState.customWorkflows.push(entry);
+            AppState.actionDock.push({ id, source: 'workflow', workflowId: id });
+        }
+        this.persist();
+        this.renderDockButtons();
+        this.renderSettings();
+        this.showToast(LocalizationRenderer.t('dock_workshop_saved'));
+        this.closeWorkshop();
+    },
+
+    importWorkflow() {
+        const payload = prompt(LocalizationRenderer.t('dock_import_prompt'));
+        if (!payload) return;
+        try {
+            const parsed = JSON.parse(payload);
+            const id = parsed.id || `workflow-${Date.now()}`;
+            parsed.id = id;
+            parsed.createdAt = parsed.createdAt || new Date().toISOString();
+            parsed.updatedAt = new Date().toISOString();
+            AppState.customWorkflows.push(parsed);
+            this.addAction({ id, source: 'workflow', workflowId: id });
+            this.renderDockButtons();
+            this.renderSettings();
+            this.persist();
+            this.showToast(LocalizationRenderer.t('dock_import_success'));
+        } catch (error) {
+            alert(LocalizationRenderer.t('dock_import_error'));
+        }
+    },
+
+    resetToDefaults() {
+        if (!confirm(LocalizationRenderer.t('dock_reset_confirm'))) return;
+        AppState.actionDock = this.getDefaultLayout();
+        this.persist();
+        this.renderDockButtons();
+        this.renderSettings();
+    },
+
+    persist() {
+        const dock = AppState.actionDock.map(entry => ({ ...entry }));
+        const workflows = AppState.customWorkflows.map(item => ({ ...item }));
+        AppState.settings.actionDock = dock;
+        AppState.settings.customWorkflows = workflows;
+        ipcRenderer.send('update-setting', 'actionDock', dock);
+        ipcRenderer.send('update-setting', 'customWorkflows', workflows);
+    },
+
+    showToast(message) {
+        const toast = this.toastElement;
+        if (!toast) {
+            console.log('[DockManager]', message);
+            return;
+        }
+        toast.textContent = message;
+        toast.classList.add('visible');
+        clearTimeout(this.toastTimer);
+        this.toastTimer = setTimeout(() => toast.classList.remove('visible'), 2500);
     }
 };
 
@@ -204,11 +917,6 @@ const LocalizationRenderer = {
 // =================================================================================
 // ... existing code ...
 const SettingsModule = {
-    builderState: {
-        base: 'clipboard',
-        blocks: []
-    },
-
     init: function() {
         this.setupEventListeners();
         this.setupTabs();
@@ -245,77 +953,7 @@ const SettingsModule = {
             });
         });
 
-        const activeAddonsList = Utils.getElement('#active-addons-list');
-        if (activeAddonsList) {
-            activeAddonsList.addEventListener('click', (event) => {
-                const removeButton = event.target.closest('[data-action="remove-addon"]');
-                if (removeButton) {
-                    const addonId = removeButton.getAttribute('data-addon-id');
-                    this.removeActiveAddon(addonId);
-                }
-            });
-        }
-
-        const addonGallery = Utils.getElement('#addon-gallery');
-        if (addonGallery) {
-            addonGallery.addEventListener('click', (event) => {
-                const deleteButton = event.target.closest('[data-action="delete-custom-addon"]');
-                if (deleteButton) {
-                    const addonId = deleteButton.getAttribute('data-addon-id');
-                    this.deleteCustomAddon(addonId);
-                    return;
-                }
-                const addButton = event.target.closest('[data-action="add-addon"]');
-                if (addButton) {
-                    const addonId = addButton.getAttribute('data-addon-id');
-                    this.addAddonFromGallery(addonId);
-                }
-            });
-        }
-
-        const builderStack = Utils.getElement('#builder-stack');
-        if (builderStack) {
-            builderStack.addEventListener('click', (event) => {
-                const removeBlock = event.target.closest('[data-action="remove-block"]');
-                if (removeBlock) {
-                    const index = parseInt(removeBlock.getAttribute('data-block-index'), 10);
-                    this.removeBuilderBlock(index);
-                }
-            });
-        }
-
-        Utils.getAllElements('.builder-base-option').forEach(button => {
-            button.addEventListener('click', () => {
-                const base = button.getAttribute('data-base');
-                if (!base) return;
-                this.builderState.base = base;
-                this.highlightBuilderBase();
-                this.renderBuilderStack();
-            });
-        });
-
-        const addBlockButton = Utils.getElement('#builder-add-block');
-        if (addBlockButton) {
-            addBlockButton.addEventListener('click', () => {
-                const select = Utils.getElement('#builder-block-select');
-                if (!select) return;
-                const blockId = select.value;
-                if (!blockId) return;
-                if (!AddonBuilderBlocks.some(block => block.id === blockId)) return;
-                this.builderState.blocks.push(blockId);
-                this.renderBuilderStack();
-            });
-        }
-
-        const resetBuilderButton = Utils.getElement('#builder-reset');
-        if (resetBuilderButton) {
-            resetBuilderButton.addEventListener('click', () => this.resetBuilder());
-        }
-
-        const saveAddonButton = Utils.getElement('#builder-save-addon');
-        if (saveAddonButton) {
-            saveAddonButton.addEventListener('click', () => this.saveCustomAddon());
-        }
+        DockManager.renderSettings();
     },
     
     bindSetting: function(elementId, settingKey) {
@@ -409,7 +1047,6 @@ const SettingsModule = {
         this.ensureSubscriptionVisibility();
         this.renderSubscription();
         this.renderAddons();
-        this.renderAddonBuilder();
         this.renderIndexedDirectories();
         this.renderAutomations();
     },
@@ -592,335 +1229,14 @@ const SettingsModule = {
     },
 
     renderAddons: function() {
-        const isActive = this.hasActiveSubscription();
-        const activeContainer = Utils.getElement('#active-addons-list');
-        const galleryContainer = Utils.getElement('#addon-gallery');
-
-        if (!isActive) {
+        if (!this.hasActiveSubscription()) {
+            const activeContainer = Utils.getElement('#dock-active-list');
+            const libraryContainer = Utils.getElement('#dock-library-list');
             if (activeContainer) activeContainer.innerHTML = '';
-            if (galleryContainer) galleryContainer.innerHTML = '';
+            if (libraryContainer) libraryContainer.innerHTML = '';
             return;
         }
-
-        const activeIds = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        const activeSet = new Set(activeIds);
-
-        if (activeContainer) {
-            activeContainer.innerHTML = '';
-            if (activeIds.length === 0) {
-                const empty = Utils.createElement('div', { className: 'addons-empty', text: LocalizationRenderer.t('addons_empty_state') });
-                activeContainer.appendChild(empty);
-            } else {
-                activeIds.forEach(id => {
-                    const addon = this.findAddonDefinition(id);
-                    if (!addon) return;
-                    const card = Utils.createElement('div', { className: 'addon-card active-addon' });
-                    const iconWrap = Utils.createElement('div', { className: 'addon-card-icon' });
-                    iconWrap.innerHTML = `<i data-feather="${addon.icon || 'box'}"></i>`;
-                    card.appendChild(iconWrap);
-
-                    const info = Utils.createElement('div', { className: 'addon-card-info' });
-                    const titleRow = Utils.createElement('div', { className: 'addon-card-title-row' });
-                    const title = Utils.createElement('h4', { className: 'addon-card-title', text: this.getAddonDisplayName(addon) });
-                    titleRow.appendChild(title);
-                    const typeBadge = Utils.createElement('span', { className: 'addon-badge', text: addon.type === 'custom' ? LocalizationRenderer.t('addon_tag_custom') : LocalizationRenderer.t('addon_tag_library') });
-                    titleRow.appendChild(typeBadge);
-                    info.appendChild(titleRow);
-
-                    const description = Utils.createElement('p', { className: 'addon-card-description', text: this.getAddonDisplayDescription(addon) });
-                    info.appendChild(description);
-
-                    const blockIds = Array.isArray(addon.blocks) ? addon.blocks.map(block => (typeof block === 'string' ? block : block.id)) : [];
-                    if (blockIds.length > 0) {
-                        const chips = Utils.createElement('div', { className: 'addon-block-chips' });
-                        blockIds.forEach(blockId => {
-                            const blockDef = AddonBuilderBlocks.find(block => block.id === blockId);
-                            const chip = Utils.createElement('span', { className: 'addon-chip', text: blockDef ? LocalizationRenderer.t(blockDef.nameKey) : blockId });
-                            chips.appendChild(chip);
-                        });
-                        info.appendChild(chips);
-                    }
-
-                    const meta = Utils.createElement('div', { className: 'addon-card-meta' });
-                    const baseLabel = this.getAddonBaseLabel(addon);
-                    if (baseLabel) {
-                        meta.appendChild(Utils.createElement('span', { className: 'addon-meta-pill', text: baseLabel }));
-                    }
-                    const blockCount = Array.isArray(blockIds) ? blockIds.length : 0;
-                    meta.appendChild(Utils.createElement('span', { className: 'addon-meta-pill subtle', text: LocalizationRenderer.t('addon_block_count', blockCount) }));
-                    info.appendChild(meta);
-
-                    card.appendChild(info);
-
-                    const actions = Utils.createElement('div', { className: 'addon-card-actions' });
-                    const removeBtn = Utils.createElement('button', { className: 'addon-pill-button danger', text: LocalizationRenderer.t('addons_remove_button') });
-                    removeBtn.setAttribute('data-action', 'remove-addon');
-                    removeBtn.setAttribute('data-addon-id', id);
-                    actions.appendChild(removeBtn);
-                    card.appendChild(actions);
-
-                    activeContainer.appendChild(card);
-                });
-            }
-        }
-
-        if (galleryContainer) {
-            galleryContainer.innerHTML = '';
-            const galleryItems = [
-                ...AddonLibrary,
-                ...(Array.isArray(AppState.settings.customAddons) ? AppState.settings.customAddons.map(addon => ({ ...addon, type: 'custom' })) : [])
-            ];
-
-            galleryItems.forEach(addon => {
-                const card = Utils.createElement('div', { className: 'addon-card gallery-addon' });
-                if (addon.type === 'custom') card.classList.add('is-custom');
-                const iconWrap = Utils.createElement('div', { className: 'addon-card-icon' });
-                iconWrap.innerHTML = `<i data-feather="${addon.icon || 'box'}"></i>`;
-                card.appendChild(iconWrap);
-
-                const info = Utils.createElement('div', { className: 'addon-card-info' });
-                const titleRow = Utils.createElement('div', { className: 'addon-card-title-row' });
-                const title = Utils.createElement('h4', { className: 'addon-card-title', text: this.getAddonDisplayName(addon) });
-                titleRow.appendChild(title);
-                const typeBadge = Utils.createElement('span', { className: 'addon-badge', text: addon.type === 'custom' ? LocalizationRenderer.t('addon_tag_custom') : LocalizationRenderer.t('addon_tag_library') });
-                titleRow.appendChild(typeBadge);
-                info.appendChild(titleRow);
-
-                const description = Utils.createElement('p', { className: 'addon-card-description', text: this.getAddonDisplayDescription(addon) });
-                info.appendChild(description);
-
-                const blockIds = Array.isArray(addon.blocks) ? addon.blocks.map(block => (typeof block === 'string' ? block : block.id)) : [];
-                if (blockIds.length > 0) {
-                    const chips = Utils.createElement('div', { className: 'addon-block-chips' });
-                    blockIds.forEach(blockId => {
-                        const blockDef = AddonBuilderBlocks.find(block => block.id === blockId);
-                        const chip = Utils.createElement('span', { className: 'addon-chip', text: blockDef ? LocalizationRenderer.t(blockDef.nameKey) : blockId });
-                        chips.appendChild(chip);
-                    });
-                    info.appendChild(chips);
-                }
-
-                card.appendChild(info);
-
-                const actions = Utils.createElement('div', { className: 'addon-card-actions stacked' });
-                const isAlreadyActive = activeSet.has(addon.id);
-                const addButton = Utils.createElement('button', { className: 'addon-pill-button primary', text: LocalizationRenderer.t(isAlreadyActive ? 'addons_gallery_added' : 'addons_gallery_add') });
-                addButton.setAttribute('data-addon-id', addon.id);
-                addButton.setAttribute('data-action', 'add-addon');
-                addButton.disabled = isAlreadyActive;
-                if (isAlreadyActive) addButton.classList.add('disabled');
-                actions.appendChild(addButton);
-
-                if (addon.type === 'custom') {
-                    const deleteButton = Utils.createElement('button', { className: 'addon-pill-button subtle-danger', text: LocalizationRenderer.t('addon_delete_custom') });
-                    deleteButton.setAttribute('data-addon-id', addon.id);
-                    deleteButton.setAttribute('data-action', 'delete-custom-addon');
-                    actions.appendChild(deleteButton);
-                }
-
-                card.appendChild(actions);
-                galleryContainer.appendChild(card);
-            });
-        }
-
-        if (window.feather) window.feather.replace();
-    },
-
-    renderAddonBuilder: function() {
-        this.highlightBuilderBase();
-        this.renderBuilderStack();
-        this.refreshBuilderPlaceholders();
-    },
-
-    highlightBuilderBase: function() {
-        const buttons = Array.from(Utils.getAllElements('.builder-base-option'));
-        if (!buttons.length) return;
-        let found = false;
-        buttons.forEach(button => {
-            const base = button.getAttribute('data-base');
-            if (base === this.builderState.base) {
-                button.classList.add('active');
-                found = true;
-            } else {
-                button.classList.remove('active');
-            }
-        });
-        if (!found) {
-            const fallback = buttons[0];
-            fallback.classList.add('active');
-            this.builderState.base = fallback.getAttribute('data-base');
-        }
-    },
-
-    renderBuilderStack: function() {
-        const stack = Utils.getElement('#builder-stack');
-        if (!stack) return;
-        stack.innerHTML = '';
-
-        const base = AddonBuilderBases.find(item => item.id === this.builderState.base) || AddonBuilderBases[0];
-        if (base) {
-            const baseCard = Utils.createElement('div', { className: 'builder-block builder-block-base' });
-            const iconWrap = Utils.createElement('div', { className: 'builder-block-icon' });
-            iconWrap.innerHTML = `<i data-feather="${base.icon}"></i>`;
-            baseCard.appendChild(iconWrap);
-            const info = Utils.createElement('div', { className: 'builder-block-info' });
-            info.appendChild(Utils.createElement('div', { className: 'builder-block-title', text: LocalizationRenderer.t(base.nameKey) }));
-            info.appendChild(Utils.createElement('div', { className: 'builder-block-description', text: LocalizationRenderer.t(base.descriptionKey) }));
-            baseCard.appendChild(info);
-            stack.appendChild(baseCard);
-        }
-
-        if (!this.builderState.blocks.length) {
-            stack.appendChild(Utils.createElement('div', { className: 'builder-empty', text: LocalizationRenderer.t('addon_builder_empty_state') }));
-        } else {
-            this.builderState.blocks.forEach((blockId, index) => {
-                const block = AddonBuilderBlocks.find(item => item.id === blockId);
-                const blockCard = Utils.createElement('div', { className: 'builder-block' });
-                const iconWrap = Utils.createElement('div', { className: 'builder-block-icon' });
-                iconWrap.innerHTML = `<i data-feather="${block?.icon || 'tool'}"></i>`;
-                blockCard.appendChild(iconWrap);
-                const info = Utils.createElement('div', { className: 'builder-block-info' });
-                info.appendChild(Utils.createElement('div', { className: 'builder-block-title', text: block ? LocalizationRenderer.t(block.nameKey) : blockId }));
-                if (block?.descriptionKey) {
-                    info.appendChild(Utils.createElement('div', { className: 'builder-block-description', text: LocalizationRenderer.t(block.descriptionKey) }));
-                }
-                blockCard.appendChild(info);
-                const removeButton = Utils.createElement('button', { className: 'addon-pill-button subtle', text: LocalizationRenderer.t('addon_builder_remove_block') });
-                removeButton.setAttribute('data-action', 'remove-block');
-                removeButton.setAttribute('data-block-index', index);
-                blockCard.appendChild(removeButton);
-                stack.appendChild(blockCard);
-            });
-        }
-
-        if (window.feather) window.feather.replace();
-    },
-
-    refreshBuilderPlaceholders: function() {
-        const nameInput = Utils.getElement('#builder-addon-name');
-        if (nameInput) nameInput.placeholder = LocalizationRenderer.t('addon_builder_name_placeholder');
-        const descriptionInput = Utils.getElement('#builder-addon-description');
-        if (descriptionInput) descriptionInput.placeholder = LocalizationRenderer.t('addon_builder_description_placeholder');
-        const blockSelect = Utils.getElement('#builder-block-select');
-        if (blockSelect) {
-            Array.from(blockSelect.options).forEach(option => {
-                const key = option.getAttribute('data-i18n');
-                if (key) option.textContent = LocalizationRenderer.t(key);
-            });
-        }
-    },
-
-    findAddonDefinition: function(id) {
-        if (!id) return null;
-        const libraryAddon = AddonLibrary.find(addon => addon.id === id);
-        if (libraryAddon) return { ...libraryAddon };
-        const customAddon = (AppState.settings.customAddons || []).find(addon => addon.id === id);
-        if (customAddon) return { ...customAddon, type: 'custom' };
-        return null;
-    },
-
-    getAddonDisplayName: function(addon) {
-        if (!addon) return LocalizationRenderer.t('addon_unknown_name');
-        if (addon.nameKey) return LocalizationRenderer.t(addon.nameKey);
-        return addon.name || LocalizationRenderer.t('addon_unknown_name');
-    },
-
-    getAddonDisplayDescription: function(addon) {
-        if (!addon) return LocalizationRenderer.t('addon_default_description');
-        if (addon.descriptionKey) return LocalizationRenderer.t(addon.descriptionKey);
-        return addon.description || LocalizationRenderer.t('addon_default_description');
-    },
-
-    getAddonBaseLabel: function(addon) {
-        if (!addon) return '';
-        const base = AddonBuilderBases.find(option => option.id === addon.base);
-        return base ? LocalizationRenderer.t(base.nameKey) : '';
-    },
-
-    addAddonFromGallery: function(id) {
-        if (!id) return;
-        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        if (activeAddons.includes(id)) return;
-        activeAddons.push(id);
-        AppState.settings.activeAddons = activeAddons;
-        ipcRenderer.send('update-setting', 'activeAddons', activeAddons);
-        this.renderAddons();
-    },
-
-    removeActiveAddon: function(id) {
-        if (!id) return;
-        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        const updated = activeAddons.filter(addonId => addonId !== id);
-        if (updated.length === activeAddons.length) return;
-        AppState.settings.activeAddons = updated;
-        ipcRenderer.send('update-setting', 'activeAddons', updated);
-        this.renderAddons();
-    },
-
-    deleteCustomAddon: function(id) {
-        if (!id) return;
-        const customAddons = Array.isArray(AppState.settings.customAddons) ? [...AppState.settings.customAddons] : [];
-        if (!customAddons.some(addon => addon.id === id)) return;
-        if (!window.confirm(LocalizationRenderer.t('addon_delete_custom_confirm'))) return;
-        const updatedCustom = customAddons.filter(addon => addon.id !== id);
-        const updatedActive = (AppState.settings.activeAddons || []).filter(addonId => addonId !== id);
-        AppState.settings.customAddons = updatedCustom;
-        AppState.settings.activeAddons = updatedActive;
-        ipcRenderer.send('update-setting', 'customAddons', updatedCustom);
-        ipcRenderer.send('update-setting', 'activeAddons', updatedActive);
-        this.renderAddons();
-    },
-
-    removeBuilderBlock: function(index) {
-        if (!Number.isInteger(index)) return;
-        if (index < 0 || index >= this.builderState.blocks.length) return;
-        this.builderState.blocks.splice(index, 1);
-        this.renderBuilderStack();
-    },
-
-    resetBuilder: function() {
-        const defaultBase = AddonBuilderBases[0]?.id || 'clipboard';
-        this.builderState = { base: defaultBase, blocks: [] };
-        const nameInput = Utils.getElement('#builder-addon-name');
-        if (nameInput) nameInput.value = '';
-        const descriptionInput = Utils.getElement('#builder-addon-description');
-        if (descriptionInput) descriptionInput.value = '';
-        const blockSelect = Utils.getElement('#builder-block-select');
-        if (blockSelect) blockSelect.value = '';
-        this.renderAddonBuilder();
-    },
-
-    saveCustomAddon: function() {
-        const nameInput = Utils.getElement('#builder-addon-name');
-        const descriptionInput = Utils.getElement('#builder-addon-description');
-        const name = nameInput?.value.trim() || '';
-        if (!name) {
-            alert(LocalizationRenderer.t('addon_builder_error_name_required'));
-            return;
-        }
-        const description = descriptionInput?.value.trim() || '';
-        const baseId = this.builderState.base || (AddonBuilderBases[0]?.id || 'clipboard');
-        const base = AddonBuilderBases.find(item => item.id === baseId);
-        const blocks = this.builderState.blocks.map(blockId => ({ id: blockId }));
-        const icon = base?.icon || 'layers';
-        const customAddons = Array.isArray(AppState.settings.customAddons) ? [...AppState.settings.customAddons] : [];
-        const newAddon = {
-            id: `custom-${Date.now()}`,
-            name,
-            description,
-            base: baseId,
-            icon,
-            blocks
-        };
-        customAddons.push(newAddon);
-        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        activeAddons.push(newAddon.id);
-        AppState.settings.customAddons = customAddons;
-        AppState.settings.activeAddons = Array.from(new Set(activeAddons));
-        ipcRenderer.send('update-setting', 'customAddons', customAddons);
-        ipcRenderer.send('update-setting', 'activeAddons', Array.from(new Set(activeAddons)));
-        this.resetBuilder();
-        this.renderAddons();
+        DockManager.renderSettings();
     },
 
     setupShortcutRecorder: function() {
@@ -2021,12 +2337,6 @@ const AuxPanelManager = {
     
     init: function() {
         this.panelContainer = Utils.getElement('#aux-panel');
-        Utils.getAllElements('#action-buttons [data-window-type]').forEach(button => {
-            button.addEventListener('click', () => {
-                const type = button.getAttribute('data-window-type');
-                this.togglePanel(type);
-            });
-        });
         ipcRenderer.on('update-data', this.updateDataListener);
     },
 
@@ -2883,6 +3193,7 @@ document.addEventListener('DOMContentLoaded', () => {
     PinnedContextMenu.init();
     PinnedAppsModule.init();
     AuxPanelManager.init();
+    DockManager.init();
     CustomSelect.init();
 
     ipcRenderer.on('file-icon-response', (event, { path, dataUrl }) => {
@@ -2919,9 +3230,11 @@ document.addEventListener('DOMContentLoaded', () => {
         AppState.translations = data.translations;
         AppState.appVersion = data.version;
         AppState.systemTheme = data.systemTheme; // Обновляем системную тему
+        DockManager.syncStateFromSettings();
         ViewManager.applyAppearanceSettings();
         LocalizationRenderer.applyTranslations();
         SettingsModule.populateSettingsUI();
+        DockManager.renderDockButtons();
         PinnedAppsModule.render();
         FolderContextMenu.highlightSelection();
         if (AuxPanelManager.currentPanel === 'apps-library') {
