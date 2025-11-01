@@ -241,7 +241,7 @@
                             <hr>
                             <div class="setting-item">
                                 <label data-i18n="settings_width">Window Width (px)</label>
-                                <input type="range" id="setting-width" min="600" max="1600" step="10">
+                                <input type="range" id="setting-width" min="420" max="1600" step="10">
                             </div>
                             <div class="setting-item">
                                 <label data-i18n="settings_height">Bar Height (px)</label>
@@ -445,10 +445,14 @@
                         <div class="inspector-content">
                             <label for="builder-action-label">Label</label>
                             <input type="text" id="builder-action-label" placeholder="My quick action">
-                            <label for="builder-action-icon">Icon</label>
+                            <label for="builder-action-icon" data-i18n="quick_actions_icon_label">Icon</label>
                             <div class="inspector-icon-picker">
-                                <input type="text" id="builder-action-icon" placeholder="feather icon name">
-                                <div id="builder-icon-preview" class="icon-preview"></div>
+                                <input type="text" id="builder-action-icon" placeholder="feather icon name" data-i18n-placeholder="quick_actions_icon_placeholder">
+                                <div id="builder-icon-preview" class="icon-preview" aria-hidden="true"></div>
+                                <button id="builder-icon-library" type="button" class="icon-picker-trigger" data-i18n="quick_actions_icon_picker">Choose icon</button>
+                                <div id="builder-icon-picker" class="icon-picker-dropdown" role="listbox" aria-hidden="true">
+                                    <div class="icon-picker-grid" id="builder-icon-picker-list"></div>
+                                </div>
                             </div>
                             <label for="builder-action-color">Accent colour</label>
                             <input type="color" id="builder-action-color" value="#5865f2">

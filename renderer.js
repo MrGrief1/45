@@ -114,6 +114,7 @@ const QuickActionCatalog = [
         icon: 'grid',
         nameKey: 'title_apps_library',
         description: 'Open the application library panel.',
+        descriptionKey: 'qa_desc_apps_library',
         type: 'panel',
         payload: { panel: 'apps-library' },
         accent: '#38bdf8',
@@ -124,6 +125,7 @@ const QuickActionCatalog = [
         icon: 'folder',
         nameKey: 'title_files',
         description: 'Browse indexed files and folders.',
+        descriptionKey: 'qa_desc_files',
         type: 'panel',
         payload: { panel: 'files' },
         accent: '#22d3ee',
@@ -134,6 +136,7 @@ const QuickActionCatalog = [
         icon: 'command',
         nameKey: 'title_commands',
         description: 'Trigger saved commands and automations.',
+        descriptionKey: 'qa_desc_commands',
         type: 'panel',
         payload: { panel: 'commands' },
         accent: '#f97316',
@@ -144,6 +147,7 @@ const QuickActionCatalog = [
         icon: 'copy',
         nameKey: 'title_clipboard',
         description: 'Review your clipboard buffer.',
+        descriptionKey: 'qa_desc_clipboard',
         type: 'panel',
         payload: { panel: 'clipboard' },
         accent: '#a855f7',
@@ -154,6 +158,7 @@ const QuickActionCatalog = [
         icon: 'settings',
         nameKey: 'context_settings',
         description: 'Jump straight to FlashSearch settings.',
+        descriptionKey: 'qa_desc_settings',
         type: 'view',
         payload: { view: 'settings' },
         accent: '#facc15',
@@ -163,7 +168,9 @@ const QuickActionCatalog = [
         id: 'pinned-apps',
         icon: 'bookmark',
         name: 'Pinned applications',
+        nameKey: 'qa_pinned_apps_title',
         description: 'Open the pinned applications panel instantly.',
+        descriptionKey: 'qa_desc_pinned_apps',
         type: 'panel',
         payload: { panel: 'apps-library', anchor: 'pinned' },
         accent: '#34d399',
@@ -173,12 +180,45 @@ const QuickActionCatalog = [
 
 const QuickActionDefaultOrder = ['apps-library', 'files', 'commands', 'clipboard', 'settings'];
 
+const QuickActionIconLibrary = [
+    'zap',
+    'grid',
+    'folder',
+    'command',
+    'copy',
+    'settings',
+    'bookmark',
+    'bell',
+    'terminal',
+    'globe',
+    'layout',
+    'clipboard',
+    'clock',
+    'edit-3',
+    'download-cloud',
+    'database',
+    'type',
+    'sliders',
+    'link',
+    'refresh-cw',
+    'sun',
+    'moon',
+    'mail',
+    'share-2',
+    'plus-circle',
+    'check-circle',
+    'shield',
+    'coffee'
+];
+
 const QuickActionModuleDefinitions = [
     {
         id: 'manual-trigger',
         category: 'trigger',
         name: 'Manual trigger',
+        nameKey: 'qa_module_manual_trigger',
         description: 'Starts when you press the quick action button.',
+        descriptionKey: 'qa_module_manual_trigger_desc',
         icon: 'play-circle',
         accent: '#38bdf8',
         inputs: [],
@@ -192,7 +232,9 @@ const QuickActionModuleDefinitions = [
         id: 'open-panel',
         category: 'action',
         name: 'Open panel',
+        nameKey: 'qa_module_open_panel',
         description: 'Show one of the auxiliary panels such as clipboard or files.',
+        descriptionKey: 'qa_module_open_panel_desc',
         icon: 'layout',
         accent: '#38bdf8',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -202,12 +244,13 @@ const QuickActionModuleDefinitions = [
             {
                 key: 'panel',
                 label: 'Panel',
+                labelKey: 'qa_field_panel',
                 type: 'select',
                 options: [
-                    { value: 'clipboard', label: 'Clipboard buffer' },
-                    { value: 'files', label: 'Files' },
-                    { value: 'commands', label: 'Commands' },
-                    { value: 'apps-library', label: 'Apps library' }
+                    { value: 'clipboard', label: 'Clipboard buffer', labelKey: 'qa_option_panel_clipboard' },
+                    { value: 'files', label: 'Files', labelKey: 'qa_option_panel_files' },
+                    { value: 'commands', label: 'Commands', labelKey: 'qa_option_panel_commands' },
+                    { value: 'apps-library', label: 'Apps library', labelKey: 'qa_option_panel_apps' }
                 ]
             }
         ],
@@ -223,14 +266,23 @@ const QuickActionModuleDefinitions = [
         id: 'open-url',
         category: 'action',
         name: 'Open website',
+        nameKey: 'qa_module_open_url',
         description: 'Launch a URL in your default browser.',
+        descriptionKey: 'qa_module_open_url_desc',
         icon: 'globe',
         accent: '#22d3ee',
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { url: 'https://flashsearch.app' },
         form: [
-            { key: 'url', label: 'Website URL', type: 'text', placeholder: 'https://example.com' }
+            {
+                key: 'url',
+                label: 'Website URL',
+                labelKey: 'qa_field_url',
+                type: 'text',
+                placeholder: 'https://example.com',
+                placeholderKey: 'qa_field_url_placeholder'
+            }
         ],
         run: async (context, config) => {
             const clone = QuickActionContext.clone(context);
@@ -248,14 +300,24 @@ const QuickActionModuleDefinitions = [
         id: 'copy-text',
         category: 'action',
         name: 'Copy text',
+        nameKey: 'qa_module_copy_text',
         description: 'Copy prepared text into the clipboard.',
+        descriptionKey: 'qa_module_copy_text_desc',
         icon: 'clipboard',
         accent: '#a855f7',
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { text: 'Hello from FlashSearch!' },
         form: [
-            { key: 'text', label: 'Text', type: 'textarea', rows: 4, placeholder: 'Enter text to copy' }
+            {
+                key: 'text',
+                label: 'Text',
+                labelKey: 'qa_field_text',
+                type: 'textarea',
+                rows: 4,
+                placeholder: 'Enter text to copy',
+                placeholderKey: 'qa_field_text_placeholder'
+            }
         ],
         run: async (context, config) => {
             const clone = QuickActionContext.clone(context);
@@ -270,14 +332,24 @@ const QuickActionModuleDefinitions = [
         id: 'run-command',
         category: 'action',
         name: 'Run shell command',
+        nameKey: 'qa_module_run_command',
         description: 'Execute a terminal command on your system.',
+        descriptionKey: 'qa_module_run_command_desc',
         icon: 'terminal',
         accent: '#f97316',
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { command: 'echo FlashSearch quick action' },
         form: [
-            { key: 'command', label: 'Command', type: 'textarea', rows: 3, placeholder: 'echo FlashSearch quick action' }
+            {
+                key: 'command',
+                label: 'Command',
+                labelKey: 'qa_field_command',
+                type: 'textarea',
+                rows: 3,
+                placeholder: 'echo FlashSearch quick action',
+                placeholderKey: 'qa_field_command_placeholder'
+            }
         ],
         run: async (context, config) => {
             const clone = QuickActionContext.clone(context);
@@ -293,15 +365,32 @@ const QuickActionModuleDefinitions = [
         id: 'show-notification',
         category: 'action',
         name: 'Show notification',
+        nameKey: 'qa_module_show_notification',
         description: 'Display a desktop notification with custom text.',
+        descriptionKey: 'qa_module_show_notification_desc',
         icon: 'bell',
         accent: '#facc15',
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { title: 'FlashSearch', body: 'Workflow finished!' },
         form: [
-            { key: 'title', label: 'Title', type: 'text', placeholder: 'FlashSearch' },
-            { key: 'body', label: 'Message', type: 'textarea', rows: 3, placeholder: 'Workflow finished!' }
+            {
+                key: 'title',
+                label: 'Title',
+                labelKey: 'qa_field_title',
+                type: 'text',
+                placeholder: 'FlashSearch',
+                placeholderKey: 'qa_field_title_placeholder'
+            },
+            {
+                key: 'body',
+                label: 'Message',
+                labelKey: 'qa_field_message',
+                type: 'textarea',
+                rows: 3,
+                placeholder: 'Workflow finished!',
+                placeholderKey: 'qa_field_message_placeholder'
+            }
         ],
         run: async (context, config) => {
             const clone = QuickActionContext.clone(context);
@@ -318,14 +407,22 @@ const QuickActionModuleDefinitions = [
         id: 'delay',
         category: 'utility',
         name: 'Delay',
+        nameKey: 'qa_module_delay',
         description: 'Pause the workflow for a specified time.',
+        descriptionKey: 'qa_module_delay_desc',
         icon: 'clock',
         accent: '#fbbf24',
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { milliseconds: 1000 },
         form: [
-            { key: 'milliseconds', label: 'Delay (ms)', type: 'number', min: 0 }
+            {
+                key: 'milliseconds',
+                label: 'Delay (ms)',
+                labelKey: 'qa_field_delay',
+                type: 'number',
+                min: 0
+            }
         ],
         run: async (context, config) => {
             const clone = QuickActionContext.clone(context);
@@ -340,14 +437,24 @@ const QuickActionModuleDefinitions = [
         id: 'set-payload',
         category: 'utility',
         name: 'Set payload',
+        nameKey: 'qa_module_set_payload',
         description: 'Store a value that can be reused by next blocks.',
+        descriptionKey: 'qa_module_set_payload_desc',
         icon: 'edit-3',
         accent: '#60a5fa',
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { payload: 'Sample text' },
         form: [
-            { key: 'payload', label: 'Payload value', type: 'textarea', rows: 3, placeholder: 'Value to store for later blocks' }
+            {
+                key: 'payload',
+                label: 'Payload value',
+                labelKey: 'qa_field_payload',
+                type: 'textarea',
+                rows: 3,
+                placeholder: 'Value to store for later blocks',
+                placeholderKey: 'qa_field_payload_placeholder'
+            }
         ],
         run: async (context, config) => {
             const clone = QuickActionContext.clone(context);
@@ -359,7 +466,9 @@ const QuickActionModuleDefinitions = [
         id: 'use-payload-as-text',
         category: 'action',
         name: 'Use payload as text',
+        nameKey: 'qa_module_use_payload',
         description: 'Copy the current payload value to the clipboard.',
+        descriptionKey: 'qa_module_use_payload_desc',
         icon: 'clipboard',
         accent: '#22c55e',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -377,21 +486,31 @@ const QuickActionModuleDefinitions = [
         id: 'fetch-json',
         category: 'utility',
         name: 'Fetch JSON',
+        nameKey: 'qa_module_fetch_json',
         description: 'Request JSON data and store it as the workflow payload.',
+        descriptionKey: 'qa_module_fetch_json_desc',
         icon: 'download-cloud',
         accent: '#38bdf8',
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { url: 'https://api.example.com/data', format: 'pretty' },
         form: [
-            { key: 'url', label: 'Request URL', type: 'text', placeholder: 'https://api.example.com/data' },
+            {
+                key: 'url',
+                label: 'Request URL',
+                labelKey: 'qa_field_request_url',
+                type: 'text',
+                placeholder: 'https://api.example.com/data',
+                placeholderKey: 'qa_field_request_url_placeholder'
+            },
             {
                 key: 'format',
                 label: 'Format',
+                labelKey: 'qa_field_format',
                 type: 'select',
                 options: [
-                    { value: 'pretty', label: 'Pretty JSON' },
-                    { value: 'raw', label: 'Compact JSON' }
+                    { value: 'pretty', label: 'Pretty JSON', labelKey: 'qa_option_format_pretty' },
+                    { value: 'raw', label: 'Compact JSON', labelKey: 'qa_option_format_raw' }
                 ]
             }
         ],
@@ -421,7 +540,9 @@ const QuickActionModuleDefinitions = [
         id: 'transform-payload',
         category: 'utility',
         name: 'Transform text',
+        nameKey: 'qa_module_transform_payload',
         description: 'Apply quick text transformations to the payload.',
+        descriptionKey: 'qa_module_transform_payload_desc',
         icon: 'type',
         accent: '#34d399',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -431,12 +552,13 @@ const QuickActionModuleDefinitions = [
             {
                 key: 'mode',
                 label: 'Transformation',
+                labelKey: 'qa_field_transformation',
                 type: 'select',
                 options: [
-                    { value: 'uppercase', label: 'Uppercase' },
-                    { value: 'lowercase', label: 'Lowercase' },
-                    { value: 'titlecase', label: 'Title case' },
-                    { value: 'trim', label: 'Trim whitespace' }
+                    { value: 'uppercase', label: 'Uppercase', labelKey: 'qa_option_transform_uppercase' },
+                    { value: 'lowercase', label: 'Lowercase', labelKey: 'qa_option_transform_lowercase' },
+                    { value: 'titlecase', label: 'Title case', labelKey: 'qa_option_transform_titlecase' },
+                    { value: 'trim', label: 'Trim whitespace', labelKey: 'qa_option_transform_trim' }
                 ]
             }
         ],
@@ -473,15 +595,32 @@ const QuickActionModuleDefinitions = [
         id: 'store-variable',
         category: 'utility',
         name: 'Store variable',
+        nameKey: 'qa_module_store_variable',
         description: 'Save a named value in the workflow context.',
+        descriptionKey: 'qa_module_store_variable_desc',
         icon: 'database',
         accent: '#f472b6',
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { key: 'name', value: 'FlashSearch' },
         form: [
-            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'project' },
-            { key: 'value', label: 'Value', type: 'textarea', rows: 2, placeholder: 'Value to store' }
+            {
+                key: 'key',
+                label: 'Variable name',
+                labelKey: 'qa_field_variable_name',
+                type: 'text',
+                placeholder: 'project',
+                placeholderKey: 'qa_field_variable_name_placeholder'
+            },
+            {
+                key: 'value',
+                label: 'Value',
+                labelKey: 'qa_field_variable_value',
+                type: 'textarea',
+                rows: 2,
+                placeholder: 'Value to store',
+                placeholderKey: 'qa_field_variable_value_placeholder'
+            }
         ],
         run: async (context, config) => {
             const clone = QuickActionContext.clone(context);
@@ -620,18 +759,26 @@ const QuickActionStore = {
     getBuilderSize() {
         this.ensureStructure();
         const size = AppState.settings.quickActions.preferences?.builderSize || {};
-        const width = Number(size.width) || 1280;
-        const height = Number(size.height) || 820;
+        const currentWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
+        const currentHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
+        const viewportWidth = Math.max(currentWidth - 80, 1040);
+        const viewportHeight = Math.max(currentHeight - 120, 760);
+        const rawWidth = Number(size.width) || 1280;
+        const rawHeight = Number(size.height) || 820;
         return {
-            width: Math.max(960, Math.min(Math.round(width), 1600)),
-            height: Math.max(640, Math.min(Math.round(height), 1000))
+            width: Math.max(960, Math.min(Math.round(rawWidth), viewportWidth)),
+            height: Math.max(640, Math.min(Math.round(rawHeight), viewportHeight))
         };
     },
 
     setBuilderSize(width, height) {
         this.ensureStructure();
-        const safeWidth = Math.max(960, Math.min(Math.round(width), 1600));
-        const safeHeight = Math.max(640, Math.min(Math.round(height), 1000));
+        const currentWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
+        const currentHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
+        const viewportWidth = Math.max(currentWidth - 80, 1040);
+        const viewportHeight = Math.max(currentHeight - 120, 760);
+        const safeWidth = Math.max(960, Math.min(Math.round(width), viewportWidth));
+        const safeHeight = Math.max(640, Math.min(Math.round(height), viewportHeight));
         AppState.settings.quickActions.preferences.builderSize = { width: safeWidth, height: safeHeight };
         this.persist();
     },
@@ -838,6 +985,9 @@ const QuickActionLab = {
     pendingBuilderSize: null,
     resizing: null,
     dragUpdateRaf: null,
+    iconPickerVisible: false,
+    boundOutsideIconPicker: null,
+    boundIconPickerKeydown: null,
 
     init() {
         if (this.initialized) return;
@@ -875,8 +1025,13 @@ const QuickActionLab = {
             actionLabelInput: Utils.getElement('#builder-action-label'),
             actionIconInput: Utils.getElement('#builder-action-icon'),
             actionColorInput: Utils.getElement('#builder-action-color'),
-            iconPreview: Utils.getElement('#builder-icon-preview')
+            iconPreview: Utils.getElement('#builder-icon-preview'),
+            iconPickerTrigger: Utils.getElement('#builder-icon-library'),
+            iconPicker: Utils.getElement('#builder-icon-picker'),
+            iconPickerList: Utils.getElement('#builder-icon-picker-list')
         };
+
+        this.iconPickerVisible = false;
 
         this.elements.dialog = document.querySelector('#quick-action-builder-modal .builder-dialog');
         this.elements.resizeHandle = document.querySelector('#quick-action-builder-modal .builder-resize-handle');
@@ -918,7 +1073,29 @@ const QuickActionLab = {
         this.elements.actionColorInput?.addEventListener('input', (event) => {
             if (!this.builderState) return;
             this.builderState.metadata.accent = event.target.value || '#5865f2';
+            this.updateIconPreview();
         });
+
+        this.elements.iconPickerTrigger?.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            this.toggleIconPicker();
+        });
+
+        this.boundOutsideIconPicker = (event) => {
+            if (!this.iconPickerVisible) return;
+            if (this.elements.iconPicker?.contains(event.target)) return;
+            if (this.elements.iconPickerTrigger?.contains(event.target)) return;
+            this.toggleIconPicker(false);
+        };
+        document.addEventListener('click', this.boundOutsideIconPicker);
+
+        this.boundIconPickerKeydown = (event) => {
+            if (event.key === 'Escape' && this.iconPickerVisible) {
+                this.toggleIconPicker(false);
+            }
+        };
+        document.addEventListener('keydown', this.boundIconPickerKeydown);
 
         this.elements.closeModal?.addEventListener('click', () => this.closeBuilder());
         this.elements.exportAction?.addEventListener('click', () => this.exportCurrentAction());
@@ -1144,6 +1321,7 @@ const QuickActionLab = {
             this.applyTemplate(options.template);
         }
 
+        this.toggleIconPicker(false);
         this.ensureManualNode();
         this.renderBuilder();
         this.updateIconPreview();
@@ -1188,8 +1366,10 @@ const QuickActionLab = {
         const deltaY = event.clientY - this.resizing.startY;
         const minWidth = 960;
         const minHeight = 640;
-        const maxWidth = Math.min(window.innerWidth - 80, 1600);
-        const maxHeight = Math.min(window.innerHeight - 80, 1000);
+        const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
+        const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
+        const maxWidth = Math.max(minWidth, viewportWidth - 80);
+        const maxHeight = Math.max(minHeight, viewportHeight - 120);
         const width = Math.max(minWidth, Math.min(this.resizing.startWidth + deltaX, maxWidth));
         const height = Math.max(minHeight, Math.min(this.resizing.startHeight + deltaY, maxHeight));
         this.elements.dialog.style.setProperty('--builder-dialog-width', `${width}px`);
@@ -1220,6 +1400,7 @@ const QuickActionLab = {
             this.elements.modal.classList.remove('active');
             this.elements.modal.setAttribute('aria-hidden', 'true');
         }
+        this.toggleIconPicker(false);
         this.builderState = null;
         this.elements.actionLabelInput.value = '';
         this.elements.actionIconInput.value = '';
@@ -1272,6 +1453,7 @@ const QuickActionLab = {
         this.elements.actionIconInput.value = this.builderState.metadata.icon;
         this.elements.actionColorInput.value = this.builderState.metadata.accent;
         this.updateIconPreview();
+        this.renderIconPicker();
         this.renderModuleList();
         this.renderCanvas();
         this.renderInspector();
@@ -1291,8 +1473,10 @@ const QuickActionLab = {
             items.forEach(module => {
                 const item = Utils.createElement('li', { className: 'builder-module-item' });
                 item.setAttribute('data-module-id', module.id);
-                const title = Utils.createElement('strong', { text: module.name });
-                const description = Utils.createElement('span', { text: module.description });
+                const titleText = module.nameKey ? LocalizationRenderer.t(module.nameKey) : module.name;
+                const descriptionText = module.descriptionKey ? LocalizationRenderer.t(module.descriptionKey) : module.description;
+                const title = Utils.createElement('strong', { text: titleText });
+                const description = Utils.createElement('span', { text: descriptionText });
                 item.appendChild(title);
                 item.appendChild(description);
                 item.addEventListener('click', () => this.addNode(module.id));
@@ -1321,7 +1505,8 @@ const QuickActionLab = {
             nodeEl.setAttribute('data-node-id', node.id);
 
             const header = Utils.createElement('div', { className: 'builder-node-header' });
-            const title = Utils.createElement('h4', { text: moduleDef.name });
+            const moduleName = moduleDef.nameKey ? LocalizationRenderer.t(moduleDef.nameKey) : moduleDef.name;
+            const title = Utils.createElement('h4', { text: moduleName });
             header.appendChild(title);
             header.addEventListener('pointerdown', (event) => this.startNodeDrag(node.id, event));
             nodeEl.appendChild(header);
@@ -1433,7 +1618,8 @@ const QuickActionLab = {
         }
 
         moduleDef.form.forEach(field => {
-            const label = Utils.createElement('label', { text: field.label || field.key });
+            const labelText = field.labelKey ? LocalizationRenderer.t(field.labelKey) : (field.label || field.key);
+            const label = Utils.createElement('label', { text: labelText });
             let input;
             if (field.type === 'textarea') {
                 input = document.createElement('textarea');
@@ -1443,7 +1629,7 @@ const QuickActionLab = {
                 (field.options || []).forEach(option => {
                     const optionEl = document.createElement('option');
                     optionEl.value = option.value;
-                    optionEl.textContent = option.label || option.value;
+                    optionEl.textContent = option.labelKey ? LocalizationRenderer.t(option.labelKey) : (option.label || option.value);
                     input.appendChild(optionEl);
                 });
             } else {
@@ -1452,7 +1638,8 @@ const QuickActionLab = {
                 if (field.min !== undefined) input.min = field.min;
             }
             input.value = node.config?.[field.key] ?? moduleDef.defaultConfig?.[field.key] ?? '';
-            if (field.placeholder) input.placeholder = field.placeholder;
+            if (field.placeholderKey) input.placeholder = LocalizationRenderer.t(field.placeholderKey);
+            else if (field.placeholder) input.placeholder = field.placeholder;
             input.addEventListener('input', () => this.updateNodeConfig(node.id, field.key, input.value));
             container.appendChild(label);
             container.appendChild(input);
@@ -1673,6 +1860,59 @@ const QuickActionLab = {
         return node?.moduleId === 'manual-trigger';
     },
 
+    renderIconPicker() {
+        if (!this.elements.iconPickerList) return;
+        const list = this.elements.iconPickerList;
+        list.innerHTML = '';
+        const currentIcon = (this.builderState?.metadata.icon || 'zap').trim();
+        QuickActionIconLibrary.forEach(iconName => {
+            const option = document.createElement('button');
+            option.type = 'button';
+            option.className = 'icon-picker-option' + (iconName === currentIcon ? ' is-selected' : '');
+            option.setAttribute('data-icon', iconName);
+            option.title = iconName;
+            if (window.feather?.icons?.[iconName]) {
+                option.innerHTML = window.feather.icons[iconName].toSvg();
+            } else {
+                option.textContent = iconName.slice(0, 2).toUpperCase();
+            }
+            option.addEventListener('click', (event) => {
+                event.preventDefault();
+                this.selectIcon(iconName);
+            });
+            list.appendChild(option);
+        });
+    },
+
+    toggleIconPicker(forceState) {
+        if (!this.elements.iconPicker) {
+            this.iconPickerVisible = false;
+            return;
+        }
+        const shouldOpen = typeof forceState === 'boolean' ? forceState : !this.iconPickerVisible;
+        this.iconPickerVisible = shouldOpen;
+        if (shouldOpen) {
+            this.renderIconPicker();
+            this.elements.iconPicker.classList.add('is-open');
+            this.elements.iconPicker.setAttribute('aria-hidden', 'false');
+        } else {
+            this.elements.iconPicker.classList.remove('is-open');
+            this.elements.iconPicker.setAttribute('aria-hidden', 'true');
+        }
+        this.elements.iconPickerTrigger?.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+    },
+
+    selectIcon(iconName) {
+        if (!this.builderState) return;
+        this.builderState.metadata.icon = iconName;
+        if (this.elements.actionIconInput) {
+            this.elements.actionIconInput.value = iconName;
+        }
+        this.updateIconPreview();
+        this.renderIconPicker();
+        this.toggleIconPicker(false);
+    },
+
     updateIconPreview() {
         if (!this.elements.iconPreview || !this.builderState) return;
         const iconName = this.builderState.metadata.icon || 'zap';
@@ -1681,6 +1921,7 @@ const QuickActionLab = {
         } else {
             this.elements.iconPreview.textContent = '⚡';
         }
+        this.elements.iconPreview.style.color = this.builderState.metadata.accent || '#5865f2';
     },
 
     saveAction() {
@@ -1881,6 +2122,10 @@ const LocalizationRenderer = {
             SettingsModule.renderSubscription();
             SettingsModule.renderAddons();
             SettingsModule.renderAddonBuilder();
+        }
+        QuickActionManager.refresh();
+        if (QuickActionLab.initialized) {
+            QuickActionLab.refresh();
         }
     }
 };
@@ -4154,7 +4399,10 @@ const ViewManager = {
             document.documentElement.style.setProperty('--dynamic-opacity-top', 0.6 * base + 0.4 * Math.pow(base, 2));
         }
         else if (settingKey === 'blurStrength') document.documentElement.style.setProperty('--dynamic-blur', `blur(${parseInt(value, 10) || 70}px)`);
-        else if (settingKey === 'width') document.documentElement.style.setProperty('--dynamic-width', `${parseInt(value, 10) || 950}px`);
+        else if (settingKey === 'width') {
+            const widthValue = Math.max(420, parseInt(value, 10) || 850);
+            document.documentElement.style.setProperty('--dynamic-width', `${widthValue}px`);
+        }
         else if (settingKey === 'height') document.documentElement.style.setProperty('--dynamic-height', `${parseInt(value, 10) || 90}px`);
         else if (settingKey === 'borderRadius') document.documentElement.style.setProperty('--dynamic-border-radius', `${parseInt(value, 10) || 24}px`);
         else if (settingKey === 'selectionColorStyle') {
