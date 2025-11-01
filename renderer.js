@@ -114,6 +114,7 @@ const QuickActionCatalog = [
         icon: 'grid',
         nameKey: 'title_apps_library',
         description: 'Open the application library panel.',
+        descriptionKey: 'quick_action_desc_apps_library',
         type: 'panel',
         payload: { panel: 'apps-library' },
         accent: '#38bdf8',
@@ -124,6 +125,7 @@ const QuickActionCatalog = [
         icon: 'folder',
         nameKey: 'title_files',
         description: 'Browse indexed files and folders.',
+        descriptionKey: 'quick_action_desc_files',
         type: 'panel',
         payload: { panel: 'files' },
         accent: '#22d3ee',
@@ -134,6 +136,7 @@ const QuickActionCatalog = [
         icon: 'command',
         nameKey: 'title_commands',
         description: 'Trigger saved commands and automations.',
+        descriptionKey: 'quick_action_desc_commands',
         type: 'panel',
         payload: { panel: 'commands' },
         accent: '#f97316',
@@ -144,6 +147,7 @@ const QuickActionCatalog = [
         icon: 'copy',
         nameKey: 'title_clipboard',
         description: 'Review your clipboard buffer.',
+        descriptionKey: 'quick_action_desc_clipboard',
         type: 'panel',
         payload: { panel: 'clipboard' },
         accent: '#a855f7',
@@ -154,6 +158,7 @@ const QuickActionCatalog = [
         icon: 'settings',
         nameKey: 'context_settings',
         description: 'Jump straight to FlashSearch settings.',
+        descriptionKey: 'quick_action_desc_settings',
         type: 'view',
         payload: { view: 'settings' },
         accent: '#facc15',
@@ -164,6 +169,7 @@ const QuickActionCatalog = [
         icon: 'bookmark',
         name: 'Pinned applications',
         description: 'Open the pinned applications panel instantly.',
+        descriptionKey: 'quick_action_desc_pinned_apps',
         type: 'panel',
         payload: { panel: 'apps-library', anchor: 'pinned' },
         accent: '#34d399',
@@ -179,6 +185,7 @@ const QuickActionModuleDefinitions = [
         category: 'trigger',
         name: 'Manual trigger',
         description: 'Starts when you press the quick action button.',
+        descriptionKey: 'quick_action_module_manual_trigger',
         icon: 'play-circle',
         accent: '#38bdf8',
         inputs: [],
@@ -193,6 +200,7 @@ const QuickActionModuleDefinitions = [
         category: 'action',
         name: 'Open panel',
         description: 'Show one of the auxiliary panels such as clipboard or files.',
+        descriptionKey: 'quick_action_module_open_panel',
         icon: 'layout',
         accent: '#38bdf8',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -224,6 +232,7 @@ const QuickActionModuleDefinitions = [
         category: 'action',
         name: 'Open website',
         description: 'Launch a URL in your default browser.',
+        descriptionKey: 'quick_action_module_open_website',
         icon: 'globe',
         accent: '#22d3ee',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -249,6 +258,7 @@ const QuickActionModuleDefinitions = [
         category: 'action',
         name: 'Copy text',
         description: 'Copy prepared text into the clipboard.',
+        descriptionKey: 'quick_action_module_copy_text',
         icon: 'clipboard',
         accent: '#a855f7',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -271,6 +281,7 @@ const QuickActionModuleDefinitions = [
         category: 'action',
         name: 'Run shell command',
         description: 'Execute a terminal command on your system.',
+        descriptionKey: 'quick_action_module_run_command',
         icon: 'terminal',
         accent: '#f97316',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -294,6 +305,7 @@ const QuickActionModuleDefinitions = [
         category: 'action',
         name: 'Show notification',
         description: 'Display a desktop notification with custom text.',
+        descriptionKey: 'quick_action_module_show_notification',
         icon: 'bell',
         accent: '#facc15',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -319,6 +331,7 @@ const QuickActionModuleDefinitions = [
         category: 'utility',
         name: 'Delay',
         description: 'Pause the workflow for a specified time.',
+        descriptionKey: 'quick_action_module_delay',
         icon: 'clock',
         accent: '#fbbf24',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -341,6 +354,7 @@ const QuickActionModuleDefinitions = [
         category: 'utility',
         name: 'Set payload',
         description: 'Store a value that can be reused by next blocks.',
+        descriptionKey: 'quick_action_module_store_value',
         icon: 'edit-3',
         accent: '#60a5fa',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -360,6 +374,7 @@ const QuickActionModuleDefinitions = [
         category: 'action',
         name: 'Use payload as text',
         description: 'Copy the current payload value to the clipboard.',
+        descriptionKey: 'quick_action_module_copy_payload',
         icon: 'clipboard',
         accent: '#22c55e',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -378,6 +393,7 @@ const QuickActionModuleDefinitions = [
         category: 'utility',
         name: 'Fetch JSON',
         description: 'Request JSON data and store it as the workflow payload.',
+        descriptionKey: 'quick_action_module_fetch_json',
         icon: 'download-cloud',
         accent: '#38bdf8',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -422,6 +438,7 @@ const QuickActionModuleDefinitions = [
         category: 'utility',
         name: 'Transform text',
         description: 'Apply quick text transformations to the payload.',
+        descriptionKey: 'quick_action_module_text_tools',
         icon: 'type',
         accent: '#34d399',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -474,6 +491,7 @@ const QuickActionModuleDefinitions = [
         category: 'utility',
         name: 'Store variable',
         description: 'Save a named value in the workflow context.',
+        descriptionKey: 'quick_action_module_save_context',
         icon: 'database',
         accent: '#f472b6',
         inputs: [{ id: 'input', label: 'Input' }],
@@ -623,15 +641,15 @@ const QuickActionStore = {
         const width = Number(size.width) || 1280;
         const height = Number(size.height) || 820;
         return {
-            width: Math.max(960, Math.min(Math.round(width), 1600)),
-            height: Math.max(640, Math.min(Math.round(height), 1000))
+            width: Math.max(720, Math.min(Math.round(width), 1800)),
+            height: Math.max(520, Math.min(Math.round(height), 1200))
         };
     },
 
     setBuilderSize(width, height) {
         this.ensureStructure();
-        const safeWidth = Math.max(960, Math.min(Math.round(width), 1600));
-        const safeHeight = Math.max(640, Math.min(Math.round(height), 1000));
+        const safeWidth = Math.max(720, Math.min(Math.round(width), 1800));
+        const safeHeight = Math.max(520, Math.min(Math.round(height), 1200));
         AppState.settings.quickActions.preferences.builderSize = { width: safeWidth, height: safeHeight };
         this.persist();
     },
@@ -838,6 +856,10 @@ const QuickActionLab = {
     pendingBuilderSize: null,
     resizing: null,
     dragUpdateRaf: null,
+    iconButtons: new Map(),
+    iconPopoverOpen: false,
+    boundOutsideClick: null,
+    boundEscapeKey: null,
 
     init() {
         if (this.initialized) return;
@@ -845,6 +867,8 @@ const QuickActionLab = {
         this.pendingBuilderSize = null;
         this.resizing = null;
         this.dragUpdateRaf = null;
+        this.iconButtons = new Map();
+        this.iconPopoverOpen = false;
         this.elements = {
             activeList: Utils.getElement('#quick-action-active-list'),
             catalog: Utils.getElement('#quick-action-catalog'),
@@ -875,7 +899,11 @@ const QuickActionLab = {
             actionLabelInput: Utils.getElement('#builder-action-label'),
             actionIconInput: Utils.getElement('#builder-action-icon'),
             actionColorInput: Utils.getElement('#builder-action-color'),
-            iconPreview: Utils.getElement('#builder-icon-preview')
+            iconPreview: Utils.getElement('#builder-icon-preview'),
+            iconPopover: Utils.getElement('#builder-icon-popover'),
+            iconSearch: Utils.getElement('#builder-icon-search'),
+            iconGrid: Utils.getElement('#builder-icon-grid'),
+            inspector: document.querySelector('.builder-inspector')
         };
 
         this.elements.dialog = document.querySelector('#quick-action-builder-modal .builder-dialog');
@@ -887,6 +915,7 @@ const QuickActionLab = {
 
         QuickActionStore.ensureStructure();
         this.attachEvents();
+        this.prepareIconPicker();
         this.initialized = true;
         this.renderAll();
     },
@@ -896,6 +925,7 @@ const QuickActionLab = {
         this.boundDragEnd = (event) => this.stopNodeDrag(event);
         this.boundResizeMove = (event) => this.handleResize(event);
         this.boundResizeEnd = (event) => this.stopResize(event);
+        this.boundPopoverReposition = () => this.positionIconPopover();
 
         this.elements.openBuilder?.addEventListener('click', () => this.openBuilder());
         this.elements.importToggle?.addEventListener('click', () => this.toggleImportArea(true));
@@ -913,6 +943,29 @@ const QuickActionLab = {
             if (!this.builderState) return;
             this.builderState.metadata.icon = event.target.value.trim() || 'zap';
             this.updateIconPreview();
+        });
+
+        this.elements.actionIconInput?.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                this.openIconPopover();
+            }
+        });
+
+        this.elements.iconPreview?.addEventListener('click', (event) => {
+            event.preventDefault();
+            this.toggleIconPopover();
+        });
+
+        this.elements.iconPreview?.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                this.toggleIconPopover();
+            }
+        });
+
+        this.elements.iconSearch?.addEventListener('input', (event) => {
+            this.filterIconList(event.target.value);
         });
 
         this.elements.actionColorInput?.addEventListener('input', (event) => {
@@ -958,6 +1011,7 @@ const QuickActionLab = {
         if (this.builderState?.isOpen) {
             this.renderBuilder();
         }
+        this.highlightIconSelection();
     },
 
     renderActiveList() {
@@ -1186,10 +1240,10 @@ const QuickActionLab = {
         event.preventDefault();
         const deltaX = event.clientX - this.resizing.startX;
         const deltaY = event.clientY - this.resizing.startY;
-        const minWidth = 960;
-        const minHeight = 640;
-        const maxWidth = Math.min(window.innerWidth - 80, 1600);
-        const maxHeight = Math.min(window.innerHeight - 80, 1000);
+        const minWidth = 720;
+        const minHeight = 520;
+        const maxWidth = Math.min(window.innerWidth - 60, 1800);
+        const maxHeight = Math.min(window.innerHeight - 60, 1200);
         const width = Math.max(minWidth, Math.min(this.resizing.startWidth + deltaX, maxWidth));
         const height = Math.max(minHeight, Math.min(this.resizing.startHeight + deltaY, maxHeight));
         this.elements.dialog.style.setProperty('--builder-dialog-width', `${width}px`);
@@ -1220,6 +1274,7 @@ const QuickActionLab = {
             this.elements.modal.classList.remove('active');
             this.elements.modal.setAttribute('aria-hidden', 'true');
         }
+        this.closeIconPopover(true);
         this.builderState = null;
         this.elements.actionLabelInput.value = '';
         this.elements.actionIconInput.value = '';
@@ -1292,13 +1347,179 @@ const QuickActionLab = {
                 const item = Utils.createElement('li', { className: 'builder-module-item' });
                 item.setAttribute('data-module-id', module.id);
                 const title = Utils.createElement('strong', { text: module.name });
-                const description = Utils.createElement('span', { text: module.description });
+                const descriptionText = this.getModuleDescription(module);
+                const description = Utils.createElement('span', { text: descriptionText });
                 item.appendChild(title);
                 item.appendChild(description);
                 item.addEventListener('click', () => this.addNode(module.id));
                 container.appendChild(item);
             });
         });
+    },
+
+    getModuleDescription(moduleDef) {
+        if (!moduleDef) return '';
+        if (moduleDef.descriptionKey) {
+            const localized = LocalizationRenderer.t(moduleDef.descriptionKey);
+            if (localized && localized !== moduleDef.descriptionKey) return localized;
+        }
+        return moduleDef.description || '';
+    },
+
+    prepareIconPicker() {
+        if (!this.elements.iconGrid) return;
+        this.iconButtons = new Map();
+        const container = this.elements.iconGrid;
+        container.innerHTML = '';
+        const source = window.feather?.icons ? Object.keys(window.feather.icons).sort() : [];
+        source.forEach((name) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.setAttribute('data-icon', name);
+            button.setAttribute('title', name);
+            button.setAttribute('aria-label', name);
+            if (window.feather?.icons?.[name]) {
+                button.innerHTML = window.feather.icons[name].toSvg({ width: 20, height: 20 });
+            } else {
+                button.textContent = name;
+            }
+            button.addEventListener('click', () => this.selectIconFromPicker(name));
+            container.appendChild(button);
+            this.iconButtons.set(name, button);
+        });
+        this.highlightIconSelection();
+    },
+
+    toggleIconPopover() {
+        if (this.iconPopoverOpen) this.closeIconPopover();
+        else this.openIconPopover();
+    },
+
+    openIconPopover() {
+        if (!this.elements.iconPopover || this.iconPopoverOpen) return;
+        if (!this.elements.iconGrid?.childElementCount) {
+            this.prepareIconPicker();
+        } else {
+            this.highlightIconSelection();
+        }
+        this.elements.iconPopover.classList.add('active');
+        this.elements.iconPopover.setAttribute('aria-hidden', 'false');
+        this.elements.iconPreview?.setAttribute('aria-expanded', 'true');
+        this.iconPopoverOpen = true;
+        window.requestAnimationFrame(() => this.positionIconPopover());
+        if (!this.boundOutsideClick) {
+            this.boundOutsideClick = (event) => {
+                const target = event.target;
+                if (!this.elements.iconPopover?.contains(target) && target !== this.elements.iconPreview && target !== this.elements.actionIconInput && target !== this.elements.iconSearch) {
+                    this.closeIconPopover();
+                }
+            };
+        }
+        document.addEventListener('pointerdown', this.boundOutsideClick, true);
+        if (!this.boundEscapeKey) {
+            this.boundEscapeKey = (event) => {
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    this.closeIconPopover();
+                }
+            };
+        }
+        document.addEventListener('keydown', this.boundEscapeKey, true);
+        window.addEventListener('resize', this.boundPopoverReposition);
+        document.addEventListener('scroll', this.boundPopoverReposition, true);
+        this.elements.inspector?.addEventListener('scroll', this.boundPopoverReposition, { passive: true });
+        this.filterIconList('');
+        window.requestAnimationFrame(() => this.positionIconPopover());
+        setTimeout(() => this.elements.iconSearch?.focus({ preventScroll: true }), 0);
+    },
+
+    positionIconPopover() {
+        if (!this.iconPopoverOpen || !this.elements.iconPopover || !this.elements.iconPreview) return;
+        const previewRect = this.elements.iconPreview.getBoundingClientRect();
+        if (!previewRect?.width && !previewRect?.height) return;
+        const popover = this.elements.iconPopover;
+        const padding = 16;
+        const desiredTop = previewRect.bottom + 12;
+        let top = desiredTop;
+        const popoverRect = popover.getBoundingClientRect();
+        if (top + popoverRect.height + padding > window.innerHeight) {
+            top = Math.max(padding, previewRect.top - popoverRect.height - 12);
+        }
+        let left = previewRect.right - popoverRect.width;
+        if (left < padding) left = padding;
+        const maxLeft = window.innerWidth - padding - popoverRect.width;
+        if (left > maxLeft) left = Math.max(padding, maxLeft);
+        popover.style.top = `${Math.round(top)}px`;
+        popover.style.left = `${Math.round(left)}px`;
+    },
+
+    closeIconPopover(silent = false) {
+        if (!this.iconPopoverOpen) return;
+        this.iconPopoverOpen = false;
+        this.elements.iconPopover?.classList.remove('active');
+        this.elements.iconPopover?.setAttribute('aria-hidden', 'true');
+        this.elements.iconPreview?.setAttribute('aria-expanded', 'false');
+        if (this.boundOutsideClick) {
+            document.removeEventListener('pointerdown', this.boundOutsideClick, true);
+        }
+        if (this.boundEscapeKey) {
+            document.removeEventListener('keydown', this.boundEscapeKey, true);
+        }
+        window.removeEventListener('resize', this.boundPopoverReposition);
+        document.removeEventListener('scroll', this.boundPopoverReposition, true);
+        this.elements.inspector?.removeEventListener('scroll', this.boundPopoverReposition);
+        if (this.elements.iconPopover) {
+            this.elements.iconPopover.style.top = '';
+            this.elements.iconPopover.style.left = '';
+        }
+        if (!silent) {
+            this.elements.iconPreview?.focus({ preventScroll: true });
+        }
+    },
+
+    filterIconList(query = '') {
+        const normalized = String(query || '').trim().toLowerCase();
+        if (this.elements.iconSearch && this.elements.iconSearch.value !== query) {
+            this.elements.iconSearch.value = query;
+        }
+        this.iconButtons?.forEach((button, name) => {
+            if (!button) return;
+            const visible = !normalized || name.toLowerCase().includes(normalized);
+            button.style.display = visible ? '' : 'none';
+        });
+        this.positionIconPopover();
+    },
+
+    selectIconFromPicker(name) {
+        if (!this.builderState) return;
+        const iconName = String(name || '').trim() || 'zap';
+        this.builderState.metadata.icon = iconName;
+        if (this.elements.actionIconInput) {
+            this.elements.actionIconInput.value = iconName;
+        }
+        this.updateIconPreview();
+        this.closeIconPopover();
+    },
+
+    highlightIconSelection() {
+        const current = (this.builderState?.metadata.icon || '').trim();
+        const titleBase = LocalizationRenderer.t('quick_actions_icon_picker_title') || 'Choose an icon';
+        const label = current ? `${titleBase}: ${current}` : titleBase;
+        if (this.elements.iconPreview) {
+            this.elements.iconPreview.setAttribute('data-selected-icon', current || '');
+            this.elements.iconPreview.setAttribute('title', label);
+            this.elements.iconPreview.setAttribute('aria-label', label);
+        }
+        const searchLabel = LocalizationRenderer.t('quick_actions_icon_search');
+        if (this.elements.iconSearch && searchLabel) {
+            this.elements.iconSearch.setAttribute('aria-label', searchLabel);
+        }
+        this.iconButtons?.forEach((button, name) => {
+            if (!button) return;
+            if (name === current) button.classList.add('active');
+            else button.classList.remove('active');
+        });
+        this.positionIconPopover();
     },
 
     renderCanvas() {
@@ -1326,7 +1547,7 @@ const QuickActionLab = {
             header.addEventListener('pointerdown', (event) => this.startNodeDrag(node.id, event));
             nodeEl.appendChild(header);
 
-            const body = Utils.createElement('div', { className: 'builder-node-body', text: moduleDef.description });
+            const body = Utils.createElement('div', { className: 'builder-node-body', text: this.getModuleDescription(moduleDef) });
             nodeEl.appendChild(body);
 
             const footer = Utils.createElement('div', { className: 'builder-node-footer' });
@@ -1681,6 +1902,7 @@ const QuickActionLab = {
         } else {
             this.elements.iconPreview.textContent = '⚡';
         }
+        this.highlightIconSelection();
     },
 
     saveAction() {
@@ -1866,6 +2088,9 @@ const LocalizationRenderer = {
             element.title = this.t(element.getAttribute('data-i18n-title'));
         });
         this.refreshLanguageDependentUI();
+        if (typeof QuickActionLab?.highlightIconSelection === 'function') {
+            QuickActionLab.highlightIconSelection();
+        }
         if (typeof CustomSelect?.refreshAll === 'function') {
             CustomSelect.refreshAll();
         }
@@ -4154,7 +4379,10 @@ const ViewManager = {
             document.documentElement.style.setProperty('--dynamic-opacity-top', 0.6 * base + 0.4 * Math.pow(base, 2));
         }
         else if (settingKey === 'blurStrength') document.documentElement.style.setProperty('--dynamic-blur', `blur(${parseInt(value, 10) || 70}px)`);
-        else if (settingKey === 'width') document.documentElement.style.setProperty('--dynamic-width', `${parseInt(value, 10) || 950}px`);
+        else if (settingKey === 'width') {
+            const numeric = Math.max(320, Math.min(1600, parseInt(value, 10) || 950));
+            document.documentElement.style.setProperty('--dynamic-width', `${numeric}px`);
+        }
         else if (settingKey === 'height') document.documentElement.style.setProperty('--dynamic-height', `${parseInt(value, 10) || 90}px`);
         else if (settingKey === 'borderRadius') document.documentElement.style.setProperty('--dynamic-border-radius', `${parseInt(value, 10) || 24}px`);
         else if (settingKey === 'selectionColorStyle') {

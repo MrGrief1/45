@@ -13,13 +13,11 @@
         
         <div id="search-view" class="view active">
             <div id="main-layout">
-                <div id="search-box" class="glass-element">
+                <div id="search-box" class="glass-element" role="search">
                     <div class="search-input-wrapper">
                         <i data-feather="search" class="icon search-icon"></i>
                         <input type="text" id="search-input" placeholder="FlashSearch" autofocus>
                     </div>
-                </div>
-                <div id="quick-action-shell" class="quick-action-shell" aria-label="Quick actions" role="presentation">
                     <div id="quick-action-bar" class="quick-action-bar" aria-label="Quick actions" role="toolbar">
                         <!-- Buttons rendered dynamically -->
                     </div>
@@ -241,7 +239,7 @@
                             <hr>
                             <div class="setting-item">
                                 <label data-i18n="settings_width">Window Width (px)</label>
-                                <input type="range" id="setting-width" min="600" max="1600" step="10">
+                                <input type="range" id="setting-width" min="320" max="1600" step="10">
                             </div>
                             <div class="setting-item">
                                 <label data-i18n="settings_height">Bar Height (px)</label>
@@ -389,14 +387,14 @@
         <div class="builder-dialog" role="dialog" aria-modal="true" aria-labelledby="quick-action-builder-title">
             <header class="builder-dialog-header">
                 <div class="builder-title-group">
-                    <h2 id="quick-action-builder-title">Quick action studio</h2>
-                    <p id="quick-action-builder-subtitle">Connect blocks visually to craft new buttons for the search bar.</p>
+                    <h2 id="quick-action-builder-title" data-i18n="quick_actions_builder_title">Quick action studio</h2>
+                    <p id="quick-action-builder-subtitle" data-i18n="quick_actions_builder_subtitle">Connect blocks visually to craft new buttons for the search bar.</p>
                 </div>
                 <div class="builder-header-actions">
-                    <button id="builder-export-action" class="builder-header-button" title="Export configuration">
+                    <button id="builder-export-action" class="builder-header-button" title="Export configuration" data-i18n-title="quick_actions_export_title">
                         <i data-feather="share-2"></i>
                     </button>
-                    <button id="close-quick-action-builder" class="builder-header-button" title="Close">
+                    <button id="close-quick-action-builder" class="builder-header-button" title="Close" data-i18n-title="quick_actions_close_title">
                         <i data-feather="x"></i>
                     </button>
                 </div>
@@ -404,53 +402,60 @@
             <div class="builder-body">
                 <aside class="builder-sidebar">
                     <div class="builder-sidebar-section">
-                        <h3>Triggers</h3>
+                        <h3 data-i18n="quick_actions_sidebar_triggers">Triggers</h3>
                         <ul id="builder-trigger-list" class="builder-module-list"></ul>
                     </div>
                     <div class="builder-sidebar-section">
-                        <h3>Actions</h3>
+                        <h3 data-i18n="quick_actions_sidebar_actions">Actions</h3>
                         <ul id="builder-action-list" class="builder-module-list"></ul>
                     </div>
                     <div class="builder-sidebar-section">
-                        <h3>Utilities</h3>
+                        <h3 data-i18n="quick_actions_sidebar_utilities">Utilities</h3>
                         <ul id="builder-utility-list" class="builder-module-list"></ul>
                     </div>
                 </aside>
                 <div class="builder-canvas-wrapper">
                     <div class="builder-toolbar">
-                        <button id="builder-zoom-out" class="builder-toolbar-button" title="Zoom out">-</button>
+                        <button id="builder-zoom-out" class="builder-toolbar-button" title="Zoom out" data-i18n-title="quick_actions_toolbar_zoom_out">-</button>
                         <span id="builder-zoom-indicator">100%</span>
-                        <button id="builder-zoom-in" class="builder-toolbar-button" title="Zoom in">+</button>
-                        <button id="builder-reset-view" class="builder-toolbar-button" title="Reset view">Reset</button>
-                        <button id="builder-clear-workspace" class="builder-toolbar-button destructive" title="Clear canvas">Clear</button>
+                        <button id="builder-zoom-in" class="builder-toolbar-button" title="Zoom in" data-i18n-title="quick_actions_toolbar_zoom_in">+</button>
+                        <button id="builder-reset-view" class="builder-toolbar-button" title="Reset view" data-i18n="quick_actions_toolbar_reset" data-i18n-title="quick_actions_toolbar_reset">Reset</button>
+                        <button id="builder-clear-workspace" class="builder-toolbar-button destructive" title="Clear canvas" data-i18n="quick_actions_toolbar_clear" data-i18n-title="quick_actions_toolbar_clear">Clear</button>
                     </div>
                     <div id="quick-action-canvas" class="builder-canvas" tabindex="0">
                         <svg id="builder-connection-layer" class="builder-connection-layer"></svg>
                         <div id="builder-node-layer" class="builder-node-layer"></div>
                         <div id="builder-empty-state" class="builder-empty-state">
                             <i data-feather="plus-circle"></i>
-                            <p>Drag modules here or click any block to start.</p>
+                            <p data-i18n="quick_actions_empty_canvas">Drag modules here or click any block to start.</p>
                         </div>
                     </div>
                 </div>
                 <aside class="builder-inspector">
                     <div class="inspector-section">
-                        <h3>Properties</h3>
+                        <h3 data-i18n="quick_actions_inspector_properties">Properties</h3>
                         <div id="builder-inspector-content" class="inspector-content">
-                            <p>Select a node to edit its configuration.</p>
+                            <p data-i18n="quick_actions_select_node">Select a node to configure it.</p>
                         </div>
                     </div>
                     <div class="inspector-section">
-                        <h3>Button appearance</h3>
+                        <h3 data-i18n="quick_actions_inspector_appearance">Button appearance</h3>
                         <div class="inspector-content">
-                            <label for="builder-action-label">Label</label>
-                            <input type="text" id="builder-action-label" placeholder="My quick action">
-                            <label for="builder-action-icon">Icon</label>
+                            <label for="builder-action-label" data-i18n="quick_actions_field_label">Label</label>
+                            <input type="text" id="builder-action-label" placeholder="My quick action" data-i18n-placeholder="quick_actions_new_label">
+                            <label for="builder-action-icon" data-i18n="quick_actions_field_icon">Icon</label>
                             <div class="inspector-icon-picker">
-                                <input type="text" id="builder-action-icon" placeholder="feather icon name">
-                                <div id="builder-icon-preview" class="icon-preview"></div>
+                                <input type="text" id="builder-action-icon" placeholder="feather icon name" data-i18n-placeholder="quick_actions_icon_placeholder">
+                                <div id="builder-icon-preview" class="icon-preview" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false"></div>
+                                <div id="builder-icon-popover" class="builder-icon-popover" role="listbox" aria-hidden="true">
+                                    <div class="icon-popover-header">
+                                        <span data-i18n="quick_actions_icon_picker_title">Choose an icon</span>
+                                        <input type="search" id="builder-icon-search" data-i18n-placeholder="quick_actions_icon_search" placeholder="Search icons..." aria-label="Search icons">
+                                    </div>
+                                    <div id="builder-icon-grid" class="icon-popover-grid"></div>
+                                </div>
                             </div>
-                            <label for="builder-action-color">Accent colour</label>
+                            <label for="builder-action-color" data-i18n="quick_actions_field_accent">Accent colour</label>
                             <input type="color" id="builder-action-color" value="#5865f2">
                         </div>
                     </div>
@@ -458,10 +463,10 @@
             </div>
             <footer class="builder-footer">
                 <div class="builder-footer-left">
-                    <button id="builder-preview-action" class="settings-button secondary">Test run</button>
+                    <button id="builder-preview-action" class="settings-button secondary" data-i18n="quick_actions_preview_button">Test run</button>
                 </div>
                 <div class="builder-footer-right">
-                    <button id="builder-save-action" class="settings-button">Add to quick action bar</button>
+                    <button id="builder-save-action" class="settings-button" data-i18n="quick_actions_save_to_bar">Add to quick action bar</button>
                 </div>
             </footer>
             <div class="builder-resize-handle" aria-hidden="true"></div>
