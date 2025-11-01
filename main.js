@@ -105,9 +105,9 @@ const DEFAULT_SETTINGS = {
     ],
     subscription: {
         isActive: true,
-        planName: 'FlashSearch Studio',
+        planName: 'FlashSearch Premium',
         renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        features: ['addon-builder', 'extended-gallery', 'priority-support']
+        features: ['addon-builder', 'extended-gallery', 'priority-support', 'unlimited-automations', 'full-clipboard-history']
     },
     quickActions: {
         activeIds: [...DEFAULT_QUICK_ACTION_IDS],
@@ -249,6 +249,7 @@ class SettingsManager {
 
         this.validateSettings();
         this.applySettings();
+        ClipboardMonitor.applySubscriptionLimit();
         
         // Возвращаем флаг необходимости переиндексации
         return needsReindex;
@@ -291,14 +292,23 @@ class SettingsManager {
         if (!currentSettings.subscription || typeof currentSettings.subscription !== 'object') {
             currentSettings.subscription = { ...DEFAULT_SETTINGS.subscription };
         } else {
+            const isActive = currentSettings.subscription.isActive !== false;
             currentSettings.subscription = {
-                isActive: currentSettings.subscription.isActive !== false,
-                planName: currentSettings.subscription.planName || DEFAULT_SETTINGS.subscription.planName,
-                renewalDate: currentSettings.subscription.renewalDate || DEFAULT_SETTINGS.subscription.renewalDate,
-                features: Array.isArray(currentSettings.subscription.features) && currentSettings.subscription.features.length > 0
-                    ? currentSettings.subscription.features
-                    : [...DEFAULT_SETTINGS.subscription.features]
+                isActive,
+                planName: isActive
+                    ? (currentSettings.subscription.planName || DEFAULT_SETTINGS.subscription.planName)
+                    : 'FlashSearch Free',
+                renewalDate: isActive
+                    ? (currentSettings.subscription.renewalDate || DEFAULT_SETTINGS.subscription.renewalDate)
+                    : null,
+                features: isActive
+                    ? [...DEFAULT_SETTINGS.subscription.features]
+                    : []
             };
+        }
+
+        if (!currentSettings.subscription.isActive && Array.isArray(currentSettings.customAutomations)) {
+            currentSettings.customAutomations = currentSettings.customAutomations.slice(0, 3);
         }
 
         if (!currentSettings.quickActions || typeof currentSettings.quickActions !== 'object') {
@@ -358,6 +368,7 @@ class SettingsManager {
                 this.validateSettings();
             }
             if (key === 'indexedDirectories') requiresReindex = true;
+            if (key === 'subscription') ClipboardMonitor.applySubscriptionLimit();
         } else if (currentSettings[key] !== value) {
             if (['opacity', 'blurStrength', 'maxIndexDepth', 'width', 'height', 'borderRadius'].includes(key)) {
                 value = parseInt(value, 10);
@@ -2251,6 +2262,23 @@ const ClipboardMonitor = {
     intervalId: null,
     MAX_HISTORY_SIZE: 50,
 
+    getHistoryLimit: function() {
+        if (currentSettings?.subscription?.isActive) {
+            return Infinity;
+        }
+        if (currentSettings?.subscription) {
+            return 10;
+        }
+        return this.MAX_HISTORY_SIZE;
+    },
+
+    enforceLimit: function() {
+        const limit = this.getHistoryLimit();
+        if (Number.isFinite(limit) && this.history.length > limit) {
+            this.history = this.history.slice(0, limit);
+        }
+    },
+
     start: function() {
         Logger.info("ClipboardMonitor started.");
         if (this.intervalId) clearInterval(this.intervalId);
@@ -2263,10 +2291,7 @@ const ClipboardMonitor = {
             if (text && text.trim() !== "" && (this.history.length === 0 || this.history[0].content !== text)) {
                 const newItem = { content: text, timestamp: Date.now() };
                 this.history.unshift(newItem);
-                
-                if (this.history.length > this.MAX_HISTORY_SIZE) {
-                    this.history.pop();
-                }
+                this.enforceLimit();
                 this.broadcastHistoryUpdate();
             }
         } catch (error) {
@@ -2276,7 +2301,65 @@ const ClipboardMonitor = {
 
     broadcastHistoryUpdate: function() {
         if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('update-data', this.history);
+            const limit = this.getHistoryLimit();
+            const payload = Number.isFinite(limit)
+                ? this.history.slice(0, limit)
+                : [...this.history];
+            mainWindow.webContents.send('update-data', payload);
+        }
+    },
+
+    applySubscriptionLimit: function() {
+        this.enforceLimit();
+        this.broadcastHistoryUpdate();
+    }
+};
+
+const SubscriptionPortal = {
+    window: null,
+
+    open: function() {
+        try {
+            if (this.window && !this.window.isDestroyed()) {
+                this.window.focus();
+                return;
+            }
+
+            const portalPath = path.join(__dirname, 'subscription-portal.html');
+            this.window = new BrowserWindow({
+                width: 960,
+                height: 700,
+                resizable: false,
+                show: false,
+                title: 'FlashSearch Subscription',
+                parent: mainWindow,
+                backgroundColor: '#101727',
+                webPreferences: {
+                    nodeIntegration: false,
+                    contextIsolation: true,
+                    sandbox: true
+                }
+            });
+
+            this.window.setMenu(null);
+            auxiliaryWindows['subscription-portal'] = this.window;
+
+            this.window.once('ready-to-show', () => {
+                if (this.window && !this.window.isDestroyed()) {
+                    this.window.show();
+                }
+            });
+
+            this.window.on('closed', () => {
+                delete auxiliaryWindows['subscription-portal'];
+                this.window = null;
+            });
+
+            this.window.loadFile(portalPath).catch(error => {
+                Logger.error(`Failed to load subscription portal: ${error.message}`);
+            });
+        } catch (error) {
+            Logger.error(`Unable to open subscription portal: ${error.message}`);
         }
     }
 };
@@ -2863,6 +2946,7 @@ ipcMain.on('update-setting', (event, key, value) => {
         mainWindow.webContents.send('recalculate-size');
     }
 });
+ipcMain.on('open-subscription-portal', () => SubscriptionPortal.open());
 ipcMain.on('open-auxiliary-window', (event, type) => {
     // This is now handled by the renderer process.
 });

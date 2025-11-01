@@ -103,8 +103,13 @@ const AppIconFallbacks = {
 
 const SubscriptionFeatureLabels = {
     'addon-builder': 'subscription_feature_addon_builder',
+    'addon-builder-locked': 'subscription_feature_addon_locked',
     'extended-gallery': 'subscription_feature_gallery',
+    'full-clipboard-history': 'subscription_feature_full_clipboard',
+    'limited-automations': 'subscription_feature_limited_automations',
+    'limited-clipboard-history': 'subscription_feature_limited_clipboard',
     'priority-support': 'subscription_feature_support',
+    'unlimited-automations': 'subscription_feature_unlimited_automations',
     default: 'subscription_feature_default'
 };
 
@@ -1211,6 +1216,10 @@ const QuickActionLab = {
     },
 
     openBuilder(actionId = null, options = {}) {
+        if (!SettingsModule.hasActiveSubscription()) {
+            SettingsModule.showSubscriptionRequiredHint();
+            return;
+        }
         QuickActionStore.ensureStructure();
         this.windowExpanded = false;
         this.builderState = this.createDefaultBuilderState();
@@ -2331,6 +2340,17 @@ const SettingsModule = {
         if (Utils.getElement('#add-automation-button')) {
             Utils.getElement('#add-automation-button').addEventListener('click', this.addAutomation.bind(this));
         }
+        const manageButton = Utils.getElement('#subscription-manage-button');
+        if (manageButton) {
+            manageButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                ipcRenderer.send('open-subscription-portal');
+            });
+        }
+        const toggleButton = Utils.getElement('#subscription-toggle-button');
+        if (toggleButton) {
+            toggleButton.addEventListener('click', () => this.toggleSubscription());
+        }
         Utils.getAllElements('.external-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -2489,7 +2509,8 @@ const SettingsModule = {
         const list = Utils.getElement('#automations-list');
         if (!list) return;
         list.innerHTML = '';
-        (AppState.settings.customAutomations || []).forEach((auto, index) => {
+        const automations = AppState.settings.customAutomations || [];
+        automations.forEach((auto, index) => {
             const entry = Utils.createElement('div', { className: 'automation-entry' });
             const infoDiv = Utils.createElement('div', { className: 'automation-info' });
             infoDiv.innerHTML = `<div class="automation-name">${Utils.escapeHtml(auto.name)} (Keyword: ${Utils.escapeHtml(auto.keyword)})</div><div class="automation-details">${auto.command}</div>`;
@@ -2499,6 +2520,30 @@ const SettingsModule = {
             entry.appendChild(removeButton);
             list.appendChild(entry);
         });
+
+        const limit = this.getAutomationLimit();
+        const addButton = Utils.getElement('#add-automation-button');
+        const limitNote = Utils.getElement('#automation-limit-note');
+        const count = automations.length;
+        const limitReached = Number.isFinite(limit) && count >= limit;
+
+        if (addButton) {
+            addButton.disabled = limitReached;
+        }
+
+        if (limitNote) {
+            if (Number.isFinite(limit)) {
+                const remaining = Math.max(limit - count, 0);
+                const key = remaining === 0
+                    ? 'subscription_automation_limit_reached'
+                    : 'subscription_automation_limit_hint';
+                limitNote.textContent = LocalizationRenderer.t(key, limit, remaining);
+                limitNote.classList.toggle('is-warning', remaining === 0);
+            } else {
+                limitNote.textContent = LocalizationRenderer.t('subscription_automation_unlimited');
+                limitNote.classList.remove('is-warning');
+            }
+        }
     },
 
     addAutomation: function() {
@@ -2509,6 +2554,11 @@ const SettingsModule = {
             const automations = [...(AppState.settings.customAutomations || [])];
             if (automations.some(a => a.keyword === keyword)) {
                 alert("Error: Keyword already exists.");
+                return;
+            }
+            const limit = this.getAutomationLimit();
+            if (Number.isFinite(limit) && automations.length >= limit) {
+                alert(LocalizationRenderer.t('subscription_automation_limit_reached') || 'Activate the subscription to add more automations.');
                 return;
             }
             automations.push({ id: `custom-${Date.now()}`, name, keyword, command });
@@ -2533,8 +2583,48 @@ const SettingsModule = {
         return !!(AppState.settings?.subscription?.isActive);
     },
 
+    getAutomationLimit: function() {
+        return this.hasActiveSubscription() ? Infinity : 3;
+    },
+
     getSubscription: function() {
         return AppState.settings?.subscription || { isActive: false, planName: '', renewalDate: null, features: [] };
+    },
+
+    getSubscriptionFeatures: function(subscription = null) {
+        const target = subscription || this.getSubscription();
+        if (target?.isActive) {
+            return ['addon-builder', 'extended-gallery', 'priority-support', 'unlimited-automations', 'full-clipboard-history'];
+        }
+        return ['limited-automations', 'limited-clipboard-history', 'addon-builder-locked'];
+    },
+
+    toggleSubscription: function() {
+        const subscription = this.getSubscription();
+        const nextActive = !subscription.isActive;
+        const nextRenewal = nextActive
+            ? (subscription.renewalDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString())
+            : null;
+        const updated = {
+            ...subscription,
+            isActive: nextActive,
+            planName: nextActive ? 'FlashSearch Premium' : 'FlashSearch Free',
+            renewalDate: nextRenewal,
+            features: nextActive ? this.getSubscriptionFeatures({ isActive: true }) : []
+        };
+
+        AppState.settings.subscription = { ...updated };
+        ipcRenderer.send('update-setting', 'subscription', updated);
+        this.renderSubscription();
+        this.renderAutomations();
+        this.ensureSubscriptionVisibility();
+    },
+
+    showSubscriptionRequiredHint: function() {
+        alert(LocalizationRenderer.t('subscription_required_builder') || 'Activate the subscription to use the Add-on Lab.');
+        Utils.getElement('.settings-sidebar li[data-tab="subscription"]')?.click();
+        const subscriptionSection = Utils.getElement('#tab-subscription');
+        subscriptionSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
 
     ensureSubscriptionVisibility: function() {
@@ -2554,6 +2644,20 @@ const SettingsModule = {
             addonsContent.classList.toggle('is-hidden', !isActive);
             if (!isActive) addonsContent.classList.remove('active');
         }
+
+        const builderButton = Utils.getElement('#open-quick-action-builder');
+        const importButton = Utils.getElement('#import-quick-action');
+        const importArea = Utils.getElement('#quick-action-import-area');
+
+        [builderButton, importButton].forEach(button => {
+            if (!button) return;
+            if (isActive) button.removeAttribute('disabled');
+            else button.setAttribute('disabled', 'disabled');
+        });
+
+        if (!isActive && importArea) {
+            importArea.setAttribute('hidden', '');
+        }
     },
 
     renderSubscription: function() {
@@ -2566,6 +2670,12 @@ const SettingsModule = {
             statusBadge.textContent = LocalizationRenderer.t(statusKey);
             statusBadge.classList.toggle('inactive', !isActive);
             statusBadge.classList.toggle('active', isActive);
+        }
+
+        const subtitle = Utils.getElement('.subscription-subtitle');
+        if (subtitle) {
+            const subtitleKey = isActive ? 'subscription_trial_message' : 'subscription_free_message';
+            subtitle.textContent = LocalizationRenderer.t(subtitleKey);
         }
 
         const statusText = Utils.getElement('#subscription-status-text');
@@ -2586,16 +2696,50 @@ const SettingsModule = {
         const featureList = Utils.getElement('#subscription-feature-list');
         if (featureList) {
             featureList.innerHTML = '';
-            const features = Array.isArray(subscription.features) && subscription.features.length > 0
-                ? subscription.features
-                : ['addon-builder'];
+            const features = this.getSubscriptionFeatures(subscription);
             features.forEach(featureKey => {
                 const item = Utils.createElement('li');
                 const translationKey = SubscriptionFeatureLabels[featureKey] || SubscriptionFeatureLabels.default;
                 item.textContent = LocalizationRenderer.t(translationKey);
+                if (['limited-automations', 'limited-clipboard-history', 'addon-builder-locked'].includes(featureKey)) {
+                    item.classList.add('is-limited');
+                }
                 featureList.appendChild(item);
             });
         }
+
+        const toggleButton = Utils.getElement('#subscription-toggle-button');
+        if (toggleButton) {
+            const toggleKey = isActive ? 'subscription_toggle_active' : 'subscription_toggle_inactive';
+            toggleButton.textContent = LocalizationRenderer.t(toggleKey);
+            toggleButton.setAttribute('data-state', isActive ? 'active' : 'inactive');
+        }
+
+        const labCard = Utils.getElement('.subscription-lab-card');
+        if (labCard) {
+            labCard.classList.toggle('is-locked', !isActive);
+            if (!isActive) {
+                labCard.setAttribute('data-locked-label', LocalizationRenderer.t('subscription_lab_locked_badge'));
+            } else {
+                labCard.removeAttribute('data-locked-label');
+            }
+
+            const labTitle = labCard.querySelector('h4');
+            const labDescription = labCard.querySelector('p');
+            if (labTitle) {
+                labTitle.textContent = LocalizationRenderer.t(isActive ? 'subscription_lab_title' : 'subscription_lab_locked_title');
+            }
+            if (labDescription) {
+                labDescription.textContent = LocalizationRenderer.t(isActive ? 'subscription_lab_description' : 'subscription_lab_locked_description');
+            }
+        }
+
+        if (!isActive && QuickActionLab.builderState?.isOpen) {
+            QuickActionLab.closeBuilder();
+        }
+
+        this.renderAutomations();
+        this.renderAddons();
     },
 
     formatDateForUser: function(value) {
@@ -2615,6 +2759,27 @@ const SettingsModule = {
     },
 
     renderAddons: function() {
+        const locked = !this.hasActiveSubscription();
+        const builderButton = Utils.getElement('#open-quick-action-builder');
+        if (builderButton) {
+            builderButton.disabled = locked;
+            const ctaKey = locked ? 'quick_actions_builder_locked_cta' : 'quick_actions_builder_open';
+            builderButton.textContent = LocalizationRenderer.t(ctaKey);
+        }
+
+        const importButton = Utils.getElement('#import-quick-action');
+        if (importButton) {
+            importButton.disabled = locked;
+            const importKey = locked ? 'quick_actions_builder_import_locked' : 'quick_actions_builder_import';
+            importButton.textContent = LocalizationRenderer.t(importKey);
+        }
+
+        const builderDescription = Utils.getElement('.quick-action-builder-text p');
+        if (builderDescription) {
+            const descriptionKey = locked ? 'quick_actions_builder_locked_description' : 'quick_actions_builder_description';
+            builderDescription.textContent = LocalizationRenderer.t(descriptionKey);
+        }
+
         QuickActionLab.renderAll();
         QuickActionManager.refresh();
     },

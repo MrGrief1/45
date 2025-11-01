@@ -29,6 +29,7 @@
   --scrollbar-size: 8px;
   --scrollbar-padding: 3px;
   --button-icon-color: #333;
+  --button-text-color: #0b0f19;
   --context-menu-bg: rgba(255, 255, 255, 0.92);
   --context-menu-border: rgba(0, 0, 0, 0.08);
   --context-menu-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
@@ -73,6 +74,7 @@ body.dark-theme {
   --action-button-bg: rgba(58, 58, 60, 0.8);
   --action-button-hover-bg: rgba(72, 72, 74, 1);
   --caret-color: #ffffff;
+  --button-text-color: #f5f5f7;
 }
 
 /* ... другие темы ... */
@@ -1569,7 +1571,7 @@ select::-ms-expand {
 .settings-button {
   padding: 10px 20px;
   background-color: var(--highlight-color);
-  color: #fff;
+  color: var(--button-text-color, #0b0f19);
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -1587,12 +1589,19 @@ select::-ms-expand {
 }
 
 .settings-button:hover {
-  filter: brightness(1.15);
+  filter: brightness(1.1);
 }
 
 .settings-button:active {
   transform: scale(0.98);
   transition-duration: 0.1s;
+}
+
+.settings-button:disabled,
+.settings-button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: none;
 }
 
 .settings-button.secondary {
@@ -1674,6 +1683,16 @@ select::-ms-expand {
 
 .automation-form .settings-button {
   margin-top: 0;
+}
+
+.automation-limit-note {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--icon-color);
+}
+
+.automation-limit-note.is-warning {
+  color: #ff3b30;
 }
 
 .automation-info {
@@ -2433,8 +2452,24 @@ input[type="range"]:active::-webkit-slider-thumb {
   font-size: 13px;
 }
 
+.subscription-feature-list li.is-limited::before {
+  content: '✖';
+  color: #ff3b30;
+}
+
 .subscription-section .settings-button {
   margin-top: 24px;
+}
+
+.subscription-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.subscription-actions .settings-button {
+  margin-top: 0;
 }
 
 .subscription-lab-card {
@@ -2442,6 +2477,23 @@ input[type="range"]:active::-webkit-slider-thumb {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
+}
+
+.subscription-lab-card.is-locked {
+  opacity: 0.6;
+  filter: grayscale(0.1);
+}
+
+.subscription-lab-card.is-locked::after {
+  content: attr(data-locked-label);
+  margin-left: auto;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px dashed rgba(255, 59, 48, 0.45);
+  color: #ff3b30;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .subscription-lab-text h4 {

@@ -280,6 +280,7 @@
                                 <input type="text" id="new-auto-command" data-i18n-placeholder="settings_auto_command" placeholder="Command/Path">
                                 <button id="add-automation-button" class="settings-button" data-i18n="settings_add_automation">Add</button>
                             </div>
+                            <p id="automation-limit-note" class="automation-limit-note"></p>
                             <hr>
                             <div class="automation-instructions">
                                 <h4 data-i18n="auto_instructions_title">How to create an Automation</h4>
@@ -319,7 +320,10 @@
                                     <h4 data-i18n="subscription_perks_title">Included perks</h4>
                                     <ul id="subscription-feature-list" class="subscription-feature-list"></ul>
                                 </div>
-                                <button id="subscription-manage-button" class="settings-button external-link" data-url="https://flashsearch.app/account" data-i18n="subscription_manage">Manage subscription</button>
+                                <div class="subscription-actions">
+                                    <button id="subscription-toggle-button" class="settings-button secondary" data-i18n="subscription_toggle_inactive">Activate subscription</button>
+                                    <button id="subscription-manage-button" class="settings-button" data-i18n="subscription_manage">Manage subscription</button>
+                                </div>
                             </section>
                             <section class="settings-section-card subscription-lab-card">
                                 <div class="subscription-lab-text">
