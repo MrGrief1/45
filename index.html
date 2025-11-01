@@ -448,7 +448,7 @@
                             <label for="builder-action-icon">Icon</label>
                             <div class="inspector-icon-picker">
                                 <input type="text" id="builder-action-icon" placeholder="feather icon name">
-                                <div id="builder-icon-preview" class="icon-preview"></div>
+                                <div id="builder-icon-preview" class="icon-preview" role="button" tabindex="0" data-i18n-title="quick_actions_icon_picker_hint" title="Choose a different icon"></div>
                             </div>
                             <label for="builder-action-color">Accent colour</label>
                             <input type="color" id="builder-action-color" value="#5865f2">
@@ -467,6 +467,8 @@
             <div class="builder-resize-handle" aria-hidden="true"></div>
         </div>
     </div>
+
+    <div id="icon-picker-popover" class="icon-picker-popover" aria-hidden="true"></div>
 
     <script>
       // Инициализация иконок Feather Icons (необходима для отображения)
