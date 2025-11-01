@@ -1570,9 +1570,15 @@ const QuickActionLab = {
             }
             input.value = node.config?.[field.key] ?? moduleDef.defaultConfig?.[field.key] ?? '';
             if (field.placeholder) input.placeholder = field.placeholder;
-            input.addEventListener('input', () => this.updateNodeConfig(node.id, field.key, input.value));
+            const handleValueChange = () => this.updateNodeConfig(node.id, field.key, input.value);
+            input.addEventListener('input', handleValueChange);
+            input.addEventListener('change', handleValueChange);
             container.appendChild(label);
             container.appendChild(input);
+
+            if (field.type === 'select') {
+                CustomSelect.enhanceNativeSelect(input, { variant: 'builder' });
+            }
         });
 
         if (!this.isManualNode(node.id)) {
@@ -4163,9 +4169,16 @@ const CustomSelect = {
     },
 
     setupSelect: function(wrapper) {
+        if (!wrapper || wrapper.dataset.customSelectInitialized === 'true') return;
+
         const trigger = wrapper.querySelector('.custom-select-trigger');
         const options = wrapper.querySelectorAll('.custom-option');
         const settingKey = wrapper.dataset.settingKey;
+        const nativeSelect = wrapper.querySelector('select.native-select-hidden');
+
+        if (!trigger) return;
+
+        wrapper.dataset.customSelectInitialized = 'true';
 
         trigger.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -4185,7 +4198,13 @@ const CustomSelect = {
                 wrapper.querySelector('.custom-option.selected')?.classList.remove('selected');
                 option.classList.add('selected');
 
-                if (settingKey && selectedValue !== AppState.settings[settingKey]) {
+                if (nativeSelect) {
+                    if (nativeSelect.value !== selectedValue) {
+                        nativeSelect.value = selectedValue;
+                        nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                        nativeSelect.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                } else if (settingKey && selectedValue !== AppState.settings[settingKey]) {
                     ipcRenderer.send('update-setting', settingKey, selectedValue);
                 }
             });
@@ -4236,6 +4255,69 @@ const CustomSelect = {
 
     refreshAll: function() {
         Utils.getAllElements('.custom-select-wrapper').forEach(wrapper => this.refreshDisplay(wrapper));
+    },
+
+    enhanceNativeSelect(selectEl, { variant } = {}) {
+        if (!selectEl || selectEl.dataset.customized === 'true') return;
+
+        const parent = selectEl.parentElement;
+        if (!parent) return;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'custom-select-wrapper';
+        if (variant === 'builder') {
+            wrapper.classList.add('builder-custom-select');
+        }
+
+        const customSelect = document.createElement('div');
+        customSelect.className = 'custom-select';
+
+        const trigger = document.createElement('div');
+        trigger.className = 'custom-select-trigger';
+        const triggerLabel = document.createElement('span');
+        const selectedOption = selectEl.options[selectEl.selectedIndex] || selectEl.options[0];
+        triggerLabel.textContent = selectedOption ? selectedOption.textContent : '';
+        const arrowIcon = document.createElement('i');
+        arrowIcon.dataset.feather = 'chevron-down';
+        arrowIcon.className = 'arrow';
+        trigger.appendChild(triggerLabel);
+        trigger.appendChild(arrowIcon);
+
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'custom-options';
+        Array.from(selectEl.options).forEach(option => {
+            const optionEl = document.createElement('div');
+            optionEl.className = 'custom-option';
+            optionEl.dataset.value = option.value;
+            if (option.selected) optionEl.classList.add('selected');
+
+            const labelSpan = document.createElement('span');
+            labelSpan.textContent = option.textContent;
+            optionEl.appendChild(labelSpan);
+
+            optionEl.addEventListener('click', () => {
+                if (selectEl.value !== option.value) {
+                    selectEl.value = option.value;
+                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    selectEl.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            });
+
+            optionsContainer.appendChild(optionEl);
+        });
+
+        customSelect.appendChild(trigger);
+        customSelect.appendChild(optionsContainer);
+        wrapper.appendChild(customSelect);
+
+        parent.insertBefore(wrapper, selectEl);
+        selectEl.classList.add('native-select-hidden');
+        selectEl.dataset.customized = 'true';
+        wrapper.appendChild(selectEl);
+
+        this.setupSelect(wrapper);
+        this.refreshDisplay(wrapper);
+        if (window.feather) window.feather.replace();
     }
 };
 
@@ -4437,6 +4519,8 @@ document.addEventListener('DOMContentLoaded', () => {
     PinnedAppsModule.init();
     AuxPanelManager.init();
     CustomSelect.init();
+
+    requestAnimationFrame(() => ViewManager.resizeWindow());
 
     ipcRenderer.on('file-icon-response', (event, { path, dataUrl }) => {
         const relatedImages = [];
