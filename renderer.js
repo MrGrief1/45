@@ -838,6 +838,8 @@ const QuickActionLab = {
     pendingBuilderSize: null,
     resizing: null,
     dragUpdateRaf: null,
+    iconPicker: null,
+    hostPadding: { width: 180, height: 220 },
 
     init() {
         if (this.initialized) return;
@@ -875,7 +877,11 @@ const QuickActionLab = {
             actionLabelInput: Utils.getElement('#builder-action-label'),
             actionIconInput: Utils.getElement('#builder-action-icon'),
             actionColorInput: Utils.getElement('#builder-action-color'),
-            iconPreview: Utils.getElement('#builder-icon-preview')
+            iconPreview: Utils.getElement('#builder-icon-preview'),
+            iconSuggestions: Utils.getElement('#builder-icon-suggestions'),
+            iconPickerLayer: Utils.getElement('#builder-icon-picker-layer'),
+            iconPickerTrigger: Utils.getElement('#builder-open-icon-picker'),
+            iconPickerApply: Utils.getElement('#builder-icon-apply')
         };
 
         this.elements.dialog = document.querySelector('#quick-action-builder-modal .builder-dialog');
@@ -887,6 +893,7 @@ const QuickActionLab = {
 
         QuickActionStore.ensureStructure();
         this.attachEvents();
+        this.setupIconPickerIntegration();
         this.initialized = true;
         this.renderAll();
     },
@@ -944,6 +951,35 @@ const QuickActionLab = {
             if (event.target === this.elements.canvas) {
                 this.selectNode(null);
             }
+        });
+    },
+
+    setupIconPickerIntegration() {
+        const connect = (picker) => {
+            if (!picker || picker === this.iconPicker) return;
+            this.iconPicker = picker;
+            if (typeof picker.setHostCallback === 'function') {
+                picker.setHostCallback(() => {
+                    this.syncHostWindowSize();
+                });
+            }
+            if (this.builderState?.metadata?.icon) {
+                const iconName = this.builderState.metadata.icon;
+                if (typeof picker.updatePreview === 'function') {
+                    picker.updatePreview(iconName);
+                }
+                if (typeof picker.highlightSelection === 'function') {
+                    picker.highlightSelection(iconName);
+                }
+            }
+        };
+
+        if (window.FlashSearchIconPicker) {
+            connect(window.FlashSearchIconPicker);
+        }
+
+        document.addEventListener('flashsearch-icon-picker-ready', (event) => {
+            connect(event.detail);
         });
     },
 
@@ -1148,6 +1184,8 @@ const QuickActionLab = {
         this.renderBuilder();
         this.updateIconPreview();
         this.applyBuilderSize();
+        document.body.classList.add('builder-open');
+        this.syncHostWindowSize();
         this.elements.modal?.classList.add('active');
         this.elements.modal?.setAttribute('aria-hidden', 'false');
         this.elements.modal?.focus();
@@ -1158,6 +1196,19 @@ const QuickActionLab = {
         const size = QuickActionStore.getBuilderSize();
         this.elements.dialog.style.setProperty('--builder-dialog-width', `${size.width}px`);
         this.elements.dialog.style.setProperty('--builder-dialog-height', `${size.height}px`);
+        this.syncHostWindowSize(size);
+    },
+
+    syncHostWindowSize(size = null) {
+        if (!this.elements.dialog) return;
+        const rect = this.elements.dialog.getBoundingClientRect();
+        const width = size?.width || rect.width;
+        const height = size?.height || rect.height;
+        const paddedWidth = Math.ceil(width + this.hostPadding.width);
+        const paddedHeight = Math.ceil(height + this.hostPadding.height);
+        if (typeof ViewManager.setBuilderOverrideSize === 'function') {
+            ViewManager.setBuilderOverrideSize({ width: paddedWidth, height: paddedHeight });
+        }
     },
 
     startResize(event) {
@@ -1195,6 +1246,7 @@ const QuickActionLab = {
         this.elements.dialog.style.setProperty('--builder-dialog-width', `${width}px`);
         this.elements.dialog.style.setProperty('--builder-dialog-height', `${height}px`);
         this.pendingBuilderSize = { width, height };
+        this.syncHostWindowSize({ width, height });
     },
 
     stopResize(event) {
@@ -1219,6 +1271,10 @@ const QuickActionLab = {
         if (this.elements.modal) {
             this.elements.modal.classList.remove('active');
             this.elements.modal.setAttribute('aria-hidden', 'true');
+        }
+        document.body.classList.remove('builder-open');
+        if (typeof ViewManager.clearBuilderOverrideSize === 'function') {
+            ViewManager.clearBuilderOverrideSize();
         }
         this.builderState = null;
         this.elements.actionLabelInput.value = '';
@@ -1680,6 +1736,14 @@ const QuickActionLab = {
             this.elements.iconPreview.innerHTML = window.feather.icons[iconName].toSvg();
         } else {
             this.elements.iconPreview.textContent = '⚡';
+        }
+        if (this.iconPicker) {
+            if (typeof this.iconPicker.updatePreview === 'function') {
+                this.iconPicker.updatePreview(iconName);
+            }
+            if (typeof this.iconPicker.highlightSelection === 'function') {
+                this.iconPicker.highlightSelection(iconName);
+            }
         }
     },
 
@@ -3991,6 +4055,7 @@ const CustomSelect = {
 };
 
 const ViewManager = {
+    builderOverrideSize: null,
     init: function() { this.setupEventListeners(); },
     setupEventListeners: function() {
         if (Utils.getElement('#settings-button')) Utils.getElement('#settings-button').addEventListener('click', () => this.switchView('settings'));
@@ -4048,10 +4113,30 @@ const ViewManager = {
             totalHeight = minHeight;
         }
 
+        if (this.builderOverrideSize) {
+            if (this.builderOverrideSize.width) {
+                targetWidth = Math.max(targetWidth, this.builderOverrideSize.width);
+            }
+            if (this.builderOverrideSize.height) {
+                totalHeight = Math.max(totalHeight, this.builderOverrideSize.height);
+            }
+        }
+
         if (totalHeight > 0 && targetWidth > 0) {
             appContainer.style.height = `${totalHeight}px`;
             ipcRenderer.send('resize-window', { width: targetWidth, height: totalHeight });
         }
+    },
+    setBuilderOverrideSize: function(size) {
+        if (!size) return;
+        const width = Math.max(0, Math.round(size.width || 0));
+        const height = Math.max(0, Math.round(size.height || 0));
+        this.builderOverrideSize = { width, height };
+        this.resizeWindow();
+    },
+    clearBuilderOverrideSize: function() {
+        this.builderOverrideSize = null;
+        this.resizeWindow();
     },
     prepareForShow: function(element) {
         if (!element) return;
@@ -4154,7 +4239,10 @@ const ViewManager = {
             document.documentElement.style.setProperty('--dynamic-opacity-top', 0.6 * base + 0.4 * Math.pow(base, 2));
         }
         else if (settingKey === 'blurStrength') document.documentElement.style.setProperty('--dynamic-blur', `blur(${parseInt(value, 10) || 70}px)`);
-        else if (settingKey === 'width') document.documentElement.style.setProperty('--dynamic-width', `${parseInt(value, 10) || 950}px`);
+        else if (settingKey === 'width') {
+            const widthValue = Math.max(420, parseInt(value, 10) || 950);
+            document.documentElement.style.setProperty('--dynamic-width', `${widthValue}px`);
+        }
         else if (settingKey === 'height') document.documentElement.style.setProperty('--dynamic-height', `${parseInt(value, 10) || 90}px`);
         else if (settingKey === 'borderRadius') document.documentElement.style.setProperty('--dynamic-border-radius', `${parseInt(value, 10) || 24}px`);
         else if (settingKey === 'selectionColorStyle') {

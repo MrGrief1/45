@@ -241,7 +241,7 @@
                             <hr>
                             <div class="setting-item">
                                 <label data-i18n="settings_width">Window Width (px)</label>
-                                <input type="range" id="setting-width" min="600" max="1600" step="10">
+                                <input type="range" id="setting-width" min="420" max="1600" step="10">
                             </div>
                             <div class="setting-item">
                                 <label data-i18n="settings_height">Bar Height (px)</label>
@@ -445,13 +445,17 @@
                         <div class="inspector-content">
                             <label for="builder-action-label">Label</label>
                             <input type="text" id="builder-action-label" placeholder="My quick action">
-                            <label for="builder-action-icon">Icon</label>
-                            <div class="inspector-icon-picker">
-                                <input type="text" id="builder-action-icon" placeholder="feather icon name">
-                                <div id="builder-icon-preview" class="icon-preview"></div>
-                            </div>
-                            <label for="builder-action-color">Accent colour</label>
-                            <input type="color" id="builder-action-color" value="#5865f2">
+                                <label for="builder-action-icon">Icon</label>
+                                <div class="inspector-icon-picker">
+                                    <div class="icon-input-group">
+                                        <input type="text" id="builder-action-icon" placeholder="feather icon name">
+                                        <button type="button" id="builder-open-icon-picker" class="icon-picker-trigger" data-i18n="quick_actions_icon_picker_open">Browse icons</button>
+                                    </div>
+                                    <div id="builder-icon-preview" class="icon-preview" aria-hidden="true"></div>
+                                </div>
+                                <div id="builder-icon-suggestions" class="icon-suggestions" aria-live="polite"></div>
+                                <label for="builder-action-color">Accent colour</label>
+                                <input type="color" id="builder-action-color" value="#5865f2">
                         </div>
                     </div>
                 </aside>
@@ -464,6 +468,61 @@
                     <button id="builder-save-action" class="settings-button">Add to quick action bar</button>
                 </div>
             </footer>
+            <div id="builder-icon-picker-layer" class="icon-picker-layer" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Icon library">
+                <div class="icon-picker-backdrop"></div>
+                <div class="icon-picker-panel" role="document">
+                    <header class="icon-picker-header">
+                        <div class="icon-picker-title-group">
+                            <h3 data-i18n="quick_actions_icon_picker_title">Select an icon</h3>
+                            <p data-i18n="quick_actions_icon_picker_subtitle">Browse the Feather icon set or search by keyword.</p>
+                        </div>
+                        <div class="icon-picker-header-actions">
+                            <button type="button" id="builder-icon-picker-close" class="icon-picker-close" aria-label="Close">×</button>
+                        </div>
+                    </header>
+                    <div class="icon-picker-body">
+                        <aside class="icon-picker-sidebar">
+                            <div class="icon-picker-search-group">
+                                <label for="builder-icon-search" data-i18n="quick_actions_icon_picker_search_label">Search</label>
+                                <input type="search" id="builder-icon-search" placeholder="Search icons" data-i18n-placeholder="quick_actions_icon_picker_search_placeholder">
+                                <p class="icon-picker-hint" data-i18n="quick_actions_icon_picker_hint">Use keywords like “arrow”, “file”, or “music”.</p>
+                            </div>
+                            <div class="icon-picker-filter-group">
+                                <h4 data-i18n="quick_actions_icon_picker_filters_title">Filters</h4>
+                                <div class="icon-picker-filter-list" id="builder-icon-filter-list" role="group" aria-label="Icon filters"></div>
+                            </div>
+                            <div class="icon-picker-meta" id="builder-icon-meta"></div>
+                        </aside>
+                        <div class="icon-picker-results">
+                            <div class="icon-picker-toolbar">
+                                <div class="icon-picker-toolbar-left">
+                                    <span id="builder-icon-count" class="icon-count">0</span>
+                                    <span data-i18n="quick_actions_icon_picker_results_label">icons</span>
+                                </div>
+                                <div class="icon-picker-toolbar-right">
+                                    <button type="button" id="builder-icon-reset" class="icon-picker-reset" data-i18n="quick_actions_icon_picker_reset">Reset filters</button>
+                                    <button type="button" id="builder-icon-favorite-toggle" class="icon-picker-favorite-toggle" data-i18n="quick_actions_icon_picker_favorites">Favorites</button>
+                                </div>
+                            </div>
+                            <div class="icon-picker-grid-wrapper">
+                                <div id="builder-icon-grid" class="icon-picker-grid" role="listbox" aria-label="Icon results"></div>
+                                <div id="builder-icon-empty" class="icon-picker-empty" hidden>
+                                    <h4 data-i18n="quick_actions_icon_picker_empty_title">No icons match your filters</h4>
+                                    <p data-i18n="quick_actions_icon_picker_empty_body">Try removing some filters or searching with a different keyword.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <footer class="icon-picker-footer">
+                        <div class="icon-picker-footer-left">
+                            <button type="button" id="builder-icon-copy-name" class="icon-picker-action secondary" data-i18n="quick_actions_icon_picker_copy">Copy name</button>
+                        </div>
+                        <div class="icon-picker-footer-right">
+                            <button type="button" id="builder-icon-apply" class="icon-picker-action primary" data-i18n="quick_actions_icon_picker_apply">Use selected icon</button>
+                        </div>
+                    </footer>
+                </div>
+            </div>
             <div class="builder-resize-handle" aria-hidden="true"></div>
         </div>
     </div>
@@ -493,6 +552,7 @@
     <div id="pinned-context-menu" class="pinned-context-menu" role="menu">
         <button type="button" data-action="create-folder" data-i18n="context_create_folder">Create Folder</button>
     </div>
+    <script src="assets/icon-picker.js"></script>
     <script src="renderer.js"></script>
 </body>
 </html>
