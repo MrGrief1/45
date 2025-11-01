@@ -102,10 +102,10 @@ const DEFAULT_SETTINGS = {
         isActive: true,
         planName: 'FlashSearch Studio',
         renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        features: ['addon-builder', 'extended-gallery', 'priority-support']
+        features: ['workspace-designer', 'extended-gallery', 'priority-support']
     },
-    activeAddons: ['clipboard-buffer'],
-    customAddons: []
+    actionModules: ['apps-library', 'files', 'commands', 'clipboard'],
+    customModules: []
 };
 
 // =================================================================================
@@ -294,23 +294,45 @@ class SettingsManager {
             };
         }
 
-        if (!Array.isArray(currentSettings.activeAddons)) {
-            currentSettings.activeAddons = [...DEFAULT_SETTINGS.activeAddons];
+        if (Array.isArray(currentSettings.activeAddons) && !currentSettings.actionModules) {
+            currentSettings.actionModules = [...currentSettings.activeAddons];
+            delete currentSettings.activeAddons;
         }
 
-        if (!Array.isArray(currentSettings.customAddons)) {
-            currentSettings.customAddons = [];
+        if (Array.isArray(currentSettings.customAddons) && !currentSettings.customModules) {
+            currentSettings.customModules = currentSettings.customAddons
+                .filter(addon => addon && typeof addon === 'object')
+                .map(addon => ({
+                    id: addon.id,
+                    name: addon.name || addon.id,
+                    icon: addon.icon || 'layers',
+                    description: addon.description || '',
+                    nodes: addon.nodes || [],
+                    connections: addon.connections || [],
+                    base: addon.base || 'clipboard',
+                    blocks: Array.isArray(addon.blocks) ? addon.blocks : []
+                }));
+            delete currentSettings.customAddons;
         }
 
-        currentSettings.activeAddons = Array.from(new Set(currentSettings.activeAddons.filter(Boolean)));
-        currentSettings.customAddons = currentSettings.customAddons
-            .filter(addon => addon && typeof addon === 'object' && addon.id && addon.name)
-            .map(addon => ({
-                ...addon,
-                base: addon.base || 'clipboard',
-                icon: addon.icon || 'layers',
-                description: addon.description || '',
-                blocks: Array.isArray(addon.blocks) ? addon.blocks : []
+        if (!Array.isArray(currentSettings.actionModules)) {
+            currentSettings.actionModules = [...DEFAULT_SETTINGS.actionModules];
+        }
+
+        if (!Array.isArray(currentSettings.customModules)) {
+            currentSettings.customModules = [];
+        }
+
+        currentSettings.actionModules = Array.from(new Set(currentSettings.actionModules.filter(Boolean)));
+        currentSettings.customModules = currentSettings.customModules
+            .filter(module => module && typeof module === 'object' && module.id && (module.name || module.title))
+            .map(module => ({
+                ...module,
+                name: module.name || module.title || 'Custom module',
+                icon: module.icon || 'layers',
+                description: module.description || '',
+                nodes: Array.isArray(module.nodes) ? module.nodes : [],
+                connections: Array.isArray(module.connections) ? module.connections : []
             }));
 
         Logger.info(`App folders structure: ${JSON.stringify(currentSettings.appFolders.map(f => ({id: f.id, name: f.name, appsCount: f.apps.length})))}`);
@@ -327,9 +349,9 @@ class SettingsManager {
     updateSetting(key, value) {
         let requiresReindex = false;
 
-        if (['indexedDirectories', 'customAutomations', 'customAddons', 'activeAddons', 'subscription'].includes(key)) {
+        if (['indexedDirectories', 'customAutomations', 'customModules', 'actionModules', 'subscription'].includes(key)) {
             currentSettings[key] = value;
-            if (['customAddons', 'activeAddons', 'subscription'].includes(key)) {
+            if (['customModules', 'actionModules', 'subscription'].includes(key)) {
                 this.validateSettings();
             }
             if (key === 'indexedDirectories') requiresReindex = true;

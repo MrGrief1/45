@@ -1,5 +1,6 @@
 // renderer.js
 const { ipcRenderer, shell } = require('electron');
+const { WorkflowStudio, WorkflowBlocks } = require('./workflow-studio');
 
 // =================================================================================
 // === Глобальное Состояние и Утилиты ===
@@ -102,53 +103,160 @@ const AppIconFallbacks = {
 };
 
 const SubscriptionFeatureLabels = {
-    'addon-builder': 'subscription_feature_addon_builder',
+    'workspace-designer': 'subscription_feature_workspace_designer',
     'extended-gallery': 'subscription_feature_gallery',
     'priority-support': 'subscription_feature_support',
     default: 'subscription_feature_default'
 };
 
-const AddonLibrary = [
+const BuiltInModules = [
     {
-        id: 'clipboard-buffer',
-        type: 'library',
-        icon: 'clipboard',
-        base: 'clipboard',
-        nameKey: 'addon_library_clipboard_name',
-        descriptionKey: 'addon_library_clipboard_description',
-        blocks: ['clipboard-filter', 'pin-items']
+        id: 'apps-library',
+        type: 'builtin',
+        icon: 'grid',
+        nameKey: 'title_apps_library',
+        descriptionKey: 'module_desc_apps_library',
+        panel: { type: 'html', resource: 'apps-library.html' }
     },
     {
-        id: 'note-canvas',
-        type: 'library',
-        icon: 'edit-3',
-        base: 'note',
-        nameKey: 'addon_library_note_name',
-        descriptionKey: 'addon_library_note_description',
-        blocks: ['text-replace']
+        id: 'files',
+        type: 'builtin',
+        icon: 'folder',
+        nameKey: 'title_files',
+        descriptionKey: 'module_desc_files',
+        panel: { type: 'html', resource: 'files.html' }
     },
     {
-        id: 'workflow-launcher',
-        type: 'library',
-        icon: 'zap',
-        base: 'command',
-        nameKey: 'addon_library_command_name',
-        descriptionKey: 'addon_library_command_description',
-        blocks: ['pin-items', 'sync']
+        id: 'commands',
+        type: 'builtin',
+        icon: 'command',
+        nameKey: 'title_commands',
+        descriptionKey: 'module_desc_commands',
+        panel: { type: 'html', resource: 'commands.html' }
+    },
+    {
+        id: 'clipboard',
+        type: 'builtin',
+        icon: 'copy',
+        nameKey: 'title_clipboard',
+        descriptionKey: 'module_desc_clipboard',
+        panel: { type: 'html', resource: 'clipboard.html' }
     }
 ];
 
-const AddonBuilderBases = [
-    { id: 'clipboard', icon: 'clipboard', nameKey: 'addon_base_clipboard', descriptionKey: 'addon_base_clipboard_desc' },
-    { id: 'note', icon: 'edit-3', nameKey: 'addon_base_note', descriptionKey: 'addon_base_note_desc' },
-    { id: 'command', icon: 'zap', nameKey: 'addon_base_command', descriptionKey: 'addon_base_command_desc' }
-];
+const ModuleTagLabels = {
+    builtin: 'module_tag_builtin',
+    custom: 'module_tag_custom'
+};
 
-const AddonBuilderBlocks = [
-    { id: 'clipboard-filter', icon: 'filter', nameKey: 'addon_builder_blocks_clipboard_filter', descriptionKey: 'addon_builder_blocks_clipboard_filter_desc' },
-    { id: 'text-replace', icon: 'repeat', nameKey: 'addon_builder_blocks_text_replace', descriptionKey: 'addon_builder_blocks_text_replace_desc' },
-    { id: 'pin-items', icon: 'bookmark', nameKey: 'addon_builder_blocks_pin_items', descriptionKey: 'addon_builder_blocks_pin_items_desc' },
-    { id: 'sync', icon: 'cloud', nameKey: 'addon_builder_blocks_sync', descriptionKey: 'addon_builder_blocks_sync_desc' }
+const ModuleRegistry = {
+    getBuiltIn() {
+        return BuiltInModules;
+    },
+    getCustom() {
+        return Array.isArray(AppState.settings.customModules) ? AppState.settings.customModules : [];
+    },
+    getModule(id) {
+        if (!id) return null;
+        const builtIn = BuiltInModules.find(module => module.id === id);
+        if (builtIn) {
+            return { ...builtIn, type: 'builtin' };
+        }
+        const customModule = this.getCustom().find(module => module.id === id);
+        if (customModule) {
+            return { ...customModule, type: 'custom' };
+        }
+        return null;
+    },
+    listAvailable() {
+        return BuiltInModules.map(module => ({ ...module, type: 'builtin' }));
+    },
+    getModuleTitle(module) {
+        if (!module) return LocalizationRenderer.t('module_unknown_name');
+        if (module.nameKey) return LocalizationRenderer.t(module.nameKey);
+        return module.name || LocalizationRenderer.t('module_unknown_name');
+    },
+    getModuleDescription(module) {
+        if (!module) return LocalizationRenderer.t('module_unknown_description');
+        if (module.descriptionKey) return LocalizationRenderer.t(module.descriptionKey);
+        return module.description || LocalizationRenderer.t('module_unknown_description');
+    },
+    getModuleIcon(module) {
+        if (!module) return 'box';
+        return (module.icon || 'box').toString().trim();
+    },
+    getModuleTagLabel(module) {
+        const tagKey = ModuleTagLabels[module?.type] || ModuleTagLabels.builtin;
+        return LocalizationRenderer.t(tagKey);
+    }
+};
+
+const ModuleIconRenderer = {
+    getMarkup(module, options = {}) {
+        const size = options.size || 26;
+        const rawIcon = ModuleRegistry.getModuleIcon(module);
+        const icon = typeof rawIcon === 'string' ? rawIcon.trim() : '';
+
+        if (!icon) {
+            return this.getFeatherSvg('box', size);
+        }
+
+        if (icon.startsWith('<svg')) {
+            return this.ensureSvgHasClass(icon, 'module-icon-svg');
+        }
+
+        if (icon.startsWith('data:') || icon.startsWith('http://') || icon.startsWith('https://')) {
+            const safeSrc = Utils.escapeHtml(icon);
+            return `<img src="${safeSrc}" alt="" class="module-icon module-icon-image" />`;
+        }
+
+        if (this.isEmoji(icon)) {
+            return `<span class="module-icon module-icon-emoji">${Utils.escapeHtml(icon)}</span>`;
+        }
+
+        const featherSvg = this.getFeatherSvg(icon.toLowerCase(), size);
+        if (featherSvg) {
+            return featherSvg;
+        }
+
+        return `<span class="module-icon module-icon-placeholder">${Utils.escapeHtml(icon.slice(0, 2).toUpperCase())}</span>`;
+    },
+
+    getFeatherSvg(name, size) {
+        const svg = window.feather?.icons?.[name]?.toSvg({
+            width: size,
+            height: size,
+            class: 'module-icon-svg'
+        });
+        if (svg) return svg;
+        if (name !== 'box') {
+            return window.feather?.icons?.box?.toSvg({
+                width: size,
+                height: size,
+                class: 'module-icon-svg'
+            }) || '';
+        }
+        return '';
+    },
+
+    isEmoji(value) {
+        if (!value) return false;
+        const trimmed = value.trim();
+        if (trimmed.length === 0 || trimmed.length > 3) return false;
+        return /[\p{Extended_Pictographic}\p{Emoji}]/u.test(trimmed);
+    },
+
+    ensureSvgHasClass(svgContent, className) {
+        if (!svgContent.includes('class=')) {
+            return svgContent.replace('<svg', `<svg class="${className}"`);
+        }
+        return svgContent;
+    }
+};
+
+// =================================================================================
+// === Система Локализации (Клиентская сторона) ===
+// =================================================================================
 ];
 
 // =================================================================================
@@ -179,6 +287,10 @@ const LocalizationRenderer = {
         Utils.getAllElements('[data-i18n-title]').forEach(element => {
             element.title = this.t(element.getAttribute('data-i18n-title'));
         });
+        Utils.getAllElements('[data-i18n-empty]').forEach(element => {
+            const key = element.getAttribute('data-i18n-empty');
+            element.dataset.emptyText = this.t(key);
+        });
         this.refreshLanguageDependentUI();
         if (typeof CustomSelect?.refreshAll === 'function') {
             CustomSelect.refreshAll();
@@ -193,9 +305,509 @@ const LocalizationRenderer = {
             SettingsModule.renderIndexedDirectories();
             SettingsModule.renderAutomations();
             SettingsModule.renderSubscription();
-            SettingsModule.renderAddons();
-            SettingsModule.renderAddonBuilder();
+            SettingsModule.renderWorkspace();
         }
+    }
+};
+
+const CustomModuleRenderer = {
+    render(container, module) {
+        if (!container) return;
+        container.innerHTML = '';
+
+        if (!module || !Array.isArray(module.nodes) || module.nodes.length === 0) {
+            const empty = Utils.createElement('div', {
+                className: 'custom-module-empty',
+                text: LocalizationRenderer.t('custom_module_empty')
+            });
+            container.appendChild(empty);
+            return;
+        }
+
+        const wrapper = Utils.createElement('div', { className: 'custom-module-panel' });
+        wrapper.appendChild(this.buildSummary(module));
+        wrapper.appendChild(this.buildVisual(module));
+        container.appendChild(wrapper);
+    },
+
+    buildSummary(module) {
+        const summary = Utils.createElement('div', { className: 'custom-module-summary' });
+        summary.appendChild(Utils.createElement('h3', {
+            text: module.name || LocalizationRenderer.t('module_unknown_name')
+        }));
+
+        const description = module.description || LocalizationRenderer.t('module_unknown_description');
+        summary.appendChild(Utils.createElement('p', { text: description }));
+
+        const nodeCount = Array.isArray(module.nodes) ? module.nodes.length : 0;
+        const connectionCount = Array.isArray(module.connections) ? module.connections.length : 0;
+        summary.appendChild(Utils.createElement('p', {
+            text: LocalizationRenderer.t('custom_module_nodes', nodeCount)
+        }));
+        summary.appendChild(Utils.createElement('p', {
+            text: LocalizationRenderer.t('custom_module_connections', connectionCount)
+        }));
+
+        const footer = Utils.createElement('div', { className: 'module-card-footer' });
+        footer.appendChild(Utils.createElement('span', {
+            className: 'tag',
+            text: LocalizationRenderer.t('module_tag_custom')
+        }));
+
+        if (module.id) {
+            const editButton = Utils.createElement('button', {
+                className: 'settings-button',
+                text: LocalizationRenderer.t('module_button_edit')
+            });
+            editButton.addEventListener('click', () => ModuleManager.openStudio(module.id));
+            footer.appendChild(editButton);
+        }
+
+        summary.appendChild(footer);
+        return summary;
+    },
+
+    buildVisual(module) {
+        const visual = Utils.createElement('div', { className: 'custom-module-visual' });
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', '100%');
+        visual.appendChild(svg);
+
+        const nodes = Array.isArray(module.nodes) ? module.nodes : [];
+        const connections = Array.isArray(module.connections) ? module.connections : [];
+
+        if (nodes.length === 0) {
+            visual.appendChild(Utils.createElement('div', {
+                className: 'custom-module-empty',
+                text: LocalizationRenderer.t('custom_module_empty')
+            }));
+            return visual;
+        }
+
+        const xs = nodes.map(node => Number(node.x) || 0);
+        const ys = nodes.map(node => Number(node.y) || 0);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+
+        const baseWidth = 640;
+        const baseHeight = 360;
+        const padding = 160;
+        const spanX = Math.max(1, maxX - minX);
+        const spanY = Math.max(1, maxY - minY);
+        const scaleX = (baseWidth - padding) / spanX;
+        const scaleY = (baseHeight - padding) / spanY;
+        const positionMap = new Map();
+
+        nodes.forEach(node => {
+            const offsetX = ((Number(node.x) || 0) - minX) * scaleX + padding / 2;
+            const offsetY = ((Number(node.y) || 0) - minY) * scaleY + padding / 2;
+            positionMap.set(node.id, { x: offsetX, y: offsetY });
+
+            const nodeEl = Utils.createElement('div', { className: 'module-node' });
+            nodeEl.style.left = `${offsetX}px`;
+            nodeEl.style.top = `${offsetY}px`;
+            nodeEl.innerHTML = `<h5>${Utils.escapeHtml(node.name || LocalizationRenderer.t('module_unknown_name'))}</h5><span>${Utils.escapeHtml(node.type || '')}</span>`;
+            visual.appendChild(nodeEl);
+        });
+
+        connections.forEach(connection => {
+            const from = positionMap.get(connection.from);
+            const to = positionMap.get(connection.to);
+            if (!from || !to) return;
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const curveOffset = Math.max(60, Math.abs(to.x - from.x) / 2);
+            path.setAttribute('d', `M ${from.x + 120} ${from.y + 30} C ${from.x + 120 + curveOffset} ${from.y + 30}, ${to.x - curveOffset} ${to.y + 30}, ${to.x} ${to.y + 30}`);
+            path.classList.add('workflow-connection-path');
+            svg.appendChild(path);
+        });
+
+        return visual;
+    }
+};
+
+const ModuleManager = {
+    initialized: false,
+    managerElement: null,
+    activeList: null,
+    availableList: null,
+    customList: null,
+    activeCount: null,
+    availableCount: null,
+    customCount: null,
+    summaryGrid: null,
+    previewContainer: null,
+    studio: null,
+
+    init() {
+        if (this.initialized) return;
+        this.managerElement = Utils.getElement('#module-manager');
+        this.activeList = Utils.getElement('#module-manager-active');
+        this.availableList = Utils.getElement('#module-manager-available');
+        this.customList = Utils.getElement('#module-manager-custom');
+        this.activeCount = Utils.getElement('#module-manager-active-count');
+        this.availableCount = Utils.getElement('#module-manager-available-count');
+        this.customCount = Utils.getElement('#module-manager-custom-count');
+        this.summaryGrid = Utils.getElement('#workspace-active-grid');
+        this.previewContainer = Utils.getElement('#workspace-studio-preview');
+
+        const overlay = Utils.getElement('#workflow-studio-overlay');
+        const windowEl = Utils.getElement('.workflow-studio-window');
+        const canvas = Utils.getElement('#workflow-canvas');
+        const connections = Utils.getElement('#workflow-canvas-connections');
+        const palette = Utils.getElement('#workflow-block-palette');
+        const nameInput = Utils.getElement('#workflow-name');
+        const iconInput = Utils.getElement('#workflow-icon');
+        const descriptionInput = Utils.getElement('#workflow-description');
+        const searchInput = Utils.getElement('#workflow-block-search');
+        const previewContent = Utils.getElement('#workflow-preview-content');
+        const runStatus = Utils.getElement('#workflow-run-status');
+        const saveButton = Utils.getElement('#workflow-save');
+        const closeButton = Utils.getElement('#workflow-studio-close');
+        const previewButton = Utils.getElement('#workflow-studio-preview');
+        const runButton = Utils.getElement('#workflow-run-preview');
+
+        this.studio = new WorkflowStudio();
+        this.studio.init({
+            overlay,
+            window: windowEl,
+            canvas,
+            canvasConnections: connections,
+            paletteContainer: palette,
+            nameInput,
+            iconInput,
+            descriptionInput,
+            searchInput,
+            previewContainer: previewContent,
+            runStatus,
+            saveButton,
+            closeButton,
+            previewButton,
+            runButton
+        });
+
+        const createButton = Utils.getElement('#module-manager-create');
+        if (createButton) {
+            createButton.addEventListener('click', () => this.openStudio());
+        }
+
+        const closeButtonEl = Utils.getElement('#module-manager-close');
+        if (closeButtonEl) {
+            closeButtonEl.addEventListener('click', () => this.close());
+        }
+
+        document.addEventListener('click', (event) => {
+            if (!this.isOpen()) return;
+            if (this.managerElement?.contains(event.target)) return;
+            const trigger = Utils.getElement('#action-modules-manage');
+            if (trigger && trigger.contains(event.target)) return;
+            this.close();
+        });
+
+        this.initialized = true;
+        this.renderWorkspaceSummary();
+    },
+
+    isOpen() {
+        return !!this.managerElement?.classList.contains('visible');
+    },
+
+    toggle() {
+        if (this.isOpen()) {
+            this.close();
+        } else {
+            this.open();
+        }
+    },
+
+    open() {
+        if (!this.managerElement) return;
+        this.managerElement.classList.add('visible');
+        this.renderManagerLists();
+    },
+
+    close() {
+        this.managerElement?.classList.remove('visible');
+    },
+
+    openFromSettings() {
+        this.open();
+    },
+
+    openStudio(moduleId = null) {
+        let moduleData = null;
+        if (moduleId) {
+            moduleData = ModuleRegistry.getModule(moduleId);
+        }
+        this.studio.open(moduleData, (savedModule) => this.saveCustomModule(savedModule));
+    },
+
+    getActiveIds() {
+        return Array.isArray(AppState.settings.actionModules)
+            ? [...AppState.settings.actionModules]
+            : [];
+    },
+
+    getCustomModules() {
+        return Array.isArray(AppState.settings.customModules)
+            ? [...AppState.settings.customModules]
+            : [];
+    },
+
+    setActionModules(ids) {
+        const sanitized = Array.from(new Set(ids.filter(Boolean)));
+        AppState.settings.actionModules = sanitized;
+        ipcRenderer.send('update-setting', 'actionModules', sanitized);
+        ActionButtonManager.renderButtons();
+        this.renderWorkspaceSummary();
+        if (this.isOpen()) {
+            this.renderManagerLists();
+        }
+    },
+
+    setCustomModules(modules) {
+        AppState.settings.customModules = modules;
+        ipcRenderer.send('update-setting', 'customModules', modules);
+        this.renderWorkspaceSummary();
+        if (this.isOpen()) {
+            this.renderManagerLists();
+        }
+    },
+
+    addModule(id) {
+        if (!id) return;
+        const active = this.getActiveIds();
+        if (active.includes(id)) return;
+        active.push(id);
+        this.setActionModules(active);
+    },
+
+    removeModule(id) {
+        if (!id) return;
+        const active = this.getActiveIds().filter(moduleId => moduleId !== id);
+        this.setActionModules(active);
+    },
+
+    deleteCustomModule(id) {
+        if (!id) return;
+        if (!window.confirm(LocalizationRenderer.t('custom_module_delete_confirm'))) return;
+        const updatedCustom = this.getCustomModules().filter(module => module.id !== id);
+        this.setCustomModules(updatedCustom);
+        this.removeModule(id);
+    },
+
+    saveCustomModule(moduleData) {
+        if (!moduleData || !moduleData.id) return;
+        const customModules = this.getCustomModules();
+        const existingIndex = customModules.findIndex(module => module.id === moduleData.id);
+        const updated = [...customModules];
+        if (existingIndex >= 0) {
+            updated[existingIndex] = moduleData;
+        } else {
+            updated.push(moduleData);
+        }
+        this.setCustomModules(updated);
+
+        const active = this.getActiveIds();
+        if (!active.includes(moduleData.id)) {
+            active.push(moduleData.id);
+            this.setActionModules(active);
+        } else {
+            this.renderWorkspaceSummary();
+            if (this.isOpen()) this.renderManagerLists();
+        }
+    },
+
+    renderManagerLists() {
+        if (!this.managerElement) return;
+
+        const activeIds = this.getActiveIds();
+        const activeModules = activeIds
+            .map(id => ModuleRegistry.getModule(id))
+            .filter(Boolean);
+        const availableModules = ModuleRegistry.listAvailable()
+            .filter(module => !activeIds.includes(module.id));
+        const customModules = this.getCustomModules();
+
+        this.renderList(this.activeList, activeModules, 'active');
+        this.renderList(this.availableList, availableModules, 'available');
+        this.renderList(this.customList, customModules, 'custom');
+        this.updateCounts(activeModules.length, availableModules.length, customModules.length);
+
+        if (window.feather) window.feather.replace();
+    },
+
+    renderWorkspaceSummary() {
+        if (this.summaryGrid) {
+            const modules = this.getActiveIds()
+                .map(id => ModuleRegistry.getModule(id))
+                .filter(Boolean);
+            this.renderList(this.summaryGrid, modules, 'summary');
+        }
+
+        if (this.previewContainer) {
+            const customModules = this.getCustomModules();
+            this.previewContainer.innerHTML = '';
+            if (customModules.length === 0) {
+                this.previewContainer.classList.remove('is-rich');
+                this.previewContainer.textContent = LocalizationRenderer.t('workspace_studio_preview_empty');
+            } else {
+                this.previewContainer.classList.add('is-rich');
+                const intro = Utils.createElement('p', {
+                    text: LocalizationRenderer.t('workspace_studio_preview_intro', customModules.length)
+                });
+                const list = document.createElement('ul');
+                list.className = 'workspace-preview-list';
+                customModules.slice(0, 5).forEach(module => {
+                    const item = document.createElement('li');
+                    item.textContent = ModuleRegistry.getModuleTitle(module);
+                    list.appendChild(item);
+                });
+                this.previewContainer.appendChild(intro);
+                this.previewContainer.appendChild(list);
+            }
+        }
+    },
+
+    renderList(container, modules, context) {
+        if (!container) return;
+        container.innerHTML = '';
+        const emptyKey = container.getAttribute('data-i18n-empty');
+        const emptyText = LocalizationRenderer.t(emptyKey || 'module_manager_empty');
+        container.dataset.emptyText = emptyText;
+
+        if (!modules || modules.length === 0) {
+            container.classList.add('is-empty');
+            return;
+        }
+
+        container.classList.remove('is-empty');
+        modules.forEach(module => {
+            const card = this.createModuleCard(module, context);
+            container.appendChild(card);
+        });
+    },
+
+    createModuleCard(module, context) {
+        const card = Utils.createElement('div', { className: 'module-card' });
+        const iconWrap = Utils.createElement('div', { className: 'module-card-icon' });
+        iconWrap.innerHTML = ModuleIconRenderer.getMarkup(module, { size: 24 });
+        card.appendChild(iconWrap);
+
+        const info = Utils.createElement('div', { className: 'module-card-content' });
+        const title = Utils.createElement('h5', {
+            text: ModuleRegistry.getModuleTitle(module)
+        });
+        const description = Utils.createElement('p', {
+            text: ModuleRegistry.getModuleDescription(module)
+        });
+        info.appendChild(title);
+        info.appendChild(description);
+        card.appendChild(info);
+
+        const footer = Utils.createElement('div', { className: 'module-card-footer' });
+        footer.appendChild(Utils.createElement('span', {
+            className: 'tag',
+            text: ModuleRegistry.getModuleTagLabel(
+                context === 'custom' ? { ...module, type: 'custom' } : module
+            )
+        }));
+
+        if (context === 'active') {
+            const removeButton = Utils.createElement('button', {
+                className: 'danger',
+                text: LocalizationRenderer.t('module_button_remove')
+            });
+            removeButton.addEventListener('click', () => this.removeModule(module.id));
+            footer.appendChild(removeButton);
+        } else if (context === 'available') {
+            const addButton = Utils.createElement('button', {
+                className: 'settings-button',
+                text: LocalizationRenderer.t('module_button_add')
+            });
+            addButton.addEventListener('click', () => this.addModule(module.id));
+            footer.appendChild(addButton);
+        } else if (context === 'custom') {
+            const isActive = this.getActiveIds().includes(module.id);
+            const toggleButton = Utils.createElement('button', {
+                className: 'settings-button',
+                text: LocalizationRenderer.t(isActive ? 'module_button_remove' : 'module_button_add')
+            });
+            toggleButton.addEventListener('click', () => {
+                if (isActive) this.removeModule(module.id);
+                else this.addModule(module.id);
+            });
+
+            const editButton = Utils.createElement('button', {
+                className: 'settings-button',
+                text: LocalizationRenderer.t('module_button_edit')
+            });
+            editButton.addEventListener('click', () => this.openStudio(module.id));
+
+            const deleteButton = Utils.createElement('button', {
+                className: 'danger',
+                text: LocalizationRenderer.t('module_button_delete')
+            });
+            deleteButton.addEventListener('click', () => this.deleteCustomModule(module.id));
+
+            footer.appendChild(toggleButton);
+            footer.appendChild(editButton);
+            footer.appendChild(deleteButton);
+        }
+
+        card.appendChild(footer);
+        return card;
+    },
+
+    updateCounts(activeCount = 0, availableCount = 0, customCount = 0) {
+        if (this.activeCount) this.activeCount.textContent = activeCount;
+        if (this.availableCount) this.availableCount.textContent = availableCount;
+        if (this.customCount) this.customCount.textContent = customCount;
+    }
+};
+
+const ActionButtonManager = {
+    container: null,
+    manageButton: null,
+
+    init() {
+        this.container = Utils.getElement('#action-buttons-scroll');
+        this.manageButton = Utils.getElement('#action-modules-manage');
+
+        if (this.manageButton) {
+            this.manageButton.addEventListener('click', () => ModuleManager.toggle());
+        }
+
+        this.renderButtons();
+    },
+
+    renderButtons() {
+        if (!this.container) return;
+        this.container.innerHTML = '';
+
+        const moduleIds = Array.isArray(AppState.settings.actionModules)
+            ? AppState.settings.actionModules
+            : [];
+
+        moduleIds.forEach(id => {
+            const module = ModuleRegistry.getModule(id);
+            if (!module) return;
+            const button = Utils.createElement('button', {
+                className: 'action-button glass-element'
+            });
+            button.dataset.moduleId = id;
+            button.setAttribute('title', ModuleRegistry.getModuleTitle(module));
+
+            button.innerHTML = ModuleIconRenderer.getMarkup(module, { size: 22 });
+
+            button.addEventListener('click', () => AuxPanelManager.toggleModule(id));
+            this.container.appendChild(button);
+        });
+
+        if (window.feather) window.feather.replace();
     }
 };
 
@@ -204,10 +816,6 @@ const LocalizationRenderer = {
 // =================================================================================
 // ... existing code ...
 const SettingsModule = {
-    builderState: {
-        base: 'clipboard',
-        blocks: []
-    },
 
     init: function() {
         this.setupEventListeners();
@@ -245,76 +853,14 @@ const SettingsModule = {
             });
         });
 
-        const activeAddonsList = Utils.getElement('#active-addons-list');
-        if (activeAddonsList) {
-            activeAddonsList.addEventListener('click', (event) => {
-                const removeButton = event.target.closest('[data-action="remove-addon"]');
-                if (removeButton) {
-                    const addonId = removeButton.getAttribute('data-addon-id');
-                    this.removeActiveAddon(addonId);
-                }
-            });
+        const openManagerButton = Utils.getElement('#workspace-open-manager');
+        if (openManagerButton) {
+            openManagerButton.addEventListener('click', () => ModuleManager.openFromSettings());
         }
 
-        const addonGallery = Utils.getElement('#addon-gallery');
-        if (addonGallery) {
-            addonGallery.addEventListener('click', (event) => {
-                const deleteButton = event.target.closest('[data-action="delete-custom-addon"]');
-                if (deleteButton) {
-                    const addonId = deleteButton.getAttribute('data-addon-id');
-                    this.deleteCustomAddon(addonId);
-                    return;
-                }
-                const addButton = event.target.closest('[data-action="add-addon"]');
-                if (addButton) {
-                    const addonId = addButton.getAttribute('data-addon-id');
-                    this.addAddonFromGallery(addonId);
-                }
-            });
-        }
-
-        const builderStack = Utils.getElement('#builder-stack');
-        if (builderStack) {
-            builderStack.addEventListener('click', (event) => {
-                const removeBlock = event.target.closest('[data-action="remove-block"]');
-                if (removeBlock) {
-                    const index = parseInt(removeBlock.getAttribute('data-block-index'), 10);
-                    this.removeBuilderBlock(index);
-                }
-            });
-        }
-
-        Utils.getAllElements('.builder-base-option').forEach(button => {
-            button.addEventListener('click', () => {
-                const base = button.getAttribute('data-base');
-                if (!base) return;
-                this.builderState.base = base;
-                this.highlightBuilderBase();
-                this.renderBuilderStack();
-            });
-        });
-
-        const addBlockButton = Utils.getElement('#builder-add-block');
-        if (addBlockButton) {
-            addBlockButton.addEventListener('click', () => {
-                const select = Utils.getElement('#builder-block-select');
-                if (!select) return;
-                const blockId = select.value;
-                if (!blockId) return;
-                if (!AddonBuilderBlocks.some(block => block.id === blockId)) return;
-                this.builderState.blocks.push(blockId);
-                this.renderBuilderStack();
-            });
-        }
-
-        const resetBuilderButton = Utils.getElement('#builder-reset');
-        if (resetBuilderButton) {
-            resetBuilderButton.addEventListener('click', () => this.resetBuilder());
-        }
-
-        const saveAddonButton = Utils.getElement('#builder-save-addon');
-        if (saveAddonButton) {
-            saveAddonButton.addEventListener('click', () => this.saveCustomAddon());
+        const openStudioButton = Utils.getElement('#workspace-open-studio');
+        if (openStudioButton) {
+            openStudioButton.addEventListener('click', () => ModuleManager.openStudio());
         }
     },
     
@@ -408,8 +954,7 @@ const SettingsModule = {
         }
         this.ensureSubscriptionVisibility();
         this.renderSubscription();
-        this.renderAddons();
-        this.renderAddonBuilder();
+        this.renderWorkspace();
         this.renderIndexedDirectories();
         this.renderAutomations();
     },
@@ -515,21 +1060,21 @@ const SettingsModule = {
     },
 
     ensureSubscriptionVisibility: function() {
-        const addonsTabButton = Utils.getElement('.settings-sidebar li[data-tab="addons"]');
-        const addonsContent = Utils.getElement('#tab-addons');
+        const workspaceTabButton = Utils.getElement('.settings-sidebar li[data-tab="workspace"]');
+        const workspaceContent = Utils.getElement('#tab-workspace');
         const isActive = this.hasActiveSubscription();
 
-        if (addonsTabButton) {
-            addonsTabButton.classList.toggle('is-hidden', !isActive);
-            if (!isActive && addonsTabButton.classList.contains('active')) {
+        if (workspaceTabButton) {
+            workspaceTabButton.classList.toggle('is-hidden', !isActive);
+            if (!isActive && workspaceTabButton.classList.contains('active')) {
                 Utils.getElement('.settings-sidebar li[data-tab="subscription"]')?.click()
                     || Utils.getElement('.settings-sidebar li[data-tab="general"]')?.click();
             }
         }
 
-        if (addonsContent) {
-            addonsContent.classList.toggle('is-hidden', !isActive);
-            if (!isActive) addonsContent.classList.remove('active');
+        if (workspaceContent) {
+            workspaceContent.classList.toggle('is-hidden', !isActive);
+            if (!isActive) workspaceContent.classList.remove('active');
         }
     },
 
@@ -565,7 +1110,7 @@ const SettingsModule = {
             featureList.innerHTML = '';
             const features = Array.isArray(subscription.features) && subscription.features.length > 0
                 ? subscription.features
-                : ['addon-builder'];
+                : ['workspace-designer'];
             features.forEach(featureKey => {
                 const item = Utils.createElement('li');
                 const translationKey = SubscriptionFeatureLabels[featureKey] || SubscriptionFeatureLabels.default;
@@ -591,336 +1136,12 @@ const SettingsModule = {
         }
     },
 
-    renderAddons: function() {
-        const isActive = this.hasActiveSubscription();
-        const activeContainer = Utils.getElement('#active-addons-list');
-        const galleryContainer = Utils.getElement('#addon-gallery');
-
-        if (!isActive) {
-            if (activeContainer) activeContainer.innerHTML = '';
-            if (galleryContainer) galleryContainer.innerHTML = '';
-            return;
+    renderWorkspace: function() {
+        if (!this.hasActiveSubscription()) return;
+        ModuleManager.renderWorkspaceSummary();
+        if (ModuleManager.isOpen()) {
+            ModuleManager.renderManagerLists();
         }
-
-        const activeIds = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        const activeSet = new Set(activeIds);
-
-        if (activeContainer) {
-            activeContainer.innerHTML = '';
-            if (activeIds.length === 0) {
-                const empty = Utils.createElement('div', { className: 'addons-empty', text: LocalizationRenderer.t('addons_empty_state') });
-                activeContainer.appendChild(empty);
-            } else {
-                activeIds.forEach(id => {
-                    const addon = this.findAddonDefinition(id);
-                    if (!addon) return;
-                    const card = Utils.createElement('div', { className: 'addon-card active-addon' });
-                    const iconWrap = Utils.createElement('div', { className: 'addon-card-icon' });
-                    iconWrap.innerHTML = `<i data-feather="${addon.icon || 'box'}"></i>`;
-                    card.appendChild(iconWrap);
-
-                    const info = Utils.createElement('div', { className: 'addon-card-info' });
-                    const titleRow = Utils.createElement('div', { className: 'addon-card-title-row' });
-                    const title = Utils.createElement('h4', { className: 'addon-card-title', text: this.getAddonDisplayName(addon) });
-                    titleRow.appendChild(title);
-                    const typeBadge = Utils.createElement('span', { className: 'addon-badge', text: addon.type === 'custom' ? LocalizationRenderer.t('addon_tag_custom') : LocalizationRenderer.t('addon_tag_library') });
-                    titleRow.appendChild(typeBadge);
-                    info.appendChild(titleRow);
-
-                    const description = Utils.createElement('p', { className: 'addon-card-description', text: this.getAddonDisplayDescription(addon) });
-                    info.appendChild(description);
-
-                    const blockIds = Array.isArray(addon.blocks) ? addon.blocks.map(block => (typeof block === 'string' ? block : block.id)) : [];
-                    if (blockIds.length > 0) {
-                        const chips = Utils.createElement('div', { className: 'addon-block-chips' });
-                        blockIds.forEach(blockId => {
-                            const blockDef = AddonBuilderBlocks.find(block => block.id === blockId);
-                            const chip = Utils.createElement('span', { className: 'addon-chip', text: blockDef ? LocalizationRenderer.t(blockDef.nameKey) : blockId });
-                            chips.appendChild(chip);
-                        });
-                        info.appendChild(chips);
-                    }
-
-                    const meta = Utils.createElement('div', { className: 'addon-card-meta' });
-                    const baseLabel = this.getAddonBaseLabel(addon);
-                    if (baseLabel) {
-                        meta.appendChild(Utils.createElement('span', { className: 'addon-meta-pill', text: baseLabel }));
-                    }
-                    const blockCount = Array.isArray(blockIds) ? blockIds.length : 0;
-                    meta.appendChild(Utils.createElement('span', { className: 'addon-meta-pill subtle', text: LocalizationRenderer.t('addon_block_count', blockCount) }));
-                    info.appendChild(meta);
-
-                    card.appendChild(info);
-
-                    const actions = Utils.createElement('div', { className: 'addon-card-actions' });
-                    const removeBtn = Utils.createElement('button', { className: 'addon-pill-button danger', text: LocalizationRenderer.t('addons_remove_button') });
-                    removeBtn.setAttribute('data-action', 'remove-addon');
-                    removeBtn.setAttribute('data-addon-id', id);
-                    actions.appendChild(removeBtn);
-                    card.appendChild(actions);
-
-                    activeContainer.appendChild(card);
-                });
-            }
-        }
-
-        if (galleryContainer) {
-            galleryContainer.innerHTML = '';
-            const galleryItems = [
-                ...AddonLibrary,
-                ...(Array.isArray(AppState.settings.customAddons) ? AppState.settings.customAddons.map(addon => ({ ...addon, type: 'custom' })) : [])
-            ];
-
-            galleryItems.forEach(addon => {
-                const card = Utils.createElement('div', { className: 'addon-card gallery-addon' });
-                if (addon.type === 'custom') card.classList.add('is-custom');
-                const iconWrap = Utils.createElement('div', { className: 'addon-card-icon' });
-                iconWrap.innerHTML = `<i data-feather="${addon.icon || 'box'}"></i>`;
-                card.appendChild(iconWrap);
-
-                const info = Utils.createElement('div', { className: 'addon-card-info' });
-                const titleRow = Utils.createElement('div', { className: 'addon-card-title-row' });
-                const title = Utils.createElement('h4', { className: 'addon-card-title', text: this.getAddonDisplayName(addon) });
-                titleRow.appendChild(title);
-                const typeBadge = Utils.createElement('span', { className: 'addon-badge', text: addon.type === 'custom' ? LocalizationRenderer.t('addon_tag_custom') : LocalizationRenderer.t('addon_tag_library') });
-                titleRow.appendChild(typeBadge);
-                info.appendChild(titleRow);
-
-                const description = Utils.createElement('p', { className: 'addon-card-description', text: this.getAddonDisplayDescription(addon) });
-                info.appendChild(description);
-
-                const blockIds = Array.isArray(addon.blocks) ? addon.blocks.map(block => (typeof block === 'string' ? block : block.id)) : [];
-                if (blockIds.length > 0) {
-                    const chips = Utils.createElement('div', { className: 'addon-block-chips' });
-                    blockIds.forEach(blockId => {
-                        const blockDef = AddonBuilderBlocks.find(block => block.id === blockId);
-                        const chip = Utils.createElement('span', { className: 'addon-chip', text: blockDef ? LocalizationRenderer.t(blockDef.nameKey) : blockId });
-                        chips.appendChild(chip);
-                    });
-                    info.appendChild(chips);
-                }
-
-                card.appendChild(info);
-
-                const actions = Utils.createElement('div', { className: 'addon-card-actions stacked' });
-                const isAlreadyActive = activeSet.has(addon.id);
-                const addButton = Utils.createElement('button', { className: 'addon-pill-button primary', text: LocalizationRenderer.t(isAlreadyActive ? 'addons_gallery_added' : 'addons_gallery_add') });
-                addButton.setAttribute('data-addon-id', addon.id);
-                addButton.setAttribute('data-action', 'add-addon');
-                addButton.disabled = isAlreadyActive;
-                if (isAlreadyActive) addButton.classList.add('disabled');
-                actions.appendChild(addButton);
-
-                if (addon.type === 'custom') {
-                    const deleteButton = Utils.createElement('button', { className: 'addon-pill-button subtle-danger', text: LocalizationRenderer.t('addon_delete_custom') });
-                    deleteButton.setAttribute('data-addon-id', addon.id);
-                    deleteButton.setAttribute('data-action', 'delete-custom-addon');
-                    actions.appendChild(deleteButton);
-                }
-
-                card.appendChild(actions);
-                galleryContainer.appendChild(card);
-            });
-        }
-
-        if (window.feather) window.feather.replace();
-    },
-
-    renderAddonBuilder: function() {
-        this.highlightBuilderBase();
-        this.renderBuilderStack();
-        this.refreshBuilderPlaceholders();
-    },
-
-    highlightBuilderBase: function() {
-        const buttons = Array.from(Utils.getAllElements('.builder-base-option'));
-        if (!buttons.length) return;
-        let found = false;
-        buttons.forEach(button => {
-            const base = button.getAttribute('data-base');
-            if (base === this.builderState.base) {
-                button.classList.add('active');
-                found = true;
-            } else {
-                button.classList.remove('active');
-            }
-        });
-        if (!found) {
-            const fallback = buttons[0];
-            fallback.classList.add('active');
-            this.builderState.base = fallback.getAttribute('data-base');
-        }
-    },
-
-    renderBuilderStack: function() {
-        const stack = Utils.getElement('#builder-stack');
-        if (!stack) return;
-        stack.innerHTML = '';
-
-        const base = AddonBuilderBases.find(item => item.id === this.builderState.base) || AddonBuilderBases[0];
-        if (base) {
-            const baseCard = Utils.createElement('div', { className: 'builder-block builder-block-base' });
-            const iconWrap = Utils.createElement('div', { className: 'builder-block-icon' });
-            iconWrap.innerHTML = `<i data-feather="${base.icon}"></i>`;
-            baseCard.appendChild(iconWrap);
-            const info = Utils.createElement('div', { className: 'builder-block-info' });
-            info.appendChild(Utils.createElement('div', { className: 'builder-block-title', text: LocalizationRenderer.t(base.nameKey) }));
-            info.appendChild(Utils.createElement('div', { className: 'builder-block-description', text: LocalizationRenderer.t(base.descriptionKey) }));
-            baseCard.appendChild(info);
-            stack.appendChild(baseCard);
-        }
-
-        if (!this.builderState.blocks.length) {
-            stack.appendChild(Utils.createElement('div', { className: 'builder-empty', text: LocalizationRenderer.t('addon_builder_empty_state') }));
-        } else {
-            this.builderState.blocks.forEach((blockId, index) => {
-                const block = AddonBuilderBlocks.find(item => item.id === blockId);
-                const blockCard = Utils.createElement('div', { className: 'builder-block' });
-                const iconWrap = Utils.createElement('div', { className: 'builder-block-icon' });
-                iconWrap.innerHTML = `<i data-feather="${block?.icon || 'tool'}"></i>`;
-                blockCard.appendChild(iconWrap);
-                const info = Utils.createElement('div', { className: 'builder-block-info' });
-                info.appendChild(Utils.createElement('div', { className: 'builder-block-title', text: block ? LocalizationRenderer.t(block.nameKey) : blockId }));
-                if (block?.descriptionKey) {
-                    info.appendChild(Utils.createElement('div', { className: 'builder-block-description', text: LocalizationRenderer.t(block.descriptionKey) }));
-                }
-                blockCard.appendChild(info);
-                const removeButton = Utils.createElement('button', { className: 'addon-pill-button subtle', text: LocalizationRenderer.t('addon_builder_remove_block') });
-                removeButton.setAttribute('data-action', 'remove-block');
-                removeButton.setAttribute('data-block-index', index);
-                blockCard.appendChild(removeButton);
-                stack.appendChild(blockCard);
-            });
-        }
-
-        if (window.feather) window.feather.replace();
-    },
-
-    refreshBuilderPlaceholders: function() {
-        const nameInput = Utils.getElement('#builder-addon-name');
-        if (nameInput) nameInput.placeholder = LocalizationRenderer.t('addon_builder_name_placeholder');
-        const descriptionInput = Utils.getElement('#builder-addon-description');
-        if (descriptionInput) descriptionInput.placeholder = LocalizationRenderer.t('addon_builder_description_placeholder');
-        const blockSelect = Utils.getElement('#builder-block-select');
-        if (blockSelect) {
-            Array.from(blockSelect.options).forEach(option => {
-                const key = option.getAttribute('data-i18n');
-                if (key) option.textContent = LocalizationRenderer.t(key);
-            });
-        }
-    },
-
-    findAddonDefinition: function(id) {
-        if (!id) return null;
-        const libraryAddon = AddonLibrary.find(addon => addon.id === id);
-        if (libraryAddon) return { ...libraryAddon };
-        const customAddon = (AppState.settings.customAddons || []).find(addon => addon.id === id);
-        if (customAddon) return { ...customAddon, type: 'custom' };
-        return null;
-    },
-
-    getAddonDisplayName: function(addon) {
-        if (!addon) return LocalizationRenderer.t('addon_unknown_name');
-        if (addon.nameKey) return LocalizationRenderer.t(addon.nameKey);
-        return addon.name || LocalizationRenderer.t('addon_unknown_name');
-    },
-
-    getAddonDisplayDescription: function(addon) {
-        if (!addon) return LocalizationRenderer.t('addon_default_description');
-        if (addon.descriptionKey) return LocalizationRenderer.t(addon.descriptionKey);
-        return addon.description || LocalizationRenderer.t('addon_default_description');
-    },
-
-    getAddonBaseLabel: function(addon) {
-        if (!addon) return '';
-        const base = AddonBuilderBases.find(option => option.id === addon.base);
-        return base ? LocalizationRenderer.t(base.nameKey) : '';
-    },
-
-    addAddonFromGallery: function(id) {
-        if (!id) return;
-        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        if (activeAddons.includes(id)) return;
-        activeAddons.push(id);
-        AppState.settings.activeAddons = activeAddons;
-        ipcRenderer.send('update-setting', 'activeAddons', activeAddons);
-        this.renderAddons();
-    },
-
-    removeActiveAddon: function(id) {
-        if (!id) return;
-        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        const updated = activeAddons.filter(addonId => addonId !== id);
-        if (updated.length === activeAddons.length) return;
-        AppState.settings.activeAddons = updated;
-        ipcRenderer.send('update-setting', 'activeAddons', updated);
-        this.renderAddons();
-    },
-
-    deleteCustomAddon: function(id) {
-        if (!id) return;
-        const customAddons = Array.isArray(AppState.settings.customAddons) ? [...AppState.settings.customAddons] : [];
-        if (!customAddons.some(addon => addon.id === id)) return;
-        if (!window.confirm(LocalizationRenderer.t('addon_delete_custom_confirm'))) return;
-        const updatedCustom = customAddons.filter(addon => addon.id !== id);
-        const updatedActive = (AppState.settings.activeAddons || []).filter(addonId => addonId !== id);
-        AppState.settings.customAddons = updatedCustom;
-        AppState.settings.activeAddons = updatedActive;
-        ipcRenderer.send('update-setting', 'customAddons', updatedCustom);
-        ipcRenderer.send('update-setting', 'activeAddons', updatedActive);
-        this.renderAddons();
-    },
-
-    removeBuilderBlock: function(index) {
-        if (!Number.isInteger(index)) return;
-        if (index < 0 || index >= this.builderState.blocks.length) return;
-        this.builderState.blocks.splice(index, 1);
-        this.renderBuilderStack();
-    },
-
-    resetBuilder: function() {
-        const defaultBase = AddonBuilderBases[0]?.id || 'clipboard';
-        this.builderState = { base: defaultBase, blocks: [] };
-        const nameInput = Utils.getElement('#builder-addon-name');
-        if (nameInput) nameInput.value = '';
-        const descriptionInput = Utils.getElement('#builder-addon-description');
-        if (descriptionInput) descriptionInput.value = '';
-        const blockSelect = Utils.getElement('#builder-block-select');
-        if (blockSelect) blockSelect.value = '';
-        this.renderAddonBuilder();
-    },
-
-    saveCustomAddon: function() {
-        const nameInput = Utils.getElement('#builder-addon-name');
-        const descriptionInput = Utils.getElement('#builder-addon-description');
-        const name = nameInput?.value.trim() || '';
-        if (!name) {
-            alert(LocalizationRenderer.t('addon_builder_error_name_required'));
-            return;
-        }
-        const description = descriptionInput?.value.trim() || '';
-        const baseId = this.builderState.base || (AddonBuilderBases[0]?.id || 'clipboard');
-        const base = AddonBuilderBases.find(item => item.id === baseId);
-        const blocks = this.builderState.blocks.map(blockId => ({ id: blockId }));
-        const icon = base?.icon || 'layers';
-        const customAddons = Array.isArray(AppState.settings.customAddons) ? [...AppState.settings.customAddons] : [];
-        const newAddon = {
-            id: `custom-${Date.now()}`,
-            name,
-            description,
-            base: baseId,
-            icon,
-            blocks
-        };
-        customAddons.push(newAddon);
-        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        activeAddons.push(newAddon.id);
-        AppState.settings.customAddons = customAddons;
-        AppState.settings.activeAddons = Array.from(new Set(activeAddons));
-        ipcRenderer.send('update-setting', 'customAddons', customAddons);
-        ipcRenderer.send('update-setting', 'activeAddons', Array.from(new Set(activeAddons)));
-        this.resetBuilder();
-        this.renderAddons();
     },
 
     setupShortcutRecorder: function() {
@@ -1040,7 +1261,7 @@ const SearchModule = {
 
         if (pinnedAppsContainer) ViewManager.animateHide(pinnedAppsContainer);
 
-        if (AuxPanelManager.currentPanel) {
+        if (AuxPanelManager.currentModuleId) {
             AuxPanelManager.closePanel(false);
         }
         
@@ -1158,7 +1379,7 @@ const SearchModule = {
         if (resultsArea) ViewManager.animateHide(resultsArea);
 
         // Close any open auxiliary panel to return to the default state.
-        if (AuxPanelManager.currentPanel) {
+        if (AuxPanelManager.currentModuleId) {
             AuxPanelManager.closePanel(false); // `false` prevents it from re-showing pinned apps.
         }
 
@@ -2017,112 +2238,106 @@ const PinnedAppsModule = {
 // =================================================================================
 
 const AuxPanelManager = {
-    currentPanel: null,
+    currentModuleId: null,
     
     init: function() {
         this.panelContainer = Utils.getElement('#aux-panel');
-        Utils.getAllElements('#action-buttons [data-window-type]').forEach(button => {
-            button.addEventListener('click', () => {
-                const type = button.getAttribute('data-window-type');
-                this.togglePanel(type);
-            });
-        });
         ipcRenderer.on('update-data', this.updateDataListener);
     },
 
-    togglePanel: function(type) {
-        // ИСПРАВЛЕНИЕ БАГА: Всегда сбрасываем preventClose при переключении панелей
+    toggleModule: function(moduleId) {
         ipcRenderer.send('set-prevent-close', false);
-        
-        if (this.currentPanel === type) {
+        if (!moduleId) return;
+        if (this.currentModuleId === moduleId) {
             this.closePanel();
         } else {
-            this.openPanel(type);
+            this.openModule(moduleId);
         }
     },
 
-    openPanel: async function(type) {
-        // ИСПРАВЛЕНИЕ БАГА: Всегда сбрасываем preventClose при переключении панелей
+    openModule: async function(moduleId) {
         ipcRenderer.send('set-prevent-close', false);
-        
-        // If search results are visible, hide them before opening a panel.
+
+        const module = ModuleRegistry.getModule(moduleId);
+        if (!module) return;
+
         const resultsArea = Utils.getElement('#results-area');
-        if (resultsArea.classList.contains('visible')) {
+        if (resultsArea?.classList.contains('visible')) {
             ViewManager.animateHide(resultsArea);
         }
 
-        this.currentPanel = type;
-        
+        this.currentModuleId = moduleId;
+
+        if (module.type === 'custom') {
+            this.renderCustomModule(module);
+            return;
+        }
+
+        const resource = module.panel?.resource || `${moduleId}.html`;
+
         try {
-            const response = await fetch(`${type}.html`);
-            if (!response.ok) throw new Error(`Failed to load ${type}.html`);
+            const response = await fetch(resource);
+            if (!response.ok) throw new Error(`Failed to load ${resource}`);
             const html = await response.text();
-            
+
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             const content = doc.body.innerHTML;
 
             this.panelContainer.innerHTML = content;
-            
-            // НОВОЕ: Для библиотеки приложений используем apps-library-wrapper
+
             const auxContainer = this.panelContainer.querySelector('#aux-container');
             const appsLibraryWrapper = this.panelContainer.querySelector('#apps-library-wrapper');
-            
-            // Apply animation class based on settings
+
             if (AppState.settings.animations && AppState.settings.resultsAnimationStyle) {
-                if (auxContainer) {
-                    auxContainer.classList.add('results-anim-' + AppState.settings.resultsAnimationStyle);
-                }
-                if (appsLibraryWrapper) {
-                    appsLibraryWrapper.classList.add('results-anim-' + AppState.settings.resultsAnimationStyle);
-                }
+                [auxContainer, appsLibraryWrapper].forEach(element => {
+                    if (element) {
+                        element.classList.add('results-anim-' + AppState.settings.resultsAnimationStyle);
+                    }
+                });
             }
 
-            if (auxContainer) {
-                ViewManager.prepareForShow(auxContainer);
-            }
-            if (appsLibraryWrapper) {
-                ViewManager.prepareForShow(appsLibraryWrapper);
-            }
-            
+            [auxContainer, appsLibraryWrapper].forEach(element => {
+                if (element) ViewManager.prepareForShow(element);
+            });
+
             this.panelContainer.classList.add('visible');
 
-            if (type === 'apps-library') {
-                if (appsLibraryWrapper) {
-                    appsLibraryWrapper.classList.add('state-loading');
-                    appsLibraryWrapper.classList.remove('state-empty');
-                }
-                ViewManager.resizeWindow();
-            }
-            
-            // ОПТИМИЗАЦИЯ: Используем requestAnimationFrame для более плавной анимации
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     if (auxContainer) auxContainer.classList.add('visible');
                     if (appsLibraryWrapper) appsLibraryWrapper.classList.add('visible');
                 });
             });
-            
+
             ViewManager.animateHide(Utils.getElement('#pinned-apps-container'));
-            
-            this.executePanelLogic(type);
-            
+
+            this.executePanelLogic(moduleId);
+
             setTimeout(() => {
-                if (type !== 'apps-library') {
+                if (moduleId !== 'apps-library') {
                     ViewManager.resizeWindow();
                 }
             }, 50);
         } catch (error) {
-            console.error(`[AuxPanelManager] Error opening panel:`, error);
-            this.closePanel();
+            console.error(`[AuxPanelManager] Error opening module ${moduleId}:`, error);
+            this.closePanel(false);
         }
+    },
+
+    renderCustomModule: function(module) {
+        this.panelContainer.innerHTML = '';
+        this.panelContainer.classList.add('visible');
+        CustomModuleRenderer.render(this.panelContainer, module);
+        ViewManager.animateHide(Utils.getElement('#pinned-apps-container'));
+        setTimeout(() => ViewManager.resizeWindow(), 50);
     },
 
     closePanel: function(showPinnedApps = true) {
         // ИСПРАВЛЕНИЕ БАГА: Сбрасываем preventClose при закрытии панели
         ipcRenderer.send('set-prevent-close', false);
 
-        this.currentPanel = null;
+        this.currentModuleId = null;
 
         const finalizeClose = () => {
             this.panelContainer.innerHTML = '';
@@ -2183,21 +2398,21 @@ const AuxPanelManager = {
         }
     },
     
-    executePanelLogic: function(type) {
+    executePanelLogic: function(moduleId) {
         const titleElement = this.panelContainer.querySelector('h2[data-i18n]');
         if (titleElement) {
             titleElement.textContent = LocalizationRenderer.t(titleElement.getAttribute('data-i18n'));
         }
-        
+
         if (window.feather) {
             window.feather.replace();
         }
-        
+
         // НОВОЕ: Специальная обработка для библиотеки приложений
-        if (type === 'apps-library') {
+        if (moduleId === 'apps-library') {
             this.loadAppsLibrary();
         } else {
-            ipcRenderer.send('aux-panel-ready-for-data', type);
+            ipcRenderer.send('aux-panel-ready-for-data', moduleId);
         }
     },
 
@@ -2536,8 +2751,8 @@ const AuxPanelManager = {
 
     updateDataListener: (event, data) => {
         const self = AuxPanelManager;
-        const type = self.currentPanel;
-        if (!type) return;
+        const moduleId = self.currentModuleId;
+        if (!moduleId) return;
 
         const listElement = self.panelContainer.querySelector('#data-list');
         if (!listElement) return;
@@ -2546,14 +2761,14 @@ const AuxPanelManager = {
         const fragment = document.createDocumentFragment();
         
         let items = [];
-        if (type === 'clipboard') {
+        if (moduleId === 'clipboard') {
             items = data.map(item => ({
                 primary: item.content.length > 100 ? item.content.substring(0, 100) + '...' : item.content,
                 secondary: new Date(item.timestamp).toLocaleString(),
                 icon: 'clipboard',
                 action: () => ipcRenderer.send('copy-to-clipboard', item.content)
             }));
-        } else if (type === 'files') {
+        } else if (moduleId === 'files') {
             items = data.map(item => ({
                 primary: item.name,
                 secondary: item.path,
@@ -2562,7 +2777,7 @@ const AuxPanelManager = {
             }));
             // Сортируем файлы по имени (кроме случаев, когда уже переданы отсортированными)
             items.sort((a, b) => a.primary.localeCompare(b.primary));
-        } else if (type === 'commands') {
+        } else if (moduleId === 'commands') {
             items = data.map(item => ({
                 primary: item.name,
                 secondary: item.type === 'system' ? 'System Command' : `Keyword: ${item.keyword}`,
@@ -2882,6 +3097,8 @@ document.addEventListener('DOMContentLoaded', () => {
     FolderContextMenu.init();
     PinnedContextMenu.init();
     PinnedAppsModule.init();
+    ModuleManager.init();
+    ActionButtonManager.init();
     AuxPanelManager.init();
     CustomSelect.init();
 
@@ -2922,9 +3139,11 @@ document.addEventListener('DOMContentLoaded', () => {
         ViewManager.applyAppearanceSettings();
         LocalizationRenderer.applyTranslations();
         SettingsModule.populateSettingsUI();
+        ActionButtonManager.renderButtons();
+        ModuleManager.renderWorkspaceSummary();
         PinnedAppsModule.render();
         FolderContextMenu.highlightSelection();
-        if (AuxPanelManager.currentPanel === 'apps-library') {
+        if (AuxPanelManager.currentModuleId === 'apps-library') {
             AuxPanelManager.loadAppsLibrary();
         }
         ViewManager.resizeWindow(); // Always resize after settings update

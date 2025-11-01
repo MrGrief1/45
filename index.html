@@ -19,17 +19,9 @@
                 </div>
 
                 <div id="action-buttons">
-                    <button class="action-button glass-element" data-window-type="apps-library" data-i18n-title="title_apps_library">
-                        <i data-feather="grid" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="files" data-i18n-title="title_files">
-                        <i data-feather="folder" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="commands" data-i18n-title="title_commands">
-                        <i data-feather="command" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="clipboard" data-i18n-title="title_clipboard">
-                        <i data-feather="copy" class="icon"></i>
+                    <div id="action-buttons-scroll" class="action-buttons-scroll"></div>
+                    <button class="action-button glass-element" id="action-modules-manage" data-i18n-title="module_manage_tooltip">
+                        <i data-feather="sliders" class="icon"></i>
                     </button>
                     <button class="action-button glass-element settings-gear" id="settings-button" data-i18n-title="context_settings">
                         <i data-feather="settings" class="icon"></i>
@@ -72,7 +64,7 @@
                             <li data-tab="indexing" data-i18n="settings_indexing">Indexing</li>
                             <li data-tab="automations" data-i18n="settings_automations">Automations</li>
                             <li data-tab="subscription" data-i18n="settings_subscription">Subscription</li>
-                            <li data-tab="addons" class="subscription-only" data-i18n="settings_addons">Add-on Lab</li>
+                            <li data-tab="workspace" class="subscription-only" data-i18n="settings_workspace">Quick Modules</li>
                             <li data-tab="about" data-i18n="settings_about">About</li>
                         </ul>
                     </div>
@@ -340,76 +332,26 @@
                             </section>
                         </div>
 
-                        <div id="tab-addons" class="tab-content">
+                        <div id="tab-workspace" class="tab-content">
                             <section class="settings-section-card addons-section">
                                 <header class="addons-section-header">
                                     <div>
-                                        <h3 data-i18n="addons_active_title">Active workspace</h3>
-                                        <p data-i18n="addons_active_description">These add-ons are currently plugged into FlashSearch.</p>
+                                        <h3 data-i18n="workspace_overview_title">Pinned buttons</h3>
+                                        <p data-i18n="workspace_overview_description">Manage which quick modules appear beside your search bar.</p>
                                     </div>
+                                    <button type="button" id="workspace-open-manager" class="settings-button" data-i18n="workspace_open_manager">Open manager</button>
                                 </header>
-                                <div id="active-addons-list" class="addons-active-list"></div>
+                                <div id="workspace-active-grid" class="module-manager-list settings-view" data-i18n-empty="module_manager_empty"></div>
                             </section>
                             <section class="settings-section-card addons-section">
                                 <header class="addons-section-header">
                                     <div>
-                                        <h3 data-i18n="addons_gallery_title">Component gallery</h3>
-                                        <p data-i18n="addons_gallery_description">Start with a ready-made module and adapt it to your workflow.</p>
+                                        <h3 data-i18n="workspace_studio_title">Design custom workflows</h3>
+                                        <p data-i18n="workspace_studio_description">Open the Workflow Studio to connect triggers, actions and outputs.</p>
                                     </div>
+                                    <button type="button" id="workspace-open-studio" class="settings-button primary" data-i18n="workspace_open_studio">Launch studio</button>
                                 </header>
-                                <div id="addon-gallery" class="addons-gallery"></div>
-                            </section>
-                            <section class="settings-section-card addons-section">
-                                <header class="addons-section-header">
-                                    <div>
-                                        <h3 data-i18n="addon_builder_title">Create your own add-on</h3>
-                                        <p data-i18n="addon_builder_intro">Build features from easy blocks—no coding required.</p>
-                                    </div>
-                                </header>
-                                <div class="addon-builder">
-                                    <div class="builder-column">
-                                        <h4 data-i18n="addon_builder_base_label">Choose a starting point</h4>
-                                        <div class="builder-base-options">
-                                            <button type="button" class="builder-base-option active" data-base="clipboard">
-                                                <i data-feather="clipboard"></i>
-                                                <span data-i18n="addon_base_clipboard">Clipboard buffer</span>
-                                                <small data-i18n="addon_base_clipboard_desc">Start from the classic clipboard layout.</small>
-                                            </button>
-                                            <button type="button" class="builder-base-option" data-base="note">
-                                                <i data-feather="edit-3"></i>
-                                                <span data-i18n="addon_base_note">Quick note</span>
-                                                <small data-i18n="addon_base_note_desc">Capture ideas and templates.</small>
-                                            </button>
-                                            <button type="button" class="builder-base-option" data-base="command">
-                                                <i data-feather="zap"></i>
-                                                <span data-i18n="addon_base_command">Quick command</span>
-                                                <small data-i18n="addon_base_command_desc">Trigger scripts or workflows.</small>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="builder-column">
-                                        <h4 data-i18n="addon_builder_blocks_label">Add building blocks</h4>
-                                        <div class="builder-controls">
-                                            <select id="builder-block-select">
-                                                <option value="" data-i18n="addon_builder_block_placeholder">Select block…</option>
-                                                <option value="clipboard-filter" data-i18n="addon_builder_blocks_clipboard_filter">Filter copied content</option>
-                                                <option value="text-replace" data-i18n="addon_builder_blocks_text_replace">Replace text automatically</option>
-                                                <option value="pin-items" data-i18n="addon_builder_blocks_pin_items">Pin favourite items</option>
-                                                <option value="sync" data-i18n="addon_builder_blocks_sync">Sync across devices</option>
-                                            </select>
-                                            <button type="button" id="builder-add-block" class="settings-button" data-i18n="addon_builder_add_block">Add block</button>
-                                            <button type="button" id="builder-reset" class="settings-button secondary" data-i18n="addon_builder_reset">Clear builder</button>
-                                        </div>
-                                        <div id="builder-stack" class="builder-stack"></div>
-                                        <div class="builder-form">
-                                            <label for="builder-addon-name" data-i18n="addon_builder_name_label">Name</label>
-                                            <input type="text" id="builder-addon-name" data-i18n-placeholder="addon_builder_name_placeholder" placeholder="Custom add-on">
-                                            <label for="builder-addon-description" data-i18n="addon_builder_description_label">Description</label>
-                                            <textarea id="builder-addon-description" data-i18n-placeholder="addon_builder_description_placeholder" placeholder="Explain what this add-on does..."></textarea>
-                                            <button type="button" id="builder-save-addon" class="settings-button" data-i18n="addon_builder_save">Save add-on</button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div class="workspace-studio-preview" id="workspace-studio-preview"></div>
                             </section>
                         </div>
 
@@ -434,6 +376,95 @@
           feather.replace();
       }
     </script>
+    <div id="module-manager" class="module-manager glass-element hidden">
+        <div class="module-manager-header">
+            <div class="module-manager-titles">
+                <h3 data-i18n="module_manager_title">Quick Modules</h3>
+                <p data-i18n="module_manager_subtitle">Choose which actions live next to your search bar.</p>
+            </div>
+            <button type="button" class="module-manager-close" id="module-manager-close" aria-label="Close">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+        <div class="module-manager-body">
+            <div class="module-manager-section">
+                <div class="module-manager-section-header">
+                    <h4 data-i18n="module_manager_active">Pinned buttons</h4>
+                    <span class="module-manager-count" id="module-manager-active-count">0</span>
+                </div>
+                <div id="module-manager-active" class="module-manager-list" data-i18n-empty="module_manager_empty"></div>
+            </div>
+            <div class="module-manager-section">
+                <div class="module-manager-section-header">
+                    <h4 data-i18n="module_manager_available">Available modules</h4>
+                    <span class="module-manager-count" id="module-manager-available-count">0</span>
+                </div>
+                <div id="module-manager-available" class="module-manager-list" data-i18n-empty="module_manager_empty"></div>
+            </div>
+            <div class="module-manager-section">
+                <div class="module-manager-section-header">
+                    <h4 data-i18n="module_manager_custom">Custom workflows</h4>
+                    <span class="module-manager-count" id="module-manager-custom-count">0</span>
+                </div>
+                <div id="module-manager-custom" class="module-manager-list" data-i18n-empty="module_manager_custom_empty"></div>
+                <button type="button" id="module-manager-create" class="module-manager-create settings-button" data-i18n="module_manager_create">Create workflow</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="workflow-studio-overlay" class="workflow-studio-overlay hidden">
+        <div class="workflow-studio-window glass-element">
+            <div class="workflow-studio-header">
+                <div class="workflow-studio-title">
+                    <h2 data-i18n="workflow_studio_title">Workflow Studio</h2>
+                    <p data-i18n="workflow_studio_subtitle">Design custom buttons by connecting blocks.</p>
+                </div>
+                <div class="workflow-studio-actions">
+                    <button type="button" id="workflow-studio-preview" class="studio-pill-button" data-i18n="workflow_studio_preview">Preview</button>
+                    <button type="button" id="workflow-studio-close" class="studio-pill-button danger" data-i18n="workflow_studio_cancel">Close studio</button>
+                </div>
+            </div>
+            <div class="workflow-studio-main">
+                <aside class="workflow-studio-sidebar">
+                    <div class="studio-panel">
+                        <h3 data-i18n="workflow_studio_palette">Blocks</h3>
+                        <input type="text" id="workflow-block-search" data-i18n-placeholder="workflow_studio_block_search" placeholder="Search blocks">
+                        <div id="workflow-block-palette" class="workflow-block-palette" data-i18n-empty="workflow_studio_empty"></div>
+                    </div>
+                    <div class="studio-panel">
+                        <h3 data-i18n="workflow_studio_properties">Module details</h3>
+                        <label for="workflow-name" data-i18n="workflow_studio_name_label">Name</label>
+                        <input type="text" id="workflow-name" placeholder="My workflow" data-i18n-placeholder="workflow_studio_name_placeholder">
+                        <label for="workflow-icon" data-i18n="workflow_studio_icon_label">Icon</label>
+                        <input type="text" id="workflow-icon" placeholder="zap" data-i18n-placeholder="workflow_studio_icon_placeholder">
+                        <label for="workflow-description" data-i18n="workflow_studio_description_label">Description</label>
+                        <textarea id="workflow-description" data-i18n-placeholder="workflow_studio_description_placeholder" placeholder="What does this module do?"></textarea>
+                        <button type="button" id="workflow-save" class="settings-button primary" data-i18n="workflow_studio_save">Save module</button>
+                    </div>
+                </aside>
+                <section class="workflow-studio-canvas" id="workflow-canvas-area">
+                    <div class="workflow-canvas-toolbar">
+                        <span data-i18n="workflow_studio_edge_hint">Click a port to start a connection, then another to finish.</span>
+                        <button type="button" id="workflow-run-preview" class="studio-pill-button" data-i18n="workflow_studio_run_preview">Simulate run</button>
+                    </div>
+                    <div class="workflow-canvas-wrapper">
+                        <svg id="workflow-canvas-connections" class="workflow-canvas-connections"></svg>
+                        <div id="workflow-canvas" class="workflow-canvas" data-empty-label="workflow_studio_empty"></div>
+                    </div>
+                </section>
+            </div>
+            <div class="workflow-studio-footer">
+                <div class="workflow-preview" id="workflow-preview">
+                    <h4 data-i18n="workflow_studio_preview">Preview</h4>
+                    <div id="workflow-preview-content" data-i18n-empty="workflow_studio_preview_empty"></div>
+                </div>
+                <div class="workflow-run-log" id="workflow-run-log">
+                    <h4 data-i18n="custom_module_last_run">Last simulated run</h4>
+                    <p id="workflow-run-status" data-i18n="custom_module_never">Never</p>
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="folder-context-menu" class="folder-context-menu">
         <div class="folder-menu-actions">
             <button type="button" class="folder-menu-action" data-action="rename" data-i18n="context_rename_folder">Rename</button>
