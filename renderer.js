@@ -874,6 +874,8 @@ const QuickActionLab = {
     iconPickerOpen: false,
     windowExpanded: false,
     boundOutsideClick: null,
+    builderSelectWrappers: new Set(),
+    boundSelectOutsideClick: null,
 
     init() {
         if (this.initialized) return;
@@ -885,6 +887,7 @@ const QuickActionLab = {
         this.iconPickerButtons = new Map();
         this.iconPickerOpen = false;
         this.windowExpanded = false;
+        this.builderSelectWrappers = new Set();
         this.elements = {
             activeList: Utils.getElement('#quick-action-active-list'),
             catalog: Utils.getElement('#quick-action-catalog'),
@@ -930,6 +933,11 @@ const QuickActionLab = {
             if (this.elements.iconPickerToggle?.contains(target)) return;
             this.toggleIconPicker(false);
         };
+
+        if (!this.boundSelectOutsideClick) {
+            this.boundSelectOutsideClick = (event) => this.handleBuilderSelectOutsideClick(event);
+            document.addEventListener('click', this.boundSelectOutsideClick);
+        }
 
         if (!this.elements.activeList) {
             return;
@@ -1499,6 +1507,8 @@ const QuickActionLab = {
     renderInspector() {
         const container = this.elements.inspectorContent;
         if (!container || !this.builderState) return;
+        this.closeAllBuilderSelects();
+        this.builderSelectWrappers = new Set();
         container.innerHTML = '';
 
         const selectedId = this.builderState.selectedNodeId;
@@ -1551,27 +1561,33 @@ const QuickActionLab = {
 
         moduleDef.form.forEach(field => {
             const label = Utils.createElement('label', { text: field.label || field.key });
+            container.appendChild(label);
+
+            const currentValue = node.config?.[field.key] ?? moduleDef.defaultConfig?.[field.key] ?? '';
+
+            if (field.type === 'select') {
+                const selectWrapper = this.createBuilderSelect(field, currentValue, (value) => {
+                    if (value !== node.config?.[field.key]) {
+                        this.updateNodeConfig(node.id, field.key, value);
+                    }
+                });
+                container.appendChild(selectWrapper);
+                return;
+            }
+
             let input;
             if (field.type === 'textarea') {
                 input = document.createElement('textarea');
                 if (field.rows) input.rows = field.rows;
-            } else if (field.type === 'select') {
-                input = document.createElement('select');
-                (field.options || []).forEach(option => {
-                    const optionEl = document.createElement('option');
-                    optionEl.value = option.value;
-                    optionEl.textContent = option.label || option.value;
-                    input.appendChild(optionEl);
-                });
             } else {
                 input = document.createElement('input');
                 input.type = field.type || 'text';
                 if (field.min !== undefined) input.min = field.min;
             }
-            input.value = node.config?.[field.key] ?? moduleDef.defaultConfig?.[field.key] ?? '';
+
+            input.value = currentValue;
             if (field.placeholder) input.placeholder = field.placeholder;
             input.addEventListener('input', () => this.updateNodeConfig(node.id, field.key, input.value));
-            container.appendChild(label);
             container.appendChild(input);
         });
 
@@ -1580,6 +1596,134 @@ const QuickActionLab = {
             deleteBtn.addEventListener('click', () => this.removeNode(node.id));
             container.appendChild(deleteBtn);
         }
+    },
+
+    createBuilderSelect(field, currentValue, onChange) {
+        const options = Array.isArray(field.options) ? field.options : [];
+        const wrapper = document.createElement('div');
+        wrapper.className = 'custom-select-wrapper builder-custom-select';
+
+        const customSelect = document.createElement('div');
+        customSelect.className = 'custom-select';
+
+        const trigger = document.createElement('div');
+        trigger.className = 'custom-select-trigger';
+        trigger.setAttribute('role', 'button');
+        trigger.setAttribute('tabindex', '0');
+
+        const labelSpan = document.createElement('span');
+        const matchingOption = options.find(option => option.value === currentValue);
+        labelSpan.textContent = matchingOption
+            ? (matchingOption.label || matchingOption.value)
+            : (currentValue || field.placeholder || '');
+        trigger.appendChild(labelSpan);
+
+        const arrow = document.createElement('span');
+        arrow.className = 'arrow';
+        arrow.innerHTML = "<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>";
+        trigger.appendChild(arrow);
+
+        customSelect.appendChild(trigger);
+
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'custom-options';
+
+        if (!options.length) {
+            const emptyOption = document.createElement('div');
+            emptyOption.className = 'custom-option disabled';
+            const emptySpan = document.createElement('span');
+            emptySpan.textContent = field.placeholder || LocalizationRenderer.t('quick_actions_no_settings') || 'No options available';
+            emptyOption.appendChild(emptySpan);
+            optionsContainer.appendChild(emptyOption);
+            trigger.classList.add('disabled');
+        } else {
+            options.forEach(option => {
+                const optionEl = document.createElement('div');
+                optionEl.className = 'custom-option';
+                optionEl.dataset.value = option.value;
+
+                const optionSpan = document.createElement('span');
+                optionSpan.textContent = option.label || option.value;
+                optionEl.appendChild(optionSpan);
+
+                if (option.value === currentValue) {
+                    optionEl.classList.add('selected');
+                }
+
+                optionEl.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    if (wrapper.dataset.selectedValue === option.value) {
+                        wrapper.classList.remove('open');
+                        return;
+                    }
+
+                    optionsContainer.querySelector('.custom-option.selected')?.classList.remove('selected');
+                    optionEl.classList.add('selected');
+                    wrapper.dataset.selectedValue = option.value;
+                    labelSpan.textContent = optionSpan.textContent;
+                    wrapper.classList.remove('open');
+                    if (typeof onChange === 'function') onChange(option.value);
+                });
+
+                optionsContainer.appendChild(optionEl);
+            });
+        }
+
+        customSelect.appendChild(optionsContainer);
+        wrapper.appendChild(customSelect);
+
+        trigger.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (trigger.classList.contains('disabled')) return;
+            const isOpen = wrapper.classList.contains('open');
+            this.closeAllBuilderSelects();
+            if (!isOpen) {
+                wrapper.classList.add('open');
+            }
+        });
+
+        trigger.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                trigger.click();
+            } else if (event.key === 'Escape') {
+                wrapper.classList.remove('open');
+            }
+        });
+
+        wrapper.dataset.selectedValue = matchingOption
+            ? String(matchingOption.value)
+            : (currentValue !== undefined && currentValue !== null ? String(currentValue) : '');
+        this.builderSelectWrappers.add(wrapper);
+
+        if (!matchingOption && options.length) {
+            const firstOption = optionsContainer.querySelector('.custom-option');
+            if (firstOption) {
+                firstOption.classList.add('selected');
+                wrapper.dataset.selectedValue = firstOption.dataset.value;
+                const firstLabel = firstOption.querySelector('span');
+                labelSpan.textContent = firstLabel ? firstLabel.textContent : firstOption.textContent;
+                if (typeof onChange === 'function') {
+                    onChange(firstOption.dataset.value);
+                }
+            }
+        }
+
+        return wrapper;
+    },
+
+    handleBuilderSelectOutsideClick(event) {
+        if (!this.builderSelectWrappers || this.builderSelectWrappers.size === 0) return;
+        this.builderSelectWrappers.forEach(wrapper => {
+            if (!wrapper.contains(event.target)) {
+                wrapper.classList.remove('open');
+            }
+        });
+    },
+
+    closeAllBuilderSelects() {
+        if (!this.builderSelectWrappers) return;
+        this.builderSelectWrappers.forEach(wrapper => wrapper.classList.remove('open'));
     },
 
     updateNodeConfig(nodeId, key, value) {
@@ -4510,6 +4654,8 @@ document.addEventListener('DOMContentLoaded', () => {
     ipcRenderer.on('prompt-create-folder', () => {
         PinnedAppsModule.promptCreateFolder();
     });
+
+    requestAnimationFrame(() => ViewManager.resizeWindow());
 });
 
 function startFolderRename(folderId) {
