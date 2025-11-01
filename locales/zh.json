@@ -159,6 +159,8 @@
   "quick_actions_import_invalid": "无效的配置文件。",
   "quick_actions_inspector_hint": "选择一个模块以配置它。",
   "quick_actions_inspector_properties": "属性",
+  "quick_actions_module_help_show": "这个模块的作用是什么？",
+  "quick_actions_module_help_hide": "隐藏说明",
   "quick_actions_button_appearance": "按钮外观",
   "quick_actions_field_label": "标签",
   "quick_actions_icon_label": "图标",

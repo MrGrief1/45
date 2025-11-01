@@ -159,6 +159,8 @@
   "quick_actions_import_invalid": "Некорректный файл конфигурации.",
   "quick_actions_inspector_hint": "Выберите блок, чтобы настроить его.",
   "quick_actions_inspector_properties": "Свойства",
+  "quick_actions_module_help_show": "Что делает этот блок?",
+  "quick_actions_module_help_hide": "Скрыть объяснение",
   "quick_actions_button_appearance": "Внешний вид кнопки",
   "quick_actions_field_label": "Название",
   "quick_actions_icon_label": "Иконка",

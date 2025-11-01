@@ -159,6 +159,8 @@
   "quick_actions_import_invalid": "Ungültige Konfigurationsdatei.",
   "quick_actions_inspector_hint": "Wählen Sie einen Block aus, um seine Einstellungen zu bearbeiten.",
   "quick_actions_inspector_properties": "Eigenschaften",
+  "quick_actions_module_help_show": "Was macht dieser Block?",
+  "quick_actions_module_help_hide": "Erklärung ausblenden",
   "quick_actions_button_appearance": "Button-Optik",
   "quick_actions_field_label": "Beschriftung",
   "quick_actions_icon_label": "Symbol",

@@ -159,6 +159,8 @@
   "quick_actions_import_invalid": "Invalid configuration file.",
   "quick_actions_inspector_hint": "Select a node to edit its configuration.",
   "quick_actions_inspector_properties": "Properties",
+  "quick_actions_module_help_show": "What does this block do?",
+  "quick_actions_module_help_hide": "Hide explanation",
   "quick_actions_button_appearance": "Button appearance",
   "quick_actions_field_label": "Label",
   "quick_actions_icon_label": "Icon",

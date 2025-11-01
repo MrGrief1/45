@@ -159,6 +159,8 @@
   "quick_actions_import_invalid": "Fichier de configuration invalide.",
   "quick_actions_inspector_hint": "Sélectionnez un bloc pour modifier sa configuration.",
   "quick_actions_inspector_properties": "Propriétés",
+  "quick_actions_module_help_show": "Que fait ce bloc ?",
+  "quick_actions_module_help_hide": "Masquer l’explication",
   "quick_actions_button_appearance": "Apparence du bouton",
   "quick_actions_field_label": "Libellé",
   "quick_actions_icon_label": "Icône",

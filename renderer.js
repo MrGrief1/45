@@ -1460,9 +1460,12 @@ const QuickActionLab = {
         connectionLayer.innerHTML = '';
 
         const canvasRect = this.elements.canvas.getBoundingClientRect();
-        connectionLayer.setAttribute('width', `${canvasRect.width}`);
-        connectionLayer.setAttribute('height', `${canvasRect.height}`);
-        connectionLayer.setAttribute('viewBox', `0 0 ${canvasRect.width} ${canvasRect.height}`);
+        const zoom = this.builderState.zoom || 1;
+        const logicalWidth = canvasRect.width / zoom;
+        const logicalHeight = canvasRect.height / zoom;
+        connectionLayer.setAttribute('width', `${logicalWidth}`);
+        connectionLayer.setAttribute('height', `${logicalHeight}`);
+        connectionLayer.setAttribute('viewBox', `0 0 ${logicalWidth} ${logicalHeight}`);
 
         this.builderState.connections.forEach(connection => {
             const fromPort = this.findPortElement(connection.from?.nodeId, connection.from?.portId, 'output');
@@ -1471,7 +1474,6 @@ const QuickActionLab = {
 
             const fromRect = fromPort.getBoundingClientRect();
             const toRect = toPort.getBoundingClientRect();
-            const zoom = this.builderState.zoom || 1;
             const startX = (fromRect.left + fromRect.width / 2 - canvasRect.left) / zoom;
             const startY = (fromRect.top + fromRect.height / 2 - canvasRect.top) / zoom;
             const endX = (toRect.left + toRect.width / 2 - canvasRect.left) / zoom;
@@ -1512,6 +1514,39 @@ const QuickActionLab = {
         if (!moduleDef || !Array.isArray(moduleDef.form)) {
             container.appendChild(Utils.createElement('p', { text: LocalizationRenderer.t('quick_actions_no_settings') || 'This block has no configurable options.' }));
             return;
+        }
+
+        const moduleDescription = this.getModuleDescription(moduleDef);
+        if (moduleDescription) {
+            const descriptionWrapper = Utils.createElement('div', { className: 'inspector-description' });
+            const toggleButton = Utils.createElement('button', { className: 'inspector-description-toggle' });
+            toggleButton.type = 'button';
+            toggleButton.setAttribute('aria-expanded', 'false');
+            const showLabel = LocalizationRenderer.t('quick_actions_module_help_show') || 'What does this block do?';
+            const hideLabel = LocalizationRenderer.t('quick_actions_module_help_hide') || 'Hide explanation';
+            const chevron = Utils.createElement('span', { className: 'chevron', text: '›' });
+            const toggleLabel = Utils.createElement('span', { className: 'label', text: showLabel });
+            toggleButton.appendChild(chevron);
+            toggleButton.appendChild(toggleLabel);
+
+            const descriptionId = `inspector-description-${node.id}`;
+            const description = Utils.createElement('div', { className: 'inspector-description-text', text: moduleDescription });
+            description.id = descriptionId;
+            description.hidden = true;
+            toggleButton.setAttribute('aria-controls', descriptionId);
+
+            toggleButton.addEventListener('click', () => {
+                const expanded = toggleButton.getAttribute('aria-expanded') === 'true';
+                const nextState = !expanded;
+                toggleButton.setAttribute('aria-expanded', nextState ? 'true' : 'false');
+                toggleButton.classList.toggle('is-open', nextState);
+                toggleLabel.textContent = nextState ? hideLabel : showLabel;
+                description.hidden = !nextState;
+            });
+
+            descriptionWrapper.appendChild(toggleButton);
+            descriptionWrapper.appendChild(description);
+            container.appendChild(descriptionWrapper);
         }
 
         moduleDef.form.forEach(field => {
@@ -4248,7 +4283,8 @@ const ViewManager = {
 
                 totalHeight = mainLayout.offsetHeight + resultsHeight + pinnedAppsHeight + auxPanelHeight;
             }
-            targetWidth = AppState.settings.width;
+            const widthSetting = parseInt(AppState.settings.width, 10);
+            targetWidth = Math.min(1600, Math.max(280, Number.isNaN(widthSetting) ? 950 : widthSetting));
         } else { // settings
             const settingsContainer = Utils.getElement('.settings-container');
             if (settingsContainer) {
@@ -4368,7 +4404,11 @@ const ViewManager = {
             document.documentElement.style.setProperty('--dynamic-opacity-top', 0.6 * base + 0.4 * Math.pow(base, 2));
         }
         else if (settingKey === 'blurStrength') document.documentElement.style.setProperty('--dynamic-blur', `blur(${parseInt(value, 10) || 70}px)`);
-        else if (settingKey === 'width') document.documentElement.style.setProperty('--dynamic-width', `${parseInt(value, 10) || 950}px`);
+        else if (settingKey === 'width') {
+            const numeric = parseInt(value, 10);
+            const safeWidth = Math.min(1600, Math.max(280, Number.isNaN(numeric) ? 950 : numeric));
+            document.documentElement.style.setProperty('--dynamic-width', `${safeWidth}px`);
+        }
         else if (settingKey === 'height') document.documentElement.style.setProperty('--dynamic-height', `${parseInt(value, 10) || 90}px`);
         else if (settingKey === 'borderRadius') document.documentElement.style.setProperty('--dynamic-border-radius', `${parseInt(value, 10) || 24}px`);
         else if (settingKey === 'selectionColorStyle') {
