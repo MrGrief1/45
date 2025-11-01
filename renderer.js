@@ -1552,27 +1552,42 @@ const QuickActionLab = {
         moduleDef.form.forEach(field => {
             const label = Utils.createElement('label', { text: field.label || field.key });
             let input;
+            let elementToAppend;
+
             if (field.type === 'textarea') {
                 input = document.createElement('textarea');
                 if (field.rows) input.rows = field.rows;
+                elementToAppend = input;
             } else if (field.type === 'select') {
                 input = document.createElement('select');
+                input.classList.add('inspector-select');
                 (field.options || []).forEach(option => {
                     const optionEl = document.createElement('option');
                     optionEl.value = option.value;
                     optionEl.textContent = option.label || option.value;
                     input.appendChild(optionEl);
                 });
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'inspector-select-wrapper';
+                wrapper.appendChild(input);
+                elementToAppend = wrapper;
             } else {
                 input = document.createElement('input');
                 input.type = field.type || 'text';
                 if (field.min !== undefined) input.min = field.min;
+                elementToAppend = input;
             }
+
+            input.classList.add('inspector-field');
             input.value = node.config?.[field.key] ?? moduleDef.defaultConfig?.[field.key] ?? '';
             if (field.placeholder) input.placeholder = field.placeholder;
-            input.addEventListener('input', () => this.updateNodeConfig(node.id, field.key, input.value));
+
+            const eventName = field.type === 'select' ? 'change' : 'input';
+            input.addEventListener(eventName, () => this.updateNodeConfig(node.id, field.key, input.value));
+
             container.appendChild(label);
-            container.appendChild(input);
+            container.appendChild(elementToAppend);
         });
 
         if (!this.isManualNode(node.id)) {
@@ -4276,14 +4291,20 @@ const ViewManager = {
             const pinnedAppsContainer = Utils.getElement('#pinned-apps-container');
             const auxPanel = Utils.getElement('#aux-panel');
 
-            if (mainLayout) {
-                const resultsHeight = (resultsArea && resultsArea.classList.contains('visible')) ? resultsArea.scrollHeight + 10 : 0;
-                const pinnedAppsHeight = (pinnedAppsContainer && pinnedAppsContainer.classList.contains('visible')) ? pinnedAppsContainer.scrollHeight + 10 : 0;
-                const auxPanelHeight = (auxPanel && auxPanel.classList.contains('visible')) ? auxPanel.offsetHeight + 10 : 0;
+            const baseHeight = mainLayout
+                ? Math.max(mainLayout.offsetHeight, mainLayout.scrollHeight, mainLayout.clientHeight)
+                : 0;
+            const resultsHeight = (resultsArea && resultsArea.classList.contains('visible')) ? resultsArea.scrollHeight + 10 : 0;
+            const pinnedAppsHeight = (pinnedAppsContainer && pinnedAppsContainer.classList.contains('visible')) ? pinnedAppsContainer.scrollHeight + 10 : 0;
+            const auxPanelHeight = (auxPanel && auxPanel.classList.contains('visible')) ? auxPanel.offsetHeight + 10 : 0;
 
-                totalHeight = mainLayout.offsetHeight + resultsHeight + pinnedAppsHeight + auxPanelHeight;
+            totalHeight = baseHeight + resultsHeight + pinnedAppsHeight + auxPanelHeight;
+
+            if (typeof AppState.settings.width === 'number' && !Number.isNaN(AppState.settings.width)) {
+                targetWidth = AppState.settings.width;
+            } else if (mainLayout) {
+                targetWidth = Math.round(mainLayout.getBoundingClientRect().width || 0);
             }
-            targetWidth = AppState.settings.width;
         } else { // settings
             const settingsContainer = Utils.getElement('.settings-container');
             if (settingsContainer) {
@@ -4291,10 +4312,19 @@ const ViewManager = {
             }
             targetWidth = 970; // Фиксированная ширина для окна настроек (950px + 20px margin)
         }
-        
-        const minHeight = Utils.getElement('#main-layout')?.offsetHeight || 70;
+
+        const minHeight = (() => {
+            const mainLayout = Utils.getElement('#main-layout');
+            if (!mainLayout) return 70;
+            return Math.max(mainLayout.offsetHeight, mainLayout.scrollHeight, mainLayout.clientHeight, 70);
+        })();
         if (totalHeight < minHeight) {
             totalHeight = minHeight;
+        }
+
+        if (!targetWidth || Number.isNaN(targetWidth)) {
+            const cssWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--dynamic-width'), 10);
+            targetWidth = Number.isNaN(cssWidth) ? (Utils.getElement('#main-layout')?.offsetWidth || 950) : cssWidth;
         }
 
         if (totalHeight > 0 && targetWidth > 0) {

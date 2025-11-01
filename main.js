@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { exec, execFile } = require('child_process');
 const os = require('os');
+const crypto = require('crypto');
 const Fuse = require('fuse.js'); // ИМПОРТ FUSE.JS
 const util = require('util');
 
@@ -44,15 +45,23 @@ if (!fs.existsSync(localUserDataPath)) {
 }
 app.setPath('userData', localUserDataPath);
 
-
 const IS_DEV = process.env.NODE_ENV !== 'production';
 
 const USER_DATA_PATH = app.getPath('userData');
 const CONFIG_PATH = path.join(USER_DATA_PATH, `${APP_NAME}_config.json`);
 const INDEX_PATH = path.join(USER_DATA_PATH, `${APP_NAME}_index.json`);
 const ICON_CACHE_PATH = path.join(USER_DATA_PATH, `${APP_NAME}_icon_cache.json`); // НОВОЕ: Кэш иконок
+const ICON_FILES_DIR = path.join(USER_DATA_PATH, 'cached-icons');
 const LOG_PATH = path.join(USER_DATA_PATH, `${APP_NAME}_log.txt`);
-const ICON_PATH = path.join(__dirname, 'icon.svg'); 
+const ICON_PATH = path.join(__dirname, 'logo.png');
+
+try {
+    if (!fs.existsSync(ICON_FILES_DIR)) {
+        fs.mkdirSync(ICON_FILES_DIR, { recursive: true });
+    }
+} catch (error) {
+    console.error('Failed to create icon cache directory:', error);
+}
 
 let mainWindow = null;
 let auxiliaryWindows = {}; 
@@ -2512,6 +2521,11 @@ app.whenReady().then(() => {
         }, 2000); // Даем время главному окну загрузиться
     }
 });
+
+app.on('before-quit', () => {
+    Logger.info('[ICON CACHE] Flushing cache before quit');
+    saveIconCache();
+});
 // ... existing code ...
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
@@ -3108,19 +3122,87 @@ ipcMain.handle('add-app-to-folder', async (event, folderId) => {
 });
 
 // === УЛУЧШЕННЫЙ КЭШ ИКОНОК С СОХРАНЕНИЕМ НА ДИСК ===
-const iconCache = new Map(); // Кэш: путь -> base64 data URL
+const iconCache = new Map(); // Кэш: путь -> { dataUrl, fileName }
+
+function computeIconFileName(executablePath) {
+    return `${crypto.createHash('sha1').update(executablePath).digest('hex')}.png`;
+}
+
+function readIconDataUrl(fileName) {
+    if (!fileName) return null;
+    const filePath = path.join(ICON_FILES_DIR, fileName);
+    if (!fs.existsSync(filePath)) return null;
+    try {
+        const buffer = fs.readFileSync(filePath);
+        return `data:image/png;base64,${buffer.toString('base64')}`;
+    } catch (error) {
+        Logger.warn(`Failed to read cached icon ${fileName}: ${error.message}`);
+        return null;
+    }
+}
+
+function persistIconRecord(executablePath, record) {
+    if (!record || !record.dataUrl || !record.dataUrl.startsWith('data:image')) {
+        return record || { dataUrl: null, fileName: null };
+    }
+
+    const base64Part = record.dataUrl.split(',')[1];
+    if (!base64Part) {
+        return { dataUrl: null, fileName: record.fileName || null };
+    }
+
+    const buffer = Buffer.from(base64Part, 'base64');
+    if (buffer.length === 0) {
+        return { dataUrl: null, fileName: record.fileName || null };
+    }
+
+    let fileName = record.fileName || computeIconFileName(executablePath);
+    const filePath = path.join(ICON_FILES_DIR, fileName);
+
+    try {
+        fs.writeFileSync(filePath, buffer);
+    } catch (error) {
+        Logger.error(`Failed to persist icon file for ${executablePath}: ${error.message}`);
+        return { dataUrl: record.dataUrl, fileName: record.fileName || null };
+    }
+
+    return { dataUrl: record.dataUrl, fileName };
+}
 
 // Загрузка кэша иконок с диска
 function loadIconCache() {
     try {
-        if (fs.existsSync(ICON_CACHE_PATH)) {
-            const data = fs.readFileSync(ICON_CACHE_PATH, 'utf8');
-            const cached = JSON.parse(data);
-            Object.entries(cached).forEach(([path, dataUrl]) => {
-                iconCache.set(path, dataUrl);
-            });
-            Logger.info(`[ICON CACHE] Loaded ${iconCache.size} icons from disk cache`);
+        if (!fs.existsSync(ICON_CACHE_PATH)) {
+            return;
         }
+
+        const data = fs.readFileSync(ICON_CACHE_PATH, 'utf8');
+        const cached = JSON.parse(data);
+
+        Object.entries(cached).forEach(([iconPath, rawValue]) => {
+            let record = { dataUrl: null, fileName: null };
+
+            if (typeof rawValue === 'string') {
+                if (rawValue.startsWith('data:image')) {
+                    record = persistIconRecord(iconPath, { dataUrl: rawValue, fileName: null });
+                } else {
+                    const dataUrl = readIconDataUrl(rawValue);
+                    record = { dataUrl, fileName: rawValue };
+                }
+            } else if (rawValue && typeof rawValue === 'object') {
+                const fileName = rawValue.fileName || null;
+                if (rawValue.dataUrl && rawValue.dataUrl.startsWith('data:image')) {
+                    record = persistIconRecord(iconPath, { dataUrl: rawValue.dataUrl, fileName });
+                } else if (fileName) {
+                    const dataUrl = readIconDataUrl(fileName);
+                    record = { dataUrl, fileName };
+                }
+            }
+
+            iconCache.set(iconPath, record);
+        });
+
+        Logger.info(`[ICON CACHE] Loaded ${iconCache.size} icons from disk cache`);
     } catch (error) {
         Logger.error(`Error loading icon cache: ${error.message}`);
     }
@@ -3130,13 +3212,33 @@ function loadIconCache() {
 function saveIconCache() {
     try {
         const cacheObject = {};
-        iconCache.forEach((value, key) => {
-            if (value && value.startsWith('data:image')) {
-                cacheObject[key] = value;
+        let savedCount = 0;
+
+        iconCache.forEach((record, key) => {
+            if (!record) {
+                cacheObject[key] = null;
+                return;
+            }
+
+            let nextRecord = record;
+            const fileExists = record.fileName && fs.existsSync(path.join(ICON_FILES_DIR, record.fileName));
+            if (record.dataUrl && !fileExists) {
+                nextRecord = persistIconRecord(key, record);
+                iconCache.set(key, nextRecord);
+            }
+
+            if (nextRecord.fileName) {
+                cacheObject[key] = { fileName: nextRecord.fileName };
+                savedCount += 1;
+            } else if (nextRecord.dataUrl) {
+                cacheObject[key] = { dataUrl: nextRecord.dataUrl };
+            } else {
+                cacheObject[key] = null;
             }
         });
-        fs.writeFileSync(ICON_CACHE_PATH, JSON.stringify(cacheObject));
-        Logger.info(`[ICON CACHE] Saved ${Object.keys(cacheObject).length} icons to disk`);
+
+        fs.writeFileSync(ICON_CACHE_PATH, JSON.stringify(cacheObject, null, 2));
+        Logger.info(`[ICON CACHE] Saved ${savedCount} icons to disk (${ICON_FILES_DIR})`);
     } catch (error) {
         Logger.error(`Error saving icon cache: ${error.message}`);
     }
@@ -3146,9 +3248,21 @@ async function extractIconToBase64(executablePath) {
     // === ПРОВЕРКА КЭША ===
     if (iconCache.has(executablePath)) {
         const cached = iconCache.get(executablePath);
-        if (cached && cached.startsWith('data:image')) {
-            Logger.info(`[ICON CACHE HIT] ${executablePath}`);
-            return cached;
+        if (cached) {
+            if (cached.dataUrl) {
+                Logger.info(`[ICON CACHE HIT] ${executablePath}`);
+                return cached.dataUrl;
+            }
+
+            if (cached.fileName) {
+                const restored = readIconDataUrl(cached.fileName);
+                if (restored) {
+                    const updated = { dataUrl: restored, fileName: cached.fileName };
+                    iconCache.set(executablePath, updated);
+                    Logger.info(`[ICON CACHE HIT] ${executablePath}`);
+                    return restored;
+                }
+            }
         }
     }
 
@@ -3199,19 +3313,28 @@ async function extractIconToBase64(executablePath) {
             const imageBytes = await fs.promises.readFile(tempIconPath);
             const base64Icon = imageBytes.toString('base64');
             const dataUrl = `data:image/png;base64,${base64Icon}`;
-            
+
             // Удаляем временный файл
             await fs.promises.unlink(tempIconPath);
-            
+
+            const fileName = computeIconFileName(executablePath);
+            const filePath = path.join(ICON_FILES_DIR, fileName);
+
+            try {
+                await fs.promises.writeFile(filePath, imageBytes);
+            } catch (writeError) {
+                Logger.error(`Failed to write icon cache file for ${executablePath}: ${writeError.message}`);
+            }
+
             // === СОХРАНЯЕМ В КЭШ ===
-            iconCache.set(executablePath, dataUrl);
+            iconCache.set(executablePath, { dataUrl, fileName });
             Logger.info(`[ICON EXTRACTED] ${executablePath} (${Math.round(imageBytes.length / 1024)}KB)`);
-            
+
             // НОВОЕ: Периодически сохраняем кэш на диск
             if (iconCache.size % 10 === 0) {
                 saveIconCache();
             }
-            
+
             return dataUrl;
         } else {
             Logger.warn(`Icon file not created: ${tempIconPath}`);
@@ -3229,7 +3352,7 @@ async function extractIconToBase64(executablePath) {
     }
     
     // === СОХРАНЯЕМ null В КЭШ, ЧТОБЫ НЕ ПОВТОРЯТЬ ПОПЫТКИ ===
-    iconCache.set(executablePath, null);
+    iconCache.set(executablePath, { dataUrl: null, fileName: null });
     return null;
 }
 
