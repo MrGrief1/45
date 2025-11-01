@@ -4411,6 +4411,16 @@ const ViewManager = {
         const appContainer = Utils.getElement('#app-container');
         if (!appContainer) return;
 
+        const parseDimension = (value, fallback = 0) => {
+            const numeric = parseInt(value, 10);
+            return Number.isFinite(numeric) && numeric > 0 ? numeric : fallback;
+        };
+
+        const readCssVariable = (variableName, fallback = 0) => {
+            const computed = getComputedStyle(document.documentElement).getPropertyValue(variableName);
+            return parseDimension(computed, fallback);
+        };
+
         let totalHeight = 0;
         let targetWidth = 0;
 
@@ -4427,7 +4437,8 @@ const ViewManager = {
 
                 totalHeight = mainLayout.offsetHeight + resultsHeight + pinnedAppsHeight + auxPanelHeight;
             }
-            targetWidth = AppState.settings.width;
+
+            targetWidth = parseDimension(AppState?.settings?.width, 0);
         } else { // settings
             const settingsContainer = Utils.getElement('.settings-container');
             if (settingsContainer) {
@@ -4435,15 +4446,24 @@ const ViewManager = {
             }
             targetWidth = 970; // Фиксированная ширина для окна настроек (950px + 20px margin)
         }
-        
+
         const minHeight = Utils.getElement('#main-layout')?.offsetHeight || 70;
         if (totalHeight < minHeight) {
             totalHeight = minHeight;
         }
 
-        if (totalHeight > 0 && targetWidth > 0) {
-            appContainer.style.height = `${totalHeight}px`;
-            ipcRenderer.send('resize-window', { width: targetWidth, height: totalHeight });
+        if (!targetWidth || targetWidth <= 0) {
+            const measuredWidth = Math.max(appContainer.offsetWidth, window.innerWidth);
+            targetWidth = readCssVariable('--dynamic-width', parseDimension(measuredWidth, 950)) || parseDimension(measuredWidth, 950) || 950;
+        }
+
+        if (totalHeight > 0) {
+            const safeHeight = Math.max(totalHeight, minHeight);
+            appContainer.style.height = `${safeHeight}px`;
+
+            if (targetWidth > 0) {
+                ipcRenderer.send('resize-window', { width: targetWidth, height: safeHeight });
+            }
         }
     },
     prepareForShow: function(element) {
@@ -4531,6 +4551,9 @@ const ViewManager = {
 
         this.updateDynamicStyles('opacity', AppState.settings.opacity);
         this.updateDynamicStyles('blurStrength', AppState.settings.blurStrength);
+        this.updateDynamicStyles('width', AppState.settings.width);
+        this.updateDynamicStyles('height', AppState.settings.height);
+        this.updateDynamicStyles('borderRadius', AppState.settings.borderRadius);
         this.updateDynamicStyles('selectionColorStyle', AppState.settings.selectionColorStyle || 'gray'); // НОВОЕ
         if (window.feather) window.feather.replace();
         this.handleStartupAnimation();
