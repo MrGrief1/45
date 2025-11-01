@@ -445,10 +445,11 @@
                         <div class="inspector-content">
                             <label for="builder-action-label">Label</label>
                             <input type="text" id="builder-action-label" placeholder="My quick action">
-                            <label for="builder-action-icon">Icon</label>
+                            <label for="builder-action-icon" data-i18n="quick_actions_icon_label">Icon</label>
                             <div class="inspector-icon-picker">
-                                <input type="text" id="builder-action-icon" placeholder="feather icon name">
-                                <div id="builder-icon-preview" class="icon-preview"></div>
+                                <input type="text" id="builder-action-icon" data-i18n-placeholder="quick_actions_icon_placeholder" placeholder="feather icon name">
+                                <button type="button" id="builder-icon-preview" class="icon-preview" data-i18n-title="quick_actions_icon_choose" aria-haspopup="listbox" aria-expanded="false"></button>
+                                <div id="builder-icon-popover" class="icon-popover" role="listbox" hidden></div>
                             </div>
                             <label for="builder-action-color">Accent colour</label>
                             <input type="color" id="builder-action-color" value="#5865f2">
