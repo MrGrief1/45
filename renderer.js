@@ -114,6 +114,7 @@ const QuickActionCatalog = [
         icon: 'grid',
         nameKey: 'title_apps_library',
         description: 'Open the application library panel.',
+        descriptionKey: 'quick_actions_catalog_apps_library_description',
         type: 'panel',
         payload: { panel: 'apps-library' },
         accent: '#38bdf8',
@@ -124,6 +125,7 @@ const QuickActionCatalog = [
         icon: 'folder',
         nameKey: 'title_files',
         description: 'Browse indexed files and folders.',
+        descriptionKey: 'quick_actions_catalog_files_description',
         type: 'panel',
         payload: { panel: 'files' },
         accent: '#22d3ee',
@@ -134,6 +136,7 @@ const QuickActionCatalog = [
         icon: 'command',
         nameKey: 'title_commands',
         description: 'Trigger saved commands and automations.',
+        descriptionKey: 'quick_actions_catalog_commands_description',
         type: 'panel',
         payload: { panel: 'commands' },
         accent: '#f97316',
@@ -144,6 +147,7 @@ const QuickActionCatalog = [
         icon: 'copy',
         nameKey: 'title_clipboard',
         description: 'Review your clipboard buffer.',
+        descriptionKey: 'quick_actions_catalog_clipboard_description',
         type: 'panel',
         payload: { panel: 'clipboard' },
         accent: '#a855f7',
@@ -154,6 +158,7 @@ const QuickActionCatalog = [
         icon: 'settings',
         nameKey: 'context_settings',
         description: 'Jump straight to FlashSearch settings.',
+        descriptionKey: 'quick_actions_catalog_settings_description',
         type: 'view',
         payload: { view: 'settings' },
         accent: '#facc15',
@@ -163,7 +168,9 @@ const QuickActionCatalog = [
         id: 'pinned-apps',
         icon: 'bookmark',
         name: 'Pinned applications',
+        nameKey: 'quick_actions_catalog_pinned_name',
         description: 'Open the pinned applications panel instantly.',
+        descriptionKey: 'quick_actions_catalog_pinned_description',
         type: 'panel',
         payload: { panel: 'apps-library', anchor: 'pinned' },
         accent: '#34d399',
@@ -173,16 +180,53 @@ const QuickActionCatalog = [
 
 const QuickActionDefaultOrder = ['apps-library', 'files', 'commands', 'clipboard', 'settings'];
 
+const QuickActionIconChoices = [
+    'zap',
+    'aperture',
+    'bell',
+    'bookmark',
+    'box',
+    'calendar',
+    'camera',
+    'check-circle',
+    'clipboard',
+    'command',
+    'copy',
+    'cpu',
+    'database',
+    'download',
+    'download-cloud',
+    'edit-3',
+    'file-text',
+    'folder',
+    'globe',
+    'grid',
+    'link',
+    'mail',
+    'map',
+    'message-circle',
+    'play-circle',
+    'refresh-cw',
+    'send',
+    'settings',
+    'share-2',
+    'sliders',
+    'terminal',
+    'type'
+];
+
 const QuickActionModuleDefinitions = [
     {
         id: 'manual-trigger',
         category: 'trigger',
         name: 'Manual trigger',
+        nameKey: 'quick_actions_module_manual_trigger_name',
         description: 'Starts when you press the quick action button.',
+        descriptionKey: 'quick_actions_module_manual_trigger_description',
         icon: 'play-circle',
         accent: '#38bdf8',
         inputs: [],
-        outputs: [{ id: 'next', label: 'Next' }],
+        outputs: [{ id: 'next', label: 'Next', labelKey: 'quick_actions_module_port_next' }],
         defaultConfig: {},
         run: async (context) => {
             return [QuickActionContext.clone(context)];
@@ -192,22 +236,25 @@ const QuickActionModuleDefinitions = [
         id: 'open-panel',
         category: 'action',
         name: 'Open panel',
+        nameKey: 'quick_actions_module_open_panel_name',
         description: 'Show one of the auxiliary panels such as clipboard or files.',
+        descriptionKey: 'quick_actions_module_open_panel_description',
         icon: 'layout',
         accent: '#38bdf8',
-        inputs: [{ id: 'input', label: 'Input' }],
-        outputs: [{ id: 'next', label: 'Next' }],
+        inputs: [{ id: 'input', label: 'Input', labelKey: 'quick_actions_module_port_input' }],
+        outputs: [{ id: 'next', label: 'Next', labelKey: 'quick_actions_module_port_next' }],
         defaultConfig: { panel: 'clipboard' },
         form: [
             {
                 key: 'panel',
                 label: 'Panel',
+                labelKey: 'quick_actions_form_panel_label',
                 type: 'select',
                 options: [
-                    { value: 'clipboard', label: 'Clipboard buffer' },
-                    { value: 'files', label: 'Files' },
-                    { value: 'commands', label: 'Commands' },
-                    { value: 'apps-library', label: 'Apps library' }
+                    { value: 'clipboard', label: 'Clipboard buffer', labelKey: 'quick_actions_form_panel_clipboard' },
+                    { value: 'files', label: 'Files', labelKey: 'quick_actions_form_panel_files' },
+                    { value: 'commands', label: 'Commands', labelKey: 'quick_actions_form_panel_commands' },
+                    { value: 'apps-library', label: 'Apps library', labelKey: 'quick_actions_form_panel_apps' }
                 ]
             }
         ],
@@ -223,14 +270,23 @@ const QuickActionModuleDefinitions = [
         id: 'open-url',
         category: 'action',
         name: 'Open website',
+        nameKey: 'quick_actions_module_open_url_name',
         description: 'Launch a URL in your default browser.',
+        descriptionKey: 'quick_actions_module_open_url_description',
         icon: 'globe',
         accent: '#22d3ee',
-        inputs: [{ id: 'input', label: 'Input' }],
-        outputs: [{ id: 'next', label: 'Next' }],
+        inputs: [{ id: 'input', label: 'Input', labelKey: 'quick_actions_module_port_input' }],
+        outputs: [{ id: 'next', label: 'Next', labelKey: 'quick_actions_module_port_next' }],
         defaultConfig: { url: 'https://flashsearch.app' },
         form: [
-            { key: 'url', label: 'Website URL', type: 'text', placeholder: 'https://example.com' }
+            {
+                key: 'url',
+                label: 'Website URL',
+                labelKey: 'quick_actions_form_open_url_label',
+                type: 'text',
+                placeholder: 'https://example.com',
+                placeholderKey: 'quick_actions_form_open_url_placeholder'
+            }
         ],
         run: async (context, config) => {
             const clone = QuickActionContext.clone(context);
@@ -248,14 +304,24 @@ const QuickActionModuleDefinitions = [
         id: 'copy-text',
         category: 'action',
         name: 'Copy text',
+        nameKey: 'quick_actions_module_copy_text_name',
         description: 'Copy prepared text into the clipboard.',
+        descriptionKey: 'quick_actions_module_copy_text_description',
         icon: 'clipboard',
         accent: '#a855f7',
-        inputs: [{ id: 'input', label: 'Input' }],
-        outputs: [{ id: 'next', label: 'Next' }],
+        inputs: [{ id: 'input', label: 'Input', labelKey: 'quick_actions_module_port_input' }],
+        outputs: [{ id: 'next', label: 'Next', labelKey: 'quick_actions_module_port_next' }],
         defaultConfig: { text: 'Hello from FlashSearch!' },
         form: [
-            { key: 'text', label: 'Text', type: 'textarea', rows: 4, placeholder: 'Enter text to copy' }
+            {
+                key: 'text',
+                label: 'Text',
+                labelKey: 'quick_actions_form_copy_text_label',
+                type: 'textarea',
+                rows: 4,
+                placeholder: 'Enter text to copy',
+                placeholderKey: 'quick_actions_form_copy_text_placeholder'
+            }
         ],
         run: async (context, config) => {
             const clone = QuickActionContext.clone(context);
@@ -270,14 +336,24 @@ const QuickActionModuleDefinitions = [
         id: 'run-command',
         category: 'action',
         name: 'Run shell command',
+        nameKey: 'quick_actions_module_run_command_name',
         description: 'Execute a terminal command on your system.',
+        descriptionKey: 'quick_actions_module_run_command_description',
         icon: 'terminal',
         accent: '#f97316',
-        inputs: [{ id: 'input', label: 'Input' }],
-        outputs: [{ id: 'next', label: 'Next' }],
+        inputs: [{ id: 'input', label: 'Input', labelKey: 'quick_actions_module_port_input' }],
+        outputs: [{ id: 'next', label: 'Next', labelKey: 'quick_actions_module_port_next' }],
         defaultConfig: { command: 'echo FlashSearch quick action' },
         form: [
-            { key: 'command', label: 'Command', type: 'textarea', rows: 3, placeholder: 'echo FlashSearch quick action' }
+            {
+                key: 'command',
+                label: 'Command',
+                labelKey: 'quick_actions_form_run_command_label',
+                type: 'textarea',
+                rows: 3,
+                placeholder: 'echo FlashSearch quick action',
+                placeholderKey: 'quick_actions_form_run_command_placeholder'
+            }
         ],
         run: async (context, config) => {
             const clone = QuickActionContext.clone(context);
@@ -293,15 +369,32 @@ const QuickActionModuleDefinitions = [
         id: 'show-notification',
         category: 'action',
         name: 'Show notification',
+        nameKey: 'quick_actions_module_show_notification_name',
         description: 'Display a desktop notification with custom text.',
+        descriptionKey: 'quick_actions_module_show_notification_description',
         icon: 'bell',
         accent: '#facc15',
-        inputs: [{ id: 'input', label: 'Input' }],
-        outputs: [{ id: 'next', label: 'Next' }],
+        inputs: [{ id: 'input', label: 'Input', labelKey: 'quick_actions_module_port_input' }],
+        outputs: [{ id: 'next', label: 'Next', labelKey: 'quick_actions_module_port_next' }],
         defaultConfig: { title: 'FlashSearch', body: 'Workflow finished!' },
         form: [
-            { key: 'title', label: 'Title', type: 'text', placeholder: 'FlashSearch' },
-            { key: 'body', label: 'Message', type: 'textarea', rows: 3, placeholder: 'Workflow finished!' }
+            {
+                key: 'title',
+                label: 'Title',
+                labelKey: 'quick_actions_form_show_notification_title',
+                type: 'text',
+                placeholder: 'FlashSearch',
+                placeholderKey: 'quick_actions_form_show_notification_title_placeholder'
+            },
+            {
+                key: 'body',
+                label: 'Message',
+                labelKey: 'quick_actions_form_show_notification_body',
+                type: 'textarea',
+                rows: 3,
+                placeholder: 'Workflow finished!',
+                placeholderKey: 'quick_actions_form_show_notification_body_placeholder'
+            }
         ],
         run: async (context, config) => {
             const clone = QuickActionContext.clone(context);
@@ -318,14 +411,22 @@ const QuickActionModuleDefinitions = [
         id: 'delay',
         category: 'utility',
         name: 'Delay',
+        nameKey: 'quick_actions_module_delay_name',
         description: 'Pause the workflow for a specified time.',
+        descriptionKey: 'quick_actions_module_delay_description',
         icon: 'clock',
         accent: '#fbbf24',
-        inputs: [{ id: 'input', label: 'Input' }],
-        outputs: [{ id: 'next', label: 'Next' }],
+        inputs: [{ id: 'input', label: 'Input', labelKey: 'quick_actions_module_port_input' }],
+        outputs: [{ id: 'next', label: 'Next', labelKey: 'quick_actions_module_port_next' }],
         defaultConfig: { milliseconds: 1000 },
         form: [
-            { key: 'milliseconds', label: 'Delay (ms)', type: 'number', min: 0 }
+            {
+                key: 'milliseconds',
+                label: 'Delay (ms)',
+                labelKey: 'quick_actions_form_delay_label',
+                type: 'number',
+                min: 0
+            }
         ],
         run: async (context, config) => {
             const clone = QuickActionContext.clone(context);
@@ -340,14 +441,24 @@ const QuickActionModuleDefinitions = [
         id: 'set-payload',
         category: 'utility',
         name: 'Set payload',
+        nameKey: 'quick_actions_module_set_payload_name',
         description: 'Store a value that can be reused by next blocks.',
+        descriptionKey: 'quick_actions_module_set_payload_description',
         icon: 'edit-3',
         accent: '#60a5fa',
-        inputs: [{ id: 'input', label: 'Input' }],
-        outputs: [{ id: 'next', label: 'Next' }],
+        inputs: [{ id: 'input', label: 'Input', labelKey: 'quick_actions_module_port_input' }],
+        outputs: [{ id: 'next', label: 'Next', labelKey: 'quick_actions_module_port_next' }],
         defaultConfig: { payload: 'Sample text' },
         form: [
-            { key: 'payload', label: 'Payload value', type: 'textarea', rows: 3, placeholder: 'Value to store for later blocks' }
+            {
+                key: 'payload',
+                label: 'Payload value',
+                labelKey: 'quick_actions_form_set_payload_label',
+                type: 'textarea',
+                rows: 3,
+                placeholder: 'Value to store for later blocks',
+                placeholderKey: 'quick_actions_form_set_payload_placeholder'
+            }
         ],
         run: async (context, config) => {
             const clone = QuickActionContext.clone(context);
@@ -359,11 +470,13 @@ const QuickActionModuleDefinitions = [
         id: 'use-payload-as-text',
         category: 'action',
         name: 'Use payload as text',
+        nameKey: 'quick_actions_module_use_payload_name',
         description: 'Copy the current payload value to the clipboard.',
+        descriptionKey: 'quick_actions_module_use_payload_description',
         icon: 'clipboard',
         accent: '#22c55e',
-        inputs: [{ id: 'input', label: 'Input' }],
-        outputs: [{ id: 'next', label: 'Next' }],
+        inputs: [{ id: 'input', label: 'Input', labelKey: 'quick_actions_module_port_input' }],
+        outputs: [{ id: 'next', label: 'Next', labelKey: 'quick_actions_module_port_next' }],
         defaultConfig: {},
         run: async (context) => {
             const clone = QuickActionContext.clone(context);
@@ -377,21 +490,31 @@ const QuickActionModuleDefinitions = [
         id: 'fetch-json',
         category: 'utility',
         name: 'Fetch JSON',
+        nameKey: 'quick_actions_module_fetch_json_name',
         description: 'Request JSON data and store it as the workflow payload.',
+        descriptionKey: 'quick_actions_module_fetch_json_description',
         icon: 'download-cloud',
         accent: '#38bdf8',
-        inputs: [{ id: 'input', label: 'Input' }],
-        outputs: [{ id: 'next', label: 'Next' }],
+        inputs: [{ id: 'input', label: 'Input', labelKey: 'quick_actions_module_port_input' }],
+        outputs: [{ id: 'next', label: 'Next', labelKey: 'quick_actions_module_port_next' }],
         defaultConfig: { url: 'https://api.example.com/data', format: 'pretty' },
         form: [
-            { key: 'url', label: 'Request URL', type: 'text', placeholder: 'https://api.example.com/data' },
+            {
+                key: 'url',
+                label: 'Request URL',
+                labelKey: 'quick_actions_form_fetch_json_url_label',
+                type: 'text',
+                placeholder: 'https://api.example.com/data',
+                placeholderKey: 'quick_actions_form_fetch_json_url_placeholder'
+            },
             {
                 key: 'format',
                 label: 'Format',
+                labelKey: 'quick_actions_form_fetch_json_format_label',
                 type: 'select',
                 options: [
-                    { value: 'pretty', label: 'Pretty JSON' },
-                    { value: 'raw', label: 'Compact JSON' }
+                    { value: 'pretty', label: 'Pretty JSON', labelKey: 'quick_actions_form_fetch_json_format_pretty' },
+                    { value: 'raw', label: 'Compact JSON', labelKey: 'quick_actions_form_fetch_json_format_raw' }
                 ]
             }
         ],
@@ -421,22 +544,25 @@ const QuickActionModuleDefinitions = [
         id: 'transform-payload',
         category: 'utility',
         name: 'Transform text',
+        nameKey: 'quick_actions_module_transform_payload_name',
         description: 'Apply quick text transformations to the payload.',
+        descriptionKey: 'quick_actions_module_transform_payload_description',
         icon: 'type',
         accent: '#34d399',
-        inputs: [{ id: 'input', label: 'Input' }],
-        outputs: [{ id: 'next', label: 'Next' }],
+        inputs: [{ id: 'input', label: 'Input', labelKey: 'quick_actions_module_port_input' }],
+        outputs: [{ id: 'next', label: 'Next', labelKey: 'quick_actions_module_port_next' }],
         defaultConfig: { mode: 'uppercase' },
         form: [
             {
                 key: 'mode',
                 label: 'Transformation',
+                labelKey: 'quick_actions_form_transform_payload_label',
                 type: 'select',
                 options: [
-                    { value: 'uppercase', label: 'Uppercase' },
-                    { value: 'lowercase', label: 'Lowercase' },
-                    { value: 'titlecase', label: 'Title case' },
-                    { value: 'trim', label: 'Trim whitespace' }
+                    { value: 'uppercase', label: 'Uppercase', labelKey: 'quick_actions_form_transform_payload_uppercase' },
+                    { value: 'lowercase', label: 'Lowercase', labelKey: 'quick_actions_form_transform_payload_lowercase' },
+                    { value: 'titlecase', label: 'Title case', labelKey: 'quick_actions_form_transform_payload_titlecase' },
+                    { value: 'trim', label: 'Trim whitespace', labelKey: 'quick_actions_form_transform_payload_trim' }
                 ]
             }
         ],
@@ -473,15 +599,32 @@ const QuickActionModuleDefinitions = [
         id: 'store-variable',
         category: 'utility',
         name: 'Store variable',
+        nameKey: 'quick_actions_module_store_variable_name',
         description: 'Save a named value in the workflow context.',
+        descriptionKey: 'quick_actions_module_store_variable_description',
         icon: 'database',
         accent: '#f472b6',
-        inputs: [{ id: 'input', label: 'Input' }],
-        outputs: [{ id: 'next', label: 'Next' }],
+        inputs: [{ id: 'input', label: 'Input', labelKey: 'quick_actions_module_port_input' }],
+        outputs: [{ id: 'next', label: 'Next', labelKey: 'quick_actions_module_port_next' }],
         defaultConfig: { key: 'name', value: 'FlashSearch' },
         form: [
-            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'project' },
-            { key: 'value', label: 'Value', type: 'textarea', rows: 2, placeholder: 'Value to store' }
+            {
+                key: 'key',
+                label: 'Variable name',
+                labelKey: 'quick_actions_form_store_variable_key_label',
+                type: 'text',
+                placeholder: 'project',
+                placeholderKey: 'quick_actions_form_store_variable_key_placeholder'
+            },
+            {
+                key: 'value',
+                label: 'Value',
+                labelKey: 'quick_actions_form_store_variable_value_label',
+                type: 'textarea',
+                rows: 2,
+                placeholder: 'Value to store',
+                placeholderKey: 'quick_actions_form_store_variable_value_placeholder'
+            }
         ],
         run: async (context, config) => {
             const clone = QuickActionContext.clone(context);
@@ -875,11 +1018,14 @@ const QuickActionLab = {
             actionLabelInput: Utils.getElement('#builder-action-label'),
             actionIconInput: Utils.getElement('#builder-action-icon'),
             actionColorInput: Utils.getElement('#builder-action-color'),
-            iconPreview: Utils.getElement('#builder-icon-preview')
+            iconPreview: Utils.getElement('#builder-icon-preview'),
+            iconPickerToggle: Utils.getElement('#builder-icon-picker-toggle'),
+            iconPickerPanel: Utils.getElement('#builder-icon-picker-panel')
         };
 
         this.elements.dialog = document.querySelector('#quick-action-builder-modal .builder-dialog');
         this.elements.resizeHandle = document.querySelector('#quick-action-builder-modal .builder-resize-handle');
+        this.boundOutsideIconClick = (event) => this.handleOutsideIconPicker(event);
 
         if (!this.elements.activeList) {
             return;
@@ -913,12 +1059,28 @@ const QuickActionLab = {
             if (!this.builderState) return;
             this.builderState.metadata.icon = event.target.value.trim() || 'zap';
             this.updateIconPreview();
+            this.renderIconPicker();
         });
 
         this.elements.actionColorInput?.addEventListener('input', (event) => {
             if (!this.builderState) return;
             this.builderState.metadata.accent = event.target.value || '#5865f2';
         });
+
+        this.elements.iconPickerToggle?.addEventListener('click', (event) => {
+            event.preventDefault();
+            this.toggleIconPicker();
+        });
+
+        this.elements.iconPreview?.addEventListener('click', () => this.toggleIconPicker());
+        this.elements.iconPreview?.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                this.toggleIconPicker();
+            }
+        });
+
+        document.addEventListener('mousedown', this.boundOutsideIconClick);
 
         this.elements.closeModal?.addEventListener('click', () => this.closeBuilder());
         this.elements.exportAction?.addEventListener('click', () => this.exportCurrentAction());
@@ -1220,6 +1382,7 @@ const QuickActionLab = {
             this.elements.modal.classList.remove('active');
             this.elements.modal.setAttribute('aria-hidden', 'true');
         }
+        this.toggleIconPicker(false);
         this.builderState = null;
         this.elements.actionLabelInput.value = '';
         this.elements.actionIconInput.value = '';
@@ -1272,10 +1435,111 @@ const QuickActionLab = {
         this.elements.actionIconInput.value = this.builderState.metadata.icon;
         this.elements.actionColorInput.value = this.builderState.metadata.accent;
         this.updateIconPreview();
+        this.renderIconPicker();
+        const previewLabel = LocalizationRenderer.t('quick_actions_builder_icon_preview') || 'Selected icon';
+        this.elements.iconPreview?.setAttribute('aria-label', previewLabel);
         this.renderModuleList();
         this.renderCanvas();
         this.renderInspector();
         this.updateZoomIndicator();
+    },
+
+    getModuleName(module) {
+        if (!module) return '';
+        if (module.nameKey) {
+            const localized = LocalizationRenderer.t(module.nameKey);
+            if (localized) return localized;
+        }
+        return module.name || '';
+    },
+
+    getModuleDescription(module) {
+        if (!module) return '';
+        if (module.descriptionKey) {
+            const localized = LocalizationRenderer.t(module.descriptionKey);
+            if (localized) return localized;
+        }
+        return module.description || '';
+    },
+
+    getFieldLabel(field) {
+        if (!field) return '';
+        if (field.labelKey) {
+            const localized = LocalizationRenderer.t(field.labelKey);
+            if (localized) return localized;
+        }
+        return field.label || field.key || '';
+    },
+
+    getFieldPlaceholder(field) {
+        if (!field) return '';
+        if (field.placeholderKey) {
+            const localized = LocalizationRenderer.t(field.placeholderKey);
+            if (localized) return localized;
+        }
+        return field.placeholder || '';
+    },
+
+    getOptionLabel(option) {
+        if (!option) return '';
+        if (option.labelKey) {
+            const localized = LocalizationRenderer.t(option.labelKey);
+            if (localized) return localized;
+        }
+        return option.label || option.value || '';
+    },
+
+    renderIconPicker() {
+        const panel = this.elements.iconPickerPanel;
+        if (!panel) return;
+        panel.innerHTML = '';
+        const current = this.builderState?.metadata.icon || 'zap';
+        QuickActionIconChoices.forEach(iconName => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'icon-picker-option' + (iconName === current ? ' is-active' : '');
+            button.setAttribute('data-icon', iconName);
+            if (window.feather?.icons?.[iconName]) {
+                button.innerHTML = window.feather.icons[iconName].toSvg({ class: 'icon' });
+            } else {
+                button.textContent = iconName;
+            }
+            button.addEventListener('click', () => this.selectIcon(iconName));
+            panel.appendChild(button);
+        });
+        if (window.feather?.replace) {
+            window.feather.replace();
+        }
+    },
+
+    toggleIconPicker(force) {
+        const panel = this.elements.iconPickerPanel;
+        if (!panel) return;
+        const shouldOpen = typeof force === 'boolean' ? force : panel.classList.contains('hidden');
+        panel.classList.toggle('hidden', !shouldOpen);
+        if (shouldOpen) {
+            this.renderIconPicker();
+        }
+    },
+
+    handleOutsideIconPicker(event) {
+        const panel = this.elements.iconPickerPanel;
+        if (!panel || panel.classList.contains('hidden')) return;
+        if (panel.contains(event.target)) return;
+        if (this.elements.iconPickerToggle?.contains(event.target)) return;
+        if (this.elements.iconPreview?.contains(event.target)) return;
+        this.toggleIconPicker(false);
+    },
+
+    selectIcon(iconName) {
+        if (!this.builderState) return;
+        this.builderState.metadata.icon = iconName;
+        if (this.elements.actionIconInput) {
+            this.elements.actionIconInput.value = iconName;
+        }
+        this.updateIconPreview();
+        this.renderIconPicker();
+        this.toggleIconPicker(false);
     },
 
     renderModuleList() {
@@ -1291,8 +1555,8 @@ const QuickActionLab = {
             items.forEach(module => {
                 const item = Utils.createElement('li', { className: 'builder-module-item' });
                 item.setAttribute('data-module-id', module.id);
-                const title = Utils.createElement('strong', { text: module.name });
-                const description = Utils.createElement('span', { text: module.description });
+                const title = Utils.createElement('strong', { text: this.getModuleName(module) });
+                const description = Utils.createElement('span', { text: this.getModuleDescription(module) });
                 item.appendChild(title);
                 item.appendChild(description);
                 item.addEventListener('click', () => this.addNode(module.id));
@@ -1321,12 +1585,12 @@ const QuickActionLab = {
             nodeEl.setAttribute('data-node-id', node.id);
 
             const header = Utils.createElement('div', { className: 'builder-node-header' });
-            const title = Utils.createElement('h4', { text: moduleDef.name });
+            const title = Utils.createElement('h4', { text: this.getModuleName(moduleDef) });
             header.appendChild(title);
             header.addEventListener('pointerdown', (event) => this.startNodeDrag(node.id, event));
             nodeEl.appendChild(header);
 
-            const body = Utils.createElement('div', { className: 'builder-node-body', text: moduleDef.description });
+            const body = Utils.createElement('div', { className: 'builder-node-body', text: this.getModuleDescription(moduleDef) });
             nodeEl.appendChild(body);
 
             const footer = Utils.createElement('div', { className: 'builder-node-footer' });
@@ -1433,7 +1697,7 @@ const QuickActionLab = {
         }
 
         moduleDef.form.forEach(field => {
-            const label = Utils.createElement('label', { text: field.label || field.key });
+            const label = Utils.createElement('label', { text: this.getFieldLabel(field) });
             let input;
             if (field.type === 'textarea') {
                 input = document.createElement('textarea');
@@ -1443,7 +1707,7 @@ const QuickActionLab = {
                 (field.options || []).forEach(option => {
                     const optionEl = document.createElement('option');
                     optionEl.value = option.value;
-                    optionEl.textContent = option.label || option.value;
+                    optionEl.textContent = this.getOptionLabel(option);
                     input.appendChild(optionEl);
                 });
             } else {
@@ -1452,7 +1716,8 @@ const QuickActionLab = {
                 if (field.min !== undefined) input.min = field.min;
             }
             input.value = node.config?.[field.key] ?? moduleDef.defaultConfig?.[field.key] ?? '';
-            if (field.placeholder) input.placeholder = field.placeholder;
+            const placeholder = this.getFieldPlaceholder(field);
+            if (placeholder) input.placeholder = placeholder;
             input.addEventListener('input', () => this.updateNodeConfig(node.id, field.key, input.value));
             container.appendChild(label);
             container.appendChild(input);
