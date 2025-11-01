@@ -18,9 +18,9 @@
                         <i data-feather="search" class="icon search-icon"></i>
                         <input type="text" id="search-input" placeholder="FlashSearch" autofocus>
                     </div>
-                    <div id="quick-action-bar" class="quick-action-bar" aria-label="Quick actions" role="toolbar">
-                        <!-- Buttons rendered dynamically -->
-                    </div>
+                </div>
+                <div id="quick-action-bar" class="quick-action-bar quick-action-tray" aria-label="Quick actions" role="toolbar">
+                    <!-- Buttons rendered dynamically -->
                 </div>
             </div>
 
@@ -391,6 +391,9 @@
                     <p id="quick-action-builder-subtitle">Connect blocks visually to craft new buttons for the search bar.</p>
                 </div>
                 <div class="builder-header-actions">
+                    <button id="builder-toggle-size" class="builder-header-button" title="Toggle layout size">
+                        <i data-feather="maximize-2"></i>
+                    </button>
                     <button id="builder-export-action" class="builder-header-button" title="Export configuration">
                         <i data-feather="share-2"></i>
                     </button>
@@ -462,6 +465,9 @@
                     <button id="builder-save-action" class="settings-button">Add to quick action bar</button>
                 </div>
             </footer>
+            <div id="builder-resize-handle" class="builder-resize-handle" title="Drag to resize">
+                <i data-feather="corner-right-down"></i>
+            </div>
         </div>
     </div>
 

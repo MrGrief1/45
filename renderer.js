@@ -372,6 +372,340 @@ const QuickActionModuleDefinitions = [
             }
             return [clone];
         }
+    },
+    {
+        id: 'set-search-query',
+        category: 'utility',
+        name: 'Set search query',
+        description: 'Fill the main search bar with prepared text and optionally run a search.',
+        icon: 'type',
+        accent: '#4ade80',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { text: 'FlashSearch', autoSearch: 'yes' },
+        form: [
+            { key: 'text', label: 'Search text', type: 'textarea', rows: 3, placeholder: 'What should be searched?' },
+            {
+                key: 'autoSearch',
+                label: 'Run search automatically',
+                type: 'select',
+                options: [
+                    { value: 'yes', label: 'Yes' },
+                    { value: 'no', label: 'No' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const text = (config?.text ?? '').toString();
+            const auto = (config?.autoSearch ?? 'yes') !== 'no';
+            const input = Utils.getElement('#search-input');
+            if (input) {
+                input.value = text;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                const trimmed = text.trim();
+                if (auto) {
+                    if (trimmed.length > 1 && typeof SearchModule?.performSearch === 'function') {
+                        await SearchModule.performSearch(trimmed);
+                    } else if (typeof SearchModule?.clearResults === 'function') {
+                        SearchModule.clearResults();
+                    }
+                }
+            }
+            clone.payload = text;
+            clone.vars.lastSearchQuery = text;
+            return [clone];
+        }
+    },
+    {
+        id: 'fetch-wikipedia-summary',
+        category: 'utility',
+        name: 'Fetch Wikipedia summary',
+        description: 'Retrieve a short summary from Wikipedia into the payload.',
+        icon: 'book-open',
+        accent: '#38bdf8',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { topic: '', language: 'en' },
+        form: [
+            { key: 'topic', label: 'Topic (leave empty to use payload)', type: 'textarea', rows: 3, placeholder: 'FlashSearch' },
+            { key: 'language', label: 'Language code', type: 'text', placeholder: 'en' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const configuredTopic = (config?.topic || '').trim();
+            const payloadTopic = (clone.payload || '').toString().trim();
+            const topic = configuredTopic || payloadTopic;
+            if (!topic) {
+                return [clone];
+            }
+            const language = (config?.language || 'en').trim() || 'en';
+            if (typeof fetch !== 'function') {
+                return [clone];
+            }
+            const endpoint = `https://${language}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`;
+            try {
+                const response = await fetch(endpoint);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data?.extract) {
+                        clone.payload = data.extract;
+                    }
+                    clone.vars.lastWikiTitle = data?.title || topic;
+                    clone.vars.lastWikiUrl = data?.content_urls?.desktop?.page || '';
+                    clone.vars.lastWikiLanguage = language;
+                }
+            } catch (error) {
+                console.warn('Quick action wiki fetch failed', error);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'http-request',
+        category: 'utility',
+        name: 'HTTP request',
+        description: 'Call a REST API endpoint and reuse the response.',
+        icon: 'cloud-lightning',
+        accent: '#0ea5e9',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            url: '',
+            method: 'GET',
+            body: '',
+            parseAs: 'auto',
+            saveTo: 'payload',
+            variableKey: 'response',
+            jsonPath: ''
+        },
+        form: [
+            { key: 'url', label: 'Request URL', type: 'text', placeholder: 'https://api.example.com/data' },
+            {
+                key: 'method',
+                label: 'Method',
+                type: 'select',
+                options: [
+                    { value: 'GET', label: 'GET' },
+                    { value: 'POST', label: 'POST' },
+                    { value: 'PUT', label: 'PUT' },
+                    { value: 'PATCH', label: 'PATCH' },
+                    { value: 'DELETE', label: 'DELETE' }
+                ]
+            },
+            { key: 'body', label: 'Request body', type: 'textarea', rows: 4, placeholder: '{"foo":"bar"} (optional)' },
+            {
+                key: 'parseAs',
+                label: 'Response type',
+                type: 'select',
+                options: [
+                    { value: 'auto', label: 'Auto-detect' },
+                    { value: 'json', label: 'JSON' },
+                    { value: 'text', label: 'Plain text' }
+                ]
+            },
+            {
+                key: 'saveTo',
+                label: 'Store result in',
+                type: 'select',
+                options: [
+                    { value: 'payload', label: 'Payload' },
+                    { value: 'var', label: 'Workflow variable' }
+                ]
+            },
+            { key: 'variableKey', label: 'Variable name', type: 'text', placeholder: 'response' },
+            { key: 'jsonPath', label: 'JSON property (optional)', type: 'text', placeholder: 'data.value' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const url = (config?.url || '').trim();
+            if (!url || typeof fetch !== 'function') {
+                return [clone];
+            }
+
+            const method = (config?.method || 'GET').toUpperCase();
+            const options = { method };
+            const headers = {};
+            const hasBody = method !== 'GET' && method !== 'HEAD' && config?.body && config.body.trim().length > 0;
+            if (hasBody) {
+                options.body = config.body;
+                headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+            }
+            if (Object.keys(headers).length > 0) {
+                options.headers = headers;
+            }
+
+            try {
+                const response = await fetch(url, options);
+                clone.vars.lastHttpStatus = response.status;
+                clone.vars.lastHttpUrl = url;
+
+                const mode = (config?.parseAs || 'auto').toLowerCase();
+                const contentType = response.headers?.get?.('content-type') || '';
+                const shouldParseJson = mode === 'json' || (mode === 'auto' && contentType.includes('json'));
+                let parsed;
+
+                if (shouldParseJson) {
+                    parsed = await response.json().catch(() => null);
+                } else {
+                    parsed = await response.text();
+                }
+
+                if (parsed !== undefined && parsed !== null) {
+                    let finalResult = parsed;
+                    if (typeof parsed === 'object' && parsed && config?.jsonPath) {
+                        const segments = config.jsonPath.split('.').map(segment => segment.trim()).filter(Boolean);
+                        finalResult = segments.reduce((acc, key) => (acc && typeof acc === 'object' && key in acc) ? acc[key] : undefined, parsed);
+                    }
+
+                    if (config?.saveTo === 'var') {
+                        const key = (config?.variableKey || 'response').trim() || 'response';
+                        clone.vars[key] = finalResult;
+                    } else {
+                        if (typeof finalResult === 'string') {
+                            clone.payload = finalResult;
+                        } else {
+                            clone.payload = JSON.stringify(finalResult, null, 2);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn('Quick action HTTP request failed', error);
+                clone.vars.lastHttpError = error?.message || String(error);
+            }
+
+            return [clone];
+        }
+    },
+    {
+        id: 'transform-text',
+        category: 'utility',
+        name: 'Transform text',
+        description: 'Apply quick text transformations such as uppercase or trimming.',
+        icon: 'type',
+        accent: '#34d399',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            source: 'payload',
+            customText: '',
+            transform: 'uppercase',
+            replaceTarget: '',
+            replaceValue: ''
+        },
+        form: [
+            {
+                key: 'source',
+                label: 'Source',
+                type: 'select',
+                options: [
+                    { value: 'payload', label: 'Use current payload' },
+                    { value: 'custom', label: 'Use custom text' }
+                ]
+            },
+            { key: 'customText', label: 'Custom text', type: 'textarea', rows: 3, placeholder: 'Only used with custom source' },
+            {
+                key: 'transform',
+                label: 'Transformation',
+                type: 'select',
+                options: [
+                    { value: 'uppercase', label: 'Uppercase' },
+                    { value: 'lowercase', label: 'Lowercase' },
+                    { value: 'title', label: 'Title case' },
+                    { value: 'trim', label: 'Trim whitespace' },
+                    { value: 'slug', label: 'Slug (kebab-case)' },
+                    { value: 'replace', label: 'Find & replace' }
+                ]
+            },
+            { key: 'replaceTarget', label: 'Find', type: 'text', placeholder: 'text to replace' },
+            { key: 'replaceValue', label: 'Replace with', type: 'text', placeholder: 'replacement value' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const source = (config?.source || 'payload').toLowerCase();
+            const baseText = source === 'custom'
+                ? String(config?.customText ?? '')
+                : String(clone.payload ?? '');
+            const mode = (config?.transform || 'uppercase').toLowerCase();
+            let result = baseText;
+
+            switch (mode) {
+                case 'lowercase':
+                    result = baseText.toLowerCase();
+                    break;
+                case 'title':
+                    result = baseText.replace(/\w\S*/g, word => word.charAt(0).toUpperCase() + word.substring(1).toLowerCase());
+                    break;
+                case 'trim':
+                    result = baseText.trim();
+                    break;
+                case 'slug':
+                    result = baseText
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .replace(/[^a-zA-Z0-9]+/g, '-')
+                        .replace(/^-+|-+$/g, '')
+                        .toLowerCase();
+                    break;
+                case 'replace': {
+                    const target = config?.replaceTarget || '';
+                    const value = config?.replaceValue || '';
+                    if (target) {
+                        const pattern = new RegExp(target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                        result = baseText.replace(pattern, value);
+                    }
+                    break;
+                }
+                case 'uppercase':
+                default:
+                    result = baseText.toUpperCase();
+                    break;
+            }
+
+            clone.payload = result;
+            clone.vars.lastTransformedText = result;
+            return [clone];
+        }
+    },
+    {
+        id: 'merge-text',
+        category: 'utility',
+        name: 'Merge text',
+        description: 'Join multiple lines and optional payload into a single value.',
+        icon: 'list',
+        accent: '#f472b6',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            lines: '',
+            includePayload: 'no',
+            separator: '\n'
+        },
+        form: [
+            { key: 'lines', label: 'Lines to merge', type: 'textarea', rows: 4, placeholder: 'One entry per line' },
+            {
+                key: 'includePayload',
+                label: 'Include existing payload',
+                type: 'select',
+                options: [
+                    { value: 'no', label: 'No' },
+                    { value: 'yes', label: 'Yes' }
+                ]
+            },
+            { key: 'separator', label: 'Separator', type: 'text', placeholder: ', ' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const lines = (config?.lines || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+            if ((config?.includePayload || 'no') !== 'no' && clone.payload) {
+                lines.unshift(String(clone.payload));
+            }
+            const separator = config?.separator !== undefined ? String(config.separator) : '\n';
+            const merged = lines.join(separator);
+            clone.payload = merged;
+            clone.vars.lastMergedCount = lines.length;
+            return [clone];
+        }
     }
 ];
 
@@ -677,8 +1011,16 @@ const QuickActionLab = {
     builderState: null,
     nodeIdCounter: 0,
     connectionIdCounter: 0,
+    dialogDimensions: null,
+    previousDialogDimensions: null,
+    isFullscreen: false,
+    connectionRedrawHandle: null,
+    resizeState: null,
     boundDragMove: null,
     boundDragEnd: null,
+    boundResizeMove: null,
+    boundResizeEnd: null,
+    boundWindowResize: null,
 
     init() {
         if (this.initialized) return;
@@ -712,7 +1054,11 @@ const QuickActionLab = {
             actionLabelInput: Utils.getElement('#builder-action-label'),
             actionIconInput: Utils.getElement('#builder-action-icon'),
             actionColorInput: Utils.getElement('#builder-action-color'),
-            iconPreview: Utils.getElement('#builder-icon-preview')
+            iconPreview: Utils.getElement('#builder-icon-preview'),
+            dialog: Utils.getElement('.builder-dialog'),
+            resizeHandle: Utils.getElement('#builder-resize-handle'),
+            sizeToggle: Utils.getElement('#builder-toggle-size'),
+            backdrop: Utils.getElement('#quick-action-builder-modal .builder-backdrop')
         };
 
         if (!this.elements.activeList) {
@@ -727,7 +1073,9 @@ const QuickActionLab = {
 
     attachEvents() {
         this.boundDragMove = (event) => this.handleNodeDrag(event);
-        this.boundDragEnd = (event) => this.stopNodeDrag(event);
+        this.boundDragEnd = () => this.stopNodeDrag();
+        this.boundResizeMove = (event) => this.handleResize(event);
+        this.boundResizeEnd = () => this.stopResize();
 
         this.elements.openBuilder?.addEventListener('click', () => this.openBuilder());
         this.elements.importToggle?.addEventListener('click', () => this.toggleImportArea(true));
@@ -759,6 +1107,13 @@ const QuickActionLab = {
         this.elements.zoomOut?.addEventListener('click', () => this.adjustZoom(-0.1));
         this.elements.resetView?.addEventListener('click', () => this.resetView());
         this.elements.clearWorkspace?.addEventListener('click', () => this.clearWorkspace());
+        this.elements.sizeToggle?.addEventListener('click', () => this.toggleBuilderSize());
+        this.elements.resizeHandle?.addEventListener('pointerdown', (event) => this.startResize(event));
+        this.elements.backdrop?.addEventListener('click', (event) => {
+            if (event.target === this.elements.backdrop) {
+                this.closeBuilder();
+            }
+        });
 
         this.elements.modal?.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
@@ -775,6 +1130,137 @@ const QuickActionLab = {
                 this.selectNode(null);
             }
         });
+    },
+
+    getDefaultDimensions() {
+        const width = Math.min(Math.max(1180, Math.round(window.innerWidth * 0.88)), Math.max(1040, window.innerWidth - 72));
+        const height = Math.min(Math.max(760, Math.round(window.innerHeight * 0.86)), Math.max(660, window.innerHeight - 72));
+        return { width, height };
+    },
+
+    normalizeDimensions(width = 0, height = 0) {
+        const minWidth = 1000;
+        const minHeight = 660;
+        const maxWidth = Math.max(minWidth, window.innerWidth - 48);
+        const maxHeight = Math.max(minHeight, window.innerHeight - 48);
+        const clampedWidth = Math.min(Math.max(minWidth, Math.round(width)), maxWidth);
+        const clampedHeight = Math.min(Math.max(minHeight, Math.round(height)), maxHeight);
+        return { width: clampedWidth, height: clampedHeight };
+    },
+
+    applyBuilderDimensions(dimensions) {
+        if (!this.elements.dialog) return;
+        const normalized = this.normalizeDimensions(dimensions?.width, dimensions?.height);
+        this.dialogDimensions = { ...normalized };
+        this.elements.dialog.style.width = `${normalized.width}px`;
+        this.elements.dialog.style.height = `${normalized.height}px`;
+        if (this.builderState) {
+            this.builderState.workspaceSize = { ...normalized };
+        }
+        this.scheduleConnectionRedraw();
+    },
+
+    attachBuilderWindowListeners() {
+        if (!this.boundWindowResize) {
+            this.boundWindowResize = () => this.handleWindowResize();
+        }
+        window.addEventListener('resize', this.boundWindowResize);
+    },
+
+    detachBuilderWindowListeners() {
+        if (this.boundWindowResize) {
+            window.removeEventListener('resize', this.boundWindowResize);
+        }
+    },
+
+    handleWindowResize() {
+        if (!this.builderState?.isOpen) return;
+        if (this.isFullscreen) {
+            const fullscreen = this.normalizeDimensions(window.innerWidth - 48, window.innerHeight - 48);
+            this.applyBuilderDimensions(fullscreen);
+        } else if (this.dialogDimensions) {
+            this.applyBuilderDimensions(this.dialogDimensions);
+        }
+    },
+
+    startResize(event) {
+        if (!this.elements.dialog) return;
+        event.preventDefault();
+        this.isFullscreen = false;
+        this.updateSizeToggleIcon();
+        const handle = event.currentTarget;
+        this.resizeState = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            width: this.elements.dialog.offsetWidth,
+            height: this.elements.dialog.offsetHeight,
+            handle
+        };
+        handle?.setPointerCapture?.(event.pointerId);
+        window.addEventListener('pointermove', this.boundResizeMove);
+        window.addEventListener('pointerup', this.boundResizeEnd);
+    },
+
+    handleResize(event) {
+        if (!this.resizeState) return;
+        const deltaX = event.clientX - this.resizeState.startX;
+        const deltaY = event.clientY - this.resizeState.startY;
+        const next = {
+            width: this.resizeState.width + deltaX,
+            height: this.resizeState.height + deltaY
+        };
+        this.applyBuilderDimensions(next);
+    },
+
+    stopResize() {
+        if (!this.resizeState) return;
+        window.removeEventListener('pointermove', this.boundResizeMove);
+        window.removeEventListener('pointerup', this.boundResizeEnd);
+        if (this.resizeState.pointerId) {
+            this.resizeState.handle?.releasePointerCapture?.(this.resizeState.pointerId);
+        }
+        this.resizeState = null;
+    },
+
+    toggleBuilderSize() {
+        if (!this.elements.dialog) return;
+        if (!this.isFullscreen) {
+            const base = this.dialogDimensions || this.getDefaultDimensions();
+            this.previousDialogDimensions = { ...base };
+            const fullscreen = this.normalizeDimensions(window.innerWidth - 48, window.innerHeight - 48);
+            this.isFullscreen = true;
+            this.applyBuilderDimensions(fullscreen);
+        } else {
+            const fallback = this.previousDialogDimensions || this.getDefaultDimensions();
+            this.isFullscreen = false;
+            this.applyBuilderDimensions(fallback);
+        }
+        this.updateSizeToggleIcon();
+    },
+
+    updateSizeToggleIcon() {
+        if (!this.elements.sizeToggle) return;
+        const iconName = this.isFullscreen ? 'minimize-2' : 'maximize-2';
+        if (window.feather?.icons?.[iconName]) {
+            this.elements.sizeToggle.innerHTML = window.feather.icons[iconName].toSvg();
+        }
+    },
+
+    scheduleConnectionRedraw() {
+        if (!this.builderState || !this.elements.connectionLayer || !this.elements.canvas) return;
+        if (this.connectionRedrawHandle) return;
+        this.connectionRedrawHandle = requestAnimationFrame(() => {
+            this.connectionRedrawHandle = null;
+            this.drawConnections();
+        });
+    },
+
+    cancelConnectionRedraw() {
+        if (this.connectionRedrawHandle) {
+            cancelAnimationFrame(this.connectionRedrawHandle);
+            this.connectionRedrawHandle = null;
+        }
     },
 
     renderAll() {
@@ -969,6 +1455,13 @@ const QuickActionLab = {
                 if (existing.workflow.initialPayload !== undefined) {
                     this.builderState.metadata.initialPayload = existing.workflow.initialPayload;
                 }
+                if (existing.workflow.workspaceSize) {
+                    this.builderState.workspaceSize = { ...existing.workflow.workspaceSize };
+                    this.dialogDimensions = this.normalizeDimensions(
+                        existing.workflow.workspaceSize.width,
+                        existing.workflow.workspaceSize.height
+                    );
+                }
             }
         } else if (options.template) {
             this.applyTemplate(options.template);
@@ -977,9 +1470,21 @@ const QuickActionLab = {
         this.ensureManualNode();
         this.renderBuilder();
         this.updateIconPreview();
+        if (!this.dialogDimensions) {
+            this.dialogDimensions = this.builderState.workspaceSize
+                ? { ...this.builderState.workspaceSize }
+                : this.getDefaultDimensions();
+        }
+        this.isFullscreen = false;
+        this.previousDialogDimensions = null;
+        this.updateSizeToggleIcon();
+        this.applyBuilderDimensions(this.dialogDimensions);
         this.elements.modal?.classList.add('active');
         this.elements.modal?.setAttribute('aria-hidden', 'false');
+        this.attachBuilderWindowListeners();
+        this.handleWindowResize();
         this.elements.modal?.focus();
+        this.scheduleConnectionRedraw();
     },
 
     closeBuilder() {
@@ -991,6 +1496,10 @@ const QuickActionLab = {
         this.elements.actionLabelInput.value = '';
         this.elements.actionIconInput.value = '';
         this.elements.actionColorInput.value = '#5865f2';
+        this.cancelConnectionRedraw();
+        this.detachBuilderWindowListeners();
+        this.isFullscreen = false;
+        this.previousDialogDimensions = null;
     },
 
     createDefaultBuilderState() {
@@ -1002,6 +1511,7 @@ const QuickActionLab = {
             selectedNodeId: manualNode.id,
             pendingConnection: null,
             isOpen: false,
+            workspaceSize: null,
             metadata: {
                 id: null,
                 label: LocalizationRenderer.t('quick_actions_new_label') || 'My quick action',
@@ -1084,7 +1594,7 @@ const QuickActionLab = {
             const moduleDef = QuickActionModuleMap.get(node.moduleId);
             if (!moduleDef) return;
             const nodeEl = Utils.createElement('div', { className: 'builder-node' + (this.builderState.selectedNodeId === node.id ? ' selected' : '') });
-            nodeEl.style.transform = `translate(${node.position.x}px, ${node.position.y}px)`;
+            nodeEl.style.transform = `translate3d(${node.position.x}px, ${node.position.y}px, 0)`;
             nodeEl.setAttribute('data-node-id', node.id);
 
             const header = Utils.createElement('div', { className: 'builder-node-header' });
@@ -1122,11 +1632,11 @@ const QuickActionLab = {
                 }
             });
 
-            nodeLayer.appendChild(nodeEl);
+        nodeLayer.appendChild(nodeEl);
         });
 
         this.elements.emptyState?.classList.toggle('hidden', this.builderState.nodes.length > 1);
-        this.drawConnections();
+        this.scheduleConnectionRedraw();
     },
 
     drawConnections() {
@@ -1140,20 +1650,33 @@ const QuickActionLab = {
         connectionLayer.setAttribute('height', `${canvasRect.height}`);
         connectionLayer.setAttribute('viewBox', `0 0 ${canvasRect.width} ${canvasRect.height}`);
 
-        this.builderState.connections.forEach(connection => {
-            const fromPort = this.findPortElement(connection.from?.nodeId, connection.from?.portId, 'output');
-            const toPort = this.findPortElement(connection.to?.nodeId, connection.to?.portId, 'input');
-            if (!fromPort || !toPort) return;
+        const zoom = this.builderState.zoom || 1;
+        const portCache = new Map();
+        const getPortCenter = (nodeId, portId, role) => {
+            const cacheKey = `${nodeId}:${portId}:${role}`;
+            if (portCache.has(cacheKey)) {
+                return portCache.get(cacheKey);
+            }
+            const portEl = this.findPortElement(nodeId, portId, role);
+            if (!portEl) return null;
+            const rect = portEl.getBoundingClientRect();
+            const center = {
+                x: (rect.left + rect.width / 2 - canvasRect.left) / zoom,
+                y: (rect.top + rect.height / 2 - canvasRect.top) / zoom
+            };
+            portCache.set(cacheKey, center);
+            return center;
+        };
 
-            const fromRect = fromPort.getBoundingClientRect();
-            const toRect = toPort.getBoundingClientRect();
-            const zoom = this.builderState.zoom || 1;
-            const startX = (fromRect.left + fromRect.width / 2 - canvasRect.left) / zoom;
-            const startY = (fromRect.top + fromRect.height / 2 - canvasRect.top) / zoom;
-            const endX = (toRect.left + toRect.width / 2 - canvasRect.left) / zoom;
-            const endY = (toRect.top + toRect.height / 2 - canvasRect.top) / zoom;
-            const delta = Math.max(60, Math.abs(endX - startX) * 0.5);
-            const pathData = `M ${startX} ${startY} C ${startX + delta} ${startY}, ${endX - delta} ${endY}, ${endX} ${endY}`;
+        const fragment = document.createDocumentFragment();
+
+        this.builderState.connections.forEach(connection => {
+            const fromCenter = getPortCenter(connection.from?.nodeId, connection.from?.portId, 'output');
+            const toCenter = getPortCenter(connection.to?.nodeId, connection.to?.portId, 'input');
+            if (!fromCenter || !toCenter) return;
+
+            const delta = Math.max(60, Math.abs(toCenter.x - fromCenter.x) * 0.5);
+            const pathData = `M ${fromCenter.x} ${fromCenter.y} C ${fromCenter.x + delta} ${fromCenter.y}, ${toCenter.x - delta} ${toCenter.y}, ${toCenter.x} ${toCenter.y}`;
 
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path.setAttribute('d', pathData);
@@ -1163,8 +1686,10 @@ const QuickActionLab = {
                     this.removeConnection(connection.id);
                 }
             });
-            connectionLayer.appendChild(path);
+            fragment.appendChild(path);
         });
+
+        connectionLayer.appendChild(fragment);
     },
 
     renderInspector() {
@@ -1211,7 +1736,9 @@ const QuickActionLab = {
             }
             input.value = node.config?.[field.key] ?? moduleDef.defaultConfig?.[field.key] ?? '';
             if (field.placeholder) input.placeholder = field.placeholder;
-            input.addEventListener('input', () => this.updateNodeConfig(node.id, field.key, input.value));
+            const handler = () => this.updateNodeConfig(node.id, field.key, input.value);
+            if (field.type === 'select') input.addEventListener('change', handler);
+            else input.addEventListener('input', handler);
             container.appendChild(label);
             container.appendChild(input);
         });
@@ -1253,12 +1780,22 @@ const QuickActionLab = {
         if (!node) return;
         event.preventDefault();
         event.stopPropagation();
+        const handleEl = event.currentTarget;
+        handleEl?.setPointerCapture?.(event.pointerId);
+        const nodeEl = this.findNodeElement(node.id);
+        if (nodeEl) {
+            nodeEl.classList.add('dragging');
+        }
         this.builderState.drag = {
             nodeId,
+            pointerId: event.pointerId,
+            handleEl,
             startX: event.clientX,
             startY: event.clientY,
             originX: node.position.x,
-            originY: node.position.y
+            originY: node.position.y,
+            pending: null,
+            raf: null
         };
         window.addEventListener('pointermove', this.boundDragMove);
         window.addEventListener('pointerup', this.boundDragEnd);
@@ -1270,20 +1807,49 @@ const QuickActionLab = {
         const node = this.builderState.nodes.find(item => item.id === drag.nodeId);
         if (!node) return;
         const zoom = this.builderState.zoom || 1;
-        node.position.x = drag.originX + (event.clientX - drag.startX) / zoom;
-        node.position.y = drag.originY + (event.clientY - drag.startY) / zoom;
+        drag.pending = {
+            x: drag.originX + (event.clientX - drag.startX) / zoom,
+            y: drag.originY + (event.clientY - drag.startY) / zoom
+        };
+        if (!drag.raf) {
+            drag.raf = requestAnimationFrame(() => this.applyPendingDragPosition());
+        }
+    },
+
+    applyPendingDragPosition() {
+        if (!this.builderState?.drag) return;
+        const drag = this.builderState.drag;
+        drag.raf = null;
+        if (!drag.pending) return;
+        const node = this.builderState.nodes.find(item => item.id === drag.nodeId);
+        if (!node) return;
+        node.position.x = drag.pending.x;
+        node.position.y = drag.pending.y;
         const nodeEl = this.findNodeElement(node.id);
         if (nodeEl) {
-            nodeEl.style.transform = `translate(${node.position.x}px, ${node.position.y}px)`;
+            nodeEl.style.transform = `translate3d(${node.position.x}px, ${node.position.y}px, 0)`;
         }
-        this.drawConnections();
+        drag.pending = null;
+        this.scheduleConnectionRedraw();
     },
 
     stopNodeDrag() {
-        if (!this.builderState) return;
-        this.builderState.drag = null;
+        if (!this.builderState?.drag) return;
         window.removeEventListener('pointermove', this.boundDragMove);
         window.removeEventListener('pointerup', this.boundDragEnd);
+        const drag = this.builderState.drag;
+        if (drag.raf) {
+            cancelAnimationFrame(drag.raf);
+            drag.raf = null;
+        }
+        this.applyPendingDragPosition();
+        const nodeEl = this.findNodeElement(drag.nodeId);
+        if (nodeEl) {
+            nodeEl.classList.remove('dragging');
+        }
+        drag.handleEl?.releasePointerCapture?.(drag.pointerId);
+        this.builderState.drag = null;
+        this.scheduleConnectionRedraw();
     },
 
     handlePortClick(nodeId, portId, role, event) {
@@ -1323,13 +1889,13 @@ const QuickActionLab = {
             from: { nodeId: fromNodeId, portId: fromPortId },
             to: { nodeId: toNodeId, portId: toPortId }
         });
-        this.drawConnections();
+        this.scheduleConnectionRedraw();
     },
 
     removeConnection(connectionId) {
         if (!this.builderState) return;
         this.builderState.connections = this.builderState.connections.filter(connection => connection.id !== connectionId);
-        this.drawConnections();
+        this.scheduleConnectionRedraw();
     },
 
     removeNode(nodeId) {
@@ -1340,6 +1906,7 @@ const QuickActionLab = {
             this.builderState.selectedNodeId = null;
         }
         this.renderBuilder();
+        this.scheduleConnectionRedraw();
     },
 
     addNode(moduleId) {
@@ -1362,12 +1929,14 @@ const QuickActionLab = {
         const next = Math.max(0.4, Math.min(1.8, (this.builderState.zoom || 1) + delta));
         this.builderState.zoom = parseFloat(next.toFixed(2));
         this.renderBuilder();
+        this.scheduleConnectionRedraw();
     },
 
     resetView() {
         if (!this.builderState) return;
         this.builderState.zoom = 1;
         this.renderBuilder();
+        this.scheduleConnectionRedraw();
     },
 
     clearWorkspace() {
@@ -1378,6 +1947,7 @@ const QuickActionLab = {
         this.builderState.connections = [];
         this.builderState.selectedNodeId = this.builderState.nodes[0].id;
         this.renderBuilder();
+        this.scheduleConnectionRedraw();
     },
 
     updateZoomIndicator() {
@@ -1448,7 +2018,10 @@ const QuickActionLab = {
                 nodes,
                 connections,
                 zoom: this.builderState.zoom,
-                initialPayload: this.builderState.metadata.initialPayload ?? null
+                initialPayload: this.builderState.metadata.initialPayload ?? null,
+                workspaceSize: this.builderState.workspaceSize
+                    ? { ...this.builderState.workspaceSize }
+                    : (this.dialogDimensions ? { ...this.dialogDimensions } : undefined)
             }
         };
 
@@ -1471,7 +2044,10 @@ const QuickActionLab = {
                     position: { ...node.position },
                     config: { ...(node.config || {}) }
                 })),
-                connections: this.builderState.connections.map(connection => ({ ...connection }))
+                connections: this.builderState.connections.map(connection => ({ ...connection })),
+                workspaceSize: this.builderState.workspaceSize
+                    ? { ...this.builderState.workspaceSize }
+                    : (this.dialogDimensions ? { ...this.dialogDimensions } : undefined)
             }
         };
         QuickActionExecutor.runDefinition(preview);
@@ -1492,7 +2068,10 @@ const QuickActionLab = {
                     position: { ...node.position },
                     config: { ...(node.config || {}) }
                 })),
-                connections: this.builderState.connections.map(connection => ({ ...connection }))
+                connections: this.builderState.connections.map(connection => ({ ...connection })),
+                workspaceSize: this.builderState.workspaceSize
+                    ? { ...this.builderState.workspaceSize }
+                    : (this.dialogDimensions ? { ...this.dialogDimensions } : undefined)
             }
         };
         ipcRenderer.send('copy-to-clipboard', JSON.stringify(payload, null, 2));
@@ -2014,7 +2593,22 @@ const SearchModule = {
             if (query.length > 1) this.performSearch(query);
             else this.clearResults();
         }, 250);
-        if (searchInput) searchInput.addEventListener('input', (e) => debouncedSearch(e.target.value.trim()));
+        if (searchInput) {
+            searchInput.disabled = false;
+            searchInput.removeAttribute('readonly');
+            searchInput.addEventListener('mousedown', () => {
+                if (document.activeElement !== searchInput) {
+                    requestAnimationFrame(() => searchInput.focus());
+                }
+            });
+            searchInput.addEventListener('keydown', (event) => {
+                const passthroughKeys = ['Enter', 'ArrowUp', 'ArrowDown', 'Escape'];
+                if (!passthroughKeys.includes(event.key)) {
+                    event.stopPropagation();
+                }
+            });
+            searchInput.addEventListener('input', (e) => debouncedSearch(e.target.value.trim()));
+        }
         this.setupKeyboardNavigation();
     },
 
