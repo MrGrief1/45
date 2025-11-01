@@ -113,6 +113,7 @@ const QuickActionCatalog = [
         id: 'apps-library',
         icon: 'grid',
         nameKey: 'title_apps_library',
+        descriptionKey: 'quick_action_description_apps_library',
         description: 'Open the application library panel.',
         type: 'panel',
         payload: { panel: 'apps-library' },
@@ -123,6 +124,7 @@ const QuickActionCatalog = [
         id: 'files',
         icon: 'folder',
         nameKey: 'title_files',
+        descriptionKey: 'quick_action_description_files',
         description: 'Browse indexed files and folders.',
         type: 'panel',
         payload: { panel: 'files' },
@@ -133,6 +135,7 @@ const QuickActionCatalog = [
         id: 'commands',
         icon: 'command',
         nameKey: 'title_commands',
+        descriptionKey: 'quick_action_description_commands',
         description: 'Trigger saved commands and automations.',
         type: 'panel',
         payload: { panel: 'commands' },
@@ -143,6 +146,7 @@ const QuickActionCatalog = [
         id: 'clipboard',
         icon: 'copy',
         nameKey: 'title_clipboard',
+        descriptionKey: 'quick_action_description_clipboard',
         description: 'Review your clipboard buffer.',
         type: 'panel',
         payload: { panel: 'clipboard' },
@@ -153,6 +157,7 @@ const QuickActionCatalog = [
         id: 'settings',
         icon: 'settings',
         nameKey: 'context_settings',
+        descriptionKey: 'quick_action_description_settings',
         description: 'Jump straight to FlashSearch settings.',
         type: 'view',
         payload: { view: 'settings' },
@@ -163,6 +168,7 @@ const QuickActionCatalog = [
         id: 'pinned-apps',
         icon: 'bookmark',
         name: 'Pinned applications',
+        descriptionKey: 'quick_action_description_pinned',
         description: 'Open the pinned applications panel instantly.',
         type: 'panel',
         payload: { panel: 'apps-library', anchor: 'pinned' },
@@ -173,11 +179,59 @@ const QuickActionCatalog = [
 
 const QuickActionDefaultOrder = ['apps-library', 'files', 'commands', 'clipboard', 'settings'];
 
+const QuickActionIconLibrary = [
+    'zap',
+    'play-circle',
+    'grid',
+    'folder',
+    'command',
+    'copy',
+    'clipboard',
+    'settings',
+    'sliders',
+    'layout',
+    'search',
+    'bookmark',
+    'bell',
+    'clock',
+    'calendar',
+    'check-circle',
+    'chevrons-right',
+    'download',
+    'download-cloud',
+    'upload',
+    'external-link',
+    'globe',
+    'link',
+    'mail',
+    'message-square',
+    'map-pin',
+    'navigation',
+    'play',
+    'plus',
+    'minus',
+    'printer',
+    'terminal',
+    'database',
+    'edit-3',
+    'type',
+    'scissors',
+    'code',
+    'user',
+    'users',
+    'wifi',
+    'shield',
+    'sun',
+    'moon',
+    'star'
+];
+
 const QuickActionModuleDefinitions = [
     {
         id: 'manual-trigger',
         category: 'trigger',
         name: 'Manual trigger',
+        descriptionKey: 'quick_action_module_manual_trigger_desc',
         description: 'Starts when you press the quick action button.',
         icon: 'play-circle',
         accent: '#38bdf8',
@@ -192,6 +246,7 @@ const QuickActionModuleDefinitions = [
         id: 'open-panel',
         category: 'action',
         name: 'Open panel',
+        descriptionKey: 'quick_action_module_open_panel_desc',
         description: 'Show one of the auxiliary panels such as clipboard or files.',
         icon: 'layout',
         accent: '#38bdf8',
@@ -223,6 +278,7 @@ const QuickActionModuleDefinitions = [
         id: 'open-url',
         category: 'action',
         name: 'Open website',
+        descriptionKey: 'quick_action_module_open_url_desc',
         description: 'Launch a URL in your default browser.',
         icon: 'globe',
         accent: '#22d3ee',
@@ -248,6 +304,7 @@ const QuickActionModuleDefinitions = [
         id: 'copy-text',
         category: 'action',
         name: 'Copy text',
+        descriptionKey: 'quick_action_module_copy_text_desc',
         description: 'Copy prepared text into the clipboard.',
         icon: 'clipboard',
         accent: '#a855f7',
@@ -270,6 +327,7 @@ const QuickActionModuleDefinitions = [
         id: 'run-command',
         category: 'action',
         name: 'Run shell command',
+        descriptionKey: 'quick_action_module_run_command_desc',
         description: 'Execute a terminal command on your system.',
         icon: 'terminal',
         accent: '#f97316',
@@ -293,6 +351,7 @@ const QuickActionModuleDefinitions = [
         id: 'show-notification',
         category: 'action',
         name: 'Show notification',
+        descriptionKey: 'quick_action_module_show_notification_desc',
         description: 'Display a desktop notification with custom text.',
         icon: 'bell',
         accent: '#facc15',
@@ -318,6 +377,7 @@ const QuickActionModuleDefinitions = [
         id: 'delay',
         category: 'utility',
         name: 'Delay',
+        descriptionKey: 'quick_action_module_delay_desc',
         description: 'Pause the workflow for a specified time.',
         icon: 'clock',
         accent: '#fbbf24',
@@ -340,6 +400,7 @@ const QuickActionModuleDefinitions = [
         id: 'set-payload',
         category: 'utility',
         name: 'Set payload',
+        descriptionKey: 'quick_action_module_set_payload_desc',
         description: 'Store a value that can be reused by next blocks.',
         icon: 'edit-3',
         accent: '#60a5fa',
@@ -359,6 +420,7 @@ const QuickActionModuleDefinitions = [
         id: 'use-payload-as-text',
         category: 'action',
         name: 'Use payload as text',
+        descriptionKey: 'quick_action_module_use_payload_text_desc',
         description: 'Copy the current payload value to the clipboard.',
         icon: 'clipboard',
         accent: '#22c55e',
@@ -377,6 +439,7 @@ const QuickActionModuleDefinitions = [
         id: 'fetch-json',
         category: 'utility',
         name: 'Fetch JSON',
+        descriptionKey: 'quick_action_module_fetch_json_desc',
         description: 'Request JSON data and store it as the workflow payload.',
         icon: 'download-cloud',
         accent: '#38bdf8',
@@ -421,6 +484,7 @@ const QuickActionModuleDefinitions = [
         id: 'transform-payload',
         category: 'utility',
         name: 'Transform text',
+        descriptionKey: 'quick_action_module_transform_payload_desc',
         description: 'Apply quick text transformations to the payload.',
         icon: 'type',
         accent: '#34d399',
@@ -473,6 +537,7 @@ const QuickActionModuleDefinitions = [
         id: 'store-variable',
         category: 'utility',
         name: 'Store variable',
+        descriptionKey: 'quick_action_module_store_variable_desc',
         description: 'Save a named value in the workflow context.',
         icon: 'database',
         accent: '#f472b6',
@@ -518,7 +583,7 @@ const QuickActionStore = {
                 activeIds: [...QuickActionDefaultOrder],
                 customActions: [],
                 preferences: {
-                    builderSize: { width: 1280, height: 820 }
+                    builderSize: { width: 1320, height: 860 }
                 }
             };
         }
@@ -533,12 +598,12 @@ const QuickActionStore = {
 
         if (!AppState.settings.quickActions.preferences || typeof AppState.settings.quickActions.preferences !== 'object') {
             AppState.settings.quickActions.preferences = {
-                builderSize: { width: 1280, height: 820 }
+                builderSize: { width: 1320, height: 860 }
             };
         }
 
         if (!AppState.settings.quickActions.preferences.builderSize) {
-            AppState.settings.quickActions.preferences.builderSize = { width: 1280, height: 820 };
+            AppState.settings.quickActions.preferences.builderSize = { width: 1320, height: 860 };
         }
 
         const normalized = Array.from(new Set(AppState.settings.quickActions.activeIds.filter(Boolean)));
@@ -620,8 +685,8 @@ const QuickActionStore = {
     getBuilderSize() {
         this.ensureStructure();
         const size = AppState.settings.quickActions.preferences?.builderSize || {};
-        const width = Number(size.width) || 1280;
-        const height = Number(size.height) || 820;
+        const width = Number(size.width) || 1320;
+        const height = Number(size.height) || 860;
         return {
             width: Math.max(960, Math.min(Math.round(width), 1600)),
             height: Math.max(640, Math.min(Math.round(height), 1000))
@@ -838,6 +903,12 @@ const QuickActionLab = {
     pendingBuilderSize: null,
     resizing: null,
     dragUpdateRaf: null,
+    iconPickerOpen: false,
+    iconPickerAnchor: null,
+    iconPickerBuilt: false,
+    iconPickerFilter: '',
+    boundIconPickerOutside: null,
+    boundIconPickerResize: null,
 
     init() {
         if (this.initialized) return;
@@ -875,11 +946,27 @@ const QuickActionLab = {
             actionLabelInput: Utils.getElement('#builder-action-label'),
             actionIconInput: Utils.getElement('#builder-action-icon'),
             actionColorInput: Utils.getElement('#builder-action-color'),
-            iconPreview: Utils.getElement('#builder-icon-preview')
+            iconPreview: Utils.getElement('#builder-icon-preview'),
+            iconPicker: Utils.getElement('#builder-icon-popover'),
+            iconGrid: Utils.getElement('#builder-icon-grid'),
+            iconSearch: Utils.getElement('#builder-icon-search')
         };
 
         this.elements.dialog = document.querySelector('#quick-action-builder-modal .builder-dialog');
         this.elements.resizeHandle = document.querySelector('#quick-action-builder-modal .builder-resize-handle');
+
+        if (this.elements.iconPreview) {
+            const previewLabel = LocalizationRenderer.t('quick_actions_icon_picker_button') || this.elements.iconPreview.getAttribute('title') || 'Pick an icon';
+            this.elements.iconPreview.setAttribute('title', previewLabel);
+            this.elements.iconPreview.setAttribute('aria-label', previewLabel);
+        }
+
+        if (this.elements.iconSearch) {
+            const searchPlaceholder = LocalizationRenderer.t('quick_actions_icon_search_placeholder');
+            if (searchPlaceholder) {
+                this.elements.iconSearch.placeholder = searchPlaceholder;
+            }
+        }
 
         if (!this.elements.activeList) {
             return;
@@ -896,6 +983,8 @@ const QuickActionLab = {
         this.boundDragEnd = (event) => this.stopNodeDrag(event);
         this.boundResizeMove = (event) => this.handleResize(event);
         this.boundResizeEnd = (event) => this.stopResize(event);
+        this.boundIconPickerOutside = (event) => this.handleIconPickerOutside(event);
+        this.boundIconPickerResize = () => this.repositionIconPicker();
 
         this.elements.openBuilder?.addEventListener('click', () => this.openBuilder());
         this.elements.importToggle?.addEventListener('click', () => this.toggleImportArea(true));
@@ -915,6 +1004,16 @@ const QuickActionLab = {
             this.updateIconPreview();
         });
 
+        this.elements.iconPreview?.addEventListener('click', (event) => {
+            event.preventDefault();
+            const anchor = event.currentTarget;
+            this.toggleIconPicker(anchor);
+        });
+
+        this.elements.iconSearch?.addEventListener('input', (event) => {
+            this.filterIconPicker(event.target.value);
+        });
+
         this.elements.actionColorInput?.addEventListener('input', (event) => {
             if (!this.builderState) return;
             this.builderState.metadata.accent = event.target.value || '#5865f2';
@@ -931,6 +1030,13 @@ const QuickActionLab = {
         this.elements.clearWorkspace?.addEventListener('click', () => this.clearWorkspace());
 
         this.elements.modal?.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && this.iconPickerOpen) {
+                this.closeIconPicker();
+                event.stopPropagation();
+                event.preventDefault();
+                return;
+            }
+
             if (event.key === 'Escape') {
                 this.closeBuilder();
             } else if (event.key === 'Delete' || event.key === 'Backspace') {
@@ -1216,6 +1322,7 @@ const QuickActionLab = {
     },
 
     closeBuilder() {
+        this.closeIconPicker();
         if (this.elements.modal) {
             this.elements.modal.classList.remove('active');
             this.elements.modal.setAttribute('aria-hidden', 'true');
@@ -1681,6 +1788,149 @@ const QuickActionLab = {
         } else {
             this.elements.iconPreview.textContent = '⚡';
         }
+        const previewLabel = LocalizationRenderer.t('quick_actions_icon_preview_label') || 'Selected icon';
+        this.elements.iconPreview.setAttribute('aria-label', `${previewLabel}: ${iconName}`);
+        this.elements.iconPreview.setAttribute('title', `${previewLabel}: ${iconName}`);
+        if (this.iconPickerBuilt) {
+            this.highlightIconPickerSelection(iconName);
+        }
+    },
+
+    handleIconPickerOutside(event) {
+        if (!this.iconPickerOpen) return;
+        const target = event.target;
+        if (this.elements.iconPicker?.contains(target)) return;
+        if (this.iconPickerAnchor && typeof this.iconPickerAnchor.contains === 'function' && this.iconPickerAnchor.contains(target)) {
+            return;
+        }
+        this.closeIconPicker();
+    },
+
+    ensureIconPickerBuilt() {
+        if (this.iconPickerBuilt || !this.elements.iconGrid) return;
+        this.elements.iconGrid.innerHTML = '';
+        QuickActionIconLibrary.forEach(iconName => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'icon-picker-option';
+            button.setAttribute('data-icon', iconName);
+            const labelText = iconName.replace(/-/g, ' ');
+            button.setAttribute('data-label', labelText.toLowerCase());
+            button.title = labelText;
+            button.setAttribute('aria-label', labelText);
+            if (window.feather?.icons?.[iconName]) {
+                button.innerHTML = window.feather.icons[iconName].toSvg();
+            } else {
+                button.textContent = '⚡';
+            }
+            const labelEl = document.createElement('span');
+            labelEl.textContent = labelText;
+            button.appendChild(labelEl);
+            button.addEventListener('click', () => this.selectIcon(iconName));
+            this.elements.iconGrid.appendChild(button);
+        });
+        this.iconPickerBuilt = true;
+        this.highlightIconPickerSelection(this.builderState?.metadata.icon || this.elements.actionIconInput?.value || 'zap');
+    },
+
+    toggleIconPicker(anchor) {
+        if (!anchor) return;
+        if (this.iconPickerOpen && this.iconPickerAnchor === anchor) {
+            this.closeIconPicker();
+        } else {
+            this.openIconPicker(anchor);
+        }
+    },
+
+    openIconPicker(anchor) {
+        if (!this.elements.iconPicker) return;
+        this.ensureIconPickerBuilt();
+        this.iconPickerAnchor = anchor;
+        this.iconPickerOpen = true;
+        this.iconPickerFilter = '';
+        this.elements.iconPicker.classList.add('visible');
+        this.elements.iconPicker.setAttribute('aria-hidden', 'false');
+        anchor?.setAttribute('aria-expanded', 'true');
+        if (this.elements.iconSearch) {
+            this.elements.iconSearch.value = '';
+        }
+        this.filterIconPicker('');
+        this.highlightIconPickerSelection(this.builderState?.metadata.icon || this.elements.actionIconInput?.value || 'zap');
+        document.addEventListener('pointerdown', this.boundIconPickerOutside, true);
+        window.addEventListener('resize', this.boundIconPickerResize);
+        window.requestAnimationFrame(() => this.repositionIconPicker());
+        if (this.elements.iconSearch) {
+            this.elements.iconSearch.focus();
+            this.elements.iconSearch.select();
+        }
+    },
+
+    closeIconPicker() {
+        if (!this.iconPickerOpen) return;
+        this.iconPickerOpen = false;
+        this.elements.iconPicker?.classList.remove('visible');
+        this.elements.iconPicker?.setAttribute('aria-hidden', 'true');
+        if (this.iconPickerAnchor) {
+            this.iconPickerAnchor.setAttribute('aria-expanded', 'false');
+            if (document.activeElement === this.elements.iconSearch) {
+                this.iconPickerAnchor.focus();
+            }
+        }
+        this.iconPickerAnchor = null;
+        document.removeEventListener('pointerdown', this.boundIconPickerOutside, true);
+        window.removeEventListener('resize', this.boundIconPickerResize);
+    },
+
+    repositionIconPicker() {
+        if (!this.iconPickerOpen) return;
+        this.positionIconPicker(this.iconPickerAnchor);
+    },
+
+    positionIconPicker(anchor) {
+        if (!this.elements.iconPicker || !anchor || !this.elements.dialog) return;
+        const dialogRect = this.elements.dialog.getBoundingClientRect();
+        const anchorRect = anchor.getBoundingClientRect();
+        const popover = this.elements.iconPicker;
+        const popRect = popover.getBoundingClientRect();
+        const width = popRect.width || popover.offsetWidth || 0;
+        const height = popRect.height || popover.offsetHeight || 0;
+        let left = anchorRect.right - dialogRect.left - width;
+        let top = anchorRect.bottom - dialogRect.top + 8;
+        if (left < 16) left = 16;
+        const maxTop = Math.max(16, dialogRect.height - height - 16);
+        if (top > maxTop) top = maxTop;
+        if (top < 16) top = 16;
+        popover.style.left = `${Math.round(left)}px`;
+        popover.style.top = `${Math.round(top)}px`;
+    },
+
+    filterIconPicker(query = '') {
+        if (!this.elements.iconGrid) return;
+        const value = String(query || '').trim().toLowerCase();
+        this.iconPickerFilter = value;
+        this.elements.iconGrid.querySelectorAll('.icon-picker-option').forEach(option => {
+            const icon = option.getAttribute('data-icon') || '';
+            const label = option.getAttribute('data-label') || '';
+            const match = !value || icon.includes(value) || label.includes(value);
+            option.style.display = match ? '' : 'none';
+        });
+    },
+
+    highlightIconPickerSelection(iconName = '') {
+        if (!this.elements.iconGrid) return;
+        const normalized = String(iconName || '').trim();
+        this.elements.iconGrid.querySelectorAll('.icon-picker-option').forEach(option => {
+            option.classList.toggle('is-active', option.getAttribute('data-icon') === normalized);
+        });
+    },
+
+    selectIcon(iconName) {
+        if (!this.elements.actionIconInput) return;
+        this.elements.actionIconInput.value = iconName;
+        const inputEvent = new Event('input', { bubbles: true });
+        this.elements.actionIconInput.dispatchEvent(inputEvent);
+        this.closeIconPicker();
+        this.elements.actionIconInput.focus();
     },
 
     saveAction() {

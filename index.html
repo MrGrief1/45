@@ -448,7 +448,7 @@
                             <label for="builder-action-icon">Icon</label>
                             <div class="inspector-icon-picker">
                                 <input type="text" id="builder-action-icon" placeholder="feather icon name">
-                                <div id="builder-icon-preview" class="icon-preview"></div>
+                                <button type="button" id="builder-icon-preview" class="icon-preview" title="Pick an icon" aria-haspopup="true" aria-expanded="false"></button>
                             </div>
                             <label for="builder-action-color">Accent colour</label>
                             <input type="color" id="builder-action-color" value="#5865f2">
@@ -465,6 +465,12 @@
                 </div>
             </footer>
             <div class="builder-resize-handle" aria-hidden="true"></div>
+            <div id="builder-icon-popover" class="icon-picker-popover" aria-hidden="true">
+                <div class="icon-picker-search">
+                    <input type="search" id="builder-icon-search" placeholder="Search icons">
+                </div>
+                <div id="builder-icon-grid" class="icon-picker-grid"></div>
+            </div>
         </div>
     </div>
 
