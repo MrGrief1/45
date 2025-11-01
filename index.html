@@ -13,12 +13,14 @@
         
         <div id="search-view" class="view active">
             <div id="main-layout">
-                <div id="search-box" class="glass-element">
+                <div id="search-box" class="glass-element" role="search">
                     <div class="search-input-wrapper">
                         <i data-feather="search" class="icon search-icon"></i>
-                        <input type="text" id="search-input" placeholder="FlashSearch" autofocus>
+                        <input type="text" id="search-input" placeholder="FlashSearch" autofocus aria-label="Search FlashSearch">
                     </div>
-                    <div id="quick-action-bar" class="quick-action-bar" aria-label="Quick actions" role="toolbar">
+                </div>
+                <div id="quick-action-strip" class="quick-action-strip" aria-label="Quick actions" role="toolbar">
+                    <div id="quick-action-bar" class="quick-action-bar">
                         <!-- Buttons rendered dynamically -->
                     </div>
                 </div>
@@ -391,6 +393,9 @@
                     <p id="quick-action-builder-subtitle">Connect blocks visually to craft new buttons for the search bar.</p>
                 </div>
                 <div class="builder-header-actions">
+                    <button id="builder-expand-action" class="builder-header-button" title="Toggle full screen">
+                        <i data-feather="maximize-2"></i>
+                    </button>
                     <button id="builder-export-action" class="builder-header-button" title="Export configuration">
                         <i data-feather="share-2"></i>
                     </button>
@@ -462,6 +467,9 @@
                     <button id="builder-save-action" class="settings-button">Add to quick action bar</button>
                 </div>
             </footer>
+            <div id="builder-resize-handle" class="builder-resize-handle" aria-hidden="true">
+                <span class="builder-resize-grip"></span>
+            </div>
         </div>
     </div>
 

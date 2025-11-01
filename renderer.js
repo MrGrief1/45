@@ -372,6 +372,321 @@ const QuickActionModuleDefinitions = [
             }
             return [clone];
         }
+    },
+    {
+        id: 'http-request',
+        category: 'utility',
+        name: 'HTTP request',
+        description: 'Fetch data from a remote endpoint and store the response.',
+        icon: 'cloud',
+        accent: '#0ea5e9',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            url: 'https://jsonplaceholder.typicode.com/todos/1',
+            method: 'GET',
+            headers: '{}',
+            body: '',
+            responseFormat: 'json'
+        },
+        form: [
+            { key: 'url', label: 'URL', type: 'text', placeholder: 'https://example.com/api' },
+            { key: 'method', label: 'Method', type: 'select', options: [
+                { value: 'GET', label: 'GET' },
+                { value: 'POST', label: 'POST' },
+                { value: 'PUT', label: 'PUT' },
+                { value: 'PATCH', label: 'PATCH' }
+            ] },
+            { key: 'headers', label: 'Headers (JSON)', type: 'textarea', rows: 3, placeholder: '{"Authorization":"Bearer token"}' },
+            { key: 'body', label: 'Body', type: 'textarea', rows: 4, placeholder: 'Optional request body for POST/PUT' },
+            { key: 'responseFormat', label: 'Response format', type: 'select', options: [
+                { value: 'json', label: 'JSON' },
+                { value: 'text', label: 'Plain text' }
+            ] }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const url = String(config?.url || '').trim();
+            if (!url) {
+                clone.vars.lastResponseError = 'Missing URL';
+                return [clone];
+            }
+            const method = (config?.method || 'GET').toUpperCase();
+            const options = { method, headers: {}, body: undefined };
+            if (config?.headers) {
+                try {
+                    const parsedHeaders = JSON.parse(config.headers);
+                    if (parsedHeaders && typeof parsedHeaders === 'object') {
+                        options.headers = parsedHeaders;
+                    }
+                } catch (error) {
+                    console.warn('[QuickActionLab] Invalid header JSON:', error);
+                }
+            }
+            if (method !== 'GET' && method !== 'HEAD' && config?.body) {
+                options.body = config.body;
+            }
+            try {
+                const response = await fetch(url, options);
+                const format = (config?.responseFormat || 'json').toLowerCase();
+                let payload = '';
+                if (format === 'text') {
+                    payload = await response.text();
+                } else {
+                    try {
+                        const json = await response.json();
+                        payload = JSON.stringify(json, null, 2);
+                        clone.vars.lastResponseJson = json;
+                    } catch (error) {
+                        payload = await response.text();
+                    }
+                }
+                clone.payload = payload;
+                clone.vars.lastResponseStatus = response.status;
+                clone.vars.lastResponseUrl = url;
+            } catch (error) {
+                clone.vars.lastResponseError = error?.message || String(error);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'json-extract',
+        category: 'utility',
+        name: 'Extract JSON field',
+        description: 'Read a property from JSON payload using dot notation.',
+        icon: 'code',
+        accent: '#a855f7',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            path: 'data.title',
+            fallback: '',
+            source: 'payload'
+        },
+        form: [
+            { key: 'path', label: 'JSON path', type: 'text', placeholder: 'e.g., data.items[0].title' },
+            { key: 'fallback', label: 'Fallback value', type: 'text', placeholder: 'Value when path not found' },
+            { key: 'source', label: 'Source', type: 'select', options: [
+                { value: 'payload', label: 'Current payload' },
+                { value: 'config', label: 'Custom JSON' }
+            ] },
+            { key: 'json', label: 'Custom JSON', type: 'textarea', rows: 4, placeholder: '{"data": {"title": "Hello"}}' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const sourceType = config?.source || 'payload';
+            let raw = sourceType === 'payload' ? clone.payload : config?.json;
+            if (raw == null || raw === '') {
+                clone.payload = config?.fallback ?? '';
+                return [clone];
+            }
+            try {
+                const data = typeof raw === 'object' ? raw : JSON.parse(String(raw));
+                const segments = String(config?.path || '').split('.').filter(Boolean);
+                let cursor = data;
+                for (const segment of segments) {
+                    const arrayMatch = segment.match(/^(\w+)\[(\d+)\]$/);
+                    if (arrayMatch) {
+                        const [, key, indexStr] = arrayMatch;
+                        cursor = cursor?.[key];
+                        cursor = Array.isArray(cursor) ? cursor[Number(indexStr)] : undefined;
+                    } else {
+                        cursor = cursor?.[segment];
+                    }
+                    if (cursor === undefined || cursor === null) break;
+                }
+                if (cursor === undefined || cursor === null) {
+                    clone.payload = config?.fallback ?? '';
+                } else if (typeof cursor === 'object') {
+                    clone.payload = JSON.stringify(cursor, null, 2);
+                } else {
+                    clone.payload = String(cursor);
+                }
+            } catch (error) {
+                console.warn('[QuickActionLab] Failed to extract JSON field:', error);
+                clone.payload = config?.fallback ?? '';
+                clone.vars.lastJsonError = error?.message || String(error);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'set-variable',
+        category: 'utility',
+        name: 'Set variable',
+        description: 'Store a value for use in later blocks.',
+        icon: 'save',
+        accent: '#f59e0b',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            key: 'result',
+            mode: 'payload',
+            value: ''
+        },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'e.g., summary' },
+            { key: 'mode', label: 'Value source', type: 'select', options: [
+                { value: 'payload', label: 'Use payload' },
+                { value: 'text', label: 'Custom text' }
+            ] },
+            { key: 'value', label: 'Custom text', type: 'textarea', rows: 3, placeholder: 'Only used when source is "Custom text"' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = String(config?.key || '').trim();
+            if (!key) return [clone];
+            const mode = config?.mode === 'text' ? 'text' : 'payload';
+            const value = mode === 'text' ? (config?.value ?? '') : clone.payload;
+            clone.vars[key] = value;
+            return [clone];
+        }
+    },
+    {
+        id: 'get-variable',
+        category: 'utility',
+        name: 'Get variable',
+        description: 'Load a stored variable into the payload.',
+        icon: 'archive',
+        accent: '#10b981',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            key: 'result',
+            fallback: ''
+        },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'Variable to read' },
+            { key: 'fallback', label: 'Fallback value', type: 'text', placeholder: 'Used when variable is missing' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = String(config?.key || '').trim();
+            if (!key) return [clone];
+            const value = clone.vars?.[key];
+            clone.payload = value !== undefined ? value : (config?.fallback ?? '');
+            return [clone];
+        }
+    },
+    {
+        id: 'append-text',
+        category: 'utility',
+        name: 'Append text',
+        description: 'Combine the payload with additional text.',
+        icon: 'type',
+        accent: '#f97316',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            prefix: '',
+            suffix: '',
+            separator: ''
+        },
+        form: [
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Text before payload' },
+            { key: 'separator', label: 'Separator', type: 'text', placeholder: 'Optional separator' },
+            { key: 'suffix', label: 'Suffix', type: 'text', placeholder: 'Text after payload' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const current = clone.payload != null ? String(clone.payload) : '';
+            const prefix = config?.prefix ? String(config.prefix) : '';
+            const suffix = config?.suffix ? String(config.suffix) : '';
+            const separator = config?.separator ? String(config.separator) : '';
+            const parts = [];
+            if (prefix) parts.push(prefix);
+            if (current) parts.push(current);
+            const body = separator ? parts.join(separator) : parts.join('');
+            clone.payload = suffix ? `${body}${suffix}` : body;
+            return [clone];
+        }
+    },
+    {
+        id: 'clipboard-read',
+        category: 'trigger',
+        name: 'Clipboard snapshot',
+        description: 'Start with the current clipboard text as payload.',
+        icon: 'clipboard',
+        accent: '#22d3ee',
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            try {
+                if (navigator.clipboard?.readText) {
+                    clone.payload = await navigator.clipboard.readText();
+                } else {
+                    throw new Error('Clipboard API unavailable');
+                }
+            } catch (error) {
+                clone.payload = '';
+                clone.vars.lastClipboardError = error?.message || String(error);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'speak-text',
+        category: 'action',
+        name: 'Speak text',
+        description: 'Use the system voice to speak the payload aloud.',
+        icon: 'volume-2',
+        accent: '#ef4444',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            rate: 1,
+            pitch: 1
+        },
+        form: [
+            { key: 'rate', label: 'Rate', type: 'number', min: 0.5 },
+            { key: 'pitch', label: 'Pitch', type: 'number', min: 0 }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const utteranceText = clone.payload != null ? String(clone.payload) : '';
+            if (!utteranceText) return [clone];
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(utteranceText);
+                const rate = parseFloat(config?.rate);
+                const pitch = parseFloat(config?.pitch);
+                if (!Number.isNaN(rate) && rate > 0) utterance.rate = Math.max(0.5, Math.min(rate, 2));
+                if (!Number.isNaN(pitch) && pitch > 0) utterance.pitch = Math.max(0.1, Math.min(pitch, 2));
+                try {
+                    window.speechSynthesis.cancel();
+                    window.speechSynthesis.speak(utterance);
+                } catch (error) {
+                    console.warn('[QuickActionLab] Speech synthesis failed:', error);
+                }
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'open-application',
+        category: 'action',
+        name: 'Open application',
+        description: 'Launch a desktop application or file path.',
+        icon: 'external-link',
+        accent: '#6366f1',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            path: 'C:/Windows/notepad.exe'
+        },
+        form: [
+            { key: 'path', label: 'Executable or file path', type: 'text', placeholder: 'C:/Path/To/App.exe' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const path = String(config?.path || '').trim();
+            if (path) {
+                ipcRenderer.send('open-item', path);
+            }
+            return [clone];
+        }
     }
 ];
 
@@ -607,12 +922,16 @@ const QuickActionExecutor = {
 
 const QuickActionManager = {
     container: null,
+    focusIndex: -1,
 
     init() {
         QuickActionStore.ensureStructure();
         this.container = Utils.getElement('#quick-action-bar');
         if (!this.container) return;
         this.container.addEventListener('click', (event) => this.handleClick(event));
+        this.container.addEventListener('keydown', (event) => this.handleKeyNavigation(event));
+        this.container.setAttribute('tabindex', '0');
+        this.container.setAttribute('role', 'toolbar');
         this.render();
     },
 
@@ -621,6 +940,7 @@ const QuickActionManager = {
         QuickActionStore.ensureStructure();
         const activeIds = QuickActionStore.getActiveIds();
         this.container.innerHTML = '';
+        this.focusIndex = -1;
 
         if (!activeIds.length) {
             this.container.setAttribute('data-empty-label', LocalizationRenderer.t('quick_actions_empty_bar') || 'Add quick actions in Settings');
@@ -629,12 +949,15 @@ const QuickActionManager = {
 
         this.container.removeAttribute('data-empty-label');
 
-        activeIds.forEach(id => {
+        activeIds.forEach((id, index) => {
             const definition = QuickActionStore.getDefinition(id);
             if (!definition) return;
             const button = document.createElement('button');
+            button.type = 'button';
             button.className = 'quick-action-button';
             button.setAttribute('data-action-id', id);
+            button.setAttribute('tabindex', '0');
+            button.setAttribute('data-index', String(index));
 
             const iconName = definition.icon || definition.payload?.icon || 'zap';
             if (window.feather?.icons?.[iconName]) {
@@ -654,7 +977,13 @@ const QuickActionManager = {
             const description = definition.descriptionKey
                 ? LocalizationRenderer.t(definition.descriptionKey)
                 : (definition.description || '');
-            button.title = description ? `${title}\n${description}` : title;
+            const tooltip = description ? `${title}\n${description}` : title;
+            button.title = tooltip;
+            button.setAttribute('aria-label', tooltip);
+
+            button.addEventListener('focus', () => {
+                this.focusIndex = index;
+            });
 
             this.container.appendChild(button);
         });
@@ -664,10 +993,47 @@ const QuickActionManager = {
         this.render();
     },
 
+    focusButton(index) {
+        const buttons = Array.from(this.container?.querySelectorAll('.quick-action-button') || []);
+        if (!buttons.length) return;
+        const clamped = ((index % buttons.length) + buttons.length) % buttons.length;
+        this.focusIndex = clamped;
+        buttons[clamped].focus();
+    },
+
+    handleKeyNavigation(event) {
+        if (!this.container) return;
+        const buttons = Array.from(this.container.querySelectorAll('.quick-action-button'));
+        if (!buttons.length) return;
+
+        if (['ArrowRight', 'ArrowLeft', 'Home', 'End', 'Enter', ' '].includes(event.key)) {
+            event.preventDefault();
+            if (event.key === 'ArrowRight') {
+                const next = this.focusIndex >= 0 ? this.focusIndex + 1 : 0;
+                this.focusButton(next);
+            } else if (event.key === 'ArrowLeft') {
+                const prev = this.focusIndex >= 0 ? this.focusIndex - 1 : buttons.length - 1;
+                this.focusButton(prev);
+            } else if (event.key === 'Home') {
+                this.focusButton(0);
+            } else if (event.key === 'End') {
+                this.focusButton(buttons.length - 1);
+            } else if (event.key === 'Enter' || event.key === ' ') {
+                const index = this.focusIndex >= 0 ? this.focusIndex : 0;
+                const button = buttons[index];
+                button?.click();
+            }
+        }
+    },
+
     handleClick(event) {
         const button = event.target.closest('.quick-action-button');
         if (!button) return;
         const actionId = button.getAttribute('data-action-id');
+        const datasetIndex = parseInt(button.getAttribute('data-index') || '-1', 10);
+        if (!Number.isNaN(datasetIndex)) {
+            this.focusIndex = datasetIndex;
+        }
         QuickActionExecutor.run(actionId);
     }
 };
@@ -679,6 +1045,17 @@ const QuickActionLab = {
     connectionIdCounter: 0,
     boundDragMove: null,
     boundDragEnd: null,
+    connectionFrame: null,
+    dragFrame: null,
+    pendingDragUpdate: null,
+    portAnchorCache: new Map(),
+    anchorFrame: null,
+    pointerPreview: null,
+    builderPreferences: { width: null, height: null, isFullscreen: false },
+    resizeState: null,
+    gridSize: 24,
+    boundResizeMove: null,
+    boundResizeEnd: null,
 
     init() {
         if (this.initialized) return;
@@ -712,7 +1089,11 @@ const QuickActionLab = {
             actionLabelInput: Utils.getElement('#builder-action-label'),
             actionIconInput: Utils.getElement('#builder-action-icon'),
             actionColorInput: Utils.getElement('#builder-action-color'),
-            iconPreview: Utils.getElement('#builder-icon-preview')
+            iconPreview: Utils.getElement('#builder-icon-preview'),
+            resizeHandle: Utils.getElement('#builder-resize-handle'),
+            expandAction: Utils.getElement('#builder-expand-action'),
+            dialog: Utils.getElement('.builder-dialog'),
+            header: Utils.getElement('.builder-dialog-header')
         };
 
         if (!this.elements.activeList) {
@@ -722,6 +1103,9 @@ const QuickActionLab = {
         QuickActionStore.ensureStructure();
         this.attachEvents();
         this.initialized = true;
+        this.loadBuilderPreferences();
+        this.applyBuilderDimensions();
+        this.installCanvasPointerTracking();
         this.renderAll();
     },
 
@@ -759,6 +1143,9 @@ const QuickActionLab = {
         this.elements.zoomOut?.addEventListener('click', () => this.adjustZoom(-0.1));
         this.elements.resetView?.addEventListener('click', () => this.resetView());
         this.elements.clearWorkspace?.addEventListener('click', () => this.clearWorkspace());
+        this.elements.expandAction?.addEventListener('click', () => this.toggleFullscreen());
+        this.elements.resizeHandle?.addEventListener('pointerdown', (event) => this.startResize(event));
+        this.elements.header?.addEventListener('dblclick', () => this.toggleFullscreen());
 
         this.elements.modal?.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
@@ -775,6 +1162,277 @@ const QuickActionLab = {
                 this.selectNode(null);
             }
         });
+
+        window.addEventListener('resize', () => this.handleWindowResize());
+    },
+
+    loadBuilderPreferences() {
+        try {
+            const raw = window.localStorage?.getItem('flashsearch.builder.layout');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed && typeof parsed === 'object') {
+                    this.builderPreferences.width = Number(parsed.width) || this.builderPreferences.width;
+                    this.builderPreferences.height = Number(parsed.height) || this.builderPreferences.height;
+                    this.builderPreferences.isFullscreen = Boolean(parsed.isFullscreen);
+                }
+            }
+        } catch (error) {
+            console.warn('[QuickActionLab] Failed to load builder preferences:', error);
+        }
+
+        const computed = getComputedStyle(document.documentElement);
+        if (!this.builderPreferences.width) {
+            this.builderPreferences.width = this.parseCssNumber(computed.getPropertyValue('--builder-width'), 1280);
+        }
+        if (!this.builderPreferences.height) {
+            this.builderPreferences.height = this.parseCssNumber(computed.getPropertyValue('--builder-height'), 780);
+        }
+    },
+
+    saveBuilderPreferences() {
+        try {
+            const payload = {
+                width: Math.round(this.builderPreferences.width || 0),
+                height: Math.round(this.builderPreferences.height || 0),
+                isFullscreen: Boolean(this.builderPreferences.isFullscreen)
+            };
+            window.localStorage?.setItem('flashsearch.builder.layout', JSON.stringify(payload));
+        } catch (error) {
+            console.warn('[QuickActionLab] Failed to persist builder preferences:', error);
+        }
+    },
+
+    parseCssNumber(value, fallback = 0) {
+        if (!value) return fallback;
+        const parsed = parseFloat(String(value).trim().replace('px', ''));
+        return Number.isFinite(parsed) ? parsed : fallback;
+    },
+
+    getCssConstraint(variableName, fallback) {
+        const computed = getComputedStyle(document.documentElement);
+        return this.parseCssNumber(computed.getPropertyValue(variableName), fallback);
+    },
+
+    applyBuilderDimensions() {
+        const minWidth = this.getCssConstraint('--builder-min-width', 960);
+        const minHeight = this.getCssConstraint('--builder-min-height', 640);
+        if (this.builderPreferences.width < minWidth) this.builderPreferences.width = minWidth;
+        if (this.builderPreferences.height < minHeight) this.builderPreferences.height = minHeight;
+
+        document.documentElement.style.setProperty('--builder-width', `${Math.round(this.builderPreferences.width)}px`);
+        document.documentElement.style.setProperty('--builder-height', `${Math.round(this.builderPreferences.height)}px`);
+
+        if (this.elements.dialog) {
+            this.elements.dialog.classList.toggle('is-fullscreen', !!this.builderPreferences.isFullscreen);
+        }
+        this.updateExpandIcon();
+    },
+
+    setBuilderSize(width, height, { save = true } = {}) {
+        this.builderPreferences.isFullscreen = false;
+        const minWidth = this.getCssConstraint('--builder-min-width', 960);
+        const minHeight = this.getCssConstraint('--builder-min-height', 640);
+        const maxWidth = Math.max(minWidth, window.innerWidth - 48);
+        const maxHeight = Math.max(minHeight, window.innerHeight - 48);
+
+        this.builderPreferences.width = Math.min(Math.max(width, minWidth), maxWidth);
+        this.builderPreferences.height = Math.min(Math.max(height, minHeight), maxHeight);
+        this.applyBuilderDimensions();
+        if (save) this.saveBuilderPreferences();
+        this.scheduleConnectionRedraw();
+        this.cachePortAnchorsDeferred();
+    },
+
+    toggleFullscreen(forceState) {
+        const nextState = typeof forceState === 'boolean'
+            ? forceState
+            : !this.builderPreferences.isFullscreen;
+        this.builderPreferences.isFullscreen = nextState;
+        if (this.elements.dialog) {
+            this.elements.dialog.classList.toggle('is-fullscreen', nextState);
+        }
+        if (!nextState) {
+            this.applyBuilderDimensions();
+        } else {
+            this.updateExpandIcon();
+        }
+        this.saveBuilderPreferences();
+    },
+
+    updateExpandIcon() {
+        if (!this.elements.expandAction) return;
+        const iconName = this.builderPreferences.isFullscreen ? 'minimize-2' : 'maximize-2';
+        if (window.feather?.icons?.[iconName]) {
+            this.elements.expandAction.innerHTML = window.feather.icons[iconName].toSvg();
+        } else {
+            this.elements.expandAction.textContent = this.builderPreferences.isFullscreen ? '⤢' : '⤡';
+        }
+    },
+
+    startResize(event) {
+        if (!this.elements.dialog) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const rect = this.elements.dialog.getBoundingClientRect();
+        this.resizeState = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            width: rect.width,
+            height: rect.height
+        };
+        this.toggleFullscreen(false);
+        this.elements.resizeHandle?.setPointerCapture?.(event.pointerId);
+        this.boundResizeMove = (e) => this.handleResize(e);
+        this.boundResizeEnd = (e) => this.stopResize(e);
+        window.addEventListener('pointermove', this.boundResizeMove);
+        window.addEventListener('pointerup', this.boundResizeEnd, { once: true });
+    },
+
+    handleResize(event) {
+        if (!this.resizeState) return;
+        const deltaX = event.clientX - this.resizeState.startX;
+        const deltaY = event.clientY - this.resizeState.startY;
+        const nextWidth = this.resizeState.width + deltaX;
+        const nextHeight = this.resizeState.height + deltaY;
+        this.setBuilderSize(nextWidth, nextHeight, { save: false });
+    },
+
+    stopResize(event) {
+        if (this.elements.resizeHandle?.releasePointerCapture) {
+            try {
+                this.elements.resizeHandle.releasePointerCapture(event.pointerId || this.resizeState?.pointerId || 0);
+            } catch (_) {
+                // ignore
+            }
+        }
+        window.removeEventListener('pointermove', this.boundResizeMove);
+        this.boundResizeMove = null;
+        this.boundResizeEnd = null;
+        this.resizeState = null;
+        this.saveBuilderPreferences();
+    },
+
+    handleWindowResize() {
+        if (!this.builderState?.isOpen) return;
+        if (this.builderPreferences.isFullscreen) {
+            this.updateExpandIcon();
+            return;
+        }
+        const rect = this.elements.dialog?.getBoundingClientRect();
+        if (!rect) return;
+        const maxWidth = Math.max(this.getCssConstraint('--builder-min-width', 960), window.innerWidth - 48);
+        const maxHeight = Math.max(this.getCssConstraint('--builder-min-height', 640), window.innerHeight - 48);
+        const width = Math.min(rect.width, maxWidth);
+        const height = Math.min(rect.height, maxHeight);
+        this.setBuilderSize(width, height, { save: false });
+    },
+
+    installCanvasPointerTracking() {
+        const canvas = this.elements.canvas;
+        if (!canvas) return;
+        canvas.addEventListener('pointermove', (event) => this.trackPointer(event));
+        canvas.addEventListener('pointerleave', () => this.clearPointerPreview());
+    },
+
+    trackPointer(event) {
+        if (!this.builderState?.pendingConnection?.from) return;
+        const rect = this.elements.canvas?.getBoundingClientRect();
+        if (!rect) return;
+        const zoom = this.builderState.zoom || 1;
+        const x = (event.clientX - rect.left) / zoom;
+        const y = (event.clientY - rect.top) / zoom;
+        this.pointerPreview = { x, y };
+        this.scheduleConnectionRedraw();
+    },
+
+    clearPointerPreview() {
+        if (!this.pointerPreview) return;
+        this.pointerPreview = null;
+        this.scheduleConnectionRedraw();
+    },
+
+    cachePortAnchorsDeferred() {
+        if (this.anchorFrame) cancelAnimationFrame(this.anchorFrame);
+        this.anchorFrame = requestAnimationFrame(() => {
+            this.cachePortAnchors();
+            this.anchorFrame = null;
+        });
+    },
+
+    cachePortAnchors() {
+        if (!this.builderState) return;
+        const nodeLayer = this.elements.nodeLayer;
+        const canvas = this.elements.canvas;
+        if (!nodeLayer || !canvas) return;
+        const zoom = this.builderState.zoom || 1;
+        const canvasRect = canvas.getBoundingClientRect();
+        const anchors = new Map();
+
+        this.builderState.nodes.forEach(node => {
+            const nodeEl = nodeLayer.querySelector(`.builder-node[data-node-id="${node.id}"]`);
+            if (!nodeEl) return;
+            nodeEl.querySelectorAll('.builder-port').forEach(portEl => {
+                const portRect = portEl.getBoundingClientRect();
+                const centerX = (portRect.left + portRect.width / 2 - canvasRect.left) / zoom;
+                const centerY = (portRect.top + portRect.height / 2 - canvasRect.top) / zoom;
+                const offsetX = centerX - node.position.x;
+                const offsetY = centerY - node.position.y;
+                const key = `${node.id}:${portEl.getAttribute('data-port-id')}:${portEl.getAttribute('data-role')}`;
+                anchors.set(key, { offsetX, offsetY });
+                portEl.dataset.anchorX = offsetX.toFixed(4);
+                portEl.dataset.anchorY = offsetY.toFixed(4);
+            });
+        });
+
+        this.portAnchorCache = anchors;
+    },
+
+    getPortAnchor(nodeId, portId, role) {
+        if (!nodeId || !portId) return null;
+        const key = `${nodeId}:${portId}:${role}`;
+        const cached = this.portAnchorCache.get(key);
+        if (!cached) return null;
+        const node = this.builderState?.nodes.find(item => item.id === nodeId);
+        if (!node) return null;
+        return {
+            x: node.position.x + cached.offsetX,
+            y: node.position.y + cached.offsetY
+        };
+    },
+
+    scheduleConnectionRedraw() {
+        if (this.connectionFrame) return;
+        this.connectionFrame = requestAnimationFrame(() => {
+            this.connectionFrame = null;
+            this.drawConnections();
+        });
+    },
+
+    scheduleDragUpdate(nodeId, position) {
+        this.pendingDragUpdate = { nodeId, position };
+        if (this.dragFrame) return;
+        this.dragFrame = requestAnimationFrame(() => this.flushDragUpdate());
+    },
+
+    flushDragUpdate() {
+        if (!this.pendingDragUpdate) {
+            this.dragFrame = null;
+            return;
+        }
+        const { nodeId, position } = this.pendingDragUpdate;
+        const nodeEl = this.findNodeElement(nodeId);
+        if (nodeEl) {
+            nodeEl.style.transform = `translate(${position.x}px, ${position.y}px)`;
+        }
+        this.pendingDragUpdate = null;
+        this.dragFrame = null;
+        this.scheduleConnectionRedraw();
+    },
+
+    snapCoordinate(value) {
+        return Math.round(value / this.gridSize) * this.gridSize;
     },
 
     renderAll() {
@@ -946,6 +1604,10 @@ const QuickActionLab = {
         QuickActionStore.ensureStructure();
         this.builderState = this.createDefaultBuilderState();
         this.builderState.isOpen = true;
+        this.pointerPreview = null;
+        this.portAnchorCache.clear();
+        this.loadBuilderPreferences();
+        this.applyBuilderDimensions();
 
         if (actionId) {
             const existing = QuickActionStore.getDefinition(actionId);
@@ -977,6 +1639,8 @@ const QuickActionLab = {
         this.ensureManualNode();
         this.renderBuilder();
         this.updateIconPreview();
+        this.cachePortAnchorsDeferred();
+        this.scheduleConnectionRedraw();
         this.elements.modal?.classList.add('active');
         this.elements.modal?.setAttribute('aria-hidden', 'false');
         this.elements.modal?.focus();
@@ -991,6 +1655,9 @@ const QuickActionLab = {
         this.elements.actionLabelInput.value = '';
         this.elements.actionIconInput.value = '';
         this.elements.actionColorInput.value = '#5865f2';
+        this.pointerPreview = null;
+        this.portAnchorCache.clear();
+        this.saveBuilderPreferences();
     },
 
     createDefaultBuilderState() {
@@ -1126,7 +1793,8 @@ const QuickActionLab = {
         });
 
         this.elements.emptyState?.classList.toggle('hidden', this.builderState.nodes.length > 1);
-        this.drawConnections();
+        this.cachePortAnchorsDeferred();
+        this.scheduleConnectionRedraw();
     },
 
     drawConnections() {
@@ -1139,20 +1807,20 @@ const QuickActionLab = {
         connectionLayer.setAttribute('width', `${canvasRect.width}`);
         connectionLayer.setAttribute('height', `${canvasRect.height}`);
         connectionLayer.setAttribute('viewBox', `0 0 ${canvasRect.width} ${canvasRect.height}`);
+        if (!this.portAnchorCache.size) {
+            this.cachePortAnchors();
+        }
 
         this.builderState.connections.forEach(connection => {
-            const fromPort = this.findPortElement(connection.from?.nodeId, connection.from?.portId, 'output');
-            const toPort = this.findPortElement(connection.to?.nodeId, connection.to?.portId, 'input');
-            if (!fromPort || !toPort) return;
+            const startAnchor = this.getPortAnchor(connection.from?.nodeId, connection.from?.portId, 'output');
+            const endAnchor = this.getPortAnchor(connection.to?.nodeId, connection.to?.portId, 'input');
+            if (!startAnchor || !endAnchor) return;
 
-            const fromRect = fromPort.getBoundingClientRect();
-            const toRect = toPort.getBoundingClientRect();
-            const zoom = this.builderState.zoom || 1;
-            const startX = (fromRect.left + fromRect.width / 2 - canvasRect.left) / zoom;
-            const startY = (fromRect.top + fromRect.height / 2 - canvasRect.top) / zoom;
-            const endX = (toRect.left + toRect.width / 2 - canvasRect.left) / zoom;
-            const endY = (toRect.top + toRect.height / 2 - canvasRect.top) / zoom;
-            const delta = Math.max(60, Math.abs(endX - startX) * 0.5);
+            const startX = startAnchor.x;
+            const startY = startAnchor.y;
+            const endX = endAnchor.x;
+            const endY = endAnchor.y;
+            const delta = Math.max(60, Math.abs(endX - startX) * 0.45);
             const pathData = `M ${startX} ${startY} C ${startX + delta} ${startY}, ${endX - delta} ${endY}, ${endX} ${endY}`;
 
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -1165,6 +1833,23 @@ const QuickActionLab = {
             });
             connectionLayer.appendChild(path);
         });
+
+        if (this.builderState.pendingConnection?.from && this.pointerPreview) {
+            const pending = this.builderState.pendingConnection.from;
+            const startAnchor = this.getPortAnchor(pending.nodeId, pending.portId, 'output');
+            if (startAnchor) {
+                const startX = startAnchor.x;
+                const startY = startAnchor.y;
+                const endX = this.pointerPreview.x;
+                const endY = this.pointerPreview.y;
+                const delta = Math.max(60, Math.abs(endX - startX) * 0.45);
+                const pathData = `M ${startX} ${startY} C ${startX + delta} ${startY}, ${endX - delta} ${endY}, ${endX} ${endY}`;
+                const previewPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                previewPath.setAttribute('d', pathData);
+                previewPath.classList.add('is-preview');
+                connectionLayer.appendChild(previewPath);
+            }
+        }
     },
 
     renderInspector() {
@@ -1258,10 +1943,13 @@ const QuickActionLab = {
             startX: event.clientX,
             startY: event.clientY,
             originX: node.position.x,
-            originY: node.position.y
+            originY: node.position.y,
+            snap: !event.altKey,
+            pointerId: event.pointerId || null
         };
         window.addEventListener('pointermove', this.boundDragMove);
         window.addEventListener('pointerup', this.boundDragEnd);
+        event.currentTarget?.setPointerCapture?.(event.pointerId || 0);
     },
 
     handleNodeDrag(event) {
@@ -1272,11 +1960,11 @@ const QuickActionLab = {
         const zoom = this.builderState.zoom || 1;
         node.position.x = drag.originX + (event.clientX - drag.startX) / zoom;
         node.position.y = drag.originY + (event.clientY - drag.startY) / zoom;
-        const nodeEl = this.findNodeElement(node.id);
-        if (nodeEl) {
-            nodeEl.style.transform = `translate(${node.position.x}px, ${node.position.y}px)`;
+        if (drag.snap && !event.shiftKey) {
+            node.position.x = this.snapCoordinate(node.position.x);
+            node.position.y = this.snapCoordinate(node.position.y);
         }
-        this.drawConnections();
+        this.scheduleDragUpdate(node.id, { x: node.position.x, y: node.position.y });
     },
 
     stopNodeDrag() {
@@ -1284,6 +1972,8 @@ const QuickActionLab = {
         this.builderState.drag = null;
         window.removeEventListener('pointermove', this.boundDragMove);
         window.removeEventListener('pointerup', this.boundDragEnd);
+        this.flushDragUpdate();
+        this.cachePortAnchorsDeferred();
     },
 
     handlePortClick(nodeId, portId, role, event) {
@@ -1298,6 +1988,8 @@ const QuickActionLab = {
             this.clearPendingConnection();
             this.builderState.pendingConnection = { from: { nodeId, portId } };
             portEl.classList.add('is-pending');
+            this.pointerPreview = null;
+            this.scheduleConnectionRedraw();
         } else if (role === 'input' && this.builderState.pendingConnection?.from) {
             this.createConnection(this.builderState.pendingConnection.from.nodeId, this.builderState.pendingConnection.from.portId, nodeId, portId);
             this.clearPendingConnection();
@@ -1310,6 +2002,7 @@ const QuickActionLab = {
         const port = this.findPortElement(pending.nodeId, pending.portId, 'output');
         port?.classList.remove('is-pending');
         this.builderState.pendingConnection = null;
+        this.clearPointerPreview();
     },
 
     createConnection(fromNodeId, fromPortId, toNodeId, toPortId) {
@@ -1323,13 +2016,13 @@ const QuickActionLab = {
             from: { nodeId: fromNodeId, portId: fromPortId },
             to: { nodeId: toNodeId, portId: toPortId }
         });
-        this.drawConnections();
+        this.scheduleConnectionRedraw();
     },
 
     removeConnection(connectionId) {
         if (!this.builderState) return;
         this.builderState.connections = this.builderState.connections.filter(connection => connection.id !== connectionId);
-        this.drawConnections();
+        this.scheduleConnectionRedraw();
     },
 
     removeNode(nodeId) {
@@ -1362,12 +2055,16 @@ const QuickActionLab = {
         const next = Math.max(0.4, Math.min(1.8, (this.builderState.zoom || 1) + delta));
         this.builderState.zoom = parseFloat(next.toFixed(2));
         this.renderBuilder();
+        this.cachePortAnchorsDeferred();
+        this.scheduleConnectionRedraw();
     },
 
     resetView() {
         if (!this.builderState) return;
         this.builderState.zoom = 1;
         this.renderBuilder();
+        this.cachePortAnchorsDeferred();
+        this.scheduleConnectionRedraw();
     },
 
     clearWorkspace() {
@@ -1378,6 +2075,8 @@ const QuickActionLab = {
         this.builderState.connections = [];
         this.builderState.selectedNodeId = this.builderState.nodes[0].id;
         this.renderBuilder();
+        this.cachePortAnchorsDeferred();
+        this.scheduleConnectionRedraw();
     },
 
     updateZoomIndicator() {
@@ -2014,7 +2713,21 @@ const SearchModule = {
             if (query.length > 1) this.performSearch(query);
             else this.clearResults();
         }, 250);
-        if (searchInput) searchInput.addEventListener('input', (e) => debouncedSearch(e.target.value.trim()));
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => debouncedSearch(e.target.value.trim()));
+            searchInput.addEventListener('keydown', (e) => {
+                if (['ArrowUp', 'ArrowDown', 'Enter', 'Escape'].includes(e.key)) {
+                    return;
+                }
+                e.stopPropagation();
+            });
+            searchInput.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                if (document.activeElement !== searchInput) {
+                    searchInput.focus();
+                }
+            });
+        }
         this.setupKeyboardNavigation();
     },
 
