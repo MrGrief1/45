@@ -104,8 +104,8 @@ const DEFAULT_SETTINGS = {
         renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         features: ['addon-builder', 'extended-gallery', 'priority-support']
     },
-    activeAddons: ['clipboard-buffer'],
-    customAddons: []
+    quickActionsActive: ['apps-library', 'files', 'commands', 'clipboard', 'settings'],
+    quickActionsCustom: []
 };
 
 // =================================================================================
@@ -294,23 +294,33 @@ class SettingsManager {
             };
         }
 
-        if (!Array.isArray(currentSettings.activeAddons)) {
-            currentSettings.activeAddons = [...DEFAULT_SETTINGS.activeAddons];
+        if (!Array.isArray(currentSettings.quickActionsActive) || currentSettings.quickActionsActive.length === 0) {
+            currentSettings.quickActionsActive = [...DEFAULT_SETTINGS.quickActionsActive];
         }
 
-        if (!Array.isArray(currentSettings.customAddons)) {
-            currentSettings.customAddons = [];
+        if (!Array.isArray(currentSettings.quickActionsCustom)) {
+            currentSettings.quickActionsCustom = [];
         }
 
-        currentSettings.activeAddons = Array.from(new Set(currentSettings.activeAddons.filter(Boolean)));
-        currentSettings.customAddons = currentSettings.customAddons
-            .filter(addon => addon && typeof addon === 'object' && addon.id && addon.name)
-            .map(addon => ({
-                ...addon,
-                base: addon.base || 'clipboard',
-                icon: addon.icon || 'layers',
-                description: addon.description || '',
-                blocks: Array.isArray(addon.blocks) ? addon.blocks : []
+        currentSettings.quickActionsActive = Array.from(new Set(currentSettings.quickActionsActive.filter(Boolean)));
+        if (currentSettings.quickActionsActive.length === 0) {
+            currentSettings.quickActionsActive = [...DEFAULT_SETTINGS.quickActionsActive];
+        }
+
+        currentSettings.quickActionsCustom = currentSettings.quickActionsCustom
+            .filter(action => action && typeof action === 'object' && action.id)
+            .map(action => ({
+                id: action.id,
+                icon: action.icon || 'zap',
+                name: action.name || '',
+                description: action.description || '',
+                modules: Array.isArray(action.modules)
+                    ? action.modules.map(module => ({
+                        id: module.id || `node-${Date.now()}`,
+                        moduleId: module.moduleId,
+                        config: module.config || {}
+                    }))
+                    : []
             }));
 
         Logger.info(`App folders structure: ${JSON.stringify(currentSettings.appFolders.map(f => ({id: f.id, name: f.name, appsCount: f.apps.length})))}`);
@@ -327,9 +337,9 @@ class SettingsManager {
     updateSetting(key, value) {
         let requiresReindex = false;
 
-        if (['indexedDirectories', 'customAutomations', 'customAddons', 'activeAddons', 'subscription'].includes(key)) {
+        if (['indexedDirectories', 'customAutomations', 'quickActionsCustom', 'quickActionsActive', 'subscription'].includes(key)) {
             currentSettings[key] = value;
-            if (['customAddons', 'activeAddons', 'subscription'].includes(key)) {
+            if (['quickActionsCustom', 'quickActionsActive', 'subscription'].includes(key)) {
                 this.validateSettings();
             }
             if (key === 'indexedDirectories') requiresReindex = true;

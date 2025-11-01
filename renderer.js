@@ -14,8 +14,22 @@ const AppState = {
     searchResults: [],
     selectedIndex: -1,
     isInitialized: false,
-    iconCache: new Map(), 
+    iconCache: new Map(),
     hintShown: false, // НОВОЕ: Флаг показа подсказки
+    quickActions: {
+        active: [],
+        custom: []
+    },
+    quickActionWorkbench: {
+        nodes: [],
+        connections: [],
+        selectedNodeId: null,
+        metadata: {
+            name: '',
+            description: '',
+            icon: 'zap'
+        }
+    }
 };
 
 const Utils = {
@@ -108,48 +122,194 @@ const SubscriptionFeatureLabels = {
     default: 'subscription_feature_default'
 };
 
-const AddonLibrary = [
+const QuickActionCatalog = [
     {
-        id: 'clipboard-buffer',
-        type: 'library',
-        icon: 'clipboard',
-        base: 'clipboard',
-        nameKey: 'addon_library_clipboard_name',
-        descriptionKey: 'addon_library_clipboard_description',
-        blocks: ['clipboard-filter', 'pin-items']
+        id: 'apps-library',
+        icon: 'grid',
+        labelKey: 'quick_action_apps_library',
+        descriptionKey: 'quick_action_apps_library_desc',
+        type: 'panel',
+        payload: { panel: 'apps-library' },
+        isDefault: true
     },
     {
-        id: 'note-canvas',
-        type: 'library',
-        icon: 'edit-3',
-        base: 'note',
-        nameKey: 'addon_library_note_name',
-        descriptionKey: 'addon_library_note_description',
-        blocks: ['text-replace']
+        id: 'files',
+        icon: 'folder',
+        labelKey: 'quick_action_files',
+        descriptionKey: 'quick_action_files_desc',
+        type: 'panel',
+        payload: { panel: 'files' },
+        isDefault: true
     },
     {
-        id: 'workflow-launcher',
-        type: 'library',
-        icon: 'zap',
-        base: 'command',
-        nameKey: 'addon_library_command_name',
-        descriptionKey: 'addon_library_command_description',
-        blocks: ['pin-items', 'sync']
+        id: 'commands',
+        icon: 'command',
+        labelKey: 'quick_action_commands',
+        descriptionKey: 'quick_action_commands_desc',
+        type: 'panel',
+        payload: { panel: 'commands' },
+        isDefault: true
+    },
+    {
+        id: 'clipboard',
+        icon: 'copy',
+        labelKey: 'quick_action_clipboard',
+        descriptionKey: 'quick_action_clipboard_desc',
+        type: 'panel',
+        payload: { panel: 'clipboard' },
+        isDefault: true
+    },
+    {
+        id: 'settings',
+        icon: 'settings',
+        labelKey: 'quick_action_settings',
+        descriptionKey: 'quick_action_settings_desc',
+        type: 'view',
+        payload: { view: 'settings' },
+        isDefault: true
+    },
+    {
+        id: 'open-help',
+        icon: 'help-circle',
+        labelKey: 'quick_action_help',
+        descriptionKey: 'quick_action_help_desc',
+        type: 'url',
+        payload: { url: 'https://flashsearch.app/help' },
+        isDefault: false
+    },
+    {
+        id: 'toggle-theme',
+        icon: 'moon',
+        labelKey: 'quick_action_toggle_theme',
+        descriptionKey: 'quick_action_toggle_theme_desc',
+        type: 'toggle-theme',
+        payload: {},
+        isDefault: false
     }
 ];
 
-const AddonBuilderBases = [
-    { id: 'clipboard', icon: 'clipboard', nameKey: 'addon_base_clipboard', descriptionKey: 'addon_base_clipboard_desc' },
-    { id: 'note', icon: 'edit-3', nameKey: 'addon_base_note', descriptionKey: 'addon_base_note_desc' },
-    { id: 'command', icon: 'zap', nameKey: 'addon_base_command', descriptionKey: 'addon_base_command_desc' }
-];
-
-const AddonBuilderBlocks = [
-    { id: 'clipboard-filter', icon: 'filter', nameKey: 'addon_builder_blocks_clipboard_filter', descriptionKey: 'addon_builder_blocks_clipboard_filter_desc' },
-    { id: 'text-replace', icon: 'repeat', nameKey: 'addon_builder_blocks_text_replace', descriptionKey: 'addon_builder_blocks_text_replace_desc' },
-    { id: 'pin-items', icon: 'bookmark', nameKey: 'addon_builder_blocks_pin_items', descriptionKey: 'addon_builder_blocks_pin_items_desc' },
-    { id: 'sync', icon: 'cloud', nameKey: 'addon_builder_blocks_sync', descriptionKey: 'addon_builder_blocks_sync_desc' }
-];
+const QuickActionModuleLibrary = {
+    triggers: [
+        {
+            id: 'manual-trigger',
+            icon: 'activity',
+            labelKey: 'quick_actions_module_manual',
+            descriptionKey: 'quick_actions_module_manual_desc',
+            fields: []
+        },
+        {
+            id: 'clipboard-trigger',
+            icon: 'clipboard',
+            labelKey: 'quick_actions_module_clipboard_trigger',
+            descriptionKey: 'quick_actions_module_clipboard_trigger_desc',
+            fields: [
+                {
+                    id: 'pattern',
+                    type: 'text',
+                    labelKey: 'quick_actions_field_pattern',
+                    placeholderKey: 'quick_actions_field_pattern_placeholder'
+                }
+            ]
+        }
+    ],
+    actions: [
+        {
+            id: 'open-panel',
+            icon: 'layout',
+            labelKey: 'quick_actions_module_open_panel',
+            descriptionKey: 'quick_actions_module_open_panel_desc',
+            fields: [
+                {
+                    id: 'panel',
+                    type: 'select',
+                    labelKey: 'quick_actions_field_panel',
+                    getOptions: () => QuickActionCatalog.filter(action => action.type === 'panel').map(action => ({
+                        value: action.payload.panel,
+                        labelKey: action.labelKey
+                    }))
+                }
+            ]
+        },
+        {
+            id: 'open-url',
+            icon: 'external-link',
+            labelKey: 'quick_actions_module_open_url',
+            descriptionKey: 'quick_actions_module_open_url_desc',
+            fields: [
+                {
+                    id: 'url',
+                    type: 'text',
+                    labelKey: 'quick_actions_field_url',
+                    placeholderKey: 'quick_actions_field_url_placeholder'
+                }
+            ]
+        },
+        {
+            id: 'copy-text',
+            icon: 'copy',
+            labelKey: 'quick_actions_module_copy_text',
+            descriptionKey: 'quick_actions_module_copy_text_desc',
+            fields: [
+                {
+                    id: 'text',
+                    type: 'textarea',
+                    labelKey: 'quick_actions_field_text',
+                    placeholderKey: 'quick_actions_field_text_placeholder'
+                }
+            ]
+        },
+        {
+            id: 'show-window',
+            icon: 'square',
+            labelKey: 'quick_actions_module_show_window',
+            descriptionKey: 'quick_actions_module_show_window_desc',
+            fields: [
+                {
+                    id: 'view',
+                    type: 'select',
+                    labelKey: 'quick_actions_field_view',
+                    options: [
+                        { value: 'search', labelKey: 'view_search' },
+                        { value: 'settings', labelKey: 'settings_title' }
+                    ]
+                }
+            ]
+        }
+    ],
+    utilities: [
+        {
+            id: 'delay',
+            icon: 'clock',
+            labelKey: 'quick_actions_module_delay',
+            descriptionKey: 'quick_actions_module_delay_desc',
+            fields: [
+                {
+                    id: 'duration',
+                    type: 'number',
+                    labelKey: 'quick_actions_field_delay',
+                    placeholderKey: 'quick_actions_field_delay_placeholder',
+                    min: 0,
+                    max: 60000,
+                    step: 100
+                }
+            ]
+        },
+        {
+            id: 'toast',
+            icon: 'bell',
+            labelKey: 'quick_actions_module_toast',
+            descriptionKey: 'quick_actions_module_toast_desc',
+            fields: [
+                {
+                    id: 'message',
+                    type: 'text',
+                    labelKey: 'quick_actions_field_message',
+                    placeholderKey: 'quick_actions_field_message_placeholder'
+                }
+            ]
+        }
+    ]
+};
 
 // =================================================================================
 // === Система Локализации (Клиентская сторона) ===
@@ -204,10 +364,6 @@ const LocalizationRenderer = {
 // =================================================================================
 // ... existing code ...
 const SettingsModule = {
-    builderState: {
-        base: 'clipboard',
-        blocks: []
-    },
 
     init: function() {
         this.setupEventListeners();
@@ -245,76 +401,14 @@ const SettingsModule = {
             });
         });
 
-        const activeAddonsList = Utils.getElement('#active-addons-list');
-        if (activeAddonsList) {
-            activeAddonsList.addEventListener('click', (event) => {
-                const removeButton = event.target.closest('[data-action="remove-addon"]');
-                if (removeButton) {
-                    const addonId = removeButton.getAttribute('data-addon-id');
-                    this.removeActiveAddon(addonId);
-                }
-            });
+        const manageQuickActionsButton = Utils.getElement('#settings-open-quick-actions');
+        if (manageQuickActionsButton) {
+            manageQuickActionsButton.addEventListener('click', () => QuickActionManager.openDialog());
         }
 
-        const addonGallery = Utils.getElement('#addon-gallery');
-        if (addonGallery) {
-            addonGallery.addEventListener('click', (event) => {
-                const deleteButton = event.target.closest('[data-action="delete-custom-addon"]');
-                if (deleteButton) {
-                    const addonId = deleteButton.getAttribute('data-addon-id');
-                    this.deleteCustomAddon(addonId);
-                    return;
-                }
-                const addButton = event.target.closest('[data-action="add-addon"]');
-                if (addButton) {
-                    const addonId = addButton.getAttribute('data-addon-id');
-                    this.addAddonFromGallery(addonId);
-                }
-            });
-        }
-
-        const builderStack = Utils.getElement('#builder-stack');
-        if (builderStack) {
-            builderStack.addEventListener('click', (event) => {
-                const removeBlock = event.target.closest('[data-action="remove-block"]');
-                if (removeBlock) {
-                    const index = parseInt(removeBlock.getAttribute('data-block-index'), 10);
-                    this.removeBuilderBlock(index);
-                }
-            });
-        }
-
-        Utils.getAllElements('.builder-base-option').forEach(button => {
-            button.addEventListener('click', () => {
-                const base = button.getAttribute('data-base');
-                if (!base) return;
-                this.builderState.base = base;
-                this.highlightBuilderBase();
-                this.renderBuilderStack();
-            });
-        });
-
-        const addBlockButton = Utils.getElement('#builder-add-block');
-        if (addBlockButton) {
-            addBlockButton.addEventListener('click', () => {
-                const select = Utils.getElement('#builder-block-select');
-                if (!select) return;
-                const blockId = select.value;
-                if (!blockId) return;
-                if (!AddonBuilderBlocks.some(block => block.id === blockId)) return;
-                this.builderState.blocks.push(blockId);
-                this.renderBuilderStack();
-            });
-        }
-
-        const resetBuilderButton = Utils.getElement('#builder-reset');
-        if (resetBuilderButton) {
-            resetBuilderButton.addEventListener('click', () => this.resetBuilder());
-        }
-
-        const saveAddonButton = Utils.getElement('#builder-save-addon');
-        if (saveAddonButton) {
-            saveAddonButton.addEventListener('click', () => this.saveCustomAddon());
+        const openWorkbenchButton = Utils.getElement('#settings-open-workbench');
+        if (openWorkbenchButton) {
+            openWorkbenchButton.addEventListener('click', () => QuickActionManager.openWorkbench());
         }
     },
     
@@ -590,337 +684,11 @@ const SettingsModule = {
             return LocalizationRenderer.t('subscription_next_renewal_unknown');
         }
     },
-
     renderAddons: function() {
-        const isActive = this.hasActiveSubscription();
-        const activeContainer = Utils.getElement('#active-addons-list');
-        const galleryContainer = Utils.getElement('#addon-gallery');
-
-        if (!isActive) {
-            if (activeContainer) activeContainer.innerHTML = '';
-            if (galleryContainer) galleryContainer.innerHTML = '';
-            return;
-        }
-
-        const activeIds = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        const activeSet = new Set(activeIds);
-
-        if (activeContainer) {
-            activeContainer.innerHTML = '';
-            if (activeIds.length === 0) {
-                const empty = Utils.createElement('div', { className: 'addons-empty', text: LocalizationRenderer.t('addons_empty_state') });
-                activeContainer.appendChild(empty);
-            } else {
-                activeIds.forEach(id => {
-                    const addon = this.findAddonDefinition(id);
-                    if (!addon) return;
-                    const card = Utils.createElement('div', { className: 'addon-card active-addon' });
-                    const iconWrap = Utils.createElement('div', { className: 'addon-card-icon' });
-                    iconWrap.innerHTML = `<i data-feather="${addon.icon || 'box'}"></i>`;
-                    card.appendChild(iconWrap);
-
-                    const info = Utils.createElement('div', { className: 'addon-card-info' });
-                    const titleRow = Utils.createElement('div', { className: 'addon-card-title-row' });
-                    const title = Utils.createElement('h4', { className: 'addon-card-title', text: this.getAddonDisplayName(addon) });
-                    titleRow.appendChild(title);
-                    const typeBadge = Utils.createElement('span', { className: 'addon-badge', text: addon.type === 'custom' ? LocalizationRenderer.t('addon_tag_custom') : LocalizationRenderer.t('addon_tag_library') });
-                    titleRow.appendChild(typeBadge);
-                    info.appendChild(titleRow);
-
-                    const description = Utils.createElement('p', { className: 'addon-card-description', text: this.getAddonDisplayDescription(addon) });
-                    info.appendChild(description);
-
-                    const blockIds = Array.isArray(addon.blocks) ? addon.blocks.map(block => (typeof block === 'string' ? block : block.id)) : [];
-                    if (blockIds.length > 0) {
-                        const chips = Utils.createElement('div', { className: 'addon-block-chips' });
-                        blockIds.forEach(blockId => {
-                            const blockDef = AddonBuilderBlocks.find(block => block.id === blockId);
-                            const chip = Utils.createElement('span', { className: 'addon-chip', text: blockDef ? LocalizationRenderer.t(blockDef.nameKey) : blockId });
-                            chips.appendChild(chip);
-                        });
-                        info.appendChild(chips);
-                    }
-
-                    const meta = Utils.createElement('div', { className: 'addon-card-meta' });
-                    const baseLabel = this.getAddonBaseLabel(addon);
-                    if (baseLabel) {
-                        meta.appendChild(Utils.createElement('span', { className: 'addon-meta-pill', text: baseLabel }));
-                    }
-                    const blockCount = Array.isArray(blockIds) ? blockIds.length : 0;
-                    meta.appendChild(Utils.createElement('span', { className: 'addon-meta-pill subtle', text: LocalizationRenderer.t('addon_block_count', blockCount) }));
-                    info.appendChild(meta);
-
-                    card.appendChild(info);
-
-                    const actions = Utils.createElement('div', { className: 'addon-card-actions' });
-                    const removeBtn = Utils.createElement('button', { className: 'addon-pill-button danger', text: LocalizationRenderer.t('addons_remove_button') });
-                    removeBtn.setAttribute('data-action', 'remove-addon');
-                    removeBtn.setAttribute('data-addon-id', id);
-                    actions.appendChild(removeBtn);
-                    card.appendChild(actions);
-
-                    activeContainer.appendChild(card);
-                });
-            }
-        }
-
-        if (galleryContainer) {
-            galleryContainer.innerHTML = '';
-            const galleryItems = [
-                ...AddonLibrary,
-                ...(Array.isArray(AppState.settings.customAddons) ? AppState.settings.customAddons.map(addon => ({ ...addon, type: 'custom' })) : [])
-            ];
-
-            galleryItems.forEach(addon => {
-                const card = Utils.createElement('div', { className: 'addon-card gallery-addon' });
-                if (addon.type === 'custom') card.classList.add('is-custom');
-                const iconWrap = Utils.createElement('div', { className: 'addon-card-icon' });
-                iconWrap.innerHTML = `<i data-feather="${addon.icon || 'box'}"></i>`;
-                card.appendChild(iconWrap);
-
-                const info = Utils.createElement('div', { className: 'addon-card-info' });
-                const titleRow = Utils.createElement('div', { className: 'addon-card-title-row' });
-                const title = Utils.createElement('h4', { className: 'addon-card-title', text: this.getAddonDisplayName(addon) });
-                titleRow.appendChild(title);
-                const typeBadge = Utils.createElement('span', { className: 'addon-badge', text: addon.type === 'custom' ? LocalizationRenderer.t('addon_tag_custom') : LocalizationRenderer.t('addon_tag_library') });
-                titleRow.appendChild(typeBadge);
-                info.appendChild(titleRow);
-
-                const description = Utils.createElement('p', { className: 'addon-card-description', text: this.getAddonDisplayDescription(addon) });
-                info.appendChild(description);
-
-                const blockIds = Array.isArray(addon.blocks) ? addon.blocks.map(block => (typeof block === 'string' ? block : block.id)) : [];
-                if (blockIds.length > 0) {
-                    const chips = Utils.createElement('div', { className: 'addon-block-chips' });
-                    blockIds.forEach(blockId => {
-                        const blockDef = AddonBuilderBlocks.find(block => block.id === blockId);
-                        const chip = Utils.createElement('span', { className: 'addon-chip', text: blockDef ? LocalizationRenderer.t(blockDef.nameKey) : blockId });
-                        chips.appendChild(chip);
-                    });
-                    info.appendChild(chips);
-                }
-
-                card.appendChild(info);
-
-                const actions = Utils.createElement('div', { className: 'addon-card-actions stacked' });
-                const isAlreadyActive = activeSet.has(addon.id);
-                const addButton = Utils.createElement('button', { className: 'addon-pill-button primary', text: LocalizationRenderer.t(isAlreadyActive ? 'addons_gallery_added' : 'addons_gallery_add') });
-                addButton.setAttribute('data-addon-id', addon.id);
-                addButton.setAttribute('data-action', 'add-addon');
-                addButton.disabled = isAlreadyActive;
-                if (isAlreadyActive) addButton.classList.add('disabled');
-                actions.appendChild(addButton);
-
-                if (addon.type === 'custom') {
-                    const deleteButton = Utils.createElement('button', { className: 'addon-pill-button subtle-danger', text: LocalizationRenderer.t('addon_delete_custom') });
-                    deleteButton.setAttribute('data-addon-id', addon.id);
-                    deleteButton.setAttribute('data-action', 'delete-custom-addon');
-                    actions.appendChild(deleteButton);
-                }
-
-                card.appendChild(actions);
-                galleryContainer.appendChild(card);
-            });
-        }
-
-        if (window.feather) window.feather.replace();
+        QuickActionManager.renderSettingsSummary();
     },
-
     renderAddonBuilder: function() {
-        this.highlightBuilderBase();
-        this.renderBuilderStack();
-        this.refreshBuilderPlaceholders();
-    },
-
-    highlightBuilderBase: function() {
-        const buttons = Array.from(Utils.getAllElements('.builder-base-option'));
-        if (!buttons.length) return;
-        let found = false;
-        buttons.forEach(button => {
-            const base = button.getAttribute('data-base');
-            if (base === this.builderState.base) {
-                button.classList.add('active');
-                found = true;
-            } else {
-                button.classList.remove('active');
-            }
-        });
-        if (!found) {
-            const fallback = buttons[0];
-            fallback.classList.add('active');
-            this.builderState.base = fallback.getAttribute('data-base');
-        }
-    },
-
-    renderBuilderStack: function() {
-        const stack = Utils.getElement('#builder-stack');
-        if (!stack) return;
-        stack.innerHTML = '';
-
-        const base = AddonBuilderBases.find(item => item.id === this.builderState.base) || AddonBuilderBases[0];
-        if (base) {
-            const baseCard = Utils.createElement('div', { className: 'builder-block builder-block-base' });
-            const iconWrap = Utils.createElement('div', { className: 'builder-block-icon' });
-            iconWrap.innerHTML = `<i data-feather="${base.icon}"></i>`;
-            baseCard.appendChild(iconWrap);
-            const info = Utils.createElement('div', { className: 'builder-block-info' });
-            info.appendChild(Utils.createElement('div', { className: 'builder-block-title', text: LocalizationRenderer.t(base.nameKey) }));
-            info.appendChild(Utils.createElement('div', { className: 'builder-block-description', text: LocalizationRenderer.t(base.descriptionKey) }));
-            baseCard.appendChild(info);
-            stack.appendChild(baseCard);
-        }
-
-        if (!this.builderState.blocks.length) {
-            stack.appendChild(Utils.createElement('div', { className: 'builder-empty', text: LocalizationRenderer.t('addon_builder_empty_state') }));
-        } else {
-            this.builderState.blocks.forEach((blockId, index) => {
-                const block = AddonBuilderBlocks.find(item => item.id === blockId);
-                const blockCard = Utils.createElement('div', { className: 'builder-block' });
-                const iconWrap = Utils.createElement('div', { className: 'builder-block-icon' });
-                iconWrap.innerHTML = `<i data-feather="${block?.icon || 'tool'}"></i>`;
-                blockCard.appendChild(iconWrap);
-                const info = Utils.createElement('div', { className: 'builder-block-info' });
-                info.appendChild(Utils.createElement('div', { className: 'builder-block-title', text: block ? LocalizationRenderer.t(block.nameKey) : blockId }));
-                if (block?.descriptionKey) {
-                    info.appendChild(Utils.createElement('div', { className: 'builder-block-description', text: LocalizationRenderer.t(block.descriptionKey) }));
-                }
-                blockCard.appendChild(info);
-                const removeButton = Utils.createElement('button', { className: 'addon-pill-button subtle', text: LocalizationRenderer.t('addon_builder_remove_block') });
-                removeButton.setAttribute('data-action', 'remove-block');
-                removeButton.setAttribute('data-block-index', index);
-                blockCard.appendChild(removeButton);
-                stack.appendChild(blockCard);
-            });
-        }
-
-        if (window.feather) window.feather.replace();
-    },
-
-    refreshBuilderPlaceholders: function() {
-        const nameInput = Utils.getElement('#builder-addon-name');
-        if (nameInput) nameInput.placeholder = LocalizationRenderer.t('addon_builder_name_placeholder');
-        const descriptionInput = Utils.getElement('#builder-addon-description');
-        if (descriptionInput) descriptionInput.placeholder = LocalizationRenderer.t('addon_builder_description_placeholder');
-        const blockSelect = Utils.getElement('#builder-block-select');
-        if (blockSelect) {
-            Array.from(blockSelect.options).forEach(option => {
-                const key = option.getAttribute('data-i18n');
-                if (key) option.textContent = LocalizationRenderer.t(key);
-            });
-        }
-    },
-
-    findAddonDefinition: function(id) {
-        if (!id) return null;
-        const libraryAddon = AddonLibrary.find(addon => addon.id === id);
-        if (libraryAddon) return { ...libraryAddon };
-        const customAddon = (AppState.settings.customAddons || []).find(addon => addon.id === id);
-        if (customAddon) return { ...customAddon, type: 'custom' };
-        return null;
-    },
-
-    getAddonDisplayName: function(addon) {
-        if (!addon) return LocalizationRenderer.t('addon_unknown_name');
-        if (addon.nameKey) return LocalizationRenderer.t(addon.nameKey);
-        return addon.name || LocalizationRenderer.t('addon_unknown_name');
-    },
-
-    getAddonDisplayDescription: function(addon) {
-        if (!addon) return LocalizationRenderer.t('addon_default_description');
-        if (addon.descriptionKey) return LocalizationRenderer.t(addon.descriptionKey);
-        return addon.description || LocalizationRenderer.t('addon_default_description');
-    },
-
-    getAddonBaseLabel: function(addon) {
-        if (!addon) return '';
-        const base = AddonBuilderBases.find(option => option.id === addon.base);
-        return base ? LocalizationRenderer.t(base.nameKey) : '';
-    },
-
-    addAddonFromGallery: function(id) {
-        if (!id) return;
-        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        if (activeAddons.includes(id)) return;
-        activeAddons.push(id);
-        AppState.settings.activeAddons = activeAddons;
-        ipcRenderer.send('update-setting', 'activeAddons', activeAddons);
-        this.renderAddons();
-    },
-
-    removeActiveAddon: function(id) {
-        if (!id) return;
-        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        const updated = activeAddons.filter(addonId => addonId !== id);
-        if (updated.length === activeAddons.length) return;
-        AppState.settings.activeAddons = updated;
-        ipcRenderer.send('update-setting', 'activeAddons', updated);
-        this.renderAddons();
-    },
-
-    deleteCustomAddon: function(id) {
-        if (!id) return;
-        const customAddons = Array.isArray(AppState.settings.customAddons) ? [...AppState.settings.customAddons] : [];
-        if (!customAddons.some(addon => addon.id === id)) return;
-        if (!window.confirm(LocalizationRenderer.t('addon_delete_custom_confirm'))) return;
-        const updatedCustom = customAddons.filter(addon => addon.id !== id);
-        const updatedActive = (AppState.settings.activeAddons || []).filter(addonId => addonId !== id);
-        AppState.settings.customAddons = updatedCustom;
-        AppState.settings.activeAddons = updatedActive;
-        ipcRenderer.send('update-setting', 'customAddons', updatedCustom);
-        ipcRenderer.send('update-setting', 'activeAddons', updatedActive);
-        this.renderAddons();
-    },
-
-    removeBuilderBlock: function(index) {
-        if (!Number.isInteger(index)) return;
-        if (index < 0 || index >= this.builderState.blocks.length) return;
-        this.builderState.blocks.splice(index, 1);
-        this.renderBuilderStack();
-    },
-
-    resetBuilder: function() {
-        const defaultBase = AddonBuilderBases[0]?.id || 'clipboard';
-        this.builderState = { base: defaultBase, blocks: [] };
-        const nameInput = Utils.getElement('#builder-addon-name');
-        if (nameInput) nameInput.value = '';
-        const descriptionInput = Utils.getElement('#builder-addon-description');
-        if (descriptionInput) descriptionInput.value = '';
-        const blockSelect = Utils.getElement('#builder-block-select');
-        if (blockSelect) blockSelect.value = '';
-        this.renderAddonBuilder();
-    },
-
-    saveCustomAddon: function() {
-        const nameInput = Utils.getElement('#builder-addon-name');
-        const descriptionInput = Utils.getElement('#builder-addon-description');
-        const name = nameInput?.value.trim() || '';
-        if (!name) {
-            alert(LocalizationRenderer.t('addon_builder_error_name_required'));
-            return;
-        }
-        const description = descriptionInput?.value.trim() || '';
-        const baseId = this.builderState.base || (AddonBuilderBases[0]?.id || 'clipboard');
-        const base = AddonBuilderBases.find(item => item.id === baseId);
-        const blocks = this.builderState.blocks.map(blockId => ({ id: blockId }));
-        const icon = base?.icon || 'layers';
-        const customAddons = Array.isArray(AppState.settings.customAddons) ? [...AppState.settings.customAddons] : [];
-        const newAddon = {
-            id: `custom-${Date.now()}`,
-            name,
-            description,
-            base: baseId,
-            icon,
-            blocks
-        };
-        customAddons.push(newAddon);
-        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        activeAddons.push(newAddon.id);
-        AppState.settings.customAddons = customAddons;
-        AppState.settings.activeAddons = Array.from(new Set(activeAddons));
-        ipcRenderer.send('update-setting', 'customAddons', customAddons);
-        ipcRenderer.send('update-setting', 'activeAddons', Array.from(new Set(activeAddons)));
-        this.resetBuilder();
-        this.renderAddons();
+        QuickActionManager.renderSettingsBuilderPreview();
     },
 
     setupShortcutRecorder: function() {
@@ -985,6 +753,770 @@ const SettingsModule = {
         });
     }
 };
+
+
+const QuickActionManager = {
+    dockEl: null,
+    scrollEl: null,
+    manageButtonEl: null,
+    dialogEl: null,
+    dialogCloseEl: null,
+    availableListEl: null,
+    activeListEl: null,
+    workbenchEl: null,
+    workbenchFlowEl: null,
+    workbenchCanvasEl: null,
+    inspectorEl: null,
+    inspectorContentEl: null,
+    inspectorFieldsEl: null,
+    inspectorPlaceholderEl: null,
+    nameInput: null,
+    descriptionInput: null,
+    iconInput: null,
+    workbenchToastEl: null,
+    workbenchEditingId: null,
+    paletteBuilt: false,
+
+    init: function() {
+        this.scrollEl = Utils.getElement('#quick-action-scroll');
+        this.manageButtonEl = Utils.getElement('#quick-action-manager-button');
+        this.dialogEl = Utils.getElement('#quick-action-dialog');
+        this.dialogCloseEl = Utils.getElement('#quick-action-dialog-close');
+        this.availableListEl = Utils.getElement('#quick-action-available-list');
+        this.activeListEl = Utils.getElement('#quick-action-active-list');
+        this.workbenchEl = Utils.getElement('#quick-action-workbench');
+        this.workbenchFlowEl = Utils.getElement('#workbench-flow');
+        this.workbenchCanvasEl = Utils.getElement('#workbench-canvas');
+        this.inspectorEl = Utils.getElement('#workbench-inspector');
+        this.inspectorContentEl = this.inspectorEl?.querySelector('.workbench-inspector-content') || null;
+        this.inspectorFieldsEl = Utils.getElement('#workbench-inspector-fields');
+        this.inspectorPlaceholderEl = this.inspectorEl?.querySelector('.workbench-inspector-placeholder') || null;
+        this.nameInput = Utils.getElement('#workbench-action-name');
+        this.descriptionInput = Utils.getElement('#workbench-action-description');
+        this.iconInput = Utils.getElement('#workbench-action-icon');
+        this.workbenchToastEl = null;
+
+        if (this.manageButtonEl) {
+            this.manageButtonEl.addEventListener('click', () => this.openDialog());
+        }
+        if (this.dialogCloseEl) {
+            this.dialogCloseEl.addEventListener('click', () => this.closeDialog());
+        }
+        if (this.dialogEl) {
+            this.dialogEl.addEventListener('click', (event) => {
+                if (event.target === this.dialogEl) this.closeDialog();
+            });
+        }
+
+        const openWorkbenchButton = Utils.getElement('#quick-action-open-workbench');
+        if (openWorkbenchButton) {
+            openWorkbenchButton.addEventListener('click', () => {
+                this.closeDialog();
+                this.openWorkbench();
+            });
+        }
+
+        const workbenchCancel = Utils.getElement('#quick-action-workbench-cancel');
+        if (workbenchCancel) {
+            workbenchCancel.addEventListener('click', () => this.closeWorkbench());
+        }
+
+        const workbenchSave = Utils.getElement('#quick-action-workbench-save');
+        if (workbenchSave) {
+            workbenchSave.addEventListener('click', () => this.saveWorkbenchAction());
+        }
+
+        if (this.nameInput) {
+            this.nameInput.addEventListener('input', (event) => {
+                AppState.quickActionWorkbench.metadata.name = event.target.value;
+            });
+        }
+        if (this.descriptionInput) {
+            this.descriptionInput.addEventListener('input', (event) => {
+                AppState.quickActionWorkbench.metadata.description = event.target.value;
+            });
+        }
+        if (this.iconInput) {
+            this.iconInput.addEventListener('input', (event) => {
+                AppState.quickActionWorkbench.metadata.icon = this.sanitizeIconName(event.target.value);
+            });
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                if (this.workbenchEl && !this.workbenchEl.classList.contains('hidden')) {
+                    this.closeWorkbench();
+                } else if (this.dialogEl && !this.dialogEl.classList.contains('hidden')) {
+                    this.closeDialog();
+                }
+            }
+        });
+
+        this.populateModuleLists();
+        this.attachWorkbenchListeners();
+    },
+
+    hydrateFromSettings: function(settings = {}) {
+        const active = Array.isArray(settings.quickActionsActive) && settings.quickActionsActive.length
+            ? [...settings.quickActionsActive]
+            : this.getDefaultQuickActions();
+        const custom = Array.isArray(settings.quickActionsCustom)
+            ? settings.quickActionsCustom.map(item => ({ ...item }))
+            : [];
+
+        AppState.quickActions.active = Array.from(new Set(active));
+        AppState.quickActions.custom = custom.map(action => ({
+            id: action.id,
+            type: 'workflow',
+            icon: this.sanitizeIconName(action.icon || 'zap'),
+            name: action.name || LocalizationRenderer.t('quick_actions_custom_default_name'),
+            description: action.description || '',
+            modules: Array.isArray(action.modules) ? action.modules.map(node => ({
+                id: node.id || `node-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                moduleId: node.moduleId,
+                config: { ...(node.config || {}) }
+            })) : []
+        }));
+
+        this.ensureActiveIntegrity();
+        this.renderDock();
+        this.renderSettingsSummary();
+        this.renderSettingsBuilderPreview();
+        if (this.dialogEl && !this.dialogEl.classList.contains('hidden')) {
+            this.renderDialog();
+        }
+    },
+
+    getDefaultQuickActions: function() {
+        return QuickActionCatalog.filter(action => action.isDefault).map(action => action.id);
+    },
+
+    ensureActiveIntegrity: function() {
+        const availableIds = new Set([
+            ...QuickActionCatalog.map(item => item.id),
+            ...AppState.quickActions.custom.map(item => item.id)
+        ]);
+        AppState.quickActions.active = AppState.quickActions.active.filter(id => availableIds.has(id));
+        if (AppState.quickActions.active.length === 0) {
+            AppState.quickActions.active = this.getDefaultQuickActions();
+        }
+    },
+
+    renderDock: function() {
+        if (!this.scrollEl) return;
+        this.scrollEl.innerHTML = '';
+        const activeActions = AppState.quickActions.active
+            .map(id => this.resolveAction(id))
+            .filter(Boolean);
+
+        if (activeActions.length === 0) {
+            const placeholder = Utils.createElement('div', { className: 'quick-action-empty', text: LocalizationRenderer.t('quick_actions_empty_state') });
+            this.scrollEl.appendChild(placeholder);
+            return;
+        }
+
+        activeActions.forEach(action => {
+            const button = this.createButtonElement(action);
+            if (button) this.scrollEl.appendChild(button);
+        });
+        if (window.feather) window.feather.replace();
+    },
+
+    createButtonElement: function(action) {
+        if (!action) return null;
+        const button = Utils.createElement('button', { className: 'quick-action-button' });
+        button.setAttribute('data-action-id', action.id);
+        button.setAttribute('title', this.translateActionDescription(action));
+
+        const iconName = this.sanitizeIconName(action.icon || action.payload?.icon || 'zap');
+        const iconContainer = Utils.createElement('span');
+        iconContainer.className = 'icon';
+        if (window.feather?.icons[iconName]) {
+            iconContainer.innerHTML = window.feather.icons[iconName].toSvg();
+        } else {
+            iconContainer.textContent = '⚡';
+        }
+        button.appendChild(iconContainer);
+
+        const label = Utils.createElement('span', { text: this.translateActionLabel(action) });
+        button.appendChild(label);
+
+        button.addEventListener('click', () => {
+            this.executeAction(action.id).catch(error => console.error('[QuickActionManager] Failed to execute action', error));
+        });
+        return button;
+    },
+
+    resolveAction: function(id) {
+        if (!id) return null;
+        const builtIn = QuickActionCatalog.find(action => action.id === id);
+        if (builtIn) return builtIn;
+        const custom = AppState.quickActions.custom.find(action => action.id === id);
+        if (custom) return custom;
+        return null;
+    },
+
+    executeAction: async function(id) {
+        const action = this.resolveAction(id);
+        if (!action) return;
+        switch (action.type) {
+            case 'panel':
+                AuxPanelManager.togglePanel(action.payload.panel);
+                break;
+            case 'view':
+                ViewManager.switchView(action.payload.view);
+                break;
+            case 'url':
+                if (action.payload?.url) shell.openExternal(action.payload.url);
+                break;
+            case 'toggle-theme':
+                this.toggleTheme();
+                break;
+            case 'workflow':
+            case 'custom':
+                await this.executeWorkflow(action);
+                break;
+            default:
+                console.warn('[QuickActionManager] Unknown action type:', action.type);
+        }
+    },
+
+    executeWorkflow: async function(action) {
+        const nodes = Array.isArray(action.modules) ? action.modules : [];
+        for (const node of nodes) {
+            // eslint-disable-next-line no-await-in-loop
+            await this.executeModule(node, action).catch(error => {
+                console.error('[QuickActionManager] Module failed', error);
+                SettingsModule.showNotification(LocalizationRenderer.t('quick_actions_module_error'));
+            });
+        }
+    },
+
+    executeModule: async function(node, action) {
+        if (!node?.moduleId) return;
+        const moduleDef = this.findModuleDefinition(node.moduleId);
+        const config = node.config || {};
+        switch (node.moduleId) {
+            case 'manual-trigger':
+            case 'clipboard-trigger':
+                return;
+            case 'open-panel':
+                if (config.panel) AuxPanelManager.openPanel(config.panel);
+                return;
+            case 'open-url':
+                if (config.url) shell.openExternal(config.url);
+                return;
+            case 'copy-text':
+                if (config.text) ipcRenderer.send('copy-to-clipboard', config.text);
+                return;
+            case 'show-window':
+                if (config.view) ViewManager.switchView(config.view);
+                return;
+            case 'delay':
+                await new Promise(resolve => setTimeout(resolve, Math.max(0, Number(config.duration) || 0)));
+                return;
+            case 'toast':
+                if (config.message) this.showToast(config.message);
+                return;
+            default:
+                console.warn('[QuickActionManager] No executor for module', node.moduleId, 'in action', action.id);
+        }
+    },
+
+    toggleTheme: function() {
+        const current = AppState.settings.theme || 'auto';
+        const next = current === 'dark' ? 'light' : 'dark';
+        ipcRenderer.send('update-setting', 'theme', next);
+        AppState.settings.theme = next;
+        SettingsModule.showNotification(LocalizationRenderer.t('quick_actions_theme_toggled', LocalizationRenderer.t(next === 'dark' ? 'theme_dark' : 'theme_light')));
+    },
+
+    openDialog: function() {
+        if (!this.dialogEl) return;
+        this.renderDialog();
+        this.dialogEl.classList.remove('hidden');
+    },
+
+    closeDialog: function() {
+        this.dialogEl?.classList.add('hidden');
+    },
+
+    renderDialog: function() {
+        this.renderAvailableList();
+        this.renderActiveList();
+        if (window.feather) window.feather.replace();
+    },
+
+    renderAvailableList: function() {
+        if (!this.availableListEl) return;
+        this.availableListEl.innerHTML = '';
+        const allActions = [
+            ...QuickActionCatalog,
+            ...AppState.quickActions.custom
+        ];
+        allActions.forEach(action => {
+            const item = Utils.createElement('div', { className: 'quick-action-item' });
+            const info = Utils.createElement('div', { className: 'quick-action-item-info' });
+
+            const iconWrap = Utils.createElement('div', { className: 'quick-action-item-icon' });
+            const iconName = this.sanitizeIconName(action.icon || action.payload?.icon || 'zap');
+            if (window.feather?.icons[iconName]) {
+                iconWrap.innerHTML = window.feather.icons[iconName].toSvg();
+            } else {
+                iconWrap.textContent = '⚡';
+            }
+            info.appendChild(iconWrap);
+
+            const textContainer = Utils.createElement('div');
+            textContainer.appendChild(Utils.createElement('div', { className: 'quick-action-item-title', text: this.translateActionLabel(action) }));
+            textContainer.appendChild(Utils.createElement('div', { className: 'quick-action-item-subtitle', text: this.translateActionDescription(action) }));
+            info.appendChild(textContainer);
+            item.appendChild(info);
+
+            const actions = Utils.createElement('div', { className: 'quick-action-item-actions' });
+            const toggleWrapper = Utils.createElement('label', { className: 'quick-action-toggle' });
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = AppState.quickActions.active.includes(action.id);
+            checkbox.addEventListener('change', () => this.toggleAction(action.id, checkbox.checked));
+            const slider = document.createElement('span');
+            toggleWrapper.appendChild(checkbox);
+            toggleWrapper.appendChild(slider);
+            actions.appendChild(toggleWrapper);
+
+            if (!QuickActionCatalog.some(item => item.id === action.id)) {
+                const editButton = Utils.createElement('button', { className: 'quick-action-mini-button', text: LocalizationRenderer.t('quick_actions_edit') });
+                editButton.addEventListener('click', () => {
+                    this.openWorkbench(action.id);
+                    this.closeDialog();
+                });
+                actions.appendChild(editButton);
+
+                const deleteButton = Utils.createElement('button', { className: 'quick-action-mini-button danger', text: LocalizationRenderer.t('quick_actions_delete') });
+                deleteButton.addEventListener('click', () => this.deleteCustomAction(action.id));
+                actions.appendChild(deleteButton);
+            }
+
+            item.appendChild(actions);
+            this.availableListEl.appendChild(item);
+        });
+    },
+
+    renderActiveList: function() {
+        if (!this.activeListEl) return;
+        this.activeListEl.innerHTML = '';
+        const activeActions = AppState.quickActions.active.map(id => this.resolveAction(id)).filter(Boolean);
+        activeActions.forEach((action, index) => {
+            const item = Utils.createElement('div', { className: 'quick-action-item' });
+            const info = Utils.createElement('div', { className: 'quick-action-item-info' });
+            const iconWrap = Utils.createElement('div', { className: 'quick-action-item-icon' });
+            const iconName = this.sanitizeIconName(action.icon || action.payload?.icon || 'zap');
+            if (window.feather?.icons[iconName]) {
+                iconWrap.innerHTML = window.feather.icons[iconName].toSvg();
+            } else {
+                iconWrap.textContent = '⚡';
+            }
+            info.appendChild(iconWrap);
+            info.appendChild(Utils.createElement('div', { className: 'quick-action-item-title', text: this.translateActionLabel(action) }));
+            item.appendChild(info);
+
+            const actions = Utils.createElement('div', { className: 'quick-action-item-actions' });
+            if (index > 0) {
+                const upButton = Utils.createElement('button', { className: 'quick-action-mini-button', text: '↑' });
+                upButton.addEventListener('click', () => this.moveActiveAction(action.id, -1));
+                actions.appendChild(upButton);
+            }
+            if (index < activeActions.length - 1) {
+                const downButton = Utils.createElement('button', { className: 'quick-action-mini-button', text: '↓' });
+                downButton.addEventListener('click', () => this.moveActiveAction(action.id, 1));
+                actions.appendChild(downButton);
+            }
+            const removeButton = Utils.createElement('button', { className: 'quick-action-mini-button danger', text: LocalizationRenderer.t('quick_actions_remove') });
+            removeButton.addEventListener('click', () => this.removeActiveAction(action.id));
+            actions.appendChild(removeButton);
+            item.appendChild(actions);
+            this.activeListEl.appendChild(item);
+        });
+    },
+
+    toggleAction: function(id, enabled) {
+        if (!id) return;
+        const active = new Set(AppState.quickActions.active);
+        if (enabled) {
+            active.add(id);
+        } else {
+            active.delete(id);
+        }
+        AppState.quickActions.active = Array.from(active);
+        this.persistState();
+        this.renderDock();
+        this.renderActiveList();
+    },
+
+    moveActiveAction: function(id, offset) {
+        const list = [...AppState.quickActions.active];
+        const index = list.indexOf(id);
+        if (index === -1) return;
+        const newIndex = index + offset;
+        if (newIndex < 0 || newIndex >= list.length) return;
+        const [item] = list.splice(index, 1);
+        list.splice(newIndex, 0, item);
+        AppState.quickActions.active = list;
+        this.persistState();
+        this.renderDock();
+        this.renderActiveList();
+    },
+
+    removeActiveAction: function(id) {
+        AppState.quickActions.active = AppState.quickActions.active.filter(item => item !== id);
+        this.persistState();
+        this.renderDock();
+        this.renderActiveList();
+        this.renderSettingsSummary();
+    },
+
+    deleteCustomAction: function(id) {
+        AppState.quickActions.custom = AppState.quickActions.custom.filter(action => action.id !== id);
+        this.removeActiveAction(id);
+        this.persistState();
+        this.renderDialog();
+        this.renderSettingsBuilderPreview();
+    },
+
+    persistState: function() {
+        AppState.settings.quickActionsActive = [...AppState.quickActions.active];
+        AppState.settings.quickActionsCustom = AppState.quickActions.custom.map(action => ({
+            id: action.id,
+            icon: this.sanitizeIconName(action.icon || 'zap'),
+            name: action.name,
+            description: action.description,
+            modules: action.modules.map(node => ({
+                id: node.id,
+                moduleId: node.moduleId,
+                config: { ...(node.config || {}) }
+            }))
+        }));
+        ipcRenderer.send('update-setting', 'quickActionsActive', AppState.settings.quickActionsActive);
+        ipcRenderer.send('update-setting', 'quickActionsCustom', AppState.settings.quickActionsCustom);
+        this.renderSettingsSummary();
+    },
+
+    renderSettingsSummary: function() {
+        const summary = Utils.getElement('#settings-quick-actions-summary');
+        if (!summary) return;
+        summary.innerHTML = '';
+        const actions = AppState.quickActions.active.map(id => this.resolveAction(id)).filter(Boolean);
+        if (!actions.length) {
+            summary.appendChild(Utils.createElement('div', { className: 'quick-actions-summary-item', text: LocalizationRenderer.t('quick_actions_summary_empty') }));
+            return;
+        }
+        actions.forEach(action => {
+            const item = Utils.createElement('div', { className: 'quick-actions-summary-item' });
+            const title = Utils.createElement('strong', { text: this.translateActionLabel(action) });
+            const description = Utils.createElement('span', { text: this.translateActionDescription(action) });
+            item.appendChild(title);
+            item.appendChild(description);
+            summary.appendChild(item);
+        });
+    },
+
+    renderSettingsBuilderPreview: function() {
+        const preview = Utils.getElement('.quick-actions-builder-preview');
+        if (!preview) return;
+        const count = AppState.quickActions.custom.length;
+        preview.textContent = LocalizationRenderer.t('quick_actions_builder_hint_count', count);
+    },
+
+    openWorkbench: function(actionId = null) {
+        if (!this.workbenchEl) return;
+        const targetAction = actionId ? AppState.quickActions.custom.find(action => action.id === actionId) : null;
+        this.workbenchEditingId = targetAction?.id || null;
+        this.resetWorkbench(targetAction);
+        this.renderWorkbench();
+        this.workbenchEl.classList.remove('hidden');
+    },
+
+    closeWorkbench: function() {
+        if (!this.workbenchEl) return;
+        this.workbenchEl.classList.add('hidden');
+        this.workbenchEditingId = null;
+    },
+
+    resetWorkbench: function(action) {
+        const nodes = action?.modules?.map(node => ({
+            id: node.id || `node-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            moduleId: node.moduleId,
+            config: { ...(node.config || {}) }
+        })) || [
+            { id: `node-${Date.now()}`, moduleId: 'manual-trigger', config: {} }
+        ];
+        AppState.quickActionWorkbench = {
+            nodes,
+            connections: [],
+            selectedNodeId: nodes[0]?.id || null,
+            metadata: {
+                name: action?.name || '',
+                description: action?.description || '',
+                icon: this.sanitizeIconName(action?.icon || 'zap')
+            }
+        };
+    },
+
+    populateModuleLists: function() {
+        if (this.paletteBuilt) return;
+        const buildList = (containerId, modules) => {
+            const container = Utils.getElement(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            modules.forEach(module => {
+                const card = Utils.createElement('button', { className: 'workbench-module' });
+                const iconWrap = Utils.createElement('div', { className: 'workbench-module-icon' });
+                const iconName = this.sanitizeIconName(module.icon || 'box');
+                if (window.feather?.icons[iconName]) {
+                    iconWrap.innerHTML = window.feather.icons[iconName].toSvg();
+                } else {
+                    iconWrap.textContent = '•';
+                }
+                card.appendChild(iconWrap);
+                const content = Utils.createElement('div', { className: 'workbench-module-content' });
+                content.appendChild(Utils.createElement('h4', { text: LocalizationRenderer.t(module.labelKey) }));
+                content.appendChild(Utils.createElement('p', { text: LocalizationRenderer.t(module.descriptionKey) }));
+                card.appendChild(content);
+                card.addEventListener('click', () => {
+                    const node = {
+                        id: `node-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                        moduleId: module.id,
+                        config: {}
+                    };
+                    AppState.quickActionWorkbench.nodes.push(node);
+                    AppState.quickActionWorkbench.selectedNodeId = node.id;
+                    this.renderWorkbench();
+                });
+                container.appendChild(card);
+            });
+        };
+
+        buildList('#workbench-trigger-list', QuickActionModuleLibrary.triggers);
+        buildList('#workbench-action-list', QuickActionModuleLibrary.actions);
+        buildList('#workbench-utility-list', QuickActionModuleLibrary.utilities);
+        if (window.feather) window.feather.replace();
+        this.paletteBuilt = true;
+    },
+
+    attachWorkbenchListeners: function() {
+        if (!this.workbenchFlowEl) return;
+        this.workbenchFlowEl.addEventListener('click', (event) => {
+            const nodeEl = event.target.closest('.workbench-node');
+            if (nodeEl) {
+                this.selectNode(nodeEl.getAttribute('data-node-id'));
+            }
+        });
+    },
+
+    renderWorkbench: function() {
+        if (!this.workbenchEl) return;
+        if (this.nameInput) this.nameInput.value = AppState.quickActionWorkbench.metadata.name || '';
+        if (this.descriptionInput) this.descriptionInput.value = AppState.quickActionWorkbench.metadata.description || '';
+        if (this.iconInput) this.iconInput.value = AppState.quickActionWorkbench.metadata.icon || 'zap';
+        this.renderWorkbenchFlow();
+        const selected = AppState.quickActionWorkbench.nodes.find(node => node.id === AppState.quickActionWorkbench.selectedNodeId);
+        this.renderInspector(selected);
+        if (window.feather) window.feather.replace();
+    },
+
+    renderWorkbenchFlow: function() {
+        if (!this.workbenchFlowEl) return;
+        this.workbenchFlowEl.innerHTML = '';
+        const nodes = AppState.quickActionWorkbench.nodes;
+        if (!nodes.length) {
+            const placeholder = Utils.createElement('div', { className: 'workbench-canvas-placeholder', text: LocalizationRenderer.t('quick_actions_workbench_placeholder') });
+            this.workbenchFlowEl.appendChild(placeholder);
+            return;
+        }
+        nodes.forEach((node, index) => {
+            const moduleDef = this.findModuleDefinition(node.moduleId);
+            const nodeEl = Utils.createElement('div', { className: 'workbench-node' });
+            nodeEl.setAttribute('data-node-id', node.id);
+            if (node.id === AppState.quickActionWorkbench.selectedNodeId) {
+                nodeEl.classList.add('active');
+            }
+            nodeEl.appendChild(Utils.createElement('h4', { text: moduleDef ? LocalizationRenderer.t(moduleDef.labelKey) : node.moduleId }));
+            if (moduleDef?.descriptionKey) {
+                nodeEl.appendChild(Utils.createElement('p', { text: LocalizationRenderer.t(moduleDef.descriptionKey) }));
+            }
+            this.workbenchFlowEl.appendChild(nodeEl);
+            if (index < nodes.length - 1) {
+                const connector = Utils.createElement('div', { className: 'workbench-connector' });
+                this.workbenchFlowEl.appendChild(connector);
+            }
+        });
+    },
+
+    selectNode: function(nodeId) {
+        AppState.quickActionWorkbench.selectedNodeId = nodeId;
+        const node = AppState.quickActionWorkbench.nodes.find(item => item.id === nodeId) || null;
+        this.renderWorkbench();
+        this.renderInspector(node);
+    },
+
+    renderInspector: function(node) {
+        if (!this.inspectorFieldsEl || !this.inspectorContentEl || !this.inspectorPlaceholderEl) return;
+        this.inspectorFieldsEl.innerHTML = '';
+        if (!node) {
+            this.inspectorContentEl.classList.add('hidden');
+            this.inspectorPlaceholderEl.classList.remove('hidden');
+            return;
+        }
+        const moduleDef = this.findModuleDefinition(node.moduleId);
+        if (!moduleDef || !moduleDef.fields?.length) {
+            this.inspectorContentEl.classList.add('hidden');
+            this.inspectorPlaceholderEl.classList.remove('hidden');
+            return;
+        }
+        this.inspectorContentEl.classList.remove('hidden');
+        this.inspectorPlaceholderEl.classList.add('hidden');
+        Utils.getElement('#workbench-inspector-title').textContent = LocalizationRenderer.t(moduleDef.labelKey);
+        moduleDef.fields.forEach(field => {
+            const fieldEl = Utils.createElement('div', { className: 'workbench-inspector-field' });
+            const label = Utils.createElement('label', { text: LocalizationRenderer.t(field.labelKey) });
+            label.setAttribute('for', `field-${node.id}-${field.id}`);
+            fieldEl.appendChild(label);
+            let input;
+            const value = node.config?.[field.id] ?? '';
+            if (field.type === 'select') {
+                input = document.createElement('select');
+                const options = typeof field.getOptions === 'function' ? field.getOptions() : field.options || [];
+                options.forEach(option => {
+                    const opt = document.createElement('option');
+                    opt.value = option.value;
+                    opt.textContent = LocalizationRenderer.t(option.labelKey);
+                    if (option.value === value) opt.selected = true;
+                    input.appendChild(opt);
+                });
+            } else if (field.type === 'textarea') {
+                input = document.createElement('textarea');
+                input.rows = 3;
+                input.value = value;
+                if (field.placeholderKey) input.placeholder = LocalizationRenderer.t(field.placeholderKey);
+            } else {
+                input = document.createElement('input');
+                input.type = field.type === 'number' ? 'number' : 'text';
+                input.value = value;
+                if (field.placeholderKey) input.placeholder = LocalizationRenderer.t(field.placeholderKey);
+                if (field.min !== undefined) input.min = field.min;
+                if (field.max !== undefined) input.max = field.max;
+                if (field.step !== undefined) input.step = field.step;
+            }
+            input.id = `field-${node.id}-${field.id}`;
+            input.addEventListener('input', () => this.updateNodeConfig(node.id, field.id, input.value));
+            if (field.type === 'select') {
+                input.addEventListener('change', () => this.updateNodeConfig(node.id, field.id, input.value));
+            }
+            fieldEl.appendChild(input);
+            this.inspectorFieldsEl.appendChild(fieldEl);
+        });
+        if (node.moduleId !== 'manual-trigger') {
+            const removeBtn = Utils.createElement('button', { className: 'secondary-button danger', text: LocalizationRenderer.t('quick_actions_workbench_remove_module') });
+            removeBtn.addEventListener('click', () => this.removeNode(node.id));
+            this.inspectorFieldsEl.appendChild(removeBtn);
+        }
+    },
+
+    updateNodeConfig: function(nodeId, fieldId, value) {
+        const node = AppState.quickActionWorkbench.nodes.find(item => item.id === nodeId);
+        if (!node) return;
+        node.config = node.config || {};
+        node.config[fieldId] = value;
+    },
+
+    removeNode: function(nodeId) {
+        if (!nodeId) return;
+        const nodes = AppState.quickActionWorkbench.nodes;
+        if (nodes.length <= 1) return;
+        AppState.quickActionWorkbench.nodes = nodes.filter(node => node.id !== nodeId);
+        AppState.quickActionWorkbench.selectedNodeId = AppState.quickActionWorkbench.nodes[0]?.id || null;
+        this.renderWorkbench();
+    },
+
+    saveWorkbenchAction: function() {
+        const metadata = AppState.quickActionWorkbench.metadata;
+        const nodes = AppState.quickActionWorkbench.nodes;
+        if (!metadata.name || metadata.name.trim().length === 0) {
+            SettingsModule.showNotification(LocalizationRenderer.t('quick_actions_workbench_name_required'));
+            return;
+        }
+        if (nodes.length === 0) {
+            SettingsModule.showNotification(LocalizationRenderer.t('quick_actions_workbench_no_modules'));
+            return;
+        }
+        const normalizedIcon = this.sanitizeIconName(metadata.icon || 'zap');
+        const workflow = {
+            id: this.workbenchEditingId || `custom-${Date.now()}`,
+            type: 'workflow',
+            icon: normalizedIcon,
+            name: metadata.name,
+            description: metadata.description,
+            modules: nodes.map(node => ({
+                id: node.id,
+                moduleId: node.moduleId,
+                config: { ...(node.config || {}) }
+            }))
+        };
+        const existingIndex = AppState.quickActions.custom.findIndex(action => action.id === workflow.id);
+        if (existingIndex >= 0) {
+            AppState.quickActions.custom.splice(existingIndex, 1, workflow);
+        } else {
+            AppState.quickActions.custom.push(workflow);
+        }
+        if (!AppState.quickActions.active.includes(workflow.id)) {
+            AppState.quickActions.active.push(workflow.id);
+        }
+        this.persistState();
+        this.renderDock();
+        this.renderDialog();
+        this.renderSettingsBuilderPreview();
+        SettingsModule.showNotification(LocalizationRenderer.t('quick_actions_workbench_saved'));
+        this.closeWorkbench();
+    },
+
+    showToast: function(message) {
+        if (!this.workbenchEl) return;
+        if (!this.workbenchToastEl) {
+            this.workbenchToastEl = Utils.createElement('div', { className: 'workbench-toast' });
+            this.workbenchEl.appendChild(this.workbenchToastEl);
+        }
+        this.workbenchToastEl.textContent = message;
+        this.workbenchToastEl.classList.add('visible');
+        setTimeout(() => this.workbenchToastEl?.classList.remove('visible'), 2000);
+    },
+
+    translateActionLabel: function(action) {
+        if (!action) return '';
+        if (action.name) return action.name;
+        if (action.labelKey) return LocalizationRenderer.t(action.labelKey);
+        return action.id;
+    },
+
+    translateActionDescription: function(action) {
+        if (!action) return '';
+        if (action.description) return action.description;
+        if (action.descriptionKey) return LocalizationRenderer.t(action.descriptionKey);
+        return '';
+    },
+
+    findModuleDefinition: function(moduleId) {
+        return QuickActionModuleLibrary.triggers.find(module => module.id === moduleId)
+            || QuickActionModuleLibrary.actions.find(module => module.id === moduleId)
+            || QuickActionModuleLibrary.utilities.find(module => module.id === moduleId)
+            || null;
+    },
+
+    sanitizeIconName: function(icon = '') {
+        const normalized = String(icon).trim().toLowerCase();
+        return normalized || 'zap';
+    }
+};
+if (typeof window !== 'undefined') { window.QuickActionManager = QuickActionManager; }
 
 // =================================================================================
 // === Модуль Поиска и Результатов (Search Module) ===
@@ -2021,12 +2553,6 @@ const AuxPanelManager = {
     
     init: function() {
         this.panelContainer = Utils.getElement('#aux-panel');
-        Utils.getAllElements('#action-buttons [data-window-type]').forEach(button => {
-            button.addEventListener('click', () => {
-                const type = button.getAttribute('data-window-type');
-                this.togglePanel(type);
-            });
-        });
         ipcRenderer.on('update-data', this.updateDataListener);
     },
 
@@ -2884,6 +3410,8 @@ document.addEventListener('DOMContentLoaded', () => {
     PinnedAppsModule.init();
     AuxPanelManager.init();
     CustomSelect.init();
+    QuickActionManager.init();
+    QuickActionManager.hydrateFromSettings(AppState.settings);
 
     ipcRenderer.on('file-icon-response', (event, { path, dataUrl }) => {
         const relatedImages = [];
@@ -2919,6 +3447,7 @@ document.addEventListener('DOMContentLoaded', () => {
         AppState.translations = data.translations;
         AppState.appVersion = data.version;
         AppState.systemTheme = data.systemTheme; // Обновляем системную тему
+        QuickActionManager.hydrateFromSettings(AppState.settings);
         ViewManager.applyAppearanceSettings();
         LocalizationRenderer.applyTranslations();
         SettingsModule.populateSettingsUI();
