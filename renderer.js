@@ -102,10 +102,45 @@ const AppIconFallbacks = {
 };
 
 const SubscriptionFeatureLabels = {
-    'addon-builder': 'subscription_feature_addon_builder',
+    'addon-builder': 'subscription_feature_master_addons',
+    'unlimited-automations': 'subscription_feature_unlimited_automations',
+    'priority-support': 'subscription_feature_priority_support',
+    'full-clipboard-history': 'subscription_feature_full_clipboard',
     'extended-gallery': 'subscription_feature_gallery',
-    'priority-support': 'subscription_feature_support',
+    'automations-limited': 'subscription_feature_automations_limit',
+    'clipboard-limited': 'subscription_feature_clipboard_limit',
+    'no-addon-builder': 'subscription_feature_no_addon_builder',
     default: 'subscription_feature_default'
+};
+
+const SubscriptionPlanDefinitions = {
+    free: {
+        id: 'free',
+        nameKey: 'subscription_free_plan_name',
+        descriptionKey: 'subscription_free_plan_description',
+        automationLimit: 3,
+        clipboardLimit: 10,
+        hasAddonBuilder: false,
+        features: [
+            { storageKey: 'automations-limited', labelKey: 'subscription_feature_automations_limit', args: (plan) => [plan.automationLimit] },
+            { storageKey: 'clipboard-limited', labelKey: 'subscription_feature_clipboard_limit', args: (plan) => [plan.clipboardLimit] },
+            { storageKey: 'no-addon-builder', labelKey: 'subscription_feature_no_addon_builder' }
+        ]
+    },
+    pro: {
+        id: 'pro',
+        nameKey: 'subscription_premium_plan_name',
+        descriptionKey: 'subscription_premium_plan_description',
+        automationLimit: null,
+        clipboardLimit: null,
+        hasAddonBuilder: true,
+        features: [
+            { storageKey: 'addon-builder', labelKey: 'subscription_feature_master_addons' },
+            { storageKey: 'unlimited-automations', labelKey: 'subscription_feature_unlimited_automations' },
+            { storageKey: 'priority-support', labelKey: 'subscription_feature_priority_support' },
+            { storageKey: 'full-clipboard-history', labelKey: 'subscription_feature_full_clipboard' }
+        ]
+    }
 };
 
 const QuickActionCatalog = [
@@ -804,6 +839,12 @@ const QuickActionManager = {
         this.render();
     },
 
+    requestResize() {
+        if (typeof ViewManager?.resizeWindow === 'function') {
+            requestAnimationFrame(() => ViewManager.resizeWindow());
+        }
+    },
+
     render() {
         if (!this.container) return;
         QuickActionStore.ensureStructure();
@@ -812,6 +853,7 @@ const QuickActionManager = {
 
         if (!activeIds.length) {
             this.container.setAttribute('data-empty-label', LocalizationRenderer.t('quick_actions_empty_bar') || 'Add quick actions in Settings');
+            this.requestResize();
             return;
         }
 
@@ -842,6 +884,8 @@ const QuickActionManager = {
 
             this.container.appendChild(button);
         });
+
+        this.requestResize();
     },
 
     refresh() {
@@ -874,6 +918,8 @@ const QuickActionLab = {
     iconPickerOpen: false,
     windowExpanded: false,
     boundOutsideClick: null,
+    builderSelectWrappers: new Set(),
+    boundSelectOutsideClick: null,
 
     init() {
         if (this.initialized) return;
@@ -885,6 +931,7 @@ const QuickActionLab = {
         this.iconPickerButtons = new Map();
         this.iconPickerOpen = false;
         this.windowExpanded = false;
+        this.builderSelectWrappers = new Set();
         this.elements = {
             activeList: Utils.getElement('#quick-action-active-list'),
             catalog: Utils.getElement('#quick-action-catalog'),
@@ -931,6 +978,11 @@ const QuickActionLab = {
             this.toggleIconPicker(false);
         };
 
+        if (!this.boundSelectOutsideClick) {
+            this.boundSelectOutsideClick = (event) => this.handleBuilderSelectOutsideClick(event);
+            document.addEventListener('click', this.boundSelectOutsideClick);
+        }
+
         if (!this.elements.activeList) {
             return;
         }
@@ -940,6 +992,10 @@ const QuickActionLab = {
         this.initialized = true;
         this.buildIconPicker();
         this.renderAll();
+    },
+
+    hasBuilderAccess() {
+        return !!(AppState.settings?.subscription?.entitlements?.hasAddonBuilder);
     },
 
     attachEvents() {
@@ -1002,9 +1058,28 @@ const QuickActionLab = {
         this.elements.clearWorkspace?.addEventListener('click', () => this.clearWorkspace());
 
         this.elements.modal?.addEventListener('keydown', (event) => {
+            const target = event.target;
+            const element = target instanceof HTMLElement ? target : null;
+            const isEditableField = !!element && (
+                element.tagName === 'INPUT' ||
+                element.tagName === 'TEXTAREA' ||
+                element.isContentEditable ||
+                (typeof element.closest === 'function' && element.closest('[contenteditable="true"]'))
+            );
+
             if (event.key === 'Escape') {
+                if (isEditableField && typeof element?.blur === 'function') {
+                    element.blur();
+                }
                 this.closeBuilder();
-            } else if (event.key === 'Delete' || event.key === 'Backspace') {
+                return;
+            }
+
+            if ((event.key === 'Delete' || event.key === 'Backspace')) {
+                if (isEditableField) {
+                    return;
+                }
+
                 if (this.builderState?.selectedNodeId && !this.isManualNode(this.builderState.selectedNodeId)) {
                     this.removeNode(this.builderState.selectedNodeId);
                 }
@@ -1020,8 +1095,24 @@ const QuickActionLab = {
 
     renderAll() {
         if (!this.initialized) return;
+        this.updateBuilderAccessState();
         this.renderActiveList();
         this.renderCatalog();
+    },
+
+    updateBuilderAccessState() {
+        const hasAccess = this.hasBuilderAccess();
+        if (this.elements?.openBuilder) {
+            this.elements.openBuilder.classList.toggle('is-locked', !hasAccess);
+            if (!hasAccess) this.elements.openBuilder.setAttribute('aria-disabled', 'true');
+            else this.elements.openBuilder.removeAttribute('aria-disabled');
+            const labelKey = hasAccess ? 'quick_actions_builder_open' : 'quick_actions_builder_locked';
+            this.elements.openBuilder.textContent = LocalizationRenderer.t(labelKey);
+        }
+        const callout = document.querySelector('.quick-action-builder-callout');
+        if (callout) {
+            callout.classList.toggle('is-locked', !hasAccess);
+        }
     },
 
     refresh() {
@@ -1184,6 +1275,11 @@ const QuickActionLab = {
     },
 
     openBuilder(actionId = null, options = {}) {
+        if (!this.hasBuilderAccess()) {
+            SettingsModule?.openSubscriptionTab?.();
+            alert(LocalizationRenderer.t('subscription_builder_requires_upgrade'));
+            return;
+        }
         QuickActionStore.ensureStructure();
         this.windowExpanded = false;
         this.builderState = this.createDefaultBuilderState();
@@ -1499,6 +1595,8 @@ const QuickActionLab = {
     renderInspector() {
         const container = this.elements.inspectorContent;
         if (!container || !this.builderState) return;
+        this.closeAllBuilderSelects();
+        this.builderSelectWrappers = new Set();
         container.innerHTML = '';
 
         const selectedId = this.builderState.selectedNodeId;
@@ -1551,27 +1649,33 @@ const QuickActionLab = {
 
         moduleDef.form.forEach(field => {
             const label = Utils.createElement('label', { text: field.label || field.key });
+            container.appendChild(label);
+
+            const currentValue = node.config?.[field.key] ?? moduleDef.defaultConfig?.[field.key] ?? '';
+
+            if (field.type === 'select') {
+                const selectWrapper = this.createBuilderSelect(field, currentValue, (value) => {
+                    if (value !== node.config?.[field.key]) {
+                        this.updateNodeConfig(node.id, field.key, value);
+                    }
+                });
+                container.appendChild(selectWrapper);
+                return;
+            }
+
             let input;
             if (field.type === 'textarea') {
                 input = document.createElement('textarea');
                 if (field.rows) input.rows = field.rows;
-            } else if (field.type === 'select') {
-                input = document.createElement('select');
-                (field.options || []).forEach(option => {
-                    const optionEl = document.createElement('option');
-                    optionEl.value = option.value;
-                    optionEl.textContent = option.label || option.value;
-                    input.appendChild(optionEl);
-                });
             } else {
                 input = document.createElement('input');
                 input.type = field.type || 'text';
                 if (field.min !== undefined) input.min = field.min;
             }
-            input.value = node.config?.[field.key] ?? moduleDef.defaultConfig?.[field.key] ?? '';
+
+            input.value = currentValue;
             if (field.placeholder) input.placeholder = field.placeholder;
             input.addEventListener('input', () => this.updateNodeConfig(node.id, field.key, input.value));
-            container.appendChild(label);
             container.appendChild(input);
         });
 
@@ -1580,6 +1684,134 @@ const QuickActionLab = {
             deleteBtn.addEventListener('click', () => this.removeNode(node.id));
             container.appendChild(deleteBtn);
         }
+    },
+
+    createBuilderSelect(field, currentValue, onChange) {
+        const options = Array.isArray(field.options) ? field.options : [];
+        const wrapper = document.createElement('div');
+        wrapper.className = 'custom-select-wrapper builder-custom-select';
+
+        const customSelect = document.createElement('div');
+        customSelect.className = 'custom-select';
+
+        const trigger = document.createElement('div');
+        trigger.className = 'custom-select-trigger';
+        trigger.setAttribute('role', 'button');
+        trigger.setAttribute('tabindex', '0');
+
+        const labelSpan = document.createElement('span');
+        const matchingOption = options.find(option => option.value === currentValue);
+        labelSpan.textContent = matchingOption
+            ? (matchingOption.label || matchingOption.value)
+            : (currentValue || field.placeholder || '');
+        trigger.appendChild(labelSpan);
+
+        const arrow = document.createElement('span');
+        arrow.className = 'arrow';
+        arrow.innerHTML = "<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>";
+        trigger.appendChild(arrow);
+
+        customSelect.appendChild(trigger);
+
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'custom-options';
+
+        if (!options.length) {
+            const emptyOption = document.createElement('div');
+            emptyOption.className = 'custom-option disabled';
+            const emptySpan = document.createElement('span');
+            emptySpan.textContent = field.placeholder || LocalizationRenderer.t('quick_actions_no_settings') || 'No options available';
+            emptyOption.appendChild(emptySpan);
+            optionsContainer.appendChild(emptyOption);
+            trigger.classList.add('disabled');
+        } else {
+            options.forEach(option => {
+                const optionEl = document.createElement('div');
+                optionEl.className = 'custom-option';
+                optionEl.dataset.value = option.value;
+
+                const optionSpan = document.createElement('span');
+                optionSpan.textContent = option.label || option.value;
+                optionEl.appendChild(optionSpan);
+
+                if (option.value === currentValue) {
+                    optionEl.classList.add('selected');
+                }
+
+                optionEl.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    if (wrapper.dataset.selectedValue === option.value) {
+                        wrapper.classList.remove('open');
+                        return;
+                    }
+
+                    optionsContainer.querySelector('.custom-option.selected')?.classList.remove('selected');
+                    optionEl.classList.add('selected');
+                    wrapper.dataset.selectedValue = option.value;
+                    labelSpan.textContent = optionSpan.textContent;
+                    wrapper.classList.remove('open');
+                    if (typeof onChange === 'function') onChange(option.value);
+                });
+
+                optionsContainer.appendChild(optionEl);
+            });
+        }
+
+        customSelect.appendChild(optionsContainer);
+        wrapper.appendChild(customSelect);
+
+        trigger.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (trigger.classList.contains('disabled')) return;
+            const isOpen = wrapper.classList.contains('open');
+            this.closeAllBuilderSelects();
+            if (!isOpen) {
+                wrapper.classList.add('open');
+            }
+        });
+
+        trigger.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                trigger.click();
+            } else if (event.key === 'Escape') {
+                wrapper.classList.remove('open');
+            }
+        });
+
+        wrapper.dataset.selectedValue = matchingOption
+            ? String(matchingOption.value)
+            : (currentValue !== undefined && currentValue !== null ? String(currentValue) : '');
+        this.builderSelectWrappers.add(wrapper);
+
+        if (!matchingOption && options.length) {
+            const firstOption = optionsContainer.querySelector('.custom-option');
+            if (firstOption) {
+                firstOption.classList.add('selected');
+                wrapper.dataset.selectedValue = firstOption.dataset.value;
+                const firstLabel = firstOption.querySelector('span');
+                labelSpan.textContent = firstLabel ? firstLabel.textContent : firstOption.textContent;
+                if (typeof onChange === 'function') {
+                    onChange(firstOption.dataset.value);
+                }
+            }
+        }
+
+        return wrapper;
+    },
+
+    handleBuilderSelectOutsideClick(event) {
+        if (!this.builderSelectWrappers || this.builderSelectWrappers.size === 0) return;
+        this.builderSelectWrappers.forEach(wrapper => {
+            if (!wrapper.contains(event.target)) {
+                wrapper.classList.remove('open');
+            }
+        });
+    },
+
+    closeAllBuilderSelects() {
+        if (!this.builderSelectWrappers) return;
+        this.builderSelectWrappers.forEach(wrapper => wrapper.classList.remove('open'));
     },
 
     updateNodeConfig(nodeId, key, value) {
@@ -2176,6 +2408,19 @@ const SettingsModule = {
             });
         });
 
+        const manageButton = Utils.getElement('#subscription-manage-button');
+        if (manageButton) {
+            manageButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                ipcRenderer.send('open-subscription-portal');
+            });
+        }
+
+        const toggleButton = Utils.getElement('#subscription-toggle');
+        if (toggleButton) {
+            toggleButton.addEventListener('click', () => this.toggleSubscription());
+        }
+
     },
     
     bindSetting: function(elementId, settingKey) {
@@ -2326,7 +2571,8 @@ const SettingsModule = {
         const list = Utils.getElement('#automations-list');
         if (!list) return;
         list.innerHTML = '';
-        (AppState.settings.customAutomations || []).forEach((auto, index) => {
+        const automations = AppState.settings.customAutomations || [];
+        automations.forEach((auto, index) => {
             const entry = Utils.createElement('div', { className: 'automation-entry' });
             const infoDiv = Utils.createElement('div', { className: 'automation-info' });
             infoDiv.innerHTML = `<div class="automation-name">${Utils.escapeHtml(auto.name)} (Keyword: ${Utils.escapeHtml(auto.keyword)})</div><div class="automation-details">${auto.command}</div>`;
@@ -2336,6 +2582,27 @@ const SettingsModule = {
             entry.appendChild(removeButton);
             list.appendChild(entry);
         });
+
+        const limit = this.getAutomationLimit();
+        const addButton = Utils.getElement('#add-automation-button');
+        const limitNote = Utils.getElement('#automation-limit-note');
+        const count = automations.length;
+
+        if (addButton) {
+            const atLimit = Number.isFinite(limit) && count >= limit;
+            addButton.disabled = atLimit;
+            addButton.classList.toggle('is-disabled', atLimit);
+        }
+
+        if (limitNote) {
+            if (Number.isFinite(limit)) {
+                limitNote.textContent = LocalizationRenderer.t('subscription_automation_limit_note', count, limit);
+                limitNote.classList.remove('is-hidden');
+            } else {
+                limitNote.textContent = '';
+                limitNote.classList.add('is-hidden');
+            }
+        }
     },
 
     addAutomation: function() {
@@ -2346,6 +2613,11 @@ const SettingsModule = {
             const automations = [...(AppState.settings.customAutomations || [])];
             if (automations.some(a => a.keyword === keyword)) {
                 alert("Error: Keyword already exists.");
+                return;
+            }
+            const limit = this.getAutomationLimit();
+            if (Number.isFinite(limit) && automations.length >= limit) {
+                alert(LocalizationRenderer.t('subscription_automation_limit_reached', limit));
                 return;
             }
             automations.push({ id: `custom-${Date.now()}`, name, keyword, command });
@@ -2367,42 +2639,70 @@ const SettingsModule = {
     },
 
     hasActiveSubscription: function() {
-        return !!(AppState.settings?.subscription?.isActive);
+        return !!this.getSubscription().isActive;
+    },
+
+    getPlanDefinition: function(planId) {
+        return SubscriptionPlanDefinitions[planId] || SubscriptionPlanDefinitions.pro;
     },
 
     getSubscription: function() {
-        return AppState.settings?.subscription || { isActive: false, planName: '', renewalDate: null, features: [] };
+        if (AppState.settings?.subscription) return AppState.settings.subscription;
+        const freePlan = this.getPlanDefinition('free');
+        return {
+            isActive: false,
+            planId: freePlan.id,
+            planName: LocalizationRenderer.t(freePlan.nameKey),
+            renewalDate: null,
+            features: freePlan.features.map(feature => feature.storageKey),
+            entitlements: {
+                automations: freePlan.automationLimit,
+                clipboard: freePlan.clipboardLimit,
+                hasAddonBuilder: freePlan.hasAddonBuilder
+            }
+        };
+    },
+
+    hasAddonBuilderAccess: function() {
+        return !!(this.getSubscription().entitlements?.hasAddonBuilder);
     },
 
     ensureSubscriptionVisibility: function() {
         const addonsTabButton = Utils.getElement('.settings-sidebar li[data-tab="addons"]');
         const addonsContent = Utils.getElement('#tab-addons');
-        const isActive = this.hasActiveSubscription();
+        const hasBuilder = this.hasAddonBuilderAccess();
 
         if (addonsTabButton) {
-            addonsTabButton.classList.toggle('is-hidden', !isActive);
-            if (!isActive && addonsTabButton.classList.contains('active')) {
+            addonsTabButton.classList.toggle('is-hidden', !hasBuilder);
+            if (!hasBuilder && addonsTabButton.classList.contains('active')) {
                 Utils.getElement('.settings-sidebar li[data-tab="subscription"]')?.click()
                     || Utils.getElement('.settings-sidebar li[data-tab="general"]')?.click();
             }
         }
 
         if (addonsContent) {
-            addonsContent.classList.toggle('is-hidden', !isActive);
-            if (!isActive) addonsContent.classList.remove('active');
+            addonsContent.classList.toggle('is-hidden', !hasBuilder);
+            if (!hasBuilder) addonsContent.classList.remove('active');
         }
     },
 
     renderSubscription: function() {
         const subscription = this.getSubscription();
         const isActive = this.hasActiveSubscription();
-        const statusKey = isActive ? 'subscription_status_active' : 'subscription_status_inactive';
+        const hasBuilder = this.hasAddonBuilderAccess();
+        const statusKey = isActive && hasBuilder ? 'subscription_status_active' : 'subscription_status_inactive';
+
+        const activePlanId = hasBuilder ? (subscription.planId || 'pro') : 'free';
+        const activePlanDef = this.getPlanDefinition(activePlanId);
+        const freePlan = this.enrichPlanWithEntitlements(this.getPlanDefinition('free'));
+        const proPlan = this.enrichPlanWithEntitlements(this.getPlanDefinition('pro'), isActive ? subscription.entitlements : null);
 
         const statusBadge = Utils.getElement('#subscription-status-badge');
         if (statusBadge) {
             statusBadge.textContent = LocalizationRenderer.t(statusKey);
-            statusBadge.classList.toggle('inactive', !isActive);
-            statusBadge.classList.toggle('active', isActive);
+            statusBadge.classList.toggle('inactive', !(isActive && hasBuilder));
+            statusBadge.classList.toggle('active', isActive && hasBuilder);
+            statusBadge.setAttribute('data-plan', activePlanId);
         }
 
         const statusText = Utils.getElement('#subscription-status-text');
@@ -2412,7 +2712,12 @@ const SettingsModule = {
 
         const planNameEl = Utils.getElement('#subscription-plan-name');
         if (planNameEl) {
-            planNameEl.textContent = subscription.planName || LocalizationRenderer.t('subscription_unknown_plan');
+            planNameEl.textContent = LocalizationRenderer.t(activePlanDef.nameKey);
+        }
+
+        const planDescriptionEl = Utils.getElement('#subscription-plan-description');
+        if (planDescriptionEl) {
+            planDescriptionEl.textContent = LocalizationRenderer.t(activePlanDef.descriptionKey);
         }
 
         const renewalEl = Utils.getElement('#subscription-renewal-date');
@@ -2420,19 +2725,114 @@ const SettingsModule = {
             renewalEl.textContent = this.formatDateForUser(subscription.renewalDate);
         }
 
-        const featureList = Utils.getElement('#subscription-feature-list');
-        if (featureList) {
-            featureList.innerHTML = '';
-            const features = Array.isArray(subscription.features) && subscription.features.length > 0
-                ? subscription.features
-                : ['addon-builder'];
-            features.forEach(featureKey => {
-                const item = Utils.createElement('li');
-                const translationKey = SubscriptionFeatureLabels[featureKey] || SubscriptionFeatureLabels.default;
-                item.textContent = LocalizationRenderer.t(translationKey);
-                featureList.appendChild(item);
-            });
+        const toggleButton = Utils.getElement('#subscription-toggle');
+        if (toggleButton) {
+            const toggleKey = hasBuilder ? 'subscription_toggle_deactivate' : 'subscription_toggle_activate';
+            toggleButton.textContent = LocalizationRenderer.t(toggleKey);
+            toggleButton.classList.toggle('is-active', hasBuilder);
+            toggleButton.setAttribute('aria-pressed', String(hasBuilder));
+            toggleButton.setAttribute('data-plan', activePlanId);
         }
+
+        this.renderPlanFeatureList(Utils.getElement('#subscription-feature-list'), proPlan, { highlight: hasBuilder });
+        this.renderPlanFeatureList(Utils.getElement('#subscription-free-feature-list'), freePlan, { highlight: !hasBuilder });
+        this.renderPlanFeatureList(Utils.getElement('#subscription-pro-feature-list'), proPlan, { highlight: hasBuilder });
+    },
+
+    enrichPlanWithEntitlements: function(planDefinition, entitlements = null) {
+        const automationLimit = entitlements && Object.prototype.hasOwnProperty.call(entitlements, 'automations')
+            ? entitlements.automations
+            : planDefinition.automationLimit;
+        const clipboardLimit = entitlements && Object.prototype.hasOwnProperty.call(entitlements, 'clipboard')
+            ? entitlements.clipboard
+            : planDefinition.clipboardLimit;
+
+        return {
+            ...planDefinition,
+            automationLimit,
+            clipboardLimit
+        };
+    },
+
+    renderPlanFeatureList: function(listElement, plan, options = {}) {
+        if (!listElement || !plan) return;
+        listElement.innerHTML = '';
+        const highlight = options.highlight === true;
+
+        const createListItem = (translationKey, ...args) => {
+            const item = Utils.createElement('li');
+            item.textContent = LocalizationRenderer.t(translationKey, ...args);
+            if (highlight) item.classList.add('is-highlighted');
+            listElement.appendChild(item);
+        };
+
+        const finiteAutomation = typeof plan.automationLimit === 'number' && Number.isFinite(plan.automationLimit);
+        const finiteClipboard = typeof plan.clipboardLimit === 'number' && Number.isFinite(plan.clipboardLimit);
+
+        plan.features.forEach(feature => {
+            switch (feature.storageKey) {
+                case 'automations-limited':
+                    if (finiteAutomation) createListItem('subscription_feature_automations_limit', plan.automationLimit);
+                    else createListItem('subscription_feature_unlimited_automations');
+                    break;
+                case 'unlimited-automations':
+                    createListItem('subscription_feature_unlimited_automations');
+                    break;
+                case 'priority-support':
+                    createListItem('subscription_feature_priority_support');
+                    break;
+                case 'addon-builder':
+                    createListItem('subscription_feature_master_addons');
+                    break;
+                case 'no-addon-builder':
+                    createListItem('subscription_feature_no_addon_builder');
+                    break;
+                case 'full-clipboard-history':
+                    createListItem('subscription_feature_full_clipboard');
+                    break;
+                case 'clipboard-limited':
+                    if (finiteClipboard) createListItem('subscription_feature_clipboard_limit', plan.clipboardLimit);
+                    else createListItem('subscription_feature_full_clipboard');
+                    break;
+                default:
+                    createListItem(SubscriptionFeatureLabels[feature.storageKey] || SubscriptionFeatureLabels.default);
+            }
+        });
+    },
+
+    getAutomationLimit: function() {
+        const limit = this.getSubscription().entitlements?.automations;
+        return typeof limit === 'number' ? limit : Infinity;
+    },
+
+    getClipboardLimit: function() {
+        const limit = this.getSubscription().entitlements?.clipboard;
+        return typeof limit === 'number' ? limit : Infinity;
+    },
+
+    toggleSubscription: function() {
+        const hasBuilder = this.hasAddonBuilderAccess();
+        const targetPlanId = hasBuilder ? 'free' : 'pro';
+        const targetPlan = this.getPlanDefinition(targetPlanId);
+        const entitlements = {
+            automations: targetPlan.automationLimit,
+            clipboard: targetPlan.clipboardLimit,
+            hasAddonBuilder: targetPlan.hasAddonBuilder
+        };
+        const payload = {
+            isActive: !hasBuilder,
+            planId: targetPlan.id,
+            planName: LocalizationRenderer.t(targetPlan.nameKey),
+            renewalDate: !hasBuilder ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : null,
+            features: targetPlan.features.map(feature => feature.storageKey),
+            entitlements
+        };
+        ipcRenderer.send('update-setting', 'subscription', payload);
+    },
+
+    openSubscriptionTab: function() {
+        const tab = Utils.getElement('.settings-sidebar li[data-tab="subscription"]');
+        if (tab) tab.click();
     },
 
     formatDateForUser: function(value) {
@@ -4099,7 +4499,12 @@ const AuxPanelManager = {
         
         let items = [];
         if (type === 'clipboard') {
-            items = data.map(item => ({
+            const limit = SettingsModule.getClipboardLimit();
+            let sourceItems = Array.isArray(data) ? data.slice() : [];
+            if (Number.isFinite(limit) && sourceItems.length > limit) {
+                sourceItems = sourceItems.slice(-limit);
+            }
+            items = sourceItems.map(item => ({
                 primary: item.content.length > 100 ? item.content.substring(0, 100) + '...' : item.content,
                 secondary: new Date(item.timestamp).toLocaleString(),
                 icon: 'clipboard',
@@ -4138,7 +4543,17 @@ const AuxPanelManager = {
             li.addEventListener('click', itemData.action);
             fragment.appendChild(li);
         });
-        
+
+        if (type === 'clipboard') {
+            const limit = SettingsModule.getClipboardLimit();
+            if (Number.isFinite(limit) && Array.isArray(data) && data.length > limit) {
+                const note = document.createElement('li');
+                note.className = 'list-item note';
+                note.textContent = LocalizationRenderer.t('subscription_clipboard_limit_note', limit);
+                fragment.appendChild(note);
+            }
+        }
+
         listElement.appendChild(fragment);
 
         // Staggered animation for list items
@@ -4267,6 +4682,16 @@ const ViewManager = {
         const appContainer = Utils.getElement('#app-container');
         if (!appContainer) return;
 
+        const parseDimension = (value, fallback = 0) => {
+            const numeric = parseInt(value, 10);
+            return Number.isFinite(numeric) && numeric > 0 ? numeric : fallback;
+        };
+
+        const readCssVariable = (variableName, fallback = 0) => {
+            const computed = getComputedStyle(document.documentElement).getPropertyValue(variableName);
+            return parseDimension(computed, fallback);
+        };
+
         let totalHeight = 0;
         let targetWidth = 0;
 
@@ -4283,7 +4708,8 @@ const ViewManager = {
 
                 totalHeight = mainLayout.offsetHeight + resultsHeight + pinnedAppsHeight + auxPanelHeight;
             }
-            targetWidth = AppState.settings.width;
+
+            targetWidth = parseDimension(AppState?.settings?.width, 0);
         } else { // settings
             const settingsContainer = Utils.getElement('.settings-container');
             if (settingsContainer) {
@@ -4291,15 +4717,24 @@ const ViewManager = {
             }
             targetWidth = 970; // Фиксированная ширина для окна настроек (950px + 20px margin)
         }
-        
+
         const minHeight = Utils.getElement('#main-layout')?.offsetHeight || 70;
         if (totalHeight < minHeight) {
             totalHeight = minHeight;
         }
 
-        if (totalHeight > 0 && targetWidth > 0) {
-            appContainer.style.height = `${totalHeight}px`;
-            ipcRenderer.send('resize-window', { width: targetWidth, height: totalHeight });
+        if (!targetWidth || targetWidth <= 0) {
+            const measuredWidth = Math.max(appContainer.offsetWidth, window.innerWidth);
+            targetWidth = readCssVariable('--dynamic-width', parseDimension(measuredWidth, 950)) || parseDimension(measuredWidth, 950) || 950;
+        }
+
+        if (totalHeight > 0) {
+            const safeHeight = Math.max(totalHeight, minHeight);
+            appContainer.style.height = `${safeHeight}px`;
+
+            if (targetWidth > 0) {
+                ipcRenderer.send('resize-window', { width: targetWidth, height: safeHeight });
+            }
         }
     },
     prepareForShow: function(element) {
@@ -4387,6 +4822,9 @@ const ViewManager = {
 
         this.updateDynamicStyles('opacity', AppState.settings.opacity);
         this.updateDynamicStyles('blurStrength', AppState.settings.blurStrength);
+        this.updateDynamicStyles('width', AppState.settings.width);
+        this.updateDynamicStyles('height', AppState.settings.height);
+        this.updateDynamicStyles('borderRadius', AppState.settings.borderRadius);
         this.updateDynamicStyles('selectionColorStyle', AppState.settings.selectionColorStyle || 'gray'); // НОВОЕ
         if (window.feather) window.feather.replace();
         this.handleStartupAnimation();
@@ -4510,6 +4948,8 @@ document.addEventListener('DOMContentLoaded', () => {
     ipcRenderer.on('prompt-create-folder', () => {
         PinnedAppsModule.promptCreateFolder();
     });
+
+    requestAnimationFrame(() => ViewManager.resizeWindow());
 });
 
 function startFolderRename(folderId) {
