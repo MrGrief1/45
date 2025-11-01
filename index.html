@@ -448,7 +448,17 @@
                             <label for="builder-action-icon">Icon</label>
                             <div class="inspector-icon-picker">
                                 <input type="text" id="builder-action-icon" placeholder="feather icon name">
-                                <div id="builder-icon-preview" class="icon-preview"></div>
+                                <button
+                                    id="builder-icon-preview"
+                                    class="icon-preview"
+                                    type="button"
+                                    aria-haspopup="listbox"
+                                    aria-expanded="false"
+                                    aria-label="Choose icon"
+                                    data-i18n-title="quick_actions_icon_picker_hint"
+                                    data-i18n-aria-label="quick_actions_icon_picker_hint"
+                                ></button>
+                                <div id="builder-icon-dropdown" class="icon-picker-dropdown" hidden></div>
                             </div>
                             <label for="builder-action-color">Accent colour</label>
                             <input type="color" id="builder-action-color" value="#5865f2">
