@@ -18,21 +18,12 @@
                     <input type="text" id="search-input" placeholder="FlashSearch" autofocus>
                 </div>
 
-                <div id="action-buttons">
-                    <button class="action-button glass-element" data-window-type="apps-library" data-i18n-title="title_apps_library">
-                        <i data-feather="grid" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="files" data-i18n-title="title_files">
-                        <i data-feather="folder" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="commands" data-i18n-title="title_commands">
-                        <i data-feather="command" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="clipboard" data-i18n-title="title_clipboard">
-                        <i data-feather="copy" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element settings-gear" id="settings-button" data-i18n-title="context_settings">
-                        <i data-feather="settings" class="icon"></i>
+                <div id="quick-actions-toolbar" class="glass-element">
+                    <div id="quick-actions-scroll" class="quick-actions-scroll">
+                        <!-- Quick action buttons are rendered dynamically by renderer.js -->
+                    </div>
+                    <button class="quick-action-utility" id="quick-actions-manage" data-i18n-title="quick_actions_manager_tooltip">
+                        <i data-feather="sliders" class="icon"></i>
                     </button>
                 </div>
             </div>
@@ -348,7 +339,7 @@
                                         <p data-i18n="addons_active_description">These add-ons are currently plugged into FlashSearch.</p>
                                     </div>
                                 </header>
-                                <div id="active-addons-list" class="addons-active-list"></div>
+                                <div id="active-quick-actions" class="quick-action-settings-list"></div>
                             </section>
                             <section class="settings-section-card addons-section">
                                 <header class="addons-section-header">
@@ -357,7 +348,7 @@
                                         <p data-i18n="addons_gallery_description">Start with a ready-made module and adapt it to your workflow.</p>
                                     </div>
                                 </header>
-                                <div id="addon-gallery" class="addons-gallery"></div>
+                                <div id="quick-action-library" class="quick-action-gallery"></div>
                             </section>
                             <section class="settings-section-card addons-section">
                                 <header class="addons-section-header">
@@ -366,48 +357,13 @@
                                         <p data-i18n="addon_builder_intro">Build features from easy blocks—no coding required.</p>
                                     </div>
                                 </header>
-                                <div class="addon-builder">
-                                    <div class="builder-column">
-                                        <h4 data-i18n="addon_builder_base_label">Choose a starting point</h4>
-                                        <div class="builder-base-options">
-                                            <button type="button" class="builder-base-option active" data-base="clipboard">
-                                                <i data-feather="clipboard"></i>
-                                                <span data-i18n="addon_base_clipboard">Clipboard buffer</span>
-                                                <small data-i18n="addon_base_clipboard_desc">Start from the classic clipboard layout.</small>
-                                            </button>
-                                            <button type="button" class="builder-base-option" data-base="note">
-                                                <i data-feather="edit-3"></i>
-                                                <span data-i18n="addon_base_note">Quick note</span>
-                                                <small data-i18n="addon_base_note_desc">Capture ideas and templates.</small>
-                                            </button>
-                                            <button type="button" class="builder-base-option" data-base="command">
-                                                <i data-feather="zap"></i>
-                                                <span data-i18n="addon_base_command">Quick command</span>
-                                                <small data-i18n="addon_base_command_desc">Trigger scripts or workflows.</small>
-                                            </button>
-                                        </div>
+                                <div class="quick-action-workbench-callout">
+                                    <div class="workbench-callout-copy">
+                                        <h4 data-i18n="quick_actions_builder_title">Design custom quick actions</h4>
+                                        <p data-i18n="quick_actions_builder_description">Launch the visual workbench to connect triggers, actions and outputs just like in n8n.</p>
                                     </div>
-                                    <div class="builder-column">
-                                        <h4 data-i18n="addon_builder_blocks_label">Add building blocks</h4>
-                                        <div class="builder-controls">
-                                            <select id="builder-block-select">
-                                                <option value="" data-i18n="addon_builder_block_placeholder">Select block…</option>
-                                                <option value="clipboard-filter" data-i18n="addon_builder_blocks_clipboard_filter">Filter copied content</option>
-                                                <option value="text-replace" data-i18n="addon_builder_blocks_text_replace">Replace text automatically</option>
-                                                <option value="pin-items" data-i18n="addon_builder_blocks_pin_items">Pin favourite items</option>
-                                                <option value="sync" data-i18n="addon_builder_blocks_sync">Sync across devices</option>
-                                            </select>
-                                            <button type="button" id="builder-add-block" class="settings-button" data-i18n="addon_builder_add_block">Add block</button>
-                                            <button type="button" id="builder-reset" class="settings-button secondary" data-i18n="addon_builder_reset">Clear builder</button>
-                                        </div>
-                                        <div id="builder-stack" class="builder-stack"></div>
-                                        <div class="builder-form">
-                                            <label for="builder-addon-name" data-i18n="addon_builder_name_label">Name</label>
-                                            <input type="text" id="builder-addon-name" data-i18n-placeholder="addon_builder_name_placeholder" placeholder="Custom add-on">
-                                            <label for="builder-addon-description" data-i18n="addon_builder_description_label">Description</label>
-                                            <textarea id="builder-addon-description" data-i18n-placeholder="addon_builder_description_placeholder" placeholder="Explain what this add-on does..."></textarea>
-                                            <button type="button" id="builder-save-addon" class="settings-button" data-i18n="addon_builder_save">Save add-on</button>
-                                        </div>
+                                    <div class="workbench-callout-actions">
+                                        <button type="button" id="open-workbench" class="settings-button" data-i18n="quick_actions_builder_launch">Open workbench</button>
                                     </div>
                                 </div>
                             </section>
@@ -452,6 +408,74 @@
     </div>
     <div id="pinned-context-menu" class="pinned-context-menu" role="menu">
         <button type="button" data-action="create-folder" data-i18n="context_create_folder">Create Folder</button>
+    </div>
+    <div id="workbench-overlay" class="workbench-overlay hidden">
+        <div class="workbench-shell glass-element">
+            <header class="workbench-header">
+                <div class="workbench-title">
+                    <i data-feather="cpu" class="icon"></i>
+                    <div class="workbench-title-copy">
+                        <h2 data-i18n="workbench_title">Action Workbench</h2>
+                        <p data-i18n="workbench_subtitle">Build n8n-style workflows and pin them as quick actions.</p>
+                    </div>
+                </div>
+                <div class="workbench-header-actions">
+                    <button id="workbench-save" class="workbench-button primary" data-i18n="workbench_save">Save quick action</button>
+                    <button id="workbench-close" class="workbench-button ghost" data-i18n="workbench_close">Close</button>
+                </div>
+            </header>
+            <div class="workbench-body">
+                <aside class="workbench-library">
+                    <div class="workbench-library-header">
+                        <h3 data-i18n="workbench_library_title">Module library</h3>
+                        <div class="workbench-library-search">
+                            <i data-feather="search" class="icon"></i>
+                            <input type="search" id="workbench-library-search" data-i18n-placeholder="workbench_library_search" placeholder="Search modules">
+                        </div>
+                    </div>
+                    <div id="workbench-library-list" class="workbench-library-list"></div>
+                </aside>
+                <section class="workbench-canvas-wrapper">
+                    <div class="workbench-canvas-toolbar">
+                        <div class="workbench-metadata">
+                            <input type="text" id="workbench-name" data-i18n-placeholder="workbench_name_placeholder" placeholder="Name your quick action">
+                            <input type="text" id="workbench-icon" data-i18n-placeholder="workbench_icon_placeholder" placeholder="Icon name (e.g., zap)">
+                        </div>
+                        <div class="workbench-toolbar-actions">
+                            <button id="workbench-clear" class="workbench-button ghost" data-i18n="workbench_clear">Clear canvas</button>
+                        </div>
+                    </div>
+                    <div class="workbench-canvas" id="workbench-canvas">
+                        <svg id="workbench-connections" class="workbench-connections"></svg>
+                        <div class="workbench-canvas-empty" data-i18n="workbench_canvas_empty">Drag modules here to start.</div>
+                    </div>
+                </section>
+                <aside class="workbench-inspector">
+                    <div class="workbench-inspector-header">
+                        <h3 data-i18n="workbench_inspector_title">Inspector</h3>
+                        <button id="workbench-remove-node" class="workbench-button danger" data-i18n="workbench_remove_node">Remove module</button>
+                    </div>
+                    <div id="workbench-inspector-content" class="workbench-inspector-content">
+                        <p data-i18n="workbench_inspector_empty">Select a module to configure it.</p>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </div>
+    <div id="workflow-runner-overlay" class="workflow-runner-overlay hidden">
+        <div class="workflow-runner glass-element">
+            <header class="workflow-runner-header">
+                <div class="workflow-runner-title">
+                    <i data-feather="zap" class="icon"></i>
+                    <div>
+                        <h2 id="workflow-runner-name">Quick action</h2>
+                        <p id="workflow-runner-description"></p>
+                    </div>
+                </div>
+                <button id="workflow-runner-close" class="workbench-button ghost" data-i18n="workflow_runner_close">Close</button>
+            </header>
+            <div id="workflow-runner-steps" class="workflow-runner-steps"></div>
+        </div>
     </div>
     <script src="renderer.js"></script>
 </body>

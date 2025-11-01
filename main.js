@@ -2252,6 +2252,7 @@ const ClipboardMonitor = {
     broadcastHistoryUpdate: function() {
         if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('update-data', this.history);
+            mainWindow.webContents.send('clipboard-history', this.history);
         }
     }
 };
@@ -2895,6 +2896,7 @@ ipcMain.handle('select-directory', async () => {
     const { filePaths } = await dialog.showOpenDialog(mainWindow, { properties: ['openDirectory'] });
     return filePaths[0] || null;
 });
+ipcMain.handle('get-clipboard-history', () => ClipboardMonitor.history);
 ipcMain.handle('search-all', (event, query) => {
     const fileResults = FileIndexer.search(query);
     const q = String(query || '').toLowerCase();
