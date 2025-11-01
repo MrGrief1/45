@@ -18,7 +18,9 @@
                         <i data-feather="search" class="icon search-icon"></i>
                         <input type="text" id="search-input" placeholder="FlashSearch" autofocus>
                     </div>
-                    <div id="quick-action-bar" class="quick-action-bar" aria-label="Quick actions" role="toolbar">
+                </div>
+                <div id="quick-action-shell" class="quick-action-shell" aria-label="Quick actions" role="toolbar">
+                    <div id="quick-action-bar" class="quick-action-bar">
                         <!-- Buttons rendered dynamically -->
                     </div>
                 </div>
@@ -382,9 +384,9 @@
         </div>
 
     </div>
-    <div id="quick-action-builder-modal" class="quick-action-builder-modal" aria-hidden="true">
+    <div id="quick-action-builder-modal" class="quick-action-builder-modal" aria-hidden="true" tabindex="-1">
         <div class="builder-backdrop"></div>
-        <div class="builder-dialog" role="dialog" aria-modal="true" aria-labelledby="quick-action-builder-title">
+        <div class="builder-dialog" role="dialog" aria-modal="true" aria-labelledby="quick-action-builder-title" tabindex="-1">
             <header class="builder-dialog-header">
                 <div class="builder-title-group">
                     <h2 id="quick-action-builder-title">Quick action studio</h2>
@@ -462,6 +464,9 @@
                     <button id="builder-save-action" class="settings-button">Add to quick action bar</button>
                 </div>
             </footer>
+            <div class="builder-resize-handle builder-resize-handle-e" data-direction="e" aria-hidden="true"></div>
+            <div class="builder-resize-handle builder-resize-handle-s" data-direction="s" aria-hidden="true"></div>
+            <div class="builder-resize-handle builder-resize-handle-se" data-direction="se" aria-hidden="true"></div>
         </div>
     </div>
 

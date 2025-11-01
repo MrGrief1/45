@@ -66,6 +66,22 @@ const Utils = {
         const b = parseInt(clean.slice(4, 6), 16);
         if ([r, g, b].some(Number.isNaN)) return null;
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    },
+
+    showToast: (message, options = {}) => {
+        if (!message || typeof document === 'undefined') return;
+        const duration = Math.max(1200, Number(options.duration) || 2400);
+        const toast = document.createElement('div');
+        toast.className = 'fs-toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        requestAnimationFrame(() => {
+            toast.classList.add('is-visible');
+        });
+        setTimeout(() => {
+            toast.classList.remove('is-visible');
+            setTimeout(() => toast.remove(), 220);
+        }, duration);
     }
 };
 
@@ -372,6 +388,596 @@ const QuickActionModuleDefinitions = [
             }
             return [clone];
         }
+    },
+    {
+        id: 'append-payload',
+        category: 'utility',
+        name: 'Append to payload',
+        description: 'Concatenate text to the existing payload value.',
+        icon: 'plus-circle',
+        accent: '#34d399',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { text: ' - extra text' },
+        form: [
+            { key: 'text', label: 'Text to append', type: 'textarea', rows: 3, placeholder: 'Add extra text to the payload' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const base = clone.payload == null ? '' : String(clone.payload);
+            clone.payload = base + (config?.text ?? '');
+            return [clone];
+        }
+    },
+    {
+        id: 'prepend-payload',
+        category: 'utility',
+        name: 'Prepend to payload',
+        description: 'Add text to the beginning of the payload value.',
+        icon: 'corner-left-up',
+        accent: '#f97316',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { text: '[prefix] ' },
+        form: [
+            { key: 'text', label: 'Text to prepend', type: 'text', placeholder: '[prefix] ' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const base = clone.payload == null ? '' : String(clone.payload);
+            clone.payload = (config?.text ?? '') + base;
+            return [clone];
+        }
+    },
+    {
+        id: 'trim-payload',
+        category: 'utility',
+        name: 'Trim payload',
+        description: 'Remove leading and trailing whitespace from the payload.',
+        icon: 'scissors',
+        accent: '#fb7185',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            if (clone.payload != null) {
+                clone.payload = String(clone.payload).trim();
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'uppercase-payload',
+        category: 'utility',
+        name: 'Uppercase payload',
+        description: 'Transform the payload to uppercase characters.',
+        icon: 'type',
+        accent: '#c084fc',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            if (clone.payload !== null && clone.payload !== undefined) {
+                clone.payload = String(clone.payload).toUpperCase();
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'lowercase-payload',
+        category: 'utility',
+        name: 'Lowercase payload',
+        description: 'Transform the payload to lowercase characters.',
+        icon: 'underline',
+        accent: '#60a5fa',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            if (clone.payload !== null && clone.payload !== undefined) {
+                clone.payload = String(clone.payload).toLowerCase();
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'set-variable',
+        category: 'utility',
+        name: 'Set variable',
+        description: 'Store a named value in the workflow context.',
+        icon: 'bookmark',
+        accent: '#facc15',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'status', value: 'ready' },
+        form: [
+            { key: 'key', label: 'Variable key', type: 'text', placeholder: 'status' },
+            { key: 'value', label: 'Stored value', type: 'textarea', rows: 2, placeholder: 'Ready' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = (config?.key || '').trim();
+            if (key) {
+                clone.vars[key] = config?.value ?? '';
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-from-variable',
+        category: 'utility',
+        name: 'Use variable as payload',
+        description: 'Load a stored variable into the payload.',
+        icon: 'download',
+        accent: '#38bdf8',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'status', fallback: '' },
+        form: [
+            { key: 'key', label: 'Variable key', type: 'text', placeholder: 'status' },
+            { key: 'fallback', label: 'Fallback if missing', type: 'text', placeholder: 'No value available' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = (config?.key || '').trim();
+            if (key) {
+                if (Object.prototype.hasOwnProperty.call(clone.vars, key)) {
+                    clone.payload = clone.vars[key];
+                } else if (config?.fallback !== undefined) {
+                    clone.payload = config.fallback;
+                }
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-length',
+        category: 'utility',
+        name: 'Measure payload',
+        description: 'Count characters or words in the payload.',
+        icon: 'hash',
+        accent: '#22d3ee',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'characters' },
+        form: [
+            {
+                key: 'mode',
+                label: 'Measurement',
+                type: 'select',
+                options: [
+                    { value: 'characters', label: 'Characters' },
+                    { value: 'words', label: 'Words' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const raw = clone.payload == null ? '' : String(clone.payload);
+            let count = raw.length;
+            if ((config?.mode || 'characters') === 'words') {
+                count = raw.trim() ? raw.trim().split(/\s+/).length : 0;
+            }
+            clone.payload = String(count);
+            clone.vars.lastPayloadCount = count;
+            return [clone];
+        }
+    },
+    {
+        id: 'round-number',
+        category: 'utility',
+        name: 'Round number',
+        description: 'Round the payload number to the specified decimals.',
+        icon: 'bar-chart-2',
+        accent: '#0ea5e9',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { decimals: 0 },
+        form: [
+            { key: 'decimals', label: 'Decimals', type: 'number', min: 0 }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const value = Number(clone.payload);
+            const decimals = Math.max(0, parseInt(config?.decimals, 10) || 0);
+            if (!Number.isNaN(value)) {
+                const factor = Math.pow(10, decimals);
+                clone.payload = String(Math.round(value * factor) / factor);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'append-log-entry',
+        category: 'utility',
+        name: 'Append log entry',
+        description: 'Record a note inside the workflow context log.',
+        icon: 'file-text',
+        accent: '#facc15',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { message: 'Step completed' },
+        form: [
+            { key: 'message', label: 'Log message', type: 'text', placeholder: 'Describe this step' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            if (!Array.isArray(clone.logs)) clone.logs = [];
+            if (config?.message) {
+                clone.logs.push({ message: config.message, timestamp: new Date().toISOString() });
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'set-search-query',
+        category: 'action',
+        name: 'Set search query',
+        description: 'Fill the FlashSearch input with prepared text.',
+        icon: 'search',
+        accent: '#38bdf8',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { query: 'Open notes', usePayload: 'no', autoSearch: 'yes' },
+        form: [
+            { key: 'query', label: 'Query text', type: 'text', placeholder: 'What should be searched?' },
+            {
+                key: 'usePayload',
+                label: 'Prefer payload value',
+                type: 'select',
+                options: [
+                    { value: 'yes', label: 'Yes' },
+                    { value: 'no', label: 'No' }
+                ]
+            },
+            {
+                key: 'autoSearch',
+                label: 'Trigger search',
+                type: 'select',
+                options: [
+                    { value: 'yes', label: 'Automatically' },
+                    { value: 'no', label: 'Only fill input' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const usePayload = (config?.usePayload || 'no') === 'yes';
+            const payloadValue = clone.payload != null ? String(clone.payload) : '';
+            const baseQuery = usePayload && payloadValue ? payloadValue : (config?.query || '');
+            const input = Utils.getElement('#search-input');
+            if (input) {
+                input.value = baseQuery;
+                if ((config?.autoSearch || 'yes') === 'yes') {
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                input.focus({ preventScroll: true });
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'toast-message',
+        category: 'action',
+        name: 'Show toast message',
+        description: 'Display a small confirmation inside FlashSearch.',
+        icon: 'message-circle',
+        accent: '#f472b6',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { message: 'Workflow completed', duration: 2400 },
+        form: [
+            { key: 'message', label: 'Toast message', type: 'textarea', rows: 2, placeholder: 'Workflow completed' },
+            { key: 'duration', label: 'Duration (ms)', type: 'number', min: 800 }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            if (config?.message) {
+                Utils.showToast(config.message, { duration: Number(config.duration) || 2400 });
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'titlecase-payload',
+        category: 'utility',
+        name: 'Title case payload',
+        description: 'Capitalize every word in the payload string.',
+        icon: 'bold',
+        accent: '#ef4444',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            if (clone.payload != null) {
+                const raw = String(clone.payload);
+                clone.payload = raw.replace(/\w\S*/g, word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'truncate-payload',
+        category: 'utility',
+        name: 'Truncate payload',
+        description: 'Limit the payload length and append a suffix.',
+        icon: 'scissors',
+        accent: '#fb923c',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { length: 60, suffix: '…' },
+        form: [
+            { key: 'length', label: 'Maximum length', type: 'number', min: 1 },
+            { key: 'suffix', label: 'Suffix', type: 'text', placeholder: '…' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const limit = Math.max(1, parseInt(config?.length, 10) || 1);
+            const suffix = config?.suffix ?? '';
+            const raw = clone.payload == null ? '' : String(clone.payload);
+            if (raw.length > limit) {
+                clone.payload = raw.slice(0, limit) + suffix;
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'replace-text',
+        category: 'utility',
+        name: 'Replace text',
+        description: 'Search and replace text within the payload.',
+        icon: 'repeat',
+        accent: '#a855f7',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { search: 'from', replace: 'to', sensitivity: 'sensitive' },
+        form: [
+            { key: 'search', label: 'Find text', type: 'text', placeholder: 'from' },
+            { key: 'replace', label: 'Replace with', type: 'text', placeholder: 'to' },
+            {
+                key: 'sensitivity',
+                label: 'Case sensitivity',
+                type: 'select',
+                options: [
+                    { value: 'sensitive', label: 'Match case' },
+                    { value: 'insensitive', label: 'Ignore case' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const search = config?.search ?? '';
+            const replace = config?.replace ?? '';
+            if (!search) return [clone];
+            const raw = clone.payload == null ? '' : String(clone.payload);
+            const escaped = search.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+            const flags = (config?.sensitivity || 'sensitive') === 'insensitive' ? 'gi' : 'g';
+            const pattern = new RegExp(escaped, flags);
+            clone.payload = raw.replace(pattern, replace);
+            return [clone];
+        }
+    },
+    {
+        id: 'json-parse-payload',
+        category: 'utility',
+        name: 'Parse JSON payload',
+        description: 'Parse the payload as JSON and store it as a variable.',
+        icon: 'code',
+        accent: '#2dd4bf',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'data', fallback: '{}' },
+        form: [
+            { key: 'key', label: 'Variable key', type: 'text', placeholder: 'data' },
+            { key: 'fallback', label: 'Fallback JSON', type: 'textarea', rows: 3, placeholder: '{ }' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = (config?.key || '').trim();
+            const payload = clone.payload == null ? '' : String(clone.payload);
+            if (!key || !payload) return [clone];
+            try {
+                clone.vars[key] = JSON.parse(payload);
+            } catch (error) {
+                try {
+                    clone.vars[key] = JSON.parse(config?.fallback || '{}');
+                } catch {
+                    clone.vars[key] = config?.fallback || '{}';
+                }
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'json-stringify-variable',
+        category: 'utility',
+        name: 'Stringify variable',
+        description: 'Convert a stored variable into a JSON string payload.',
+        icon: 'file-code',
+        accent: '#f59e0b',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'data', spacing: 2 },
+        form: [
+            { key: 'key', label: 'Variable key', type: 'text', placeholder: 'data' },
+            { key: 'spacing', label: 'JSON spacing', type: 'number', min: 0 }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = (config?.key || '').trim();
+            if (!key) return [clone];
+            const spacing = Math.max(0, parseInt(config?.spacing, 10) || 0);
+            try {
+                const serialized = JSON.stringify(clone.vars?.[key], null, spacing);
+                clone.payload = serialized ?? '';
+            } catch (error) {
+                clone.payload = '';
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'random-delay-range',
+        category: 'utility',
+        name: 'Random delay',
+        description: 'Pause for a random duration between the provided limits.',
+        icon: 'shuffle',
+        accent: '#22c55e',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { min: 200, max: 1200 },
+        form: [
+            { key: 'min', label: 'Minimum (ms)', type: 'number', min: 0 },
+            { key: 'max', label: 'Maximum (ms)', type: 'number', min: 1 }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const min = Math.max(0, parseInt(config?.min, 10) || 0);
+            const max = Math.max(min, parseInt(config?.max, 10) || min);
+            const delay = Math.floor(Math.random() * (max - min + 1)) + min;
+            if (delay > 0) {
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+            clone.vars.lastDelay = delay;
+            return [clone];
+        }
+    },
+    {
+        id: 'remember-payload',
+        category: 'utility',
+        name: 'Remember payload',
+        description: 'Append the current payload to a history array variable.',
+        icon: 'layers',
+        accent: '#94a3b8',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'history' },
+        form: [
+            { key: 'key', label: 'History key', type: 'text', placeholder: 'history' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = (config?.key || 'history').trim();
+            if (!key) return [clone];
+            if (!Array.isArray(clone.vars[key])) {
+                clone.vars[key] = [];
+            }
+            clone.vars[key].push(clone.payload);
+            return [clone];
+        }
+    },
+    {
+        id: 'clear-variable',
+        category: 'utility',
+        name: 'Clear variable',
+        description: 'Remove a variable from the workflow context.',
+        icon: 'trash-2',
+        accent: '#f87171',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'status' },
+        form: [
+            { key: 'key', label: 'Variable key', type: 'text', placeholder: 'status' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = (config?.key || '').trim();
+            if (key) {
+                delete clone.vars[key];
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'ensure-prefix',
+        category: 'utility',
+        name: 'Ensure prefix',
+        description: 'Ensure that the payload begins with a specific prefix.',
+        icon: 'corner-right-up',
+        accent: '#34d399',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { prefix: 'https://' },
+        form: [
+            { key: 'prefix', label: 'Required prefix', type: 'text', placeholder: 'https://' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const prefix = (config?.prefix || '').trim();
+            if (!prefix) return [clone];
+            const raw = clone.payload == null ? '' : String(clone.payload);
+            if (!raw.toLowerCase().startsWith(prefix.toLowerCase())) {
+                clone.payload = `${prefix}${raw}`;
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'ensure-number',
+        category: 'utility',
+        name: 'Ensure number',
+        description: 'Coerce the payload into a formatted numeric string.',
+        icon: 'percent',
+        accent: '#3b82f6',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { fallback: '0', decimals: 0 },
+        form: [
+            { key: 'fallback', label: 'Fallback value', type: 'text', placeholder: '0' },
+            { key: 'decimals', label: 'Decimals', type: 'number', min: 0 }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const decimals = Math.max(0, parseInt(config?.decimals, 10) || 0);
+            const fallback = config?.fallback ?? '0';
+            const numeric = Number(clone.payload);
+            if (Number.isNaN(numeric)) {
+                clone.payload = fallback;
+            } else {
+                clone.payload = numeric.toFixed(decimals);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'normalize-whitespace',
+        category: 'utility',
+        name: 'Normalize whitespace',
+        description: 'Collapse repeated whitespace characters within the payload.',
+        icon: 'align-left',
+        accent: '#6b7280',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            if (clone.payload != null) {
+                clone.payload = String(clone.payload).replace(/\s+/g, ' ').trim();
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'reverse-payload',
+        category: 'utility',
+        name: 'Reverse payload',
+        description: 'Reverse the characters of the payload string.',
+        icon: 'rotate-ccw',
+        accent: '#0ea5e9',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            if (clone.payload != null) {
+                clone.payload = String(clone.payload).split('').reverse().join('');
+            }
+            return [clone];
+        }
     }
 ];
 
@@ -607,10 +1213,12 @@ const QuickActionExecutor = {
 
 const QuickActionManager = {
     container: null,
+    shell: null,
 
     init() {
         QuickActionStore.ensureStructure();
         this.container = Utils.getElement('#quick-action-bar');
+        this.shell = Utils.getElement('#quick-action-shell');
         if (!this.container) return;
         this.container.addEventListener('click', (event) => this.handleClick(event));
         this.render();
@@ -624,10 +1232,12 @@ const QuickActionManager = {
 
         if (!activeIds.length) {
             this.container.setAttribute('data-empty-label', LocalizationRenderer.t('quick_actions_empty_bar') || 'Add quick actions in Settings');
+            this.updateShellState(true);
             return;
         }
 
         this.container.removeAttribute('data-empty-label');
+        this.updateShellState(false);
 
         activeIds.forEach(id => {
             const definition = QuickActionStore.getDefinition(id);
@@ -672,6 +1282,11 @@ const QuickActionManager = {
     }
 };
 
+QuickActionManager.updateShellState = function(isEmpty) {
+    if (!this.shell) return;
+    this.shell.classList.toggle('is-empty', Boolean(isEmpty));
+};
+
 const QuickActionLab = {
     initialized: false,
     builderState: null,
@@ -679,6 +1294,13 @@ const QuickActionLab = {
     connectionIdCounter: 0,
     boundDragMove: null,
     boundDragEnd: null,
+    boundResizeMove: null,
+    boundResizeEnd: null,
+    boundWindowResize: null,
+    resizeState: null,
+    dialogSize: null,
+    connectionFrame: null,
+    canvasResizeObserver: null,
 
     init() {
         if (this.initialized) return;
@@ -712,7 +1334,9 @@ const QuickActionLab = {
             actionLabelInput: Utils.getElement('#builder-action-label'),
             actionIconInput: Utils.getElement('#builder-action-icon'),
             actionColorInput: Utils.getElement('#builder-action-color'),
-            iconPreview: Utils.getElement('#builder-icon-preview')
+            iconPreview: Utils.getElement('#builder-icon-preview'),
+            dialog: Utils.getElement('#quick-action-builder-modal .builder-dialog'),
+            resizeHandles: Array.from(document.querySelectorAll('.builder-resize-handle'))
         };
 
         if (!this.elements.activeList) {
@@ -721,6 +1345,7 @@ const QuickActionLab = {
 
         QuickActionStore.ensureStructure();
         this.attachEvents();
+        this.setupCanvasObservers();
         this.initialized = true;
         this.renderAll();
     },
@@ -728,6 +1353,9 @@ const QuickActionLab = {
     attachEvents() {
         this.boundDragMove = (event) => this.handleNodeDrag(event);
         this.boundDragEnd = (event) => this.stopNodeDrag(event);
+        this.boundResizeMove = (event) => this.handleResize(event);
+        this.boundResizeEnd = (event) => this.stopResize(event);
+        this.boundWindowResize = () => this.handleWindowResize();
 
         this.elements.openBuilder?.addEventListener('click', () => this.openBuilder());
         this.elements.importToggle?.addEventListener('click', () => this.toggleImportArea(true));
@@ -775,6 +1403,119 @@ const QuickActionLab = {
                 this.selectNode(null);
             }
         });
+
+        this.elements.resizeHandles?.forEach(handle => {
+            handle.addEventListener('pointerdown', (event) => {
+                const direction = handle.getAttribute('data-direction');
+                this.startResize(direction, event);
+            });
+        });
+        window.addEventListener('resize', this.boundWindowResize);
+    },
+
+    setupCanvasObservers() {
+        if (!window.ResizeObserver) return;
+        if (this.canvasResizeObserver) {
+            this.canvasResizeObserver.disconnect();
+        }
+        if (!this.elements.canvas) return;
+        this.canvasResizeObserver = new ResizeObserver(() => {
+            this.queueConnectionRedraw();
+        });
+        this.canvasResizeObserver.observe(this.elements.canvas);
+    },
+
+    handleWindowResize() {
+        if (!this.elements.dialog) return;
+        if (!this.dialogSize) {
+            this.dialogSize = this.getDefaultDialogSize();
+        }
+        const clamped = this.clampDialogSize(this.dialogSize);
+        this.dialogSize = clamped;
+        this.applyDialogSize(clamped);
+        this.queueConnectionRedraw(true);
+    },
+
+    getDefaultDialogSize() {
+        const width = Math.min(1280, Math.max(920, Math.round(window.innerWidth * 0.84)));
+        const height = Math.min(880, Math.max(660, Math.round(window.innerHeight * 0.88)));
+        return { width, height };
+    },
+
+    clampDialogSize(size = {}) {
+        const minWidth = 880;
+        const minHeight = 620;
+        const maxWidth = Math.min(window.innerWidth - 48, 1600);
+        const maxHeight = Math.min(window.innerHeight - 48, 1100);
+        return {
+            width: Math.max(minWidth, Math.min(maxWidth, size.width || minWidth)),
+            height: Math.max(minHeight, Math.min(maxHeight, size.height || minHeight))
+        };
+    },
+
+    applyDialogSize(size = {}) {
+        if (!this.elements.dialog || !size.width || !size.height) return;
+        this.elements.dialog.style.width = `${Math.round(size.width)}px`;
+        this.elements.dialog.style.height = `${Math.round(size.height)}px`;
+    },
+
+    restoreDialogSize() {
+        const size = this.dialogSize ? this.clampDialogSize(this.dialogSize) : this.getDefaultDialogSize();
+        this.dialogSize = size;
+        this.applyDialogSize(size);
+    },
+
+    captureDialogSize() {
+        if (!this.elements.dialog) return;
+        const rect = this.elements.dialog.getBoundingClientRect();
+        this.dialogSize = this.clampDialogSize({ width: rect.width, height: rect.height });
+    },
+
+    startResize(direction, event) {
+        if (!direction || !this.elements.dialog) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const rect = this.elements.dialog.getBoundingClientRect();
+        this.resizeState = {
+            direction,
+            startX: event.clientX,
+            startY: event.clientY,
+            startWidth: rect.width,
+            startHeight: rect.height
+        };
+        this.dialogSize = this.clampDialogSize({ width: rect.width, height: rect.height });
+        window.addEventListener('pointermove', this.boundResizeMove);
+        window.addEventListener('pointerup', this.boundResizeEnd);
+    },
+
+    handleResize(event) {
+        if (!this.resizeState) return;
+        const { direction, startX, startY, startWidth, startHeight } = this.resizeState;
+        let width = startWidth;
+        let height = startHeight;
+        if (direction.includes('e')) {
+            width = startWidth + (event.clientX - startX);
+        }
+        if (direction.includes('s')) {
+            height = startHeight + (event.clientY - startY);
+        }
+        const clamped = this.clampDialogSize({ width, height });
+        this.applyDialogSize(clamped);
+        this.queueConnectionRedraw();
+    },
+
+    stopResize() {
+        window.removeEventListener('pointermove', this.boundResizeMove);
+        window.removeEventListener('pointerup', this.boundResizeEnd);
+        if (!this.resizeState) {
+            return;
+        }
+        const rect = this.elements.dialog?.getBoundingClientRect();
+        if (rect) {
+            this.dialogSize = this.clampDialogSize({ width: rect.width, height: rect.height });
+        }
+        this.resizeState = null;
+        this.queueConnectionRedraw(true);
     },
 
     renderAll() {
@@ -975,14 +1716,18 @@ const QuickActionLab = {
         }
 
         this.ensureManualNode();
+        this.restoreDialogSize();
         this.renderBuilder();
         this.updateIconPreview();
         this.elements.modal?.classList.add('active');
         this.elements.modal?.setAttribute('aria-hidden', 'false');
         this.elements.modal?.focus();
+        this.elements.dialog?.focus({ preventScroll: true });
     },
 
     closeBuilder() {
+        this.stopResize();
+        this.captureDialogSize();
         if (this.elements.modal) {
             this.elements.modal.classList.remove('active');
             this.elements.modal.setAttribute('aria-hidden', 'true');
@@ -1126,7 +1871,24 @@ const QuickActionLab = {
         });
 
         this.elements.emptyState?.classList.toggle('hidden', this.builderState.nodes.length > 1);
-        this.drawConnections();
+        this.queueConnectionRedraw(true);
+    },
+
+    queueConnectionRedraw(immediate = false) {
+        if (!this.elements?.connectionLayer) return;
+        if (immediate) {
+            if (this.connectionFrame) {
+                cancelAnimationFrame(this.connectionFrame);
+                this.connectionFrame = null;
+            }
+            this.drawConnections();
+            return;
+        }
+        if (this.connectionFrame) return;
+        this.connectionFrame = requestAnimationFrame(() => {
+            this.connectionFrame = null;
+            this.drawConnections();
+        });
     },
 
     drawConnections() {
@@ -1276,7 +2038,7 @@ const QuickActionLab = {
         if (nodeEl) {
             nodeEl.style.transform = `translate(${node.position.x}px, ${node.position.y}px)`;
         }
-        this.drawConnections();
+        this.queueConnectionRedraw();
     },
 
     stopNodeDrag() {
@@ -1284,6 +2046,7 @@ const QuickActionLab = {
         this.builderState.drag = null;
         window.removeEventListener('pointermove', this.boundDragMove);
         window.removeEventListener('pointerup', this.boundDragEnd);
+        this.queueConnectionRedraw(true);
     },
 
     handlePortClick(nodeId, portId, role, event) {
@@ -1323,13 +2086,13 @@ const QuickActionLab = {
             from: { nodeId: fromNodeId, portId: fromPortId },
             to: { nodeId: toNodeId, portId: toPortId }
         });
-        this.drawConnections();
+        this.queueConnectionRedraw(true);
     },
 
     removeConnection(connectionId) {
         if (!this.builderState) return;
         this.builderState.connections = this.builderState.connections.filter(connection => connection.id !== connectionId);
-        this.drawConnections();
+        this.queueConnectionRedraw(true);
     },
 
     removeNode(nodeId) {
@@ -2014,7 +2777,18 @@ const SearchModule = {
             if (query.length > 1) this.performSearch(query);
             else this.clearResults();
         }, 250);
-        if (searchInput) searchInput.addEventListener('input', (e) => debouncedSearch(e.target.value.trim()));
+        if (searchInput) {
+            searchInput.removeAttribute('disabled');
+            searchInput.removeAttribute('readonly');
+            searchInput.addEventListener('input', (e) => debouncedSearch(e.target.value.trim()));
+            const focusInput = () => {
+                if (document.activeElement !== searchInput) {
+                    searchInput.focus({ preventScroll: true });
+                }
+            };
+            searchInput.addEventListener('mousedown', focusInput);
+            searchInput.addEventListener('touchstart', focusInput, { passive: true });
+        }
         this.setupKeyboardNavigation();
     },
 
