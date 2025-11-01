@@ -13,27 +13,14 @@
         
         <div id="search-view" class="view active">
             <div id="main-layout">
-                <div id="search-box" class="glass-element">
-                    <i data-feather="search" class="icon search-icon"></i>
-                    <input type="text" id="search-input" placeholder="FlashSearch" autofocus>
-                </div>
-
-                <div id="action-buttons">
-                    <button class="action-button glass-element" data-window-type="apps-library" data-i18n-title="title_apps_library">
-                        <i data-feather="grid" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="files" data-i18n-title="title_files">
-                        <i data-feather="folder" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="commands" data-i18n-title="title_commands">
-                        <i data-feather="command" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="clipboard" data-i18n-title="title_clipboard">
-                        <i data-feather="copy" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element settings-gear" id="settings-button" data-i18n-title="context_settings">
-                        <i data-feather="settings" class="icon"></i>
-                    </button>
+                <div id="search-toolbar" class="glass-element">
+                    <div class="search-toolbar-field">
+                        <i data-feather="search" class="icon search-icon"></i>
+                        <input type="text" id="search-input" placeholder="FlashSearch" autofocus>
+                    </div>
+                    <div id="quick-action-buttons" class="quick-action-bar" role="toolbar" aria-label="Quick actions">
+                        <!-- Quick action buttons will be rendered by renderer.js -->
+                    </div>
                 </div>
             </div>
 
@@ -359,55 +346,26 @@
                                 </header>
                                 <div id="addon-gallery" class="addons-gallery"></div>
                             </section>
-                            <section class="settings-section-card addons-section">
+                            <section class="settings-section-card addons-section quick-actions-bridge">
                                 <header class="addons-section-header">
                                     <div>
-                                        <h3 data-i18n="addon_builder_title">Create your own add-on</h3>
-                                        <p data-i18n="addon_builder_intro">Build features from easy blocks—no coding required.</p>
+                                        <h3 data-i18n="quick_actions_bridge_title">Quick bar workspace</h3>
+                                        <p data-i18n="quick_actions_bridge_description">Curate the buttons beside the search bar and launch the studio for deeper customization.</p>
                                     </div>
                                 </header>
-                                <div class="addon-builder">
-                                    <div class="builder-column">
-                                        <h4 data-i18n="addon_builder_base_label">Choose a starting point</h4>
-                                        <div class="builder-base-options">
-                                            <button type="button" class="builder-base-option active" data-base="clipboard">
-                                                <i data-feather="clipboard"></i>
-                                                <span data-i18n="addon_base_clipboard">Clipboard buffer</span>
-                                                <small data-i18n="addon_base_clipboard_desc">Start from the classic clipboard layout.</small>
-                                            </button>
-                                            <button type="button" class="builder-base-option" data-base="note">
-                                                <i data-feather="edit-3"></i>
-                                                <span data-i18n="addon_base_note">Quick note</span>
-                                                <small data-i18n="addon_base_note_desc">Capture ideas and templates.</small>
-                                            </button>
-                                            <button type="button" class="builder-base-option" data-base="command">
-                                                <i data-feather="zap"></i>
-                                                <span data-i18n="addon_base_command">Quick command</span>
-                                                <small data-i18n="addon_base_command_desc">Trigger scripts or workflows.</small>
-                                            </button>
-                                        </div>
+                                <div class="quick-actions-bridge-body">
+                                    <div class="quick-actions-bridge-copy">
+                                        <p data-i18n="quick_actions_bridge_body">Use the Quick App Studio to assemble flows visually. Activate or remove quick actions to keep your workspace focused.</p>
+                                        <ul>
+                                            <li data-i18n="quick_actions_bridge_point1">Toggle which default tools appear next to search.</li>
+                                            <li data-i18n="quick_actions_bridge_point2">Promote your custom automations to instant-launch buttons.</li>
+                                            <li data-i18n="quick_actions_bridge_point3">Share blueprints with teammates via export files.</li>
+                                        </ul>
                                     </div>
-                                    <div class="builder-column">
-                                        <h4 data-i18n="addon_builder_blocks_label">Add building blocks</h4>
-                                        <div class="builder-controls">
-                                            <select id="builder-block-select">
-                                                <option value="" data-i18n="addon_builder_block_placeholder">Select block…</option>
-                                                <option value="clipboard-filter" data-i18n="addon_builder_blocks_clipboard_filter">Filter copied content</option>
-                                                <option value="text-replace" data-i18n="addon_builder_blocks_text_replace">Replace text automatically</option>
-                                                <option value="pin-items" data-i18n="addon_builder_blocks_pin_items">Pin favourite items</option>
-                                                <option value="sync" data-i18n="addon_builder_blocks_sync">Sync across devices</option>
-                                            </select>
-                                            <button type="button" id="builder-add-block" class="settings-button" data-i18n="addon_builder_add_block">Add block</button>
-                                            <button type="button" id="builder-reset" class="settings-button secondary" data-i18n="addon_builder_reset">Clear builder</button>
-                                        </div>
-                                        <div id="builder-stack" class="builder-stack"></div>
-                                        <div class="builder-form">
-                                            <label for="builder-addon-name" data-i18n="addon_builder_name_label">Name</label>
-                                            <input type="text" id="builder-addon-name" data-i18n-placeholder="addon_builder_name_placeholder" placeholder="Custom add-on">
-                                            <label for="builder-addon-description" data-i18n="addon_builder_description_label">Description</label>
-                                            <textarea id="builder-addon-description" data-i18n-placeholder="addon_builder_description_placeholder" placeholder="Explain what this add-on does..."></textarea>
-                                            <button type="button" id="builder-save-addon" class="settings-button" data-i18n="addon_builder_save">Save add-on</button>
-                                        </div>
+                                    <div class="quick-actions-bridge-controls">
+                                        <button id="open-quick-action-manager" class="settings-button" data-i18n="quick_actions_bridge_manage">Manage quick bar</button>
+                                        <button id="open-quick-app-studio" class="settings-button primary" data-i18n="quick_actions_bridge_launch">Launch Quick App Studio</button>
+                                        <button id="open-quick-actions-help" class="settings-button subtle" data-i18n="quick_actions_bridge_learn">Learn more</button>
                                     </div>
                                 </div>
                             </section>
@@ -425,9 +383,187 @@
                     </div>
                 </div>
             </div>
+
         </div>
 
+        <div id="quick-app-builder-view" class="view">
+            <div class="quick-app-builder-shell">
+                <header class="quick-app-builder-header glass-element">
+                    <div class="builder-header-primary">
+                        <button id="builder-back-button" class="builder-icon-button" title="Back to search" aria-label="Back to search">
+                            <i data-feather="arrow-left"></i>
+                        </button>
+                        <div class="builder-title-group">
+                            <h2 data-i18n="quick_app_builder_title">Quick App Studio</h2>
+                            <p data-i18n="quick_app_builder_subtitle">Assemble modules to create your custom quick action.</p>
+                        </div>
+                    </div>
+                    <div class="builder-header-actions">
+                        <button id="builder-preview-action" class="builder-pill-button" data-i18n="quick_app_builder_preview">Preview</button>
+                        <button id="builder-save-action" class="builder-pill-button primary" data-i18n="quick_app_builder_save">Add to quick actions</button>
+                    </div>
+                </header>
+                <div class="quick-app-builder-body">
+                    <aside class="builder-sidebar glass-element">
+                        <div class="sidebar-section">
+                            <div class="sidebar-section-header">
+                                <h3 data-i18n="quick_app_modules_title">Modules</h3>
+                                <button id="builder-collapse-sidebar" class="builder-icon-button" title="Collapse sidebar">
+                                    <i data-feather="chevron-left"></i>
+                                </button>
+                            </div>
+                            <div class="sidebar-search">
+                                <i data-feather="search"></i>
+                                <input type="text" id="builder-module-filter" data-i18n-placeholder="quick_app_modules_search" placeholder="Search modules">
+                            </div>
+                            <div id="builder-module-groups" class="sidebar-module-groups">
+                                <!-- Module groups rendered dynamically -->
+                            </div>
+                        </div>
+                        <div class="sidebar-section secondary">
+                            <h3 data-i18n="quick_app_templates_title">Blueprints</h3>
+                            <div id="builder-blueprints" class="sidebar-blueprints">
+                                <!-- Blueprint cards rendered dynamically -->
+                            </div>
+                        </div>
+                    </aside>
+                    <main class="builder-canvas-area">
+                        <div class="builder-canvas-toolbar glass-element">
+                            <div class="canvas-toolbar-left">
+                                <button class="builder-icon-button" id="builder-zoom-in" title="Zoom in">
+                                    <i data-feather="zoom-in"></i>
+                                </button>
+                                <button class="builder-icon-button" id="builder-zoom-out" title="Zoom out">
+                                    <i data-feather="zoom-out"></i>
+                                </button>
+                                <button class="builder-icon-button" id="builder-zoom-reset" title="Reset zoom">
+                                    <i data-feather="maximize-2"></i>
+                                </button>
+                                <div class="canvas-toolbar-divider"></div>
+                                <button class="builder-icon-button" id="builder-auto-layout" title="Auto layout">
+                                    <i data-feather="aperture"></i>
+                                </button>
+                                <button class="builder-icon-button" id="builder-run-test" title="Run test">
+                                    <i data-feather="play"></i>
+                                </button>
+                            </div>
+                            <div class="canvas-toolbar-right">
+                                <span id="builder-zoom-indicator">100%</span>
+                                <span class="canvas-status" id="builder-status-indicator" data-i18n="quick_app_status_idle">Idle</span>
+                            </div>
+                        </div>
+                        <div class="builder-canvas" id="builder-canvas" tabindex="0">
+                            <svg id="builder-connection-layer"></svg>
+                            <div id="builder-nodes-layer" class="builder-nodes-layer"></div>
+                            <div id="builder-empty-state" class="builder-empty-state" data-i18n="quick_app_builder_empty_state">Drop a module to begin.</div>
+                        </div>
+                        <footer class="builder-timeline glass-element">
+                            <div class="timeline-header">
+                                <h4 data-i18n="quick_app_activity_log">Execution timeline</h4>
+                                <button class="builder-icon-button" id="builder-clear-log" title="Clear log">
+                                    <i data-feather="trash-2"></i>
+                                </button>
+                            </div>
+                            <div id="builder-log" class="builder-log"></div>
+                        </footer>
+                    </main>
+                    <aside class="builder-inspector glass-element">
+                        <div class="inspector-header">
+                            <h3 data-i18n="quick_app_inspector_title">Inspector</h3>
+                            <button class="builder-icon-button" id="builder-close-inspector" title="Close inspector">
+                                <i data-feather="x"></i>
+                            </button>
+                        </div>
+                        <div id="builder-inspector-content" class="inspector-content">
+                            <p data-i18n="quick_app_inspector_empty">Select a module to edit its configuration.</p>
+                        </div>
+                        <div class="inspector-footer">
+                            <button id="builder-duplicate-node" class="builder-pill-button" data-i18n="quick_app_duplicate_node">Duplicate</button>
+                            <button id="builder-delete-node" class="builder-pill-button danger" data-i18n="quick_app_delete_node">Delete</button>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <div id="quick-action-manager" class="quick-action-manager hidden" role="dialog" aria-modal="true" aria-labelledby="quick-action-manager-title">
+        <div class="quick-action-manager-dialog glass-element">
+            <header class="quick-action-manager-header">
+                <div class="manager-header-text">
+                    <h3 id="quick-action-manager-title" data-i18n="quick_action_manager_title">Quick bar manager</h3>
+                    <p data-i18n="quick_action_manager_subtitle">Enable, arrange, and personalize the buttons that live beside search.</p>
+                </div>
+                <button id="quick-action-manager-close" class="builder-icon-button" aria-label="Close manager">
+                    <i data-feather="x"></i>
+                </button>
+            </header>
+            <div class="quick-action-manager-body">
+                <div class="manager-columns">
+                    <section class="manager-column">
+                        <h4 data-i18n="quick_action_manager_active">Active quick actions</h4>
+                        <p data-i18n="quick_action_manager_active_hint">Drag to reorder. Click the minus icon to remove an item.</p>
+                        <ul id="quick-action-active-list" class="quick-action-list" aria-label="Active quick actions"></ul>
+                        <div class="manager-column-footer">
+                            <button id="quick-action-reset-defaults" class="builder-pill-button subtle" data-i18n="quick_action_manager_reset">Restore defaults</button>
+                        </div>
+                    </section>
+                    <section class="manager-column">
+                        <h4 data-i18n="quick_action_manager_available">Available actions</h4>
+                        <p data-i18n="quick_action_manager_available_hint">Toggle to add an item to the quick bar.</p>
+                        <div id="quick-action-available-list" class="quick-action-available"></div>
+                        <div class="manager-column-footer">
+                            <button id="quick-action-import" class="builder-pill-button" data-i18n="quick_action_manager_import">Import blueprint</button>
+                            <button id="quick-action-export" class="builder-pill-button" data-i18n="quick_action_manager_export">Export selection</button>
+                        </div>
+                    </section>
+                    <section class="manager-column">
+                        <h4 data-i18n="quick_action_manager_details">Details</h4>
+                        <div id="quick-action-detail" class="quick-action-detail"></div>
+                        <div class="manager-column-footer">
+                            <button id="quick-action-create" class="builder-pill-button primary" data-i18n="quick_action_manager_create">Design new quick app</button>
+                        </div>
+                    </section>
+                </div>
+            </div>
+            <footer class="quick-action-manager-footer">
+                <div class="manager-status" id="quick-action-manager-status" data-i18n="quick_action_manager_status_ready">Ready</div>
+                <div class="manager-footer-actions">
+                    <button id="quick-action-manager-cancel" class="builder-pill-button subtle" data-i18n="quick_action_manager_cancel">Cancel</button>
+                    <button id="quick-action-manager-apply" class="builder-pill-button primary" data-i18n="quick_action_manager_apply">Apply changes</button>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <div id="quick-actions-help" class="quick-actions-help hidden" role="dialog" aria-modal="true" aria-labelledby="quick-actions-help-title">
+        <div class="quick-actions-help-dialog glass-element">
+            <header class="quick-actions-help-header">
+                <h3 id="quick-actions-help-title" data-i18n="quick_actions_help_title">Quick actions overview</h3>
+                <button id="quick-actions-help-close" class="builder-icon-button" aria-label="Close help">
+                    <i data-feather="x"></i>
+                </button>
+            </header>
+            <div class="quick-actions-help-body">
+                <article>
+                    <h4 data-i18n="quick_actions_help_layout_title">Workspace anatomy</h4>
+                    <p data-i18n="quick_actions_help_layout_body">The quick bar sits to the right of the global search field. Each button can launch an app, toggle a panel, or run a full automation.</p>
+                    <h4 data-i18n="quick_actions_help_builder_title">Designing flows</h4>
+                    <p data-i18n="quick_actions_help_builder_body">Quick App Studio offers drag-and-drop modules, responsive zoom, branching conditions, and live testing. Save your blueprint to instantly spawn a button.</p>
+                    <h4 data-i18n="quick_actions_help_tips_title">Tips</h4>
+                    <ul>
+                        <li data-i18n="quick_actions_help_tip1">Group related actions by colour and emoji for faster recognition.</li>
+                        <li data-i18n="quick_actions_help_tip2">Use the timeline to trace automation runs before publishing.</li>
+                        <li data-i18n="quick_actions_help_tip3">Export blueprints to share quick apps with your organisation.</li>
+                    </ul>
+                </article>
+            </div>
+            <footer class="quick-actions-help-footer">
+                <button id="quick-actions-help-open-studio" class="builder-pill-button primary" data-i18n="quick_actions_help_launch">Open Quick App Studio</button>
+            </footer>
+        </div>
+    </div>
+
     <script>
       // Инициализация иконок Feather Icons (необходима для отображения)
       if (window.feather) {
@@ -453,6 +589,7 @@
     <div id="pinned-context-menu" class="pinned-context-menu" role="menu">
         <button type="button" data-action="create-folder" data-i18n="context_create_folder">Create Folder</button>
     </div>
+    <script src="workflow-designer.js"></script>
     <script src="renderer.js"></script>
 </body>
 </html>

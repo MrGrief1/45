@@ -108,48 +108,330 @@ const SubscriptionFeatureLabels = {
     default: 'subscription_feature_default'
 };
 
-const AddonLibrary = [
+const QuickActionLibrary = [
     {
-        id: 'clipboard-buffer',
-        type: 'library',
-        icon: 'clipboard',
-        base: 'clipboard',
-        nameKey: 'addon_library_clipboard_name',
-        descriptionKey: 'addon_library_clipboard_description',
-        blocks: ['clipboard-filter', 'pin-items']
+        id: 'apps-library',
+        kind: 'panel',
+        icon: 'grid',
+        accentColor: '#6c63ff',
+        labelKey: 'quick_action_apps_title',
+        descriptionKey: 'quick_action_apps_description',
+        defaultEnabled: true,
+        handler: { type: 'panel', target: 'apps-library' },
+        tags: ['navigation', 'panel', 'system']
     },
     {
-        id: 'note-canvas',
-        type: 'library',
-        icon: 'edit-3',
-        base: 'note',
-        nameKey: 'addon_library_note_name',
-        descriptionKey: 'addon_library_note_description',
-        blocks: ['text-replace']
+        id: 'files',
+        kind: 'panel',
+        icon: 'folder',
+        accentColor: '#44b4ff',
+        labelKey: 'quick_action_files_title',
+        descriptionKey: 'quick_action_files_description',
+        defaultEnabled: true,
+        handler: { type: 'panel', target: 'files' },
+        tags: ['productivity', 'panel', 'system']
     },
     {
-        id: 'workflow-launcher',
-        type: 'library',
-        icon: 'zap',
-        base: 'command',
-        nameKey: 'addon_library_command_name',
-        descriptionKey: 'addon_library_command_description',
-        blocks: ['pin-items', 'sync']
+        id: 'commands',
+        kind: 'panel',
+        icon: 'command',
+        accentColor: '#ff8a65',
+        labelKey: 'quick_action_commands_title',
+        descriptionKey: 'quick_action_commands_description',
+        defaultEnabled: true,
+        handler: { type: 'panel', target: 'commands' },
+        tags: ['automation', 'panel', 'system']
+    },
+    {
+        id: 'clipboard',
+        kind: 'panel',
+        icon: 'copy',
+        accentColor: '#61d6ad',
+        labelKey: 'quick_action_clipboard_title',
+        descriptionKey: 'quick_action_clipboard_description',
+        defaultEnabled: true,
+        handler: { type: 'panel', target: 'clipboard' },
+        tags: ['writing', 'panel', 'system']
+    },
+    {
+        id: 'focus-mode',
+        kind: 'command',
+        icon: 'moon',
+        accentColor: '#8b5cf6',
+        labelKey: 'quick_action_focus_title',
+        descriptionKey: 'quick_action_focus_description',
+        defaultEnabled: false,
+        handler: { type: 'command', command: 'toggle-focus' },
+        tags: ['automation', 'desktop']
+    },
+    {
+        id: 'quick-notes',
+        kind: 'panel',
+        icon: 'file-text',
+        accentColor: '#f6c344',
+        labelKey: 'quick_action_notes_title',
+        descriptionKey: 'quick_action_notes_description',
+        defaultEnabled: false,
+        handler: { type: 'panel', target: 'notes' },
+        tags: ['writing', 'panel']
+    },
+    {
+        id: 'quick-app-studio',
+        kind: 'view',
+        icon: 'cpu',
+        accentColor: '#00d4ff',
+        labelKey: 'quick_action_studio_title',
+        descriptionKey: 'quick_action_studio_description',
+        defaultEnabled: true,
+        handler: { type: 'view', target: 'quick-app-builder' },
+        badgeKey: 'quick_action_badge_new',
+        tags: ['builder', 'automation']
+    },
+    {
+        id: 'settings',
+        kind: 'view',
+        icon: 'settings',
+        accentColor: '#f06292',
+        labelKey: 'quick_action_settings_title',
+        descriptionKey: 'quick_action_settings_description',
+        defaultEnabled: true,
+        handler: { type: 'view', target: 'settings' },
+        tags: ['system']
     }
 ];
 
-const AddonBuilderBases = [
-    { id: 'clipboard', icon: 'clipboard', nameKey: 'addon_base_clipboard', descriptionKey: 'addon_base_clipboard_desc' },
-    { id: 'note', icon: 'edit-3', nameKey: 'addon_base_note', descriptionKey: 'addon_base_note_desc' },
-    { id: 'command', icon: 'zap', nameKey: 'addon_base_command', descriptionKey: 'addon_base_command_desc' }
+const QuickActionBlueprints = [
+    {
+        id: 'blueprint-lead-capture',
+        icon: 'zap',
+        accentColor: '#ff6584',
+        nameKey: 'quick_blueprint_lead_name',
+        descriptionKey: 'quick_blueprint_lead_description',
+        difficulty: 'intermediate',
+        estimatedTime: 6,
+        workflow: {
+            trigger: { module: 'trigger-google-sheets', config: { pollInterval: 900 } },
+            nodes: [
+                { id: 'format-message', module: 'action-format-text', position: { x: 340, y: 160 } },
+                { id: 'route-priority', module: 'logic-branch', position: { x: 620, y: 160 }, config: { conditions: [{ field: 'budget', operator: '>=', value: 1500 }] } },
+                { id: 'notify-slack', module: 'integration-slack', position: { x: 900, y: 60 }, config: { channel: '#sales' } },
+                { id: 'notify-email', module: 'integration-email', position: { x: 900, y: 260 }, config: { template: 'lead-nurture' } }
+            ],
+            connections: [
+                { source: { node: 'trigger', port: 'out' }, target: { node: 'format-message', port: 'in' } },
+                { source: { node: 'format-message', port: 'success' }, target: { node: 'route-priority', port: 'in' } },
+                { source: { node: 'route-priority', port: 'branch-0' }, target: { node: 'notify-slack', port: 'in' } },
+                { source: { node: 'route-priority', port: 'fallback' }, target: { node: 'notify-email', port: 'in' } }
+            ]
+        }
+    },
+    {
+        id: 'blueprint-daily-briefing',
+        icon: 'sunrise',
+        accentColor: '#ffcf70',
+        nameKey: 'quick_blueprint_briefing_name',
+        descriptionKey: 'quick_blueprint_briefing_description',
+        difficulty: 'beginner',
+        estimatedTime: 4,
+        workflow: {
+            trigger: { module: 'trigger-schedule', config: { cron: '0 8 * * *' } },
+            nodes: [
+                { id: 'fetch-weather', module: 'integration-weather', position: { x: 360, y: 120 } },
+                { id: 'fetch-tasks', module: 'integration-task-manager', position: { x: 360, y: 260 } },
+                { id: 'compose-brief', module: 'action-combine-text', position: { x: 640, y: 180 } },
+                { id: 'send-brief', module: 'integration-email', position: { x: 920, y: 180 }, config: { subject: 'Daily briefing', recipients: ['me@company.com'] } }
+            ],
+            connections: [
+                { source: { node: 'trigger', port: 'out' }, target: { node: 'fetch-weather', port: 'in' } },
+                { source: { node: 'trigger', port: 'out' }, target: { node: 'fetch-tasks', port: 'in' } },
+                { source: { node: 'fetch-weather', port: 'success' }, target: { node: 'compose-brief', port: 'slot-1' } },
+                { source: { node: 'fetch-tasks', port: 'success' }, target: { node: 'compose-brief', port: 'slot-2' } },
+                { source: { node: 'compose-brief', port: 'success' }, target: { node: 'send-brief', port: 'in' } }
+            ]
+        }
+    },
+    {
+        id: 'blueprint-content-calendar',
+        icon: 'calendar',
+        accentColor: '#4fd1c5',
+        nameKey: 'quick_blueprint_calendar_name',
+        descriptionKey: 'quick_blueprint_calendar_description',
+        difficulty: 'advanced',
+        estimatedTime: 9,
+        workflow: {
+            trigger: { module: 'trigger-manual', config: {} },
+            nodes: [
+                { id: 'gather-ideas', module: 'integration-notion', position: { x: 360, y: 80 } },
+                { id: 'score-ideas', module: 'logic-score', position: { x: 640, y: 80 } },
+                { id: 'choose-format', module: 'logic-branch', position: { x: 920, y: 80 }, config: { conditions: [{ field: 'score', operator: '>=', value: 75 }] } },
+                { id: 'schedule-post', module: 'integration-social', position: { x: 1200, y: 40 }, config: { platform: 'twitter' } },
+                { id: 'queue-newsletter', module: 'integration-email', position: { x: 1200, y: 200 }, config: { list: 'newsletter' } }
+            ],
+            connections: [
+                { source: { node: 'trigger', port: 'out' }, target: { node: 'gather-ideas', port: 'in' } },
+                { source: { node: 'gather-ideas', port: 'success' }, target: { node: 'score-ideas', port: 'in' } },
+                { source: { node: 'score-ideas', port: 'success' }, target: { node: 'choose-format', port: 'in' } },
+                { source: { node: 'choose-format', port: 'branch-0' }, target: { node: 'schedule-post', port: 'in' } },
+                { source: { node: 'choose-format', port: 'fallback' }, target: { node: 'queue-newsletter', port: 'in' } }
+            ]
+        }
+    }
 ];
 
-const AddonBuilderBlocks = [
-    { id: 'clipboard-filter', icon: 'filter', nameKey: 'addon_builder_blocks_clipboard_filter', descriptionKey: 'addon_builder_blocks_clipboard_filter_desc' },
-    { id: 'text-replace', icon: 'repeat', nameKey: 'addon_builder_blocks_text_replace', descriptionKey: 'addon_builder_blocks_text_replace_desc' },
-    { id: 'pin-items', icon: 'bookmark', nameKey: 'addon_builder_blocks_pin_items', descriptionKey: 'addon_builder_blocks_pin_items_desc' },
-    { id: 'sync', icon: 'cloud', nameKey: 'addon_builder_blocks_sync', descriptionKey: 'addon_builder_blocks_sync_desc' }
-];
+const QuickAppModuleCatalog = {
+    triggers: [
+        {
+            id: 'trigger-manual',
+            icon: 'play-circle',
+            labelKey: 'quick_module_trigger_manual',
+            descriptionKey: 'quick_module_trigger_manual_description',
+            category: 'core',
+            ports: { outputs: ['out'] },
+            defaultConfig: {}
+        },
+        {
+            id: 'trigger-schedule',
+            icon: 'clock',
+            labelKey: 'quick_module_trigger_schedule',
+            descriptionKey: 'quick_module_trigger_schedule_description',
+            category: 'time',
+            ports: { outputs: ['out'] },
+            defaultConfig: { cron: '0 9 * * 1-5' }
+        },
+        {
+            id: 'trigger-google-sheets',
+            icon: 'grid',
+            labelKey: 'quick_module_trigger_sheets',
+            descriptionKey: 'quick_module_trigger_sheets_description',
+            category: 'data',
+            ports: { outputs: ['out'] },
+            defaultConfig: { pollInterval: 600 }
+        },
+        {
+            id: 'trigger-webhook',
+            icon: 'globe',
+            labelKey: 'quick_module_trigger_webhook',
+            descriptionKey: 'quick_module_trigger_webhook_description',
+            category: 'integrations',
+            ports: { outputs: ['out'] },
+            defaultConfig: { method: 'POST', endpoint: '/flashsearch/hook' }
+        }
+    ],
+    actions: [
+        {
+            id: 'action-format-text',
+            icon: 'type',
+            labelKey: 'quick_module_action_format',
+            descriptionKey: 'quick_module_action_format_description',
+            category: 'text',
+            ports: { inputs: ['in'], outputs: ['success'] },
+            defaultConfig: { template: 'Hello {{name}}' }
+        },
+        {
+            id: 'action-combine-text',
+            icon: 'layers',
+            labelKey: 'quick_module_action_combine',
+            descriptionKey: 'quick_module_action_combine_description',
+            category: 'text',
+            ports: { inputs: ['slot-1', 'slot-2', 'slot-3'], outputs: ['success'] },
+            defaultConfig: { joiner: '\n\n' }
+        },
+        {
+            id: 'action-extract-entities',
+            icon: 'target',
+            labelKey: 'quick_module_action_extract',
+            descriptionKey: 'quick_module_action_extract_description',
+            category: 'ai',
+            ports: { inputs: ['in'], outputs: ['success', 'fallback'] },
+            defaultConfig: { entities: ['company', 'budget'] }
+        }
+    ],
+    logic: [
+        {
+            id: 'logic-branch',
+            icon: 'git-branch',
+            labelKey: 'quick_module_logic_branch',
+            descriptionKey: 'quick_module_logic_branch_description',
+            category: 'logic',
+            ports: { inputs: ['in'], outputs: ['branch-0', 'branch-1', 'fallback'] },
+            defaultConfig: { conditions: [] }
+        },
+        {
+            id: 'logic-score',
+            icon: 'activity',
+            labelKey: 'quick_module_logic_score',
+            descriptionKey: 'quick_module_logic_score_description',
+            category: 'logic',
+            ports: { inputs: ['in'], outputs: ['success'] },
+            defaultConfig: { rules: [] }
+        },
+        {
+            id: 'logic-delay',
+            icon: 'clock',
+            labelKey: 'quick_module_logic_delay',
+            descriptionKey: 'quick_module_logic_delay_description',
+            category: 'time',
+            ports: { inputs: ['in'], outputs: ['success'] },
+            defaultConfig: { duration: 5, unit: 'minutes' }
+        }
+    ],
+    integrations: [
+        {
+            id: 'integration-slack',
+            icon: 'slack',
+            labelKey: 'quick_module_integration_slack',
+            descriptionKey: 'quick_module_integration_slack_description',
+            category: 'communication',
+            ports: { inputs: ['in'], outputs: ['success', 'error'] },
+            defaultConfig: { channel: '#general' }
+        },
+        {
+            id: 'integration-email',
+            icon: 'send',
+            labelKey: 'quick_module_integration_email',
+            descriptionKey: 'quick_module_integration_email_description',
+            category: 'communication',
+            ports: { inputs: ['in'], outputs: ['success', 'error'] },
+            defaultConfig: { recipients: [], subject: '', template: '' }
+        },
+        {
+            id: 'integration-task-manager',
+            icon: 'check-square',
+            labelKey: 'quick_module_integration_tasks',
+            descriptionKey: 'quick_module_integration_tasks_description',
+            category: 'productivity',
+            ports: { inputs: ['in'], outputs: ['success'] },
+            defaultConfig: { project: 'Inbox' }
+        },
+        {
+            id: 'integration-weather',
+            icon: 'cloud-rain',
+            labelKey: 'quick_module_integration_weather',
+            descriptionKey: 'quick_module_integration_weather_description',
+            category: 'data',
+            ports: { inputs: ['in'], outputs: ['success'] },
+            defaultConfig: { city: 'San Francisco' }
+        },
+        {
+            id: 'integration-social',
+            icon: 'share-2',
+            labelKey: 'quick_module_integration_social',
+            descriptionKey: 'quick_module_integration_social_description',
+            category: 'marketing',
+            ports: { inputs: ['in'], outputs: ['success', 'error'] },
+            defaultConfig: { platform: 'twitter', queue: 'default' }
+        },
+        {
+            id: 'integration-notion',
+            icon: 'book-open',
+            labelKey: 'quick_module_integration_notion',
+            descriptionKey: 'quick_module_integration_notion_description',
+            category: 'knowledge',
+            ports: { inputs: ['in'], outputs: ['success'] },
+            defaultConfig: { database: 'Content ideas' }
+        }
+    ]
+};
 
 // =================================================================================
 // === Система Локализации (Клиентская сторона) ===
@@ -194,21 +476,797 @@ const LocalizationRenderer = {
             SettingsModule.renderAutomations();
             SettingsModule.renderSubscription();
             SettingsModule.renderAddons();
-            SettingsModule.renderAddonBuilder();
+            SettingsModule.renderQuickActionBridge();
         }
     }
 };
 
 // =================================================================================
+// === Quick Action State & Registry ===
+// =================================================================================
+
+const QuickActionState = {
+    listeners: new Set(),
+
+    ensureDefaults: function() {
+        if (!Array.isArray(AppState.settings.activeAddons) || AppState.settings.activeAddons.length === 0) {
+            const defaults = QuickActionLibrary.filter(action => action.defaultEnabled).map(action => action.id);
+            this.setActiveList(defaults, { silent: false });
+        }
+        if (!Array.isArray(AppState.settings.customAddons)) {
+            AppState.settings.customAddons = [];
+            ipcRenderer.send('update-setting', 'customAddons', []);
+        }
+    },
+
+    subscribe: function(callback) {
+        if (typeof callback === 'function') {
+            this.listeners.add(callback);
+        }
+        return () => this.listeners.delete(callback);
+    },
+
+    notify: function(reason = 'state') {
+        this.listeners.forEach(listener => {
+            try { listener(reason); } catch (error) { console.error('QuickActionState listener failed', error); }
+        });
+    },
+
+    getActiveList: function() {
+        const raw = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
+        return Array.from(new Set(raw.filter(Boolean)));
+    },
+
+    getDefaultActiveList: function() {
+        return QuickActionLibrary.filter(action => action.defaultEnabled).map(action => action.id);
+    },
+
+    setActiveList: function(list, options = {}) {
+        const normalized = Array.from(new Set((Array.isArray(list) ? list : []).filter(Boolean)));
+        AppState.settings.activeAddons = normalized;
+        if (!options.silent) {
+            ipcRenderer.send('update-setting', 'activeAddons', normalized);
+        }
+        this.notify('active');
+    },
+
+    addToActive: function(actionId, options = {}) {
+        const current = this.getActiveList();
+        if (!current.includes(actionId)) {
+            current.push(actionId);
+            this.setActiveList(current, options);
+        }
+    },
+
+    removeFromActive: function(actionId, options = {}) {
+        const current = this.getActiveList().filter(id => id !== actionId);
+        this.setActiveList(current, options);
+    },
+
+    moveActive: function(actionId, newIndex, options = {}) {
+        const current = this.getActiveList();
+        const oldIndex = current.indexOf(actionId);
+        if (oldIndex === -1) return;
+        current.splice(oldIndex, 1);
+        current.splice(Math.max(0, Math.min(newIndex, current.length)), 0, actionId);
+        this.setActiveList(current, options);
+    },
+
+    getCustomActions: function() {
+        const custom = Array.isArray(AppState.settings.customAddons) ? AppState.settings.customAddons : [];
+        return custom.map(action => ({ ...action }));
+    },
+
+    setCustomActions: function(list, options = {}) {
+        const normalized = Array.isArray(list) ? list.map(item => ({ ...item })) : [];
+        AppState.settings.customAddons = normalized;
+        if (!options.silent) {
+            ipcRenderer.send('update-setting', 'customAddons', normalized);
+        }
+        this.notify('custom');
+    },
+
+    addCustomAction: function(action, options = {}) {
+        if (!action || typeof action !== 'object') return null;
+        const custom = this.getCustomActions();
+        const id = action.id || `quick-app-${Date.now()}`;
+        const payload = {
+            id,
+            name: action.name || LocalizationRenderer.t('quick_app_default_name'),
+            description: action.description || LocalizationRenderer.t('quick_app_default_description'),
+            icon: action.icon || 'cpu',
+            accentColor: action.accentColor || '#6366f1',
+            workflow: action.workflow || null,
+            handler: { type: 'workflow' }
+        };
+        custom.push(payload);
+        this.setCustomActions(custom, options);
+        this.addToActive(id, options);
+        return id;
+    },
+
+    deleteCustomAction: function(actionId, options = {}) {
+        const custom = this.getCustomActions().filter(action => action.id !== actionId);
+        this.setCustomActions(custom, options);
+        this.removeFromActive(actionId, options);
+    },
+
+    getAllDefinitions: function() {
+        const library = QuickActionLibrary.map(action => ({ ...action, type: 'library' }));
+        const custom = this.getCustomActions().map(action => ({ ...action, type: 'custom', handler: action.handler || { type: 'workflow' } }));
+        return [...library, ...custom];
+    },
+
+    getDefinition: function(actionId) {
+        if (!actionId) return null;
+        const libraryMatch = QuickActionLibrary.find(action => action.id === actionId);
+        if (libraryMatch) return { ...libraryMatch, type: 'library' };
+        const customMatch = this.getCustomActions().find(action => action.id === actionId);
+        if (customMatch) return { ...customMatch, type: 'custom', handler: customMatch.handler || { type: 'workflow' } };
+        return null;
+    },
+
+    getBlueprint: function(blueprintId) {
+        return QuickActionBlueprints.find(item => item.id === blueprintId) || null;
+    }
+};
+
+const ToastManager = {
+    element: null,
+    hideTimeout: null,
+
+    ensureElement: function() {
+        if (!this.element) {
+            this.element = document.createElement('div');
+            this.element.className = 'builder-toast';
+            document.body.appendChild(this.element);
+        }
+    },
+
+    show: function(message, options = {}) {
+        this.ensureElement();
+        if (!this.element) return;
+        this.element.textContent = message;
+        this.element.classList.add('visible');
+        clearTimeout(this.hideTimeout);
+        const duration = options.duration || 3200;
+        this.hideTimeout = setTimeout(() => this.hide(), duration);
+    },
+
+    hide: function() {
+        if (!this.element) return;
+        this.element.classList.remove('visible');
+    }
+};
+
+const QuickActionRegistry = {
+    execute: function(actionId, context = {}) {
+        const action = QuickActionState.getDefinition(actionId);
+        if (!action) {
+            ToastManager.show(LocalizationRenderer.t('quick_action_missing'));
+            return;
+        }
+        const handler = action.handler || { type: 'panel', target: actionId };
+        const runtimeContext = {
+            togglePanel: (panel) => AuxPanelManager.togglePanel(panel),
+            switchView: (view) => ViewManager.switchView(view),
+            showManager: () => QuickActionManagerUI.open(),
+            showToast: (message, options) => ToastManager.show(message, options),
+            runWorkflow: (definition, options) => WorkflowRuntime.execute(definition, options),
+            sendCommand: (command) => ipcRenderer.send('execute-quick-action-command', { id: actionId, command })
+        };
+        Object.assign(runtimeContext, context || {});
+
+        try {
+            switch (handler.type) {
+                case 'panel':
+                    runtimeContext.togglePanel(handler.target || actionId);
+                    break;
+                case 'view':
+                    runtimeContext.switchView(handler.target || 'search');
+                    break;
+                case 'command':
+                    runtimeContext.sendCommand(handler.command || actionId);
+                    runtimeContext.showToast(LocalizationRenderer.t('quick_action_command_sent', handler.command || actionId));
+                    break;
+                case 'workflow':
+                    runtimeContext.runWorkflow(action, { source: 'quick-action', onComplete: () => runtimeContext.showToast(LocalizationRenderer.t('quick_action_workflow_done', action.name || LocalizationRenderer.t(action.labelKey))) });
+                    break;
+                case 'manager':
+                    runtimeContext.showManager();
+                    break;
+                default:
+                    runtimeContext.togglePanel(handler.target || actionId);
+            }
+        } catch (error) {
+            console.error('Failed to execute quick action', actionId, error);
+            runtimeContext.showToast(LocalizationRenderer.t('quick_action_execution_error'));
+        }
+    }
+};
+
+const QuickActionBar = {
+    container: null,
+    managerButton: null,
+    unsubscribe: null,
+
+    init: function() {
+        this.container = Utils.getElement('#quick-action-buttons');
+        if (!this.container) return;
+        this.render();
+        this.unsubscribe = QuickActionState.subscribe(() => this.render());
+    },
+
+    dispose: function() {
+        if (typeof this.unsubscribe === 'function') this.unsubscribe();
+    },
+
+    render: function() {
+        if (!this.container) return;
+        this.container.innerHTML = '';
+        const active = QuickActionState.getActiveList();
+        if (active.length === 0) {
+            const empty = Utils.createElement('button', { className: 'quick-action-manager-trigger' });
+            empty.innerHTML = `<i data-feather="plus"></i>`;
+            empty.addEventListener('click', () => QuickActionManagerUI.open());
+            this.container.appendChild(empty);
+            if (window.feather) feather.replace();
+            return;
+        }
+
+        active.forEach(actionId => {
+            const definition = QuickActionState.getDefinition(actionId);
+            if (!definition) return;
+            const button = this.createButton(definition);
+            this.container.appendChild(button);
+        });
+
+        this.managerButton = Utils.createElement('button', { className: 'quick-action-manager-trigger', text: '' });
+        this.managerButton.innerHTML = `<i data-feather="plus"></i>`;
+        this.managerButton.title = LocalizationRenderer.t('quick_action_add_button');
+        this.managerButton.addEventListener('click', () => QuickActionManagerUI.open());
+        this.container.appendChild(this.managerButton);
+
+        if (window.feather) feather.replace();
+    },
+
+    createButton: function(action) {
+        const label = action.name ? action.name : LocalizationRenderer.t(action.labelKey);
+        const button = Utils.createElement('button', { className: 'quick-action-button', text: '' });
+        button.setAttribute('data-action-id', action.id);
+        button.innerHTML = `
+            <i data-feather="${action.icon || 'zap'}" class="icon"></i>
+            <span class="quick-action-label">${label}</span>
+        `;
+        if (action.badgeKey) {
+            const pill = Utils.createElement('span', { className: 'quick-action-pill', text: LocalizationRenderer.t(action.badgeKey) });
+            button.appendChild(pill);
+        }
+        if (action.accentColor) {
+            button.style.setProperty('--quick-action-accent', action.accentColor);
+        }
+        button.addEventListener('click', () => QuickActionRegistry.execute(action.id));
+        return button;
+    }
+};
+
+const QuickActionManagerUI = {
+    dialog: null,
+    overlay: null,
+    activeListEl: null,
+    availableListEl: null,
+    detailEl: null,
+    statusEl: null,
+    applyButton: null,
+    cancelButton: null,
+    selectedId: null,
+    draftActiveList: [],
+    dragSource: null,
+
+    init: function() {
+        this.overlay = Utils.getElement('#quick-action-manager');
+        if (!this.overlay) return;
+        this.dialog = this.overlay.querySelector('.quick-action-manager-dialog');
+        this.activeListEl = Utils.getElement('#quick-action-active-list');
+        this.availableListEl = Utils.getElement('#quick-action-available-list');
+        this.detailEl = Utils.getElement('#quick-action-detail');
+        this.statusEl = Utils.getElement('#quick-action-manager-status');
+        this.applyButton = Utils.getElement('#quick-action-manager-apply');
+        this.cancelButton = Utils.getElement('#quick-action-manager-cancel');
+
+        Utils.getElement('#quick-action-manager-close')?.addEventListener('click', () => this.close());
+        this.overlay.addEventListener('click', (event) => {
+            if (event.target === this.overlay) this.close();
+        });
+        this.cancelButton?.addEventListener('click', () => this.close());
+        this.applyButton?.addEventListener('click', () => this.applyChanges());
+        Utils.getElement('#quick-action-reset-defaults')?.addEventListener('click', () => this.resetToDefaults());
+        Utils.getElement('#quick-action-import')?.addEventListener('click', () => this.showComingSoon());
+        Utils.getElement('#quick-action-export')?.addEventListener('click', () => this.exportSelection());
+        Utils.getElement('#quick-action-create')?.addEventListener('click', () => this.createNewQuickApp());
+
+        const openButtons = [
+            Utils.getElement('#open-quick-action-manager'),
+            Utils.getElement('#quick-action-manager-button')
+        ].filter(Boolean);
+        openButtons.forEach(button => button.addEventListener('click', () => this.open()));
+
+        QuickActionState.subscribe(() => {
+            if (!this.isOpen()) return;
+            this.render();
+        });
+    },
+
+    isOpen: function() {
+        return this.overlay && !this.overlay.classList.contains('hidden');
+    },
+
+    open: function() {
+        if (!this.overlay) return;
+        this.draftActiveList = QuickActionState.getActiveList();
+        this.selectedId = this.draftActiveList[0] || QuickActionLibrary[0]?.id || null;
+        this.overlay.classList.remove('hidden');
+        this.render();
+        if (window.feather) feather.replace();
+    },
+
+    close: function() {
+        if (!this.overlay) return;
+        this.overlay.classList.add('hidden');
+        this.statusEl?.setAttribute('data-i18n', 'quick_action_manager_status_ready');
+        if (this.statusEl) this.statusEl.textContent = LocalizationRenderer.t('quick_action_manager_status_ready');
+    },
+
+    render: function() {
+        this.renderActiveList();
+        this.renderAvailableList();
+        this.renderDetail();
+        if (window.feather) feather.replace();
+    },
+
+    renderActiveList: function() {
+        if (!this.activeListEl) return;
+        this.activeListEl.innerHTML = '';
+        if (this.draftActiveList.length === 0) {
+            const empty = Utils.createElement('li', { className: 'addons-empty', text: LocalizationRenderer.t('quick_action_manager_empty') });
+            this.activeListEl.appendChild(empty);
+            return;
+        }
+
+        this.draftActiveList.forEach(actionId => {
+            const definition = QuickActionState.getDefinition(actionId);
+            if (!definition) return;
+            const item = Utils.createElement('li', { className: 'quick-action-list-item' });
+            item.setAttribute('data-action-id', actionId);
+            item.draggable = true;
+
+            const meta = Utils.createElement('div', { className: 'item-meta' });
+            meta.innerHTML = `<i data-feather="${definition.icon || 'zap'}" class="icon"></i>`;
+            const text = Utils.createElement('div');
+            const title = Utils.createElement('div', { className: 'item-title', text: definition.name || LocalizationRenderer.t(definition.labelKey) });
+            const subtitle = Utils.createElement('div', { className: 'item-subtitle', text: LocalizationRenderer.t(definition.descriptionKey || 'quick_action_no_description') });
+            text.appendChild(title);
+            text.appendChild(subtitle);
+            meta.appendChild(text);
+            item.appendChild(meta);
+
+            const remove = Utils.createElement('button', { className: 'quick-action-remove' });
+            remove.innerHTML = '<i data-feather="minus"></i>';
+            remove.addEventListener('click', () => {
+                this.draftActiveList = this.draftActiveList.filter(id => id !== actionId);
+                this.render();
+            });
+            item.appendChild(remove);
+
+            item.addEventListener('click', () => {
+                this.selectedId = actionId;
+                this.renderDetail();
+            });
+
+            item.addEventListener('dragstart', (event) => {
+                this.dragSource = actionId;
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', actionId);
+            });
+            item.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                item.classList.add('drag-over');
+            });
+            item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+            item.addEventListener('drop', (event) => {
+                event.preventDefault();
+                item.classList.remove('drag-over');
+                const sourceId = this.dragSource || event.dataTransfer.getData('text/plain');
+                const targetId = actionId;
+                if (!sourceId || !targetId || sourceId === targetId) return;
+                const sourceIndex = this.draftActiveList.indexOf(sourceId);
+                const targetIndex = this.draftActiveList.indexOf(targetId);
+                if (sourceIndex === -1 || targetIndex === -1) return;
+                this.draftActiveList.splice(sourceIndex, 1);
+                this.draftActiveList.splice(targetIndex, 0, sourceId);
+                this.renderActiveList();
+            });
+
+            this.activeListEl.appendChild(item);
+        });
+    },
+
+    renderAvailableList: function() {
+        if (!this.availableListEl) return;
+        this.availableListEl.innerHTML = '';
+        const activeSet = new Set(this.draftActiveList);
+        const definitions = QuickActionState.getAllDefinitions();
+
+        definitions.forEach(definition => {
+            const card = Utils.createElement('div', { className: 'available-card' });
+            const header = Utils.createElement('div', { className: 'available-card-header' });
+            header.innerHTML = `
+                <div class="available-card-title">
+                    <strong>${definition.name || LocalizationRenderer.t(definition.labelKey)}</strong>
+                    <div class="available-card-tags">${(definition.tags || []).map(tag => `#${tag}`).join(' ')}</div>
+                </div>
+            `;
+            const toggle = Utils.createElement('label', { className: 'toggle' });
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = activeSet.has(definition.id);
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) {
+                    this.draftActiveList.push(definition.id);
+                } else {
+                    this.draftActiveList = this.draftActiveList.filter(id => id !== definition.id);
+                }
+                this.render();
+            });
+            toggle.appendChild(checkbox);
+            toggle.appendChild(Utils.createElement('span', { text: LocalizationRenderer.t('quick_action_toggle_label') }));
+            header.appendChild(toggle);
+            card.appendChild(header);
+
+            const description = Utils.createElement('p', { text: LocalizationRenderer.t(definition.descriptionKey || 'quick_action_no_description') });
+            card.appendChild(description);
+
+            if (definition.type === 'custom') {
+                const footer = Utils.createElement('div', { className: 'manager-column-footer' });
+                const deleteBtn = Utils.createElement('button', { className: 'builder-pill-button danger', text: LocalizationRenderer.t('quick_action_delete_custom') });
+                deleteBtn.addEventListener('click', () => {
+                    if (window.confirm(LocalizationRenderer.t('quick_action_delete_confirm'))) {
+                        QuickActionState.deleteCustomAction(definition.id);
+                        this.draftActiveList = this.draftActiveList.filter(id => id !== definition.id);
+                        this.render();
+                    }
+                });
+                footer.appendChild(deleteBtn);
+                card.appendChild(footer);
+            }
+
+            card.addEventListener('click', () => {
+                this.selectedId = definition.id;
+                this.renderDetail();
+            });
+
+            this.availableListEl.appendChild(card);
+        });
+    },
+
+    renderDetail: function() {
+        if (!this.detailEl) return;
+        const definition = QuickActionState.getDefinition(this.selectedId) || QuickActionLibrary[0];
+        if (!definition) {
+            this.detailEl.innerHTML = `<p>${LocalizationRenderer.t('quick_action_no_selection')}</p>`;
+            return;
+        }
+
+        const label = definition.name || LocalizationRenderer.t(definition.labelKey);
+        const description = LocalizationRenderer.t(definition.descriptionKey || 'quick_action_no_description');
+        const handlerType = definition.handler?.type || 'panel';
+        const tags = (definition.tags || []).map(tag => `#${tag}`).join(' ');
+
+        this.detailEl.innerHTML = `
+            <div class="detail-heading">
+                <h5>${label}</h5>
+                <p>${description}</p>
+            </div>
+            <div class="detail-meta">
+                <p><strong>${LocalizationRenderer.t('quick_action_detail_type')}:</strong> ${handlerType}</p>
+                <p><strong>${LocalizationRenderer.t('quick_action_detail_tags')}:</strong> ${tags || '—'}</p>
+            </div>
+            <div class="detail-actions">
+                <button class="builder-pill-button" data-role="preview-action">${LocalizationRenderer.t('quick_action_preview')}</button>
+                <button class="builder-pill-button primary" data-role="launch-action">${LocalizationRenderer.t('quick_action_launch')}</button>
+            </div>
+        `;
+
+        this.detailEl.querySelector('[data-role="preview-action"]').addEventListener('click', () => {
+            if (definition.handler?.type === 'workflow') {
+                WorkflowRuntime.execute(definition, { source: 'preview', dryRun: true, onLogEntry: (entry) => this.appendStatus(entry.message) });
+            } else {
+                QuickActionRegistry.execute(definition.id, { showToast: (message) => this.appendStatus(message) });
+            }
+        });
+
+        this.detailEl.querySelector('[data-role="launch-action"]').addEventListener('click', () => QuickActionRegistry.execute(definition.id));
+    },
+
+    appendStatus: function(message) {
+        if (!this.statusEl) return;
+        this.statusEl.textContent = message;
+    },
+
+    applyChanges: function() {
+        QuickActionState.setActiveList(this.draftActiveList);
+        this.appendStatus(LocalizationRenderer.t('quick_action_manager_saved'));
+        this.close();
+    },
+
+    resetToDefaults: function() {
+        this.draftActiveList = QuickActionState.getDefaultActiveList();
+        this.render();
+        this.appendStatus(LocalizationRenderer.t('quick_action_manager_defaults'));
+    },
+
+    showComingSoon: function() {
+        ToastManager.show(LocalizationRenderer.t('quick_action_coming_soon'));
+    },
+
+    exportSelection: function() {
+        const payload = {
+            active: this.draftActiveList,
+            timestamp: Date.now()
+        };
+        ipcRenderer.send('export-quick-actions', payload);
+        this.appendStatus(LocalizationRenderer.t('quick_action_manager_exported'));
+    },
+
+    createNewQuickApp: function() {
+        this.close();
+        ViewManager.switchView('quick-app-builder');
+        QuickAppBuilderController.prepareNewBlueprint();
+    }
+};
+
+const QuickActionsHelp = {
+    overlay: null,
+
+    init: function() {
+        this.overlay = Utils.getElement('#quick-actions-help');
+        if (!this.overlay) return;
+        Utils.getElement('#open-quick-actions-help')?.addEventListener('click', () => this.open());
+        Utils.getElement('#quick-actions-help-close')?.addEventListener('click', () => this.close());
+        Utils.getElement('#quick-actions-help-open-studio')?.addEventListener('click', () => {
+            this.close();
+            ViewManager.switchView('quick-app-builder');
+        });
+        this.overlay.addEventListener('click', (event) => {
+            if (event.target === this.overlay) this.close();
+        });
+    },
+
+    open: function() {
+        if (!this.overlay) return;
+        this.overlay.classList.remove('hidden');
+    },
+
+    close: function() {
+        if (!this.overlay) return;
+        this.overlay.classList.add('hidden');
+    }
+};
+
+// =================================================================================
+// === Workflow Runtime ===
+// =================================================================================
+
+const WorkflowRuntime = {
+    execute: function(definition, options = {}) {
+        if (!definition || !definition.workflow) {
+            ToastManager.show(LocalizationRenderer.t('quick_action_missing_workflow'));
+            return;
+        }
+        const workflow = definition.workflow;
+        const runId = `run-${Date.now()}`;
+        const log = [];
+        const notifyLog = (entry) => {
+            log.push(entry);
+            if (typeof options.onLogEntry === 'function') options.onLogEntry(entry);
+            QuickAppBuilderController.appendLog(entry);
+        };
+
+        notifyLog({
+            runId,
+            level: 'info',
+            message: LocalizationRenderer.t('workflow_log_trigger_fired'),
+            timestamp: new Date().toISOString()
+        });
+
+        const adjacency = new Map();
+        (workflow.connections || []).forEach(connection => {
+            const sourceKey = `${connection.source.node}:${connection.source.port}`;
+            if (!adjacency.has(sourceKey)) adjacency.set(sourceKey, []);
+            adjacency.get(sourceKey).push(connection.target);
+        });
+
+        const queue = [{ node: 'trigger', port: 'out', payload: workflow.trigger?.config || {} }];
+        const visited = new Set();
+
+        while (queue.length > 0) {
+            const current = queue.shift();
+            const key = `${current.node}:${current.port}`;
+            if (visited.has(key)) continue;
+            visited.add(key);
+
+            const nextTargets = adjacency.get(key) || [];
+            nextTargets.forEach(target => {
+                notifyLog({
+                    runId,
+                    level: 'info',
+                    message: LocalizationRenderer.t('workflow_log_step', key, `${target.node}:${target.port}`),
+                    timestamp: new Date().toISOString()
+                });
+                queue.push({ node: target.node, port: target.port, payload: {} });
+            });
+        }
+
+        notifyLog({
+            runId,
+            level: 'success',
+            message: LocalizationRenderer.t('workflow_log_complete', definition.name || LocalizationRenderer.t(definition.labelKey)),
+            timestamp: new Date().toISOString()
+        });
+
+        if (typeof options.onComplete === 'function') options.onComplete(log);
+    }
+};
+
+// =================================================================================
+// === Quick App Builder Controller ===
+// =================================================================================
+
+const QuickAppBuilderController = {
+    view: null,
+    logContainer: null,
+    zoomIndicator: null,
+    statusIndicator: null,
+    designer: null,
+    currentBlueprint: null,
+
+    init: function() {
+        this.view = Utils.getElement('#quick-app-builder-view');
+        if (!this.view) return;
+        this.logContainer = Utils.getElement('#builder-log');
+        this.zoomIndicator = Utils.getElement('#builder-zoom-indicator');
+        this.statusIndicator = Utils.getElement('#builder-status-indicator');
+
+        const options = {
+            canvas: Utils.getElement('#builder-canvas'),
+            connectionLayer: Utils.getElement('#builder-connection-layer'),
+            nodesLayer: Utils.getElement('#builder-nodes-layer'),
+            moduleCatalog: QuickAppModuleCatalog,
+            moduleContainer: Utils.getElement('#builder-module-groups'),
+            blueprintContainer: Utils.getElement('#builder-blueprints'),
+            inspectorContainer: Utils.getElement('#builder-inspector-content'),
+            onSelectionChange: (node) => this.handleSelectionChange(node),
+            onStatusChange: (status) => this.updateStatus(status),
+            onZoomChange: (value) => this.updateZoom(value)
+        };
+
+        if (window.WorkflowDesigner) {
+            this.designer = new window.WorkflowDesigner(options);
+        }
+
+        Utils.getElement('#builder-back-button')?.addEventListener('click', () => ViewManager.switchView('search'));
+        Utils.getElement('#builder-clear-log')?.addEventListener('click', () => this.clearLog());
+        Utils.getElement('#builder-preview-action')?.addEventListener('click', () => this.previewWorkflow());
+        Utils.getElement('#builder-save-action')?.addEventListener('click', () => this.saveWorkflow());
+        Utils.getElement('#builder-run-test')?.addEventListener('click', () => this.previewWorkflow());
+        Utils.getElement('#builder-zoom-in')?.addEventListener('click', () => this.designer?.adjustZoom(0.1));
+        Utils.getElement('#builder-zoom-out')?.addEventListener('click', () => this.designer?.adjustZoom(-0.1));
+        Utils.getElement('#builder-zoom-reset')?.addEventListener('click', () => this.designer?.setZoom(1));
+        Utils.getElement('#builder-auto-layout')?.addEventListener('click', () => this.designer?.autoLayout());
+        Utils.getElement('#builder-collapse-sidebar')?.addEventListener('click', () => this.toggleSidebar());
+        Utils.getElement('#builder-close-inspector')?.addEventListener('click', () => this.designer?.clearSelection());
+        Utils.getElement('#builder-duplicate-node')?.addEventListener('click', () => this.designer?.duplicateSelection());
+        Utils.getElement('#builder-delete-node')?.addEventListener('click', () => this.designer?.deleteSelection());
+        Utils.getElement('#builder-module-filter')?.addEventListener('input', (event) => this.designer?.filterModules(event.target.value));
+    },
+
+    onEnter: function() {
+        this.updateStatus(LocalizationRenderer.t('quick_action_status_idle'));
+        this.designer?.refresh();
+        if (window.feather) feather.replace();
+    },
+
+    prepareNewBlueprint: function() {
+        this.currentBlueprint = null;
+        this.designer?.reset();
+        this.clearLog();
+        this.updateStatus(LocalizationRenderer.t('quick_app_builder_ready'));
+    },
+
+    loadBlueprint: function(blueprint) {
+        if (!blueprint) return;
+        this.currentBlueprint = blueprint;
+        this.designer?.loadBlueprint(blueprint);
+        this.clearLog();
+        this.updateStatus(LocalizationRenderer.t('quick_app_builder_blueprint_loaded', blueprint.name || LocalizationRenderer.t(blueprint.nameKey)));
+    },
+
+    previewWorkflow: function() {
+        const definition = this.designer?.exportWorkflow();
+        if (!definition || !definition.workflow) {
+            ToastManager.show(LocalizationRenderer.t('quick_app_builder_no_nodes'));
+            return;
+        }
+        WorkflowRuntime.execute(definition, {
+            source: 'builder-preview',
+            onLogEntry: (entry) => this.appendLog(entry)
+        });
+    },
+
+    saveWorkflow: function() {
+        const definition = this.designer?.exportWorkflow();
+        if (!definition || !definition.workflow) {
+            ToastManager.show(LocalizationRenderer.t('quick_app_builder_no_nodes'));
+            return;
+        }
+        const metadata = this.designer?.getMetadata();
+        const id = QuickActionState.addCustomAction({
+            name: metadata?.name,
+            description: metadata?.description,
+            icon: metadata?.icon,
+            accentColor: metadata?.accentColor,
+            workflow: definition.workflow
+        });
+        ToastManager.show(LocalizationRenderer.t('quick_app_builder_saved')); 
+        ViewManager.switchView('search');
+        QuickActionRegistry.execute(id);
+    },
+
+    handleSelectionChange: function(node) {
+        if (!node) {
+            Utils.getElement('#builder-inspector-content').innerHTML = `<p>${LocalizationRenderer.t('quick_app_inspector_empty')}</p>`;
+            return;
+        }
+        if (window.feather) feather.replace();
+    },
+
+    toggleSidebar: function() {
+        const sidebar = Utils.getElement('.builder-sidebar');
+        if (!sidebar) return;
+        sidebar.classList.toggle('collapsed');
+    },
+
+    updateStatus: function(status) {
+        if (!this.statusIndicator) return;
+        this.statusIndicator.textContent = status;
+    },
+
+    updateZoom: function(value) {
+        if (!this.zoomIndicator) return;
+        this.zoomIndicator.textContent = `${Math.round(value * 100)}%`;
+    },
+
+    appendLog: function(entry) {
+        if (!this.logContainer || !entry) return;
+        const row = Utils.createElement('div', { className: `builder-log-entry ${entry.level || 'info'}` });
+        const time = Utils.createElement('div', { className: 'log-time', text: new Date(entry.timestamp || Date.now()).toLocaleTimeString() });
+        const message = Utils.createElement('div', { className: 'log-status', text: entry.message });
+        row.appendChild(time);
+        row.appendChild(message);
+        this.logContainer.appendChild(row);
+        this.logContainer.scrollTop = this.logContainer.scrollHeight;
+    },
+
+    clearLog: function() {
+        if (!this.logContainer) return;
+        this.logContainer.innerHTML = '';
+    }
+};
+// =================================================================================
 // === Модуль Управления Настройками (UI) ===
 // =================================================================================
 // ... existing code ...
 const SettingsModule = {
-    builderState: {
-        base: 'clipboard',
-        blocks: []
-    },
-
     init: function() {
         this.setupEventListeners();
         this.setupTabs();
@@ -248,10 +1306,11 @@ const SettingsModule = {
         const activeAddonsList = Utils.getElement('#active-addons-list');
         if (activeAddonsList) {
             activeAddonsList.addEventListener('click', (event) => {
-                const removeButton = event.target.closest('[data-action="remove-addon"]');
+                const removeButton = event.target.closest('[data-action="remove-quick-action"]');
                 if (removeButton) {
-                    const addonId = removeButton.getAttribute('data-addon-id');
-                    this.removeActiveAddon(addonId);
+                    const actionId = removeButton.getAttribute('data-action-id');
+                    QuickActionState.removeFromActive(actionId);
+                    this.renderAddons();
                 }
             });
         }
@@ -259,63 +1318,38 @@ const SettingsModule = {
         const addonGallery = Utils.getElement('#addon-gallery');
         if (addonGallery) {
             addonGallery.addEventListener('click', (event) => {
-                const deleteButton = event.target.closest('[data-action="delete-custom-addon"]');
-                if (deleteButton) {
-                    const addonId = deleteButton.getAttribute('data-addon-id');
-                    this.deleteCustomAddon(addonId);
+                const addButton = event.target.closest('[data-action="add-quick-action"]');
+                if (addButton) {
+                    const actionId = addButton.getAttribute('data-action-id');
+                    QuickActionState.addToActive(actionId);
+                    this.renderAddons();
                     return;
                 }
-                const addButton = event.target.closest('[data-action="add-addon"]');
-                if (addButton) {
-                    const addonId = addButton.getAttribute('data-addon-id');
-                    this.addAddonFromGallery(addonId);
+                const deleteButton = event.target.closest('[data-action="delete-quick-action"]');
+                if (deleteButton) {
+                    const actionId = deleteButton.getAttribute('data-action-id');
+                    if (window.confirm(LocalizationRenderer.t('quick_action_delete_confirm'))) {
+                        QuickActionState.deleteCustomAction(actionId);
+                        this.renderAddons();
+                    }
+                    return;
+                }
+                const blueprintButton = event.target.closest('[data-action="open-blueprint"]');
+                if (blueprintButton) {
+                    const blueprintId = blueprintButton.getAttribute('data-blueprint-id');
+                    const blueprint = QuickActionState.getBlueprint(blueprintId);
+                    if (blueprint) {
+                        ViewManager.switchView('quick-app-builder');
+                        QuickAppBuilderController.loadBlueprint(blueprint);
+                    }
                 }
             });
         }
 
-        const builderStack = Utils.getElement('#builder-stack');
-        if (builderStack) {
-            builderStack.addEventListener('click', (event) => {
-                const removeBlock = event.target.closest('[data-action="remove-block"]');
-                if (removeBlock) {
-                    const index = parseInt(removeBlock.getAttribute('data-block-index'), 10);
-                    this.removeBuilderBlock(index);
-                }
-            });
-        }
-
-        Utils.getAllElements('.builder-base-option').forEach(button => {
-            button.addEventListener('click', () => {
-                const base = button.getAttribute('data-base');
-                if (!base) return;
-                this.builderState.base = base;
-                this.highlightBuilderBase();
-                this.renderBuilderStack();
-            });
+        Utils.getElement('#open-quick-app-studio')?.addEventListener('click', () => {
+            ViewManager.switchView('quick-app-builder');
+            QuickAppBuilderController.prepareNewBlueprint();
         });
-
-        const addBlockButton = Utils.getElement('#builder-add-block');
-        if (addBlockButton) {
-            addBlockButton.addEventListener('click', () => {
-                const select = Utils.getElement('#builder-block-select');
-                if (!select) return;
-                const blockId = select.value;
-                if (!blockId) return;
-                if (!AddonBuilderBlocks.some(block => block.id === blockId)) return;
-                this.builderState.blocks.push(blockId);
-                this.renderBuilderStack();
-            });
-        }
-
-        const resetBuilderButton = Utils.getElement('#builder-reset');
-        if (resetBuilderButton) {
-            resetBuilderButton.addEventListener('click', () => this.resetBuilder());
-        }
-
-        const saveAddonButton = Utils.getElement('#builder-save-addon');
-        if (saveAddonButton) {
-            saveAddonButton.addEventListener('click', () => this.saveCustomAddon());
-        }
     },
     
     bindSetting: function(elementId, settingKey) {
@@ -409,7 +1443,7 @@ const SettingsModule = {
         this.ensureSubscriptionVisibility();
         this.renderSubscription();
         this.renderAddons();
-        this.renderAddonBuilder();
+        this.renderQuickActionBridge();
         this.renderIndexedDirectories();
         this.renderAutomations();
     },
@@ -592,70 +1626,44 @@ const SettingsModule = {
     },
 
     renderAddons: function() {
-        const isActive = this.hasActiveSubscription();
         const activeContainer = Utils.getElement('#active-addons-list');
         const galleryContainer = Utils.getElement('#addon-gallery');
-
-        if (!isActive) {
-            if (activeContainer) activeContainer.innerHTML = '';
-            if (galleryContainer) galleryContainer.innerHTML = '';
-            return;
-        }
-
-        const activeIds = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        const activeSet = new Set(activeIds);
+        const activeList = QuickActionState.getActiveList();
+        const activeSet = new Set(activeList);
 
         if (activeContainer) {
             activeContainer.innerHTML = '';
-            if (activeIds.length === 0) {
-                const empty = Utils.createElement('div', { className: 'addons-empty', text: LocalizationRenderer.t('addons_empty_state') });
+            if (activeList.length === 0) {
+                const empty = Utils.createElement('div', { className: 'addons-empty', text: LocalizationRenderer.t('quick_action_manager_empty') });
                 activeContainer.appendChild(empty);
             } else {
-                activeIds.forEach(id => {
-                    const addon = this.findAddonDefinition(id);
-                    if (!addon) return;
-                    const card = Utils.createElement('div', { className: 'addon-card active-addon' });
+                activeList.forEach(actionId => {
+                    const definition = QuickActionState.getDefinition(actionId);
+                    if (!definition) return;
+                    const card = Utils.createElement('div', { className: 'addon-card active-addon quick-action-card' });
                     const iconWrap = Utils.createElement('div', { className: 'addon-card-icon' });
-                    iconWrap.innerHTML = `<i data-feather="${addon.icon || 'box'}"></i>`;
+                    iconWrap.innerHTML = `<i data-feather="${definition.icon || 'zap'}"></i>`;
                     card.appendChild(iconWrap);
 
                     const info = Utils.createElement('div', { className: 'addon-card-info' });
                     const titleRow = Utils.createElement('div', { className: 'addon-card-title-row' });
-                    const title = Utils.createElement('h4', { className: 'addon-card-title', text: this.getAddonDisplayName(addon) });
-                    titleRow.appendChild(title);
-                    const typeBadge = Utils.createElement('span', { className: 'addon-badge', text: addon.type === 'custom' ? LocalizationRenderer.t('addon_tag_custom') : LocalizationRenderer.t('addon_tag_library') });
-                    titleRow.appendChild(typeBadge);
+                    titleRow.appendChild(Utils.createElement('h4', { className: 'addon-card-title', text: this.getQuickActionName(definition) }));
+                    const badge = Utils.createElement('span', { className: 'addon-badge', text: definition.type === 'custom' ? LocalizationRenderer.t('addon_tag_custom') : LocalizationRenderer.t('addon_tag_library') });
+                    titleRow.appendChild(badge);
                     info.appendChild(titleRow);
-
-                    const description = Utils.createElement('p', { className: 'addon-card-description', text: this.getAddonDisplayDescription(addon) });
-                    info.appendChild(description);
-
-                    const blockIds = Array.isArray(addon.blocks) ? addon.blocks.map(block => (typeof block === 'string' ? block : block.id)) : [];
-                    if (blockIds.length > 0) {
-                        const chips = Utils.createElement('div', { className: 'addon-block-chips' });
-                        blockIds.forEach(blockId => {
-                            const blockDef = AddonBuilderBlocks.find(block => block.id === blockId);
-                            const chip = Utils.createElement('span', { className: 'addon-chip', text: blockDef ? LocalizationRenderer.t(blockDef.nameKey) : blockId });
-                            chips.appendChild(chip);
-                        });
-                        info.appendChild(chips);
-                    }
+                    info.appendChild(Utils.createElement('p', { className: 'addon-card-description', text: this.getQuickActionDescription(definition) }));
 
                     const meta = Utils.createElement('div', { className: 'addon-card-meta' });
-                    const baseLabel = this.getAddonBaseLabel(addon);
-                    if (baseLabel) {
-                        meta.appendChild(Utils.createElement('span', { className: 'addon-meta-pill', text: baseLabel }));
-                    }
-                    const blockCount = Array.isArray(blockIds) ? blockIds.length : 0;
-                    meta.appendChild(Utils.createElement('span', { className: 'addon-meta-pill subtle', text: LocalizationRenderer.t('addon_block_count', blockCount) }));
+                    const handlerType = definition.handler?.type || 'panel';
+                    meta.appendChild(Utils.createElement('span', { className: 'addon-meta-pill', text: handlerType }));
+                    meta.appendChild(Utils.createElement('span', { className: 'addon-meta-pill subtle', text: (definition.tags || []).join(' • ') }));
                     info.appendChild(meta);
-
                     card.appendChild(info);
 
                     const actions = Utils.createElement('div', { className: 'addon-card-actions' });
                     const removeBtn = Utils.createElement('button', { className: 'addon-pill-button danger', text: LocalizationRenderer.t('addons_remove_button') });
-                    removeBtn.setAttribute('data-action', 'remove-addon');
-                    removeBtn.setAttribute('data-addon-id', id);
+                    removeBtn.setAttribute('data-action', 'remove-quick-action');
+                    removeBtn.setAttribute('data-action-id', definition.id);
                     actions.appendChild(removeBtn);
                     card.appendChild(actions);
 
@@ -666,263 +1674,100 @@ const SettingsModule = {
 
         if (galleryContainer) {
             galleryContainer.innerHTML = '';
-            const galleryItems = [
-                ...AddonLibrary,
-                ...(Array.isArray(AppState.settings.customAddons) ? AppState.settings.customAddons.map(addon => ({ ...addon, type: 'custom' })) : [])
-            ];
+            const definitions = QuickActionState.getAllDefinitions();
+            const library = definitions.filter(def => def.type === 'library');
+            const custom = definitions.filter(def => def.type === 'custom');
 
-            galleryItems.forEach(addon => {
-                const card = Utils.createElement('div', { className: 'addon-card gallery-addon' });
-                if (addon.type === 'custom') card.classList.add('is-custom');
+            const renderCard = (definition, isCustom) => {
+                const card = Utils.createElement('div', { className: `addon-card gallery-addon ${isCustom ? 'is-custom' : ''}` });
                 const iconWrap = Utils.createElement('div', { className: 'addon-card-icon' });
-                iconWrap.innerHTML = `<i data-feather="${addon.icon || 'box'}"></i>`;
+                iconWrap.innerHTML = `<i data-feather="${definition.icon || 'zap'}"></i>`;
                 card.appendChild(iconWrap);
 
                 const info = Utils.createElement('div', { className: 'addon-card-info' });
                 const titleRow = Utils.createElement('div', { className: 'addon-card-title-row' });
-                const title = Utils.createElement('h4', { className: 'addon-card-title', text: this.getAddonDisplayName(addon) });
-                titleRow.appendChild(title);
-                const typeBadge = Utils.createElement('span', { className: 'addon-badge', text: addon.type === 'custom' ? LocalizationRenderer.t('addon_tag_custom') : LocalizationRenderer.t('addon_tag_library') });
-                titleRow.appendChild(typeBadge);
+                titleRow.appendChild(Utils.createElement('h4', { className: 'addon-card-title', text: this.getQuickActionName(definition) }));
+                const badge = Utils.createElement('span', { className: 'addon-badge', text: isCustom ? LocalizationRenderer.t('addon_tag_custom') : LocalizationRenderer.t('addon_tag_library') });
+                titleRow.appendChild(badge);
                 info.appendChild(titleRow);
-
-                const description = Utils.createElement('p', { className: 'addon-card-description', text: this.getAddonDisplayDescription(addon) });
-                info.appendChild(description);
-
-                const blockIds = Array.isArray(addon.blocks) ? addon.blocks.map(block => (typeof block === 'string' ? block : block.id)) : [];
-                if (blockIds.length > 0) {
-                    const chips = Utils.createElement('div', { className: 'addon-block-chips' });
-                    blockIds.forEach(blockId => {
-                        const blockDef = AddonBuilderBlocks.find(block => block.id === blockId);
-                        const chip = Utils.createElement('span', { className: 'addon-chip', text: blockDef ? LocalizationRenderer.t(blockDef.nameKey) : blockId });
-                        chips.appendChild(chip);
-                    });
-                    info.appendChild(chips);
-                }
-
+                info.appendChild(Utils.createElement('p', { className: 'addon-card-description', text: this.getQuickActionDescription(definition) }));
                 card.appendChild(info);
 
                 const actions = Utils.createElement('div', { className: 'addon-card-actions stacked' });
-                const isAlreadyActive = activeSet.has(addon.id);
-                const addButton = Utils.createElement('button', { className: 'addon-pill-button primary', text: LocalizationRenderer.t(isAlreadyActive ? 'addons_gallery_added' : 'addons_gallery_add') });
-                addButton.setAttribute('data-addon-id', addon.id);
-                addButton.setAttribute('data-action', 'add-addon');
-                addButton.disabled = isAlreadyActive;
-                if (isAlreadyActive) addButton.classList.add('disabled');
+                const alreadyActive = activeSet.has(definition.id);
+                const addButton = Utils.createElement('button', { className: 'addon-pill-button primary', text: LocalizationRenderer.t(alreadyActive ? 'addons_gallery_added' : 'addons_gallery_add') });
+                addButton.setAttribute('data-action', 'add-quick-action');
+                addButton.setAttribute('data-action-id', definition.id);
+                if (alreadyActive) addButton.classList.add('disabled');
                 actions.appendChild(addButton);
-
-                if (addon.type === 'custom') {
-                    const deleteButton = Utils.createElement('button', { className: 'addon-pill-button subtle-danger', text: LocalizationRenderer.t('addon_delete_custom') });
-                    deleteButton.setAttribute('data-addon-id', addon.id);
-                    deleteButton.setAttribute('data-action', 'delete-custom-addon');
-                    actions.appendChild(deleteButton);
+                if (isCustom) {
+                    const deleteBtn = Utils.createElement('button', { className: 'addon-pill-button subtle-danger', text: LocalizationRenderer.t('addon_delete_custom') });
+                    deleteBtn.setAttribute('data-action', 'delete-quick-action');
+                    deleteBtn.setAttribute('data-action-id', definition.id);
+                    actions.appendChild(deleteBtn);
                 }
-
                 card.appendChild(actions);
-                galleryContainer.appendChild(card);
-            });
-        }
+                return card;
+            };
 
-        if (window.feather) window.feather.replace();
-    },
+            library.forEach(def => galleryContainer.appendChild(renderCard(def, false)));
+            custom.forEach(def => galleryContainer.appendChild(renderCard(def, true)));
 
-    renderAddonBuilder: function() {
-        this.highlightBuilderBase();
-        this.renderBuilderStack();
-        this.refreshBuilderPlaceholders();
-    },
-
-    highlightBuilderBase: function() {
-        const buttons = Array.from(Utils.getAllElements('.builder-base-option'));
-        if (!buttons.length) return;
-        let found = false;
-        buttons.forEach(button => {
-            const base = button.getAttribute('data-base');
-            if (base === this.builderState.base) {
-                button.classList.add('active');
-                found = true;
-            } else {
-                button.classList.remove('active');
+            if (QuickActionBlueprints.length > 0) {
+                const blueprintHeader = Utils.createElement('div', { className: 'addon-card-meta', text: LocalizationRenderer.t('quick_action_blueprints_header') });
+                galleryContainer.appendChild(blueprintHeader);
+                QuickActionBlueprints.forEach(blueprint => {
+                    const card = Utils.createElement('div', { className: 'addon-card gallery-addon blueprint-card' });
+                    const iconWrap = Utils.createElement('div', { className: 'addon-card-icon' });
+                    iconWrap.innerHTML = `<i data-feather="${blueprint.icon || 'layers'}"></i>`;
+                    card.appendChild(iconWrap);
+                    const info = Utils.createElement('div', { className: 'addon-card-info' });
+                    info.appendChild(Utils.createElement('h4', { className: 'addon-card-title', text: LocalizationRenderer.t(blueprint.nameKey) }));
+                    info.appendChild(Utils.createElement('p', { className: 'addon-card-description', text: LocalizationRenderer.t(blueprint.descriptionKey) }));
+                    const meta = Utils.createElement('div', { className: 'addon-card-meta' });
+                    meta.appendChild(Utils.createElement('span', { className: 'addon-meta-pill', text: blueprint.difficulty }));
+                    meta.appendChild(Utils.createElement('span', { className: 'addon-meta-pill subtle', text: LocalizationRenderer.t('quick_action_blueprint_eta', blueprint.estimatedTime) }));
+                    info.appendChild(meta);
+                    card.appendChild(info);
+                    const actions = Utils.createElement('div', { className: 'addon-card-actions' });
+                    const openBtn = Utils.createElement('button', { className: 'addon-pill-button primary', text: LocalizationRenderer.t('quick_action_blueprint_open') });
+                    openBtn.setAttribute('data-action', 'open-blueprint');
+                    openBtn.setAttribute('data-blueprint-id', blueprint.id);
+                    actions.appendChild(openBtn);
+                    card.appendChild(actions);
+                    galleryContainer.appendChild(card);
+                });
             }
-        });
-        if (!found) {
-            const fallback = buttons[0];
-            fallback.classList.add('active');
-            this.builderState.base = fallback.getAttribute('data-base');
+
+            if (window.feather) feather.replace();
         }
     },
 
-    renderBuilderStack: function() {
-        const stack = Utils.getElement('#builder-stack');
-        if (!stack) return;
-        stack.innerHTML = '';
-
-        const base = AddonBuilderBases.find(item => item.id === this.builderState.base) || AddonBuilderBases[0];
-        if (base) {
-            const baseCard = Utils.createElement('div', { className: 'builder-block builder-block-base' });
-            const iconWrap = Utils.createElement('div', { className: 'builder-block-icon' });
-            iconWrap.innerHTML = `<i data-feather="${base.icon}"></i>`;
-            baseCard.appendChild(iconWrap);
-            const info = Utils.createElement('div', { className: 'builder-block-info' });
-            info.appendChild(Utils.createElement('div', { className: 'builder-block-title', text: LocalizationRenderer.t(base.nameKey) }));
-            info.appendChild(Utils.createElement('div', { className: 'builder-block-description', text: LocalizationRenderer.t(base.descriptionKey) }));
-            baseCard.appendChild(info);
-            stack.appendChild(baseCard);
-        }
-
-        if (!this.builderState.blocks.length) {
-            stack.appendChild(Utils.createElement('div', { className: 'builder-empty', text: LocalizationRenderer.t('addon_builder_empty_state') }));
-        } else {
-            this.builderState.blocks.forEach((blockId, index) => {
-                const block = AddonBuilderBlocks.find(item => item.id === blockId);
-                const blockCard = Utils.createElement('div', { className: 'builder-block' });
-                const iconWrap = Utils.createElement('div', { className: 'builder-block-icon' });
-                iconWrap.innerHTML = `<i data-feather="${block?.icon || 'tool'}"></i>`;
-                blockCard.appendChild(iconWrap);
-                const info = Utils.createElement('div', { className: 'builder-block-info' });
-                info.appendChild(Utils.createElement('div', { className: 'builder-block-title', text: block ? LocalizationRenderer.t(block.nameKey) : blockId }));
-                if (block?.descriptionKey) {
-                    info.appendChild(Utils.createElement('div', { className: 'builder-block-description', text: LocalizationRenderer.t(block.descriptionKey) }));
-                }
-                blockCard.appendChild(info);
-                const removeButton = Utils.createElement('button', { className: 'addon-pill-button subtle', text: LocalizationRenderer.t('addon_builder_remove_block') });
-                removeButton.setAttribute('data-action', 'remove-block');
-                removeButton.setAttribute('data-block-index', index);
-                blockCard.appendChild(removeButton);
-                stack.appendChild(blockCard);
-            });
-        }
-
-        if (window.feather) window.feather.replace();
+    getQuickActionName: function(definition) {
+        if (!definition) return LocalizationRenderer.t('addon_unknown_name');
+        if (definition.name) return definition.name;
+        if (definition.nameKey) return LocalizationRenderer.t(definition.nameKey);
+        return LocalizationRenderer.t('addon_unknown_name');
     },
 
-    refreshBuilderPlaceholders: function() {
-        const nameInput = Utils.getElement('#builder-addon-name');
-        if (nameInput) nameInput.placeholder = LocalizationRenderer.t('addon_builder_name_placeholder');
-        const descriptionInput = Utils.getElement('#builder-addon-description');
-        if (descriptionInput) descriptionInput.placeholder = LocalizationRenderer.t('addon_builder_description_placeholder');
-        const blockSelect = Utils.getElement('#builder-block-select');
-        if (blockSelect) {
-            Array.from(blockSelect.options).forEach(option => {
-                const key = option.getAttribute('data-i18n');
-                if (key) option.textContent = LocalizationRenderer.t(key);
-            });
+    getQuickActionDescription: function(definition) {
+        if (!definition) return LocalizationRenderer.t('addon_default_description');
+        if (definition.description) return definition.description;
+        if (definition.descriptionKey) return LocalizationRenderer.t(definition.descriptionKey);
+        return LocalizationRenderer.t('addon_default_description');
+    },
+
+    renderQuickActionBridge: function() {
+        const manageButton = Utils.getElement('#open-quick-action-manager');
+        if (manageButton) {
+            const count = QuickActionState.getActiveList().length;
+            manageButton.title = LocalizationRenderer.t('quick_actions_bridge_manage_tooltip', count);
+        }
+        const launchButton = Utils.getElement('#open-quick-app-studio');
+        if (launchButton) {
+            launchButton.title = LocalizationRenderer.t('quick_actions_bridge_launch_tooltip');
         }
     },
-
-    findAddonDefinition: function(id) {
-        if (!id) return null;
-        const libraryAddon = AddonLibrary.find(addon => addon.id === id);
-        if (libraryAddon) return { ...libraryAddon };
-        const customAddon = (AppState.settings.customAddons || []).find(addon => addon.id === id);
-        if (customAddon) return { ...customAddon, type: 'custom' };
-        return null;
-    },
-
-    getAddonDisplayName: function(addon) {
-        if (!addon) return LocalizationRenderer.t('addon_unknown_name');
-        if (addon.nameKey) return LocalizationRenderer.t(addon.nameKey);
-        return addon.name || LocalizationRenderer.t('addon_unknown_name');
-    },
-
-    getAddonDisplayDescription: function(addon) {
-        if (!addon) return LocalizationRenderer.t('addon_default_description');
-        if (addon.descriptionKey) return LocalizationRenderer.t(addon.descriptionKey);
-        return addon.description || LocalizationRenderer.t('addon_default_description');
-    },
-
-    getAddonBaseLabel: function(addon) {
-        if (!addon) return '';
-        const base = AddonBuilderBases.find(option => option.id === addon.base);
-        return base ? LocalizationRenderer.t(base.nameKey) : '';
-    },
-
-    addAddonFromGallery: function(id) {
-        if (!id) return;
-        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        if (activeAddons.includes(id)) return;
-        activeAddons.push(id);
-        AppState.settings.activeAddons = activeAddons;
-        ipcRenderer.send('update-setting', 'activeAddons', activeAddons);
-        this.renderAddons();
-    },
-
-    removeActiveAddon: function(id) {
-        if (!id) return;
-        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        const updated = activeAddons.filter(addonId => addonId !== id);
-        if (updated.length === activeAddons.length) return;
-        AppState.settings.activeAddons = updated;
-        ipcRenderer.send('update-setting', 'activeAddons', updated);
-        this.renderAddons();
-    },
-
-    deleteCustomAddon: function(id) {
-        if (!id) return;
-        const customAddons = Array.isArray(AppState.settings.customAddons) ? [...AppState.settings.customAddons] : [];
-        if (!customAddons.some(addon => addon.id === id)) return;
-        if (!window.confirm(LocalizationRenderer.t('addon_delete_custom_confirm'))) return;
-        const updatedCustom = customAddons.filter(addon => addon.id !== id);
-        const updatedActive = (AppState.settings.activeAddons || []).filter(addonId => addonId !== id);
-        AppState.settings.customAddons = updatedCustom;
-        AppState.settings.activeAddons = updatedActive;
-        ipcRenderer.send('update-setting', 'customAddons', updatedCustom);
-        ipcRenderer.send('update-setting', 'activeAddons', updatedActive);
-        this.renderAddons();
-    },
-
-    removeBuilderBlock: function(index) {
-        if (!Number.isInteger(index)) return;
-        if (index < 0 || index >= this.builderState.blocks.length) return;
-        this.builderState.blocks.splice(index, 1);
-        this.renderBuilderStack();
-    },
-
-    resetBuilder: function() {
-        const defaultBase = AddonBuilderBases[0]?.id || 'clipboard';
-        this.builderState = { base: defaultBase, blocks: [] };
-        const nameInput = Utils.getElement('#builder-addon-name');
-        if (nameInput) nameInput.value = '';
-        const descriptionInput = Utils.getElement('#builder-addon-description');
-        if (descriptionInput) descriptionInput.value = '';
-        const blockSelect = Utils.getElement('#builder-block-select');
-        if (blockSelect) blockSelect.value = '';
-        this.renderAddonBuilder();
-    },
-
-    saveCustomAddon: function() {
-        const nameInput = Utils.getElement('#builder-addon-name');
-        const descriptionInput = Utils.getElement('#builder-addon-description');
-        const name = nameInput?.value.trim() || '';
-        if (!name) {
-            alert(LocalizationRenderer.t('addon_builder_error_name_required'));
-            return;
-        }
-        const description = descriptionInput?.value.trim() || '';
-        const baseId = this.builderState.base || (AddonBuilderBases[0]?.id || 'clipboard');
-        const base = AddonBuilderBases.find(item => item.id === baseId);
-        const blocks = this.builderState.blocks.map(blockId => ({ id: blockId }));
-        const icon = base?.icon || 'layers';
-        const customAddons = Array.isArray(AppState.settings.customAddons) ? [...AppState.settings.customAddons] : [];
-        const newAddon = {
-            id: `custom-${Date.now()}`,
-            name,
-            description,
-            base: baseId,
-            icon,
-            blocks
-        };
-        customAddons.push(newAddon);
-        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        activeAddons.push(newAddon.id);
-        AppState.settings.customAddons = customAddons;
-        AppState.settings.activeAddons = Array.from(new Set(activeAddons));
-        ipcRenderer.send('update-setting', 'customAddons', customAddons);
-        ipcRenderer.send('update-setting', 'activeAddons', Array.from(new Set(activeAddons)));
-        this.resetBuilder();
-        this.renderAddons();
-    },
-
     setupShortcutRecorder: function() {
         const shortcutInput = Utils.getElement('#setting-shortcut');
         if (!shortcutInput) return;
@@ -2021,12 +2866,6 @@ const AuxPanelManager = {
     
     init: function() {
         this.panelContainer = Utils.getElement('#aux-panel');
-        Utils.getAllElements('#action-buttons [data-window-type]').forEach(button => {
-            button.addEventListener('click', () => {
-                const type = button.getAttribute('data-window-type');
-                this.togglePanel(type);
-            });
-        });
         ipcRenderer.on('update-data', this.updateDataListener);
     },
 
@@ -2704,6 +3543,8 @@ const ViewManager = {
             ipcRenderer.invoke('get-indexing-state').then(state => SettingsModule.updateIndexingStatus(state));
             SettingsModule.renderIndexedDirectories();
             SettingsModule.renderAutomations();
+        } else if (viewName === 'quick-app-builder') {
+            QuickAppBuilderController.onEnter();
         } else {
             Utils.getElement('#search-input')?.focus();
             AuxPanelManager.closePanel();
@@ -2732,6 +3573,15 @@ const ViewManager = {
                 totalHeight = mainLayout.offsetHeight + resultsHeight + pinnedAppsHeight + auxPanelHeight;
             }
             targetWidth = AppState.settings.width;
+        } else if (AppState.currentView === 'quick-app-builder') {
+            const builderShell = Utils.getElement('.quick-app-builder-shell');
+            if (builderShell) {
+                totalHeight = builderShell.offsetHeight + 40;
+                targetWidth = Math.max(1200, builderShell.offsetWidth + 40);
+            } else {
+                totalHeight = 900;
+                targetWidth = 1280;
+            }
         } else { // settings
             const settingsContainer = Utils.getElement('.settings-container');
             if (settingsContainer) {
@@ -2884,6 +3734,10 @@ document.addEventListener('DOMContentLoaded', () => {
     PinnedAppsModule.init();
     AuxPanelManager.init();
     CustomSelect.init();
+    QuickActionManagerUI.init();
+    QuickActionsHelp.init();
+    QuickAppBuilderController.init();
+    QuickActionBar.init();
 
     ipcRenderer.on('file-icon-response', (event, { path, dataUrl }) => {
         const relatedImages = [];
@@ -2919,6 +3773,7 @@ document.addEventListener('DOMContentLoaded', () => {
         AppState.translations = data.translations;
         AppState.appVersion = data.version;
         AppState.systemTheme = data.systemTheme; // Обновляем системную тему
+        QuickActionState.ensureDefaults();
         ViewManager.applyAppearanceSettings();
         LocalizationRenderer.applyTranslations();
         SettingsModule.populateSettingsUI();
