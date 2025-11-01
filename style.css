@@ -687,6 +687,7 @@ body.dark-theme .aux-header {
   min-width: 0;
   position: relative;
   box-shadow: inset 0 0 0 1px var(--border-color);
+  outline: none;
 }
 
 .search-input-wrapper {
@@ -700,6 +701,8 @@ body.dark-theme .aux-header {
   border: none;
   background: transparent;
   outline: none;
+  appearance: none;
+  -webkit-appearance: none;
   font-size: clamp(
     16px,
     calc(var(--dynamic-height) * 0.32),
@@ -709,6 +712,12 @@ body.dark-theme .aux-header {
   color: var(--text-color);
   caret-color: var(--caret-color, var(--text-color));
   pointer-events: auto;
+}
+
+#search-input:focus,
+#search-input:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
 #quick-action-shell {
@@ -804,7 +813,7 @@ body.dark-theme .aux-header {
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  border-radius: 999px;
+  border-radius: min(var(--dynamic-border-radius), calc(var(--qa-button-size) / 2));
   position: relative;
   background-color: rgba(var(--secondary-bg-color-rgb), var(--dynamic-opacity));
   border: 1px solid rgba(var(--border-color-rgb, 148, 163, 184), 0.45);
