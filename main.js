@@ -66,8 +66,8 @@ const DEFAULT_SETTINGS = {
     theme: 'auto', // ИЗМЕНЕНО: Тема по умолчанию теперь 'auto'
     language: 'ru',
     windowPosition: 'top-center',
-    width: 950, // ИЗМЕНЕНО: Начальная ширина
-    height: 70,  // ИЗМЕНЕНО: Начальная высота
+    width: 820, // ИЗМЕНЕНО: Начальная ширина
+    height: 74,  // ИЗМЕНЕНО: Начальная высота
     borderRadius: 24, // НОВОЕ: Скругление углов
     shortcut: 'Alt+Tab',
     animations: true,
