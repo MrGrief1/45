@@ -372,6 +372,131 @@ const QuickActionModuleDefinitions = [
             }
             return [clone];
         }
+    },
+    {
+        id: 'fetch-json',
+        category: 'utility',
+        name: 'Fetch JSON',
+        description: 'Request JSON data and store it as the workflow payload.',
+        icon: 'download-cloud',
+        accent: '#38bdf8',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { url: 'https://api.example.com/data', format: 'pretty' },
+        form: [
+            { key: 'url', label: 'Request URL', type: 'text', placeholder: 'https://api.example.com/data' },
+            {
+                key: 'format',
+                label: 'Format',
+                type: 'select',
+                options: [
+                    { value: 'pretty', label: 'Pretty JSON' },
+                    { value: 'raw', label: 'Compact JSON' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const url = String(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('Fetch JSON skipped: URL is empty.');
+                return [clone];
+            }
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                const formatted = config?.format === 'raw'
+                    ? JSON.stringify(data)
+                    : JSON.stringify(data, null, 2);
+                clone.payload = formatted;
+                clone.vars.lastResponse = data;
+                clone.logs.push(`Fetched data from ${url}`);
+            } catch (error) {
+                clone.logs.push(`Fetch JSON failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'transform-payload',
+        category: 'utility',
+        name: 'Transform text',
+        description: 'Apply quick text transformations to the payload.',
+        icon: 'type',
+        accent: '#34d399',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'uppercase' },
+        form: [
+            {
+                key: 'mode',
+                label: 'Transformation',
+                type: 'select',
+                options: [
+                    { value: 'uppercase', label: 'Uppercase' },
+                    { value: 'lowercase', label: 'Lowercase' },
+                    { value: 'titlecase', label: 'Title case' },
+                    { value: 'trim', label: 'Trim whitespace' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const mode = config?.mode || 'uppercase';
+            const source = typeof clone.payload === 'string'
+                ? clone.payload
+                : String(clone.payload ?? '');
+            let result = source;
+            switch (mode) {
+                case 'lowercase':
+                    result = source.toLowerCase();
+                    break;
+                case 'titlecase':
+                    result = source
+                        .toLowerCase()
+                        .replace(/(^|\s|[-_/])([\p{L}\p{N}])/gu, (match, prefix, char) => prefix + char.toUpperCase());
+                    break;
+                case 'trim':
+                    result = source.trim();
+                    break;
+                case 'uppercase':
+                default:
+                    result = source.toUpperCase();
+                    break;
+            }
+            clone.payload = result;
+            clone.logs.push(`Transformed payload using ${mode}`);
+            return [clone];
+        }
+    },
+    {
+        id: 'store-variable',
+        category: 'utility',
+        name: 'Store variable',
+        description: 'Save a named value in the workflow context.',
+        icon: 'database',
+        accent: '#f472b6',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'name', value: 'FlashSearch' },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'project' },
+            { key: 'value', label: 'Value', type: 'textarea', rows: 2, placeholder: 'Value to store' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = String(config?.key || '').trim();
+            if (!key) {
+                clone.logs.push('Store variable skipped: missing name.');
+                return [clone];
+            }
+            clone.vars[key] = config?.value ?? '';
+            if (!clone.payload) {
+                clone.payload = config?.value ?? '';
+            }
+            clone.logs.push(`Stored variable "${key}"`);
+            return [clone];
+        }
     }
 ];
 
@@ -391,7 +516,10 @@ const QuickActionStore = {
         if (!AppState.settings.quickActions || typeof AppState.settings.quickActions !== 'object') {
             AppState.settings.quickActions = {
                 activeIds: [...QuickActionDefaultOrder],
-                customActions: []
+                customActions: [],
+                preferences: {
+                    builderSize: { width: 1280, height: 820 }
+                }
             };
         }
 
@@ -401,6 +529,16 @@ const QuickActionStore = {
 
         if (!Array.isArray(AppState.settings.quickActions.customActions)) {
             AppState.settings.quickActions.customActions = [];
+        }
+
+        if (!AppState.settings.quickActions.preferences || typeof AppState.settings.quickActions.preferences !== 'object') {
+            AppState.settings.quickActions.preferences = {
+                builderSize: { width: 1280, height: 820 }
+            };
+        }
+
+        if (!AppState.settings.quickActions.preferences.builderSize) {
+            AppState.settings.quickActions.preferences.builderSize = { width: 1280, height: 820 };
         }
 
         const normalized = Array.from(new Set(AppState.settings.quickActions.activeIds.filter(Boolean)));
@@ -477,6 +615,25 @@ const QuickActionStore = {
         const defaults = QuickActionCatalog.map(item => ({ ...item }));
         const custom = this.getCustomActions();
         return { defaults, custom };
+    },
+
+    getBuilderSize() {
+        this.ensureStructure();
+        const size = AppState.settings.quickActions.preferences?.builderSize || {};
+        const width = Number(size.width) || 1280;
+        const height = Number(size.height) || 820;
+        return {
+            width: Math.max(960, Math.min(Math.round(width), 1600)),
+            height: Math.max(640, Math.min(Math.round(height), 1000))
+        };
+    },
+
+    setBuilderSize(width, height) {
+        this.ensureStructure();
+        const safeWidth = Math.max(960, Math.min(Math.round(width), 1600));
+        const safeHeight = Math.max(640, Math.min(Math.round(height), 1000));
+        AppState.settings.quickActions.preferences.builderSize = { width: safeWidth, height: safeHeight };
+        this.persist();
     },
 
     persist() {
@@ -644,10 +801,6 @@ const QuickActionManager = {
                 button.appendChild(iconFallback);
             }
 
-            if (definition.accent) {
-                button.style.setProperty('--qa-accent', definition.accent);
-            }
-
             const title = definition.nameKey
                 ? LocalizationRenderer.t(definition.nameKey)
                 : (definition.name || definition.label || 'Quick action');
@@ -679,9 +832,19 @@ const QuickActionLab = {
     connectionIdCounter: 0,
     boundDragMove: null,
     boundDragEnd: null,
+    boundResizeMove: null,
+    boundResizeEnd: null,
+    connectionRedrawScheduled: false,
+    pendingBuilderSize: null,
+    resizing: null,
+    dragUpdateRaf: null,
 
     init() {
         if (this.initialized) return;
+        this.connectionRedrawScheduled = false;
+        this.pendingBuilderSize = null;
+        this.resizing = null;
+        this.dragUpdateRaf = null;
         this.elements = {
             activeList: Utils.getElement('#quick-action-active-list'),
             catalog: Utils.getElement('#quick-action-catalog'),
@@ -715,6 +878,9 @@ const QuickActionLab = {
             iconPreview: Utils.getElement('#builder-icon-preview')
         };
 
+        this.elements.dialog = document.querySelector('#quick-action-builder-modal .builder-dialog');
+        this.elements.resizeHandle = document.querySelector('#quick-action-builder-modal .builder-resize-handle');
+
         if (!this.elements.activeList) {
             return;
         }
@@ -728,6 +894,8 @@ const QuickActionLab = {
     attachEvents() {
         this.boundDragMove = (event) => this.handleNodeDrag(event);
         this.boundDragEnd = (event) => this.stopNodeDrag(event);
+        this.boundResizeMove = (event) => this.handleResize(event);
+        this.boundResizeEnd = (event) => this.stopResize(event);
 
         this.elements.openBuilder?.addEventListener('click', () => this.openBuilder());
         this.elements.importToggle?.addEventListener('click', () => this.toggleImportArea(true));
@@ -738,6 +906,8 @@ const QuickActionLab = {
             if (!this.builderState) return;
             this.builderState.metadata.label = event.target.value;
         });
+
+        this.elements.resizeHandle?.addEventListener('pointerdown', (event) => this.startResize(event));
 
         this.elements.actionIconInput?.addEventListener('input', (event) => {
             if (!this.builderState) return;
@@ -977,9 +1147,72 @@ const QuickActionLab = {
         this.ensureManualNode();
         this.renderBuilder();
         this.updateIconPreview();
+        this.applyBuilderSize();
         this.elements.modal?.classList.add('active');
         this.elements.modal?.setAttribute('aria-hidden', 'false');
         this.elements.modal?.focus();
+    },
+
+    applyBuilderSize() {
+        if (!this.elements.dialog) return;
+        const size = QuickActionStore.getBuilderSize();
+        this.elements.dialog.style.setProperty('--builder-dialog-width', `${size.width}px`);
+        this.elements.dialog.style.setProperty('--builder-dialog-height', `${size.height}px`);
+    },
+
+    startResize(event) {
+        if (!this.elements.dialog) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const rect = this.elements.dialog.getBoundingClientRect();
+        this.resizing = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            startWidth: rect.width,
+            startHeight: rect.height
+        };
+        try {
+            this.elements.resizeHandle?.setPointerCapture(event.pointerId);
+        } catch (error) {
+            // Pointer capture might not be supported; ignore
+        }
+        window.addEventListener('pointermove', this.boundResizeMove);
+        window.addEventListener('pointerup', this.boundResizeEnd);
+    },
+
+    handleResize(event) {
+        if (!this.resizing || !this.elements.dialog) return;
+        event.preventDefault();
+        const deltaX = event.clientX - this.resizing.startX;
+        const deltaY = event.clientY - this.resizing.startY;
+        const minWidth = 960;
+        const minHeight = 640;
+        const maxWidth = Math.min(window.innerWidth - 80, 1600);
+        const maxHeight = Math.min(window.innerHeight - 80, 1000);
+        const width = Math.max(minWidth, Math.min(this.resizing.startWidth + deltaX, maxWidth));
+        const height = Math.max(minHeight, Math.min(this.resizing.startHeight + deltaY, maxHeight));
+        this.elements.dialog.style.setProperty('--builder-dialog-width', `${width}px`);
+        this.elements.dialog.style.setProperty('--builder-dialog-height', `${height}px`);
+        this.pendingBuilderSize = { width, height };
+    },
+
+    stopResize(event) {
+        if (!this.resizing) return;
+        try {
+            if (typeof this.resizing.pointerId === 'number') {
+                this.elements.resizeHandle?.releasePointerCapture?.(this.resizing.pointerId);
+            }
+        } catch (error) {
+            // Ignore pointer release errors
+        }
+        window.removeEventListener('pointermove', this.boundResizeMove);
+        window.removeEventListener('pointerup', this.boundResizeEnd);
+        if (this.pendingBuilderSize) {
+            QuickActionStore.setBuilderSize(this.pendingBuilderSize.width, this.pendingBuilderSize.height);
+        }
+        this.pendingBuilderSize = null;
+        this.resizing = null;
     },
 
     closeBuilder() {
@@ -1129,6 +1362,15 @@ const QuickActionLab = {
         this.drawConnections();
     },
 
+    scheduleConnectionRedraw() {
+        if (this.connectionRedrawScheduled) return;
+        this.connectionRedrawScheduled = true;
+        requestAnimationFrame(() => {
+            this.connectionRedrawScheduled = false;
+            this.drawConnections();
+        });
+    },
+
     drawConnections() {
         if (!this.builderState) return;
         const connectionLayer = this.elements.connectionLayer;
@@ -1258,29 +1500,60 @@ const QuickActionLab = {
             startX: event.clientX,
             startY: event.clientY,
             originX: node.position.x,
-            originY: node.position.y
+            originY: node.position.y,
+            pointerId: event.pointerId,
+            pointerTarget: event.currentTarget || event.target,
+            lastEvent: event
         };
+        try {
+            this.builderState.drag.pointerTarget?.setPointerCapture?.(event.pointerId);
+        } catch (error) {
+            // Ignore pointer capture failures
+        }
         window.addEventListener('pointermove', this.boundDragMove);
         window.addEventListener('pointerup', this.boundDragEnd);
     },
 
     handleNodeDrag(event) {
         if (!this.builderState?.drag) return;
+        event.preventDefault();
+        this.builderState.drag.lastEvent = event;
+        if (this.dragUpdateRaf) return;
+        this.dragUpdateRaf = requestAnimationFrame(() => this.applyDragUpdate());
+    },
+
+    applyDragUpdate() {
+        this.dragUpdateRaf = null;
+        if (!this.builderState?.drag?.lastEvent) return;
         const drag = this.builderState.drag;
         const node = this.builderState.nodes.find(item => item.id === drag.nodeId);
         if (!node) return;
         const zoom = this.builderState.zoom || 1;
-        node.position.x = drag.originX + (event.clientX - drag.startX) / zoom;
-        node.position.y = drag.originY + (event.clientY - drag.startY) / zoom;
+        node.position.x = drag.originX + (drag.lastEvent.clientX - drag.startX) / zoom;
+        node.position.y = drag.originY + (drag.lastEvent.clientY - drag.startY) / zoom;
         const nodeEl = this.findNodeElement(node.id);
         if (nodeEl) {
             nodeEl.style.transform = `translate(${node.position.x}px, ${node.position.y}px)`;
         }
-        this.drawConnections();
+        this.scheduleConnectionRedraw();
     },
 
     stopNodeDrag() {
         if (!this.builderState) return;
+        if (this.dragUpdateRaf) {
+            cancelAnimationFrame(this.dragUpdateRaf);
+            this.dragUpdateRaf = null;
+            this.applyDragUpdate();
+        } else {
+            this.applyDragUpdate();
+        }
+        try {
+            if (this.builderState.drag?.pointerTarget && typeof this.builderState.drag.pointerId === 'number') {
+                this.builderState.drag.pointerTarget.releasePointerCapture?.(this.builderState.drag.pointerId);
+            }
+        } catch (error) {
+            // Ignore pointer release errors
+        }
         this.builderState.drag = null;
         window.removeEventListener('pointermove', this.boundDragMove);
         window.removeEventListener('pointerup', this.boundDragEnd);
@@ -2014,7 +2287,20 @@ const SearchModule = {
             if (query.length > 1) this.performSearch(query);
             else this.clearResults();
         }, 250);
-        if (searchInput) searchInput.addEventListener('input', (e) => debouncedSearch(e.target.value.trim()));
+        if (searchInput) {
+            searchInput.removeAttribute('readonly');
+            searchInput.disabled = false;
+            searchInput.addEventListener('input', (e) => debouncedSearch(e.target.value.trim()));
+        }
+        const searchBox = Utils.getElement('#search-box');
+        if (searchInput && searchBox) {
+            searchBox.addEventListener('mousedown', (event) => {
+                if (event.target !== searchInput) {
+                    event.preventDefault();
+                    searchInput.focus({ preventScroll: true });
+                }
+            });
+        }
         this.setupKeyboardNavigation();
     },
 
