@@ -241,7 +241,7 @@
                             <hr>
                             <div class="setting-item">
                                 <label data-i18n="settings_width">Window Width (px)</label>
-                                <input type="range" id="setting-width" min="600" max="1600" step="10">
+                                <input type="range" id="setting-width" min="360" max="1600" step="10">
                             </div>
                             <div class="setting-item">
                                 <label data-i18n="settings_height">Bar Height (px)</label>
@@ -429,39 +429,45 @@
                         <div id="builder-node-layer" class="builder-node-layer"></div>
                         <div id="builder-empty-state" class="builder-empty-state">
                             <i data-feather="plus-circle"></i>
-                            <p>Drag modules here or click any block to start.</p>
+                            <p data-i18n="quick_actions_builder_empty">Drag modules here or click any block to start.</p>
                         </div>
                     </div>
                 </div>
                 <aside class="builder-inspector">
-                    <div class="inspector-section">
-                        <h3>Properties</h3>
-                        <div id="builder-inspector-content" class="inspector-content">
-                            <p>Select a node to edit its configuration.</p>
-                        </div>
-                    </div>
-                    <div class="inspector-section">
-                        <h3>Button appearance</h3>
-                        <div class="inspector-content">
-                            <label for="builder-action-label">Label</label>
-                            <input type="text" id="builder-action-label" placeholder="My quick action">
-                            <label for="builder-action-icon">Icon</label>
-                            <div class="inspector-icon-picker">
-                                <input type="text" id="builder-action-icon" placeholder="feather icon name">
-                                <div id="builder-icon-preview" class="icon-preview"></div>
+                    <div class="builder-inspector-scroll">
+                        <div class="inspector-section">
+                            <h3 data-i18n="quick_actions_inspector_properties">Properties</h3>
+                            <div id="builder-inspector-content" class="inspector-content">
+                                <p data-i18n="quick_actions_inspector_hint">Select a node to edit its configuration.</p>
                             </div>
-                            <label for="builder-action-color">Accent colour</label>
-                            <input type="color" id="builder-action-color" value="#5865f2">
+                        </div>
+                        <div class="inspector-section">
+                            <h3 data-i18n="quick_actions_button_appearance">Button appearance</h3>
+                            <div class="inspector-content">
+                                <label for="builder-action-label" data-i18n="quick_actions_field_label">Label</label>
+                                <input type="text" id="builder-action-label" data-i18n-placeholder="quick_actions_new_label" placeholder="My quick action">
+                                <label for="builder-action-icon" data-i18n="quick_actions_icon_label">Icon</label>
+                                <div class="inspector-icon-picker">
+                                    <input type="text" id="builder-action-icon" data-i18n-placeholder="quick_actions_icon_placeholder" placeholder="feather icon name">
+                                    <button type="button" id="builder-icon-picker-toggle" class="icon-picker-toggle" aria-haspopup="true" aria-expanded="false" data-i18n-title="quick_actions_icon_picker_label">
+                                        <span class="sr-only" data-i18n="quick_actions_icon_picker_label">Choose icon</span>
+                                        <div id="builder-icon-preview" class="icon-preview"></div>
+                                    </button>
+                                    <div id="builder-icon-picker" class="icon-picker" hidden></div>
+                                </div>
+                                <label for="builder-action-color" data-i18n="quick_actions_color_label">Accent colour</label>
+                                <input type="color" id="builder-action-color" value="#5865f2">
+                            </div>
                         </div>
                     </div>
                 </aside>
             </div>
             <footer class="builder-footer">
                 <div class="builder-footer-left">
-                    <button id="builder-preview-action" class="settings-button secondary">Test run</button>
+                    <button id="builder-preview-action" class="settings-button secondary" data-i18n="quick_actions_builder_test">Test run</button>
                 </div>
                 <div class="builder-footer-right">
-                    <button id="builder-save-action" class="settings-button">Add to quick action bar</button>
+                    <button id="builder-save-action" class="settings-button" data-i18n="quick_actions_builder_save">Add to quick action bar</button>
                 </div>
             </footer>
             <div class="builder-resize-handle" aria-hidden="true"></div>
