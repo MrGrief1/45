@@ -1010,9 +1010,28 @@ const QuickActionLab = {
         this.elements.clearWorkspace?.addEventListener('click', () => this.clearWorkspace());
 
         this.elements.modal?.addEventListener('keydown', (event) => {
+            const target = event.target;
+            const element = target instanceof HTMLElement ? target : null;
+            const isEditableField = !!element && (
+                element.tagName === 'INPUT' ||
+                element.tagName === 'TEXTAREA' ||
+                element.isContentEditable ||
+                (typeof element.closest === 'function' && element.closest('[contenteditable="true"]'))
+            );
+
             if (event.key === 'Escape') {
+                if (isEditableField && typeof element?.blur === 'function') {
+                    element.blur();
+                }
                 this.closeBuilder();
-            } else if (event.key === 'Delete' || event.key === 'Backspace') {
+                return;
+            }
+
+            if ((event.key === 'Delete' || event.key === 'Backspace')) {
+                if (isEditableField) {
+                    return;
+                }
+
                 if (this.builderState?.selectedNodeId && !this.isManualNode(this.builderState.selectedNodeId)) {
                     this.removeNode(this.builderState.selectedNodeId);
                 }
