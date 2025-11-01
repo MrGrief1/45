@@ -14,26 +14,11 @@
         <div id="search-view" class="view active">
             <div id="main-layout">
                 <div id="search-box" class="glass-element">
-                    <i data-feather="search" class="icon search-icon"></i>
-                    <input type="text" id="search-input" placeholder="FlashSearch" autofocus>
-                </div>
-
-                <div id="action-buttons">
-                    <button class="action-button glass-element" data-window-type="apps-library" data-i18n-title="title_apps_library">
-                        <i data-feather="grid" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="files" data-i18n-title="title_files">
-                        <i data-feather="folder" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="commands" data-i18n-title="title_commands">
-                        <i data-feather="command" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element" data-window-type="clipboard" data-i18n-title="title_clipboard">
-                        <i data-feather="copy" class="icon"></i>
-                    </button>
-                    <button class="action-button glass-element settings-gear" id="settings-button" data-i18n-title="context_settings">
-                        <i data-feather="settings" class="icon"></i>
-                    </button>
+                    <div class="search-field">
+                        <i data-feather="search" class="icon search-icon"></i>
+                        <input type="text" id="search-input" placeholder="FlashSearch" autofocus>
+                    </div>
+                    <div id="quick-action-strip" class="quick-action-strip" aria-label="Quick actions"></div>
                 </div>
             </div>
 
@@ -367,47 +352,25 @@
                                     </div>
                                 </header>
                                 <div class="addon-builder">
-                                    <div class="builder-column">
-                                        <h4 data-i18n="addon_builder_base_label">Choose a starting point</h4>
-                                        <div class="builder-base-options">
-                                            <button type="button" class="builder-base-option active" data-base="clipboard">
-                                                <i data-feather="clipboard"></i>
-                                                <span data-i18n="addon_base_clipboard">Clipboard buffer</span>
-                                                <small data-i18n="addon_base_clipboard_desc">Start from the classic clipboard layout.</small>
-                                            </button>
-                                            <button type="button" class="builder-base-option" data-base="note">
-                                                <i data-feather="edit-3"></i>
-                                                <span data-i18n="addon_base_note">Quick note</span>
-                                                <small data-i18n="addon_base_note_desc">Capture ideas and templates.</small>
-                                            </button>
-                                            <button type="button" class="builder-base-option" data-base="command">
-                                                <i data-feather="zap"></i>
-                                                <span data-i18n="addon_base_command">Quick command</span>
-                                                <small data-i18n="addon_base_command_desc">Trigger scripts or workflows.</small>
-                                            </button>
+                                    <div class="builder-hero">
+                                        <div class="builder-hero-text">
+                                            <h4 data-i18n="addon_builder_visual_title">Design quick actions visually</h4>
+                                            <p data-i18n="addon_builder_visual_description">Compose workflows from smart modules and pin them as buttons near the search bar.</p>
+                                            <div class="builder-hero-actions">
+                                                <button type="button" id="open-workflow-builder" class="settings-button" data-i18n="addon_builder_open_visual">Create workflow</button>
+                                                <button type="button" id="builder-show-library" class="settings-button secondary" data-i18n="addon_builder_show_library">Browse templates</button>
+                                            </div>
+                                        </div>
+                                        <div class="builder-hero-preview">
+                                            <div class="builder-preview-grid" id="builder-preview-grid">
+                                                <!-- Preview quick actions will render here -->
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="builder-column">
-                                        <h4 data-i18n="addon_builder_blocks_label">Add building blocks</h4>
-                                        <div class="builder-controls">
-                                            <select id="builder-block-select">
-                                                <option value="" data-i18n="addon_builder_block_placeholder">Select block…</option>
-                                                <option value="clipboard-filter" data-i18n="addon_builder_blocks_clipboard_filter">Filter copied content</option>
-                                                <option value="text-replace" data-i18n="addon_builder_blocks_text_replace">Replace text automatically</option>
-                                                <option value="pin-items" data-i18n="addon_builder_blocks_pin_items">Pin favourite items</option>
-                                                <option value="sync" data-i18n="addon_builder_blocks_sync">Sync across devices</option>
-                                            </select>
-                                            <button type="button" id="builder-add-block" class="settings-button" data-i18n="addon_builder_add_block">Add block</button>
-                                            <button type="button" id="builder-reset" class="settings-button secondary" data-i18n="addon_builder_reset">Clear builder</button>
-                                        </div>
-                                        <div id="builder-stack" class="builder-stack"></div>
-                                        <div class="builder-form">
-                                            <label for="builder-addon-name" data-i18n="addon_builder_name_label">Name</label>
-                                            <input type="text" id="builder-addon-name" data-i18n-placeholder="addon_builder_name_placeholder" placeholder="Custom add-on">
-                                            <label for="builder-addon-description" data-i18n="addon_builder_description_label">Description</label>
-                                            <textarea id="builder-addon-description" data-i18n-placeholder="addon_builder_description_placeholder" placeholder="Explain what this add-on does..."></textarea>
-                                            <button type="button" id="builder-save-addon" class="settings-button" data-i18n="addon_builder_save">Save add-on</button>
-                                        </div>
+                                    <div class="builder-custom-actions">
+                                        <h4 data-i18n="addon_builder_custom_heading">Your visual quick actions</h4>
+                                        <p class="builder-subtitle" data-i18n="addon_builder_custom_subheading">Manage, edit or remove the actions you have created.</p>
+                                        <div id="custom-quick-actions-list" class="custom-quick-actions-list"></div>
                                     </div>
                                 </div>
                             </section>
@@ -434,6 +397,98 @@
           feather.replace();
       }
     </script>
+    <div id="workflow-builder-overlay" class="modal-overlay hidden" aria-hidden="true">
+        <div class="modal-backdrop" data-overlay-close="workflow-builder"></div>
+        <div class="modal-content workflow-builder-modal" role="dialog" aria-modal="true" aria-labelledby="workflow-builder-title">
+            <header class="modal-header">
+                <div class="modal-header-text">
+                    <h2 id="workflow-builder-title" data-i18n="workflow_builder_title">Visual workflow builder</h2>
+                    <p data-i18n="workflow_builder_subtitle">Connect triggers, transformations and actions to craft your quick action.</p>
+                </div>
+                <div class="modal-header-actions">
+                    <button type="button" class="modal-button secondary" id="workflow-builder-cancel" data-i18n="workflow_builder_cancel">Cancel</button>
+                    <button type="button" class="modal-button primary" id="workflow-builder-save" data-i18n="workflow_builder_save">Save action</button>
+                </div>
+            </header>
+            <div class="workflow-builder-body">
+                <aside class="workflow-palette" id="workflow-palette" aria-label="Workflow modules">
+                    <div class="palette-search">
+                        <input type="text" id="workflow-module-search" placeholder="Search modules" data-i18n-placeholder="workflow_builder_search_modules">
+                    </div>
+                    <div class="palette-groups" id="workflow-palette-groups"></div>
+                </aside>
+                <section class="workflow-canvas-section">
+                    <div class="workflow-toolbar">
+                        <div class="workflow-meta">
+                            <label for="workflow-name-input" data-i18n="workflow_builder_name_label">Button label</label>
+                            <input type="text" id="workflow-name-input" placeholder="My quick action" data-i18n-placeholder="workflow_builder_name_placeholder">
+                        </div>
+                        <div class="workflow-meta">
+                            <label for="workflow-icon-input" data-i18n="workflow_builder_icon_label">Icon</label>
+                            <select id="workflow-icon-input"></select>
+                        </div>
+                        <div class="workflow-meta full">
+                            <label for="workflow-description-input" data-i18n="workflow_builder_description_label">Description</label>
+                            <textarea id="workflow-description-input" placeholder="Explain what this action does" data-i18n-placeholder="workflow_builder_description_placeholder"></textarea>
+                        </div>
+                    </div>
+                    <div class="workflow-canvas-container">
+                        <div class="workflow-canvas" id="workflow-canvas" aria-live="polite"></div>
+                        <div class="workflow-empty-state" id="workflow-empty-state">
+                            <div class="empty-state-icon"><i data-feather="aperture"></i></div>
+                            <h3 data-i18n="workflow_builder_empty_title">Drop modules to begin</h3>
+                            <p data-i18n="workflow_builder_empty_subtitle">Choose a trigger, then connect transformations and finish with an action.</p>
+                        </div>
+                    </div>
+                </section>
+                <aside class="workflow-inspector" id="workflow-inspector" aria-live="polite">
+                    <div class="inspector-empty" id="workflow-inspector-empty">
+                        <h3 data-i18n="workflow_inspector_empty_title">Select a module</h3>
+                        <p data-i18n="workflow_inspector_empty_subtitle">Click on any module on the canvas to configure details.</p>
+                    </div>
+                    <div class="inspector-form hidden" id="workflow-inspector-form"></div>
+                </aside>
+            </div>
+        </div>
+    </div>
+
+    <div id="workflow-runner-overlay" class="modal-overlay hidden" aria-hidden="true">
+        <div class="modal-backdrop" data-overlay-close="workflow-runner"></div>
+        <div class="modal-content workflow-runner-modal" role="dialog" aria-modal="true" aria-labelledby="workflow-runner-title">
+            <header class="modal-header">
+                <div class="modal-header-text">
+                    <h2 id="workflow-runner-title">Quick action</h2>
+                    <p id="workflow-runner-description"></p>
+                </div>
+                <div class="modal-header-actions">
+                    <button type="button" class="modal-button secondary" id="workflow-runner-close" data-i18n="workflow_runner_close">Close</button>
+                </div>
+            </header>
+            <div class="workflow-runner-body">
+                <div class="workflow-runner-steps" id="workflow-runner-steps"></div>
+                <div class="workflow-runner-console">
+                    <h4 data-i18n="workflow_runner_activity">Activity</h4>
+                    <div id="workflow-runner-log" class="workflow-runner-log"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="addon-template-drawer" class="template-drawer hidden" aria-hidden="true">
+        <div class="template-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="template-drawer-title">
+            <header class="template-drawer-header">
+                <div>
+                    <h3 id="template-drawer-title" data-i18n="workflow_template_gallery_title">Quick start templates</h3>
+                    <p data-i18n="workflow_template_gallery_subtitle">Pick a ready-made workflow and adapt it to your needs.</p>
+                </div>
+                <button type="button" class="template-drawer-close" data-overlay-close="template-drawer" aria-label="Close template gallery">
+                    <i data-feather="x"></i>
+                </button>
+            </header>
+            <div class="template-drawer-content" id="template-drawer-content"></div>
+        </div>
+    </div>
+
     <div id="folder-context-menu" class="folder-context-menu">
         <div class="folder-menu-actions">
             <button type="button" class="folder-menu-action" data-action="rename" data-i18n="context_rename_folder">Rename</button>

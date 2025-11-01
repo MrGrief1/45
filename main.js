@@ -104,6 +104,7 @@ const DEFAULT_SETTINGS = {
         renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         features: ['addon-builder', 'extended-gallery', 'priority-support']
     },
+    quickActions: ['apps-library', 'files', 'commands', 'clipboard'],
     activeAddons: ['clipboard-buffer'],
     customAddons: []
 };
@@ -298,11 +299,16 @@ class SettingsManager {
             currentSettings.activeAddons = [...DEFAULT_SETTINGS.activeAddons];
         }
 
+        if (!Array.isArray(currentSettings.quickActions)) {
+            currentSettings.quickActions = [...DEFAULT_SETTINGS.quickActions];
+        }
+
         if (!Array.isArray(currentSettings.customAddons)) {
             currentSettings.customAddons = [];
         }
 
         currentSettings.activeAddons = Array.from(new Set(currentSettings.activeAddons.filter(Boolean)));
+        currentSettings.quickActions = Array.from(new Set(currentSettings.quickActions.filter(Boolean)));
         currentSettings.customAddons = currentSettings.customAddons
             .filter(addon => addon && typeof addon === 'object' && addon.id && addon.name)
             .map(addon => ({
@@ -327,9 +333,9 @@ class SettingsManager {
     updateSetting(key, value) {
         let requiresReindex = false;
 
-        if (['indexedDirectories', 'customAutomations', 'customAddons', 'activeAddons', 'subscription'].includes(key)) {
+        if (['indexedDirectories', 'customAutomations', 'customAddons', 'activeAddons', 'subscription', 'quickActions'].includes(key)) {
             currentSettings[key] = value;
-            if (['customAddons', 'activeAddons', 'subscription'].includes(key)) {
+            if (['customAddons', 'activeAddons', 'subscription', 'quickActions'].includes(key)) {
                 this.validateSettings();
             }
             if (key === 'indexedDirectories') requiresReindex = true;
