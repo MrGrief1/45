@@ -14,8 +14,11 @@ const AppState = {
     searchResults: [],
     selectedIndex: -1,
     isInitialized: false,
-    iconCache: new Map(), 
+    iconCache: new Map(),
     hintShown: false, // НОВОЕ: Флаг показа подсказки
+    toolbarSnapshot: [],
+    workflowDraft: null,
+    workflowHistory: []
 };
 
 const Utils = {
@@ -108,48 +111,1204 @@ const SubscriptionFeatureLabels = {
     default: 'subscription_feature_default'
 };
 
-const AddonLibrary = [
+const QuickActionDefaults = ['apps-library', 'files', 'commands', 'clipboard'];
+
+const QuickActionLibrary = [
     {
-        id: 'clipboard-buffer',
-        type: 'library',
-        icon: 'clipboard',
-        base: 'clipboard',
-        nameKey: 'addon_library_clipboard_name',
-        descriptionKey: 'addon_library_clipboard_description',
-        blocks: ['clipboard-filter', 'pin-items']
+        id: 'apps-library',
+        icon: 'grid',
+        accent: 'ocean',
+        type: 'panel',
+        payload: { panel: 'apps-library' },
+        nameKey: 'quick_action_apps_library',
+        descriptionKey: 'quick_action_apps_library_description',
+        tags: ['core', 'navigation']
     },
     {
-        id: 'note-canvas',
-        type: 'library',
-        icon: 'edit-3',
-        base: 'note',
-        nameKey: 'addon_library_note_name',
-        descriptionKey: 'addon_library_note_description',
-        blocks: ['text-replace']
+        id: 'files',
+        icon: 'folder',
+        accent: 'amber',
+        type: 'panel',
+        payload: { panel: 'files' },
+        nameKey: 'quick_action_files',
+        descriptionKey: 'quick_action_files_description',
+        tags: ['core', 'files']
     },
     {
-        id: 'workflow-launcher',
-        type: 'library',
-        icon: 'zap',
-        base: 'command',
-        nameKey: 'addon_library_command_name',
-        descriptionKey: 'addon_library_command_description',
-        blocks: ['pin-items', 'sync']
+        id: 'commands',
+        icon: 'command',
+        accent: 'violet',
+        type: 'panel',
+        payload: { panel: 'commands' },
+        nameKey: 'quick_action_commands',
+        descriptionKey: 'quick_action_commands_description',
+        tags: ['core', 'automation']
+    },
+    {
+        id: 'clipboard',
+        icon: 'copy',
+        accent: 'teal',
+        type: 'panel',
+        payload: { panel: 'clipboard' },
+        nameKey: 'quick_action_clipboard',
+        descriptionKey: 'quick_action_clipboard_description',
+        tags: ['core', 'productivity']
+    },
+    {
+        id: 'workflow-gallery',
+        icon: 'layers',
+        accent: 'magenta',
+        type: 'workflow',
+        payload: { templateId: 'curated-gallery' },
+        nameKey: 'quick_action_workflow_gallery',
+        descriptionKey: 'quick_action_workflow_gallery_description',
+        tags: ['premium', 'workflow']
+    },
+    {
+        id: 'research-deck',
+        icon: 'book-open',
+        accent: 'indigo',
+        type: 'workflow',
+        payload: { templateId: 'research-brief' },
+        nameKey: 'quick_action_research',
+        descriptionKey: 'quick_action_research_description',
+        tags: ['workflow', 'knowledge']
+    },
+    {
+        id: 'standup-reporter',
+        icon: 'mic',
+        accent: 'sunset',
+        type: 'workflow',
+        payload: { templateId: 'daily-standup' },
+        nameKey: 'quick_action_standup',
+        descriptionKey: 'quick_action_standup_description',
+        tags: ['team', 'communication']
+    },
+    {
+        id: 'status-mailer',
+        icon: 'mail',
+        accent: 'crimson',
+        type: 'workflow',
+        payload: { templateId: 'status-email' },
+        nameKey: 'quick_action_status_mailer',
+        descriptionKey: 'quick_action_status_mailer_description',
+        tags: ['communication', 'automation']
+    },
+    {
+        id: 'ai-scout',
+        icon: 'cpu',
+        accent: 'mint',
+        type: 'workflow',
+        payload: { templateId: 'ai-scout' },
+        nameKey: 'quick_action_ai_scout',
+        descriptionKey: 'quick_action_ai_scout_description',
+        tags: ['ai', 'premium']
+    },
+    {
+        id: 'focus-playlist',
+        icon: 'music',
+        accent: 'blue',
+        type: 'workflow',
+        payload: { templateId: 'focus-playlist' },
+        nameKey: 'quick_action_focus_playlist',
+        descriptionKey: 'quick_action_focus_playlist_description',
+        tags: ['music', 'personal']
+    },
+    {
+        id: 'design-review',
+        icon: 'pen-tool',
+        accent: 'gold',
+        type: 'workflow',
+        payload: { templateId: 'design-review' },
+        nameKey: 'quick_action_design_review',
+        descriptionKey: 'quick_action_design_review_description',
+        tags: ['team', 'design']
+    },
+    {
+        id: 'metrics-dashboard',
+        icon: 'trending-up',
+        accent: 'emerald',
+        type: 'workflow',
+        payload: { templateId: 'metrics-dashboard' },
+        nameKey: 'quick_action_metrics',
+        descriptionKey: 'quick_action_metrics_description',
+        tags: ['analytics', 'data']
     }
 ];
 
-const AddonBuilderBases = [
-    { id: 'clipboard', icon: 'clipboard', nameKey: 'addon_base_clipboard', descriptionKey: 'addon_base_clipboard_desc' },
-    { id: 'note', icon: 'edit-3', nameKey: 'addon_base_note', descriptionKey: 'addon_base_note_desc' },
-    { id: 'command', icon: 'zap', nameKey: 'addon_base_command', descriptionKey: 'addon_base_command_desc' }
+const WorkflowModuleCatalog = [
+    {
+        id: 'trigger-clipboard',
+        category: 'trigger',
+        icon: 'clipboard',
+        nameKey: 'workflow_module_clipboard_trigger',
+        descriptionKey: 'workflow_module_clipboard_trigger_description',
+        inputs: [],
+        outputs: ['text'],
+        configSchema: [
+            { field: 'keywords', type: 'multi-text', labelKey: 'workflow_module_clipboard_trigger_keywords', placeholderKey: 'workflow_module_clipboard_trigger_keywords_placeholder' },
+            { field: 'maxItems', type: 'number', labelKey: 'workflow_module_clipboard_trigger_limit', default: 10 }
+        ]
+    },
+    {
+        id: 'trigger-schedule',
+        category: 'trigger',
+        icon: 'clock',
+        nameKey: 'workflow_module_schedule_trigger',
+        descriptionKey: 'workflow_module_schedule_trigger_description',
+        inputs: [],
+        outputs: ['tick'],
+        configSchema: [
+            { field: 'frequency', type: 'select', labelKey: 'workflow_module_schedule_trigger_frequency', options: ['daily', 'weekly', 'hourly'] },
+            { field: 'time', type: 'time', labelKey: 'workflow_module_schedule_trigger_time', default: '09:00' }
+        ]
+    },
+    {
+        id: 'trigger-webhook',
+        category: 'trigger',
+        icon: 'cloud-lightning',
+        nameKey: 'workflow_module_webhook_trigger',
+        descriptionKey: 'workflow_module_webhook_trigger_description',
+        inputs: [],
+        outputs: ['payload'],
+        configSchema: [
+            { field: 'url', type: 'text', labelKey: 'workflow_module_webhook_trigger_url' },
+            { field: 'method', type: 'select', labelKey: 'workflow_module_webhook_trigger_method', options: ['POST', 'GET'] }
+        ]
+    },
+    {
+        id: 'transform-markdown',
+        category: 'processor',
+        icon: 'file-text',
+        nameKey: 'workflow_module_markdown_formatter',
+        descriptionKey: 'workflow_module_markdown_formatter_description',
+        inputs: ['text'],
+        outputs: ['document'],
+        configSchema: [
+            { field: 'template', type: 'textarea', labelKey: 'workflow_module_markdown_formatter_template' },
+            { field: 'variables', type: 'key-value', labelKey: 'workflow_module_markdown_formatter_variables' }
+        ]
+    },
+    {
+        id: 'transform-language',
+        category: 'processor',
+        icon: 'globe',
+        nameKey: 'workflow_module_language_transform',
+        descriptionKey: 'workflow_module_language_transform_description',
+        inputs: ['text'],
+        outputs: ['text'],
+        configSchema: [
+            { field: 'targetLanguage', type: 'select', labelKey: 'workflow_module_language_transform_target', options: ['en', 'ru', 'de', 'fr', 'zh'] },
+            { field: 'formal', type: 'boolean', labelKey: 'workflow_module_language_transform_formal' }
+        ]
+    },
+    {
+        id: 'transform-summary',
+        category: 'processor',
+        icon: 'align-left',
+        nameKey: 'workflow_module_summary',
+        descriptionKey: 'workflow_module_summary_description',
+        inputs: ['text'],
+        outputs: ['summary'],
+        configSchema: [
+            { field: 'sentences', type: 'number', labelKey: 'workflow_module_summary_sentences', default: 3 }
+        ]
+    },
+    {
+        id: 'transform-ai-analysis',
+        category: 'processor',
+        icon: 'cpu',
+        nameKey: 'workflow_module_ai_analysis',
+        descriptionKey: 'workflow_module_ai_analysis_description',
+        inputs: ['text'],
+        outputs: ['insight'],
+        configSchema: [
+            { field: 'tone', type: 'select', labelKey: 'workflow_module_ai_analysis_tone', options: ['neutral', 'optimistic', 'critical'] },
+            { field: 'bulletPoints', type: 'boolean', labelKey: 'workflow_module_ai_analysis_bullets' }
+        ]
+    },
+    {
+        id: 'action-open-panel',
+        category: 'action',
+        icon: 'sidebar',
+        nameKey: 'workflow_module_open_panel',
+        descriptionKey: 'workflow_module_open_panel_description',
+        inputs: ['context'],
+        outputs: [],
+        configSchema: [
+            { field: 'panel', type: 'select', labelKey: 'workflow_module_open_panel_target', options: ['apps-library', 'files', 'commands', 'clipboard'] }
+        ]
+    },
+    {
+        id: 'action-run-command',
+        category: 'action',
+        icon: 'terminal',
+        nameKey: 'workflow_module_run_command',
+        descriptionKey: 'workflow_module_run_command_description',
+        inputs: ['context'],
+        outputs: [],
+        configSchema: [
+            { field: 'command', type: 'text', labelKey: 'workflow_module_run_command_command' },
+            { field: 'arguments', type: 'list', labelKey: 'workflow_module_run_command_arguments' }
+        ]
+    },
+    {
+        id: 'action-send-webhook',
+        category: 'action',
+        icon: 'send',
+        nameKey: 'workflow_module_send_webhook',
+        descriptionKey: 'workflow_module_send_webhook_description',
+        inputs: ['payload'],
+        outputs: [],
+        configSchema: [
+            { field: 'endpoint', type: 'text', labelKey: 'workflow_module_send_webhook_endpoint' },
+            { field: 'method', type: 'select', labelKey: 'workflow_module_send_webhook_method', options: ['POST', 'PUT', 'PATCH'] }
+        ]
+    },
+    {
+        id: 'action-create-note',
+        category: 'action',
+        icon: 'file-plus',
+        nameKey: 'workflow_module_create_note',
+        descriptionKey: 'workflow_module_create_note_description',
+        inputs: ['document'],
+        outputs: [],
+        configSchema: [
+            { field: 'destination', type: 'text', labelKey: 'workflow_module_create_note_destination' },
+            { field: 'pinToToolbar', type: 'boolean', labelKey: 'workflow_module_create_note_pin' }
+        ]
+    }
 ];
 
-const AddonBuilderBlocks = [
-    { id: 'clipboard-filter', icon: 'filter', nameKey: 'addon_builder_blocks_clipboard_filter', descriptionKey: 'addon_builder_blocks_clipboard_filter_desc' },
-    { id: 'text-replace', icon: 'repeat', nameKey: 'addon_builder_blocks_text_replace', descriptionKey: 'addon_builder_blocks_text_replace_desc' },
-    { id: 'pin-items', icon: 'bookmark', nameKey: 'addon_builder_blocks_pin_items', descriptionKey: 'addon_builder_blocks_pin_items_desc' },
-    { id: 'sync', icon: 'cloud', nameKey: 'addon_builder_blocks_sync', descriptionKey: 'addon_builder_blocks_sync_desc' }
+const WorkflowTemplates = [
+    {
+        id: 'curated-gallery',
+        nameKey: 'workflow_template_curated_gallery',
+        descriptionKey: 'workflow_template_curated_gallery_description',
+        icon: 'layers',
+        accent: 'magenta',
+        nodes: [
+            { id: 'trigger-clipboard', position: { x: 120, y: 80 } },
+            { id: 'transform-summary', position: { x: 420, y: 70 } },
+            { id: 'transform-ai-analysis', position: { x: 720, y: 160 } },
+            { id: 'action-create-note', position: { x: 1040, y: 100 } }
+        ],
+        connections: [
+            { from: { node: 0, port: 'text' }, to: { node: 1, port: 'text' } },
+            { from: { node: 1, port: 'summary' }, to: { node: 2, port: 'text' } },
+            { from: { node: 2, port: 'insight' }, to: { node: 3, port: 'document' } }
+        ]
+    },
+    {
+        id: 'research-brief',
+        nameKey: 'workflow_template_research_brief',
+        descriptionKey: 'workflow_template_research_brief_description',
+        icon: 'book-open',
+        accent: 'indigo',
+        nodes: [
+            { id: 'trigger-webhook', position: { x: 100, y: 180 } },
+            { id: 'transform-summary', position: { x: 420, y: 120 } },
+            { id: 'transform-language', position: { x: 720, y: 180 } },
+            { id: 'action-open-panel', position: { x: 1020, y: 180 } }
+        ],
+        connections: [
+            { from: { node: 0, port: 'payload' }, to: { node: 1, port: 'text' } },
+            { from: { node: 1, port: 'summary' }, to: { node: 2, port: 'text' } },
+            { from: { node: 2, port: 'text' }, to: { node: 3, port: 'context' } }
+        ]
+    },
+    {
+        id: 'daily-standup',
+        nameKey: 'workflow_template_daily_standup',
+        descriptionKey: 'workflow_template_daily_standup_description',
+        icon: 'mic',
+        accent: 'sunset',
+        nodes: [
+            { id: 'trigger-schedule', position: { x: 120, y: 120 } },
+            { id: 'transform-markdown', position: { x: 420, y: 80 } },
+            { id: 'action-send-webhook', position: { x: 740, y: 140 } }
+        ],
+        connections: [
+            { from: { node: 0, port: 'tick' }, to: { node: 1, port: 'text' } },
+            { from: { node: 1, port: 'document' }, to: { node: 2, port: 'payload' } }
+        ]
+    },
+    {
+        id: 'status-email',
+        nameKey: 'workflow_template_status_email',
+        descriptionKey: 'workflow_template_status_email_description',
+        icon: 'mail',
+        accent: 'crimson',
+        nodes: [
+            { id: 'trigger-schedule', position: { x: 120, y: 90 } },
+            { id: 'transform-summary', position: { x: 400, y: 120 } },
+            { id: 'transform-markdown', position: { x: 680, y: 160 } },
+            { id: 'action-send-webhook', position: { x: 970, y: 200 } }
+        ],
+        connections: [
+            { from: { node: 0, port: 'tick' }, to: { node: 1, port: 'text' } },
+            { from: { node: 1, port: 'summary' }, to: { node: 2, port: 'text' } },
+            { from: { node: 2, port: 'document' }, to: { node: 3, port: 'payload' } }
+        ]
+    },
+    {
+        id: 'ai-scout',
+        nameKey: 'workflow_template_ai_scout',
+        descriptionKey: 'workflow_template_ai_scout_description',
+        icon: 'cpu',
+        accent: 'mint',
+        nodes: [
+            { id: 'trigger-webhook', position: { x: 120, y: 140 } },
+            { id: 'transform-ai-analysis', position: { x: 440, y: 160 } },
+            { id: 'action-create-note', position: { x: 760, y: 110 } }
+        ],
+        connections: [
+            { from: { node: 0, port: 'payload' }, to: { node: 1, port: 'text' } },
+            { from: { node: 1, port: 'insight' }, to: { node: 2, port: 'document' } }
+        ]
+    },
+    {
+        id: 'focus-playlist',
+        nameKey: 'workflow_template_focus_playlist',
+        descriptionKey: 'workflow_template_focus_playlist_description',
+        icon: 'music',
+        accent: 'blue',
+        nodes: [
+            { id: 'trigger-schedule', position: { x: 120, y: 60 } },
+            { id: 'transform-ai-analysis', position: { x: 420, y: 60 } },
+            { id: 'action-open-panel', position: { x: 720, y: 120 } }
+        ],
+        connections: [
+            { from: { node: 0, port: 'tick' }, to: { node: 1, port: 'text' } },
+            { from: { node: 1, port: 'insight' }, to: { node: 2, port: 'context' } }
+        ]
+    },
+    {
+        id: 'design-review',
+        nameKey: 'workflow_template_design_review',
+        descriptionKey: 'workflow_template_design_review_description',
+        icon: 'pen-tool',
+        accent: 'gold',
+        nodes: [
+            { id: 'trigger-clipboard', position: { x: 120, y: 100 } },
+            { id: 'transform-language', position: { x: 420, y: 160 } },
+            { id: 'transform-markdown', position: { x: 720, y: 120 } },
+            { id: 'action-create-note', position: { x: 1020, y: 160 } }
+        ],
+        connections: [
+            { from: { node: 0, port: 'text' }, to: { node: 1, port: 'text' } },
+            { from: { node: 1, port: 'text' }, to: { node: 2, port: 'text' } },
+            { from: { node: 2, port: 'document' }, to: { node: 3, port: 'document' } }
+        ]
+    },
+    {
+        id: 'metrics-dashboard',
+        nameKey: 'workflow_template_metrics_dashboard',
+        descriptionKey: 'workflow_template_metrics_dashboard_description',
+        icon: 'trending-up',
+        accent: 'emerald',
+        nodes: [
+            { id: 'trigger-webhook', position: { x: 120, y: 200 } },
+            { id: 'transform-summary', position: { x: 420, y: 120 } },
+            { id: 'transform-ai-analysis', position: { x: 740, y: 140 } },
+            { id: 'action-open-panel', position: { x: 1060, y: 180 } }
+        ],
+        connections: [
+            { from: { node: 0, port: 'payload' }, to: { node: 1, port: 'text' } },
+            { from: { node: 1, port: 'summary' }, to: { node: 2, port: 'text' } },
+            { from: { node: 2, port: 'insight' }, to: { node: 3, port: 'context' } }
+        ]
+    }
 ];
+
+const QuickActionManager = {
+    library: QuickActionLibrary,
+    templates: WorkflowTemplates,
+    modules: WorkflowModuleCatalog,
+
+    init() {
+        this.ensureSettingsIntegrity();
+    },
+
+    ensureSettingsIntegrity() {
+        if (!AppState.settings) return;
+        if (!Array.isArray(AppState.settings.toolbarActions)) {
+            if (Array.isArray(AppState.settings.activeAddons) && AppState.settings.activeAddons.length > 0) {
+                AppState.settings.toolbarActions = [...new Set(AppState.settings.activeAddons)];
+            } else {
+                AppState.settings.toolbarActions = [...QuickActionDefaults];
+            }
+            ipcRenderer.send('update-setting', 'toolbarActions', AppState.settings.toolbarActions);
+        }
+        if (!Array.isArray(AppState.settings.customWorkflows)) {
+            if (Array.isArray(AppState.settings.customAddons)) {
+                AppState.settings.customWorkflows = AppState.settings.customAddons.map(addon => ({
+                    id: addon.id,
+                    name: addon.name,
+                    icon: addon.icon || 'zap',
+                    accent: addon.accent || 'violet',
+                    description: addon.description || '',
+                    nodes: addon.blocks?.map((block, index) => ({
+                        id: block,
+                        position: { x: 160 + index * 220, y: 120 + (index % 2) * 120 },
+                        config: {}
+                    })) || [],
+                    connections: []
+                }));
+            } else {
+                AppState.settings.customWorkflows = [];
+            }
+            ipcRenderer.send('update-setting', 'customWorkflows', AppState.settings.customWorkflows);
+        }
+    },
+
+    getActiveActionIds() {
+        const stored = Array.isArray(AppState.settings?.toolbarActions) ? [...AppState.settings.toolbarActions] : [];
+        if (stored.length === 0) {
+            stored.push(...QuickActionDefaults);
+            this.setActiveActionIds(stored, { persist: true, silent: true });
+        }
+        return stored;
+    },
+
+    setActiveActionIds(ids, options = { persist: true, silent: false }) {
+        const normalized = Array.from(new Set((ids || []).filter(Boolean)));
+        AppState.settings.toolbarActions = normalized;
+        if (options.persist) {
+            ipcRenderer.send('update-setting', 'toolbarActions', normalized);
+        }
+        if (!options.silent) {
+            ToolbarQuickActions.refresh();
+        }
+    },
+
+    getActionDefinition(id) {
+        if (!id) return null;
+        const builtin = this.library.find(item => item.id === id);
+        if (builtin) return { ...builtin, source: 'builtin' };
+        const workflow = this.getWorkflowById(id);
+        if (workflow) {
+            return this.createActionFromWorkflow(workflow);
+        }
+        return null;
+    },
+
+    getWorkflowById(id) {
+        if (!id) return null;
+        return (AppState.settings.customWorkflows || []).find(workflow => workflow.id === id) || null;
+    },
+
+    createActionFromWorkflow(workflow) {
+        if (!workflow) return null;
+        return {
+            id: workflow.id,
+            icon: workflow.icon || 'zap',
+            accent: workflow.accent || 'violet',
+            type: 'workflow',
+            payload: { workflowId: workflow.id },
+            name: workflow.name,
+            description: workflow.description || '',
+            source: 'custom',
+            tags: ['workflow', 'custom']
+        };
+    },
+
+    getRenderableActions() {
+        const activeIds = this.getActiveActionIds();
+        return activeIds
+            .map(id => this.getActionDefinition(id))
+            .filter(Boolean);
+    },
+
+    listAvailableLibrary() {
+        const activeIds = new Set(this.getActiveActionIds());
+        const customActions = (AppState.settings.customWorkflows || []).map(workflow => this.createActionFromWorkflow(workflow));
+        const merged = [...this.library.map(item => ({ ...item, source: 'builtin', isActive: activeIds.has(item.id) })),
+            ...customActions.map(item => ({ ...item, isActive: activeIds.has(item.id) }))];
+        return merged;
+    },
+
+    upsertWorkflow(workflow) {
+        if (!workflow?.id) return;
+        const workflows = Array.isArray(AppState.settings.customWorkflows) ? [...AppState.settings.customWorkflows] : [];
+        const index = workflows.findIndex(item => item.id === workflow.id);
+        if (index === -1) {
+            workflows.push(workflow);
+        } else {
+            workflows[index] = workflow;
+        }
+        AppState.settings.customWorkflows = workflows;
+        ipcRenderer.send('update-setting', 'customWorkflows', workflows);
+        ToolbarQuickActions.refresh();
+        SettingsModule.renderAddons();
+    },
+
+    removeWorkflow(id) {
+        const workflows = Array.isArray(AppState.settings.customWorkflows) ? [...AppState.settings.customWorkflows] : [];
+        const filtered = workflows.filter(workflow => workflow.id !== id);
+        if (filtered.length === workflows.length) return;
+        AppState.settings.customWorkflows = filtered;
+        ipcRenderer.send('update-setting', 'customWorkflows', filtered);
+        const active = this.getActiveActionIds().filter(actionId => actionId !== id);
+        this.setActiveActionIds(active, { persist: true, silent: true });
+        ToolbarQuickActions.refresh();
+        SettingsModule.renderAddons();
+    },
+
+    getTemplateById(id) {
+        return this.templates.find(template => template.id === id) || null;
+    },
+
+    getModuleById(id) {
+        return this.modules.find(module => module.id === id) || null;
+    },
+
+    formatActionTitle(action) {
+        if (!action) return LocalizationRenderer.t('quick_action_unknown');
+        if (action.nameKey) return LocalizationRenderer.t(action.nameKey);
+        if (action.name) return action.name;
+        return LocalizationRenderer.t('quick_action_unknown');
+    },
+
+    formatActionDescription(action) {
+        if (!action) return '';
+        if (action.descriptionKey) return LocalizationRenderer.t(action.descriptionKey);
+        return action.description || '';
+    },
+
+    resolveAccentColor(accent) {
+        const palette = {
+            ocean: '#5096ff',
+            amber: '#ffc75f',
+            violet: '#9a6bff',
+            teal: '#2dd4bf',
+            magenta: '#ff73b3',
+            indigo: '#6c63ff',
+            sunset: '#ff9472',
+            crimson: '#ff6b6b',
+            mint: '#36f0c0',
+            blue: '#4c6fff',
+            gold: '#facc15',
+            emerald: '#34d399'
+        };
+        return palette[accent] || '#6c63ff';
+    }
+};
+
+const ToolbarQuickActions = {
+    container: null,
+
+    init() {
+        this.container = Utils.getElement('#quick-actions-track');
+        if (!this.container) return;
+        this.refresh();
+        window.addEventListener('resize', Utils.debounce(() => this.updateOverflowState(), 200));
+    },
+
+    refresh() {
+        if (!this.container) return;
+        this.container.innerHTML = '';
+        const actions = QuickActionManager.getRenderableActions();
+        actions.forEach(action => {
+            const button = this.createButton(action);
+            this.container.appendChild(button);
+        });
+        if (window.feather) window.feather.replace();
+        this.updateOverflowState();
+    },
+
+    updateOverflowState() {
+        if (!this.container) return;
+        const hasOverflow = this.container.scrollWidth > this.container.clientWidth + 16;
+        this.container.classList.toggle('has-overflow', hasOverflow);
+    },
+
+    createButton(action) {
+        const button = Utils.createElement('button', { className: 'action-button quick-action-button glass-element' });
+        const label = QuickActionManager.formatActionTitle(action);
+        button.setAttribute('data-label', label);
+        button.setAttribute('data-action-id', action.id);
+
+        if (action.accent) {
+            const accent = QuickActionManager.resolveAccentColor(action.accent);
+            button.style.setProperty('--action-accent', accent);
+            button.style.boxShadow = `0 6px 18px ${Utils.hexToRgba(accent, 0.25)}`;
+        }
+
+        const icon = Utils.createElement('i', { className: 'icon' });
+        icon.setAttribute('data-feather', action.icon || 'zap');
+        button.appendChild(icon);
+
+        button.addEventListener('click', () => this.handleAction(action));
+        return button;
+    },
+
+    handleAction(action) {
+        if (!action) return;
+        if (action.type === 'panel' && action.payload?.panel) {
+            AuxPanelManager.togglePanel(action.payload.panel);
+        } else if (action.type === 'workflow') {
+            WorkflowRuntime.launch(action);
+        } else {
+            console.warn('Unknown action type', action);
+        }
+    }
+};
+
+const WorkflowRuntime = {
+    launch(action) {
+        if (action.payload?.workflowId) {
+            const workflow = QuickActionManager.getWorkflowById(action.payload.workflowId);
+            if (!workflow) {
+                this.showToast('runtime', LocalizationRenderer.t('workflow_runtime_missing'));
+                return;
+            }
+            this.executeWorkflow(workflow);
+        } else if (action.payload?.templateId) {
+            const template = QuickActionManager.getTemplateById(action.payload.templateId);
+            if (!template) {
+                this.showToast('runtime', LocalizationRenderer.t('workflow_runtime_missing_template'));
+                return;
+            }
+            const generated = this.instantiateTemplate(template);
+            this.executeWorkflow(generated);
+        } else {
+            this.showToast('runtime', LocalizationRenderer.t('workflow_runtime_unknown_payload'));
+        }
+    },
+
+    instantiateTemplate(template) {
+        return {
+            id: `temp-${Date.now()}`,
+            name: LocalizationRenderer.t(template.nameKey),
+            icon: template.icon,
+            accent: template.accent,
+            nodes: template.nodes.map(node => ({
+                ...node,
+                config: this.autofillConfig(node.id)
+            })),
+            connections: template.connections
+        };
+    },
+
+    autofillConfig(moduleId) {
+        const module = QuickActionManager.getModuleById(moduleId);
+        if (!module) return {};
+        const config = {};
+        (module.configSchema || []).forEach(field => {
+            if (Object.prototype.hasOwnProperty.call(field, 'default')) {
+                config[field.field] = field.default;
+            } else if (field.type === 'boolean') {
+                config[field.field] = false;
+            } else if (field.type === 'list' || field.type === 'multi-text') {
+                config[field.field] = [];
+            } else {
+                config[field.field] = '';
+            }
+        });
+        return config;
+    },
+
+    executeWorkflow(workflow) {
+        this.showToast('runtime', LocalizationRenderer.t('workflow_runtime_start', workflow.name || 'workflow'));
+        setTimeout(() => {
+            this.showToast('runtime', LocalizationRenderer.t('workflow_runtime_finished', workflow.name || 'workflow'));
+        }, 600);
+    },
+
+    showToast(channel, message) {
+        const existing = document.querySelector(`.workflow-toast[data-channel="${channel}"]`);
+        if (existing) existing.remove();
+        const toast = Utils.createElement('div', { className: 'workflow-toast', text: message });
+        toast.dataset.channel = channel;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.classList.add('visible'), 10);
+        setTimeout(() => {
+            toast.classList.remove('visible');
+            setTimeout(() => toast.remove(), 300);
+        }, 2800);
+    }
+};
+
+const WorkflowBuilder = {
+    overlay: null,
+    moduleListEl: null,
+    canvasEl: null,
+    connectionSvg: null,
+    inspectorEl: null,
+    nameInput: null,
+    iconSelect: null,
+    deleteButton: null,
+    saveButton: null,
+    closeButton: null,
+    historyContainer: null,
+    searchInput: null,
+    emptyStateButton: null,
+
+    state: {
+        isOpen: false,
+        editingWorkflowId: null,
+        nodes: [],
+        connections: [],
+        selectedNodeId: null,
+        viewTransform: { x: 0, y: 0, scale: 1 }
+    },
+
+    init() {
+        this.overlay = Utils.getElement('#workflow-builder-overlay');
+        if (!this.overlay) return;
+        this.moduleListEl = Utils.getElement('#workflow-module-list');
+        this.canvasEl = Utils.getElement('#workflow-canvas');
+        this.connectionSvg = Utils.getElement('#workflow-connections');
+        this.inspectorEl = Utils.getElement('#workflow-inspector');
+        this.nameInput = Utils.getElement('#workflow-name');
+        this.iconSelect = Utils.getElement('#workflow-icon');
+        this.deleteButton = Utils.getElement('#workflow-delete');
+        this.saveButton = Utils.getElement('#workflow-save');
+        this.closeButton = Utils.getElement('#workflow-builder-close');
+        this.historyContainer = Utils.getElement('#workflow-studio-history');
+        this.searchInput = Utils.getElement('#workflow-module-search');
+        this.emptyStateButton = Utils.getElement('#workflow-empty-add-trigger');
+
+        this.bindEvents();
+        this.renderModuleLibrary();
+        this.renderInspector();
+    },
+
+    bindEvents() {
+        if (this.closeButton) this.closeButton.addEventListener('click', () => this.close());
+        if (this.saveButton) this.saveButton.addEventListener('click', () => this.save());
+        if (this.deleteButton) this.deleteButton.addEventListener('click', () => this.deleteWorkflow());
+        if (this.overlay) this.overlay.addEventListener('click', (event) => {
+            if (event.target === this.overlay) this.close();
+        });
+        if (this.canvasEl) {
+            this.canvasEl.addEventListener('click', (event) => {
+                if (event.target === this.canvasEl) {
+                    this.state.selectedNodeId = null;
+                    this.renderInspector();
+                    this.renderCanvas();
+                }
+            });
+        }
+        if (this.searchInput) {
+            this.searchInput.addEventListener('input', Utils.debounce(() => {
+                this.renderModuleLibrary(this.searchInput.value.trim().toLowerCase());
+            }, 120));
+        }
+        if (this.emptyStateButton) {
+            this.emptyStateButton.addEventListener('click', () => {
+                const firstTrigger = QuickActionManager.modules.find(module => module.category === 'trigger');
+                if (firstTrigger) this.addModuleToCanvas(firstTrigger.id);
+            });
+        }
+    },
+
+    syncFromSettings() {
+        this.renderHistory();
+        if (this.state.isOpen && this.state.editingWorkflowId) {
+            const workflow = QuickActionManager.getWorkflowById(this.state.editingWorkflowId);
+            if (workflow) this.loadWorkflow(workflow);
+        }
+    },
+
+    renderModuleLibrary(filter = '') {
+        if (!this.moduleListEl) return;
+        this.moduleListEl.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+        QuickActionManager.modules
+            .filter(module => {
+                if (!filter) return true;
+                const label = LocalizationRenderer.t(module.nameKey);
+                const description = LocalizationRenderer.t(module.descriptionKey);
+                return label.toLowerCase().includes(filter) || description.toLowerCase().includes(filter);
+            })
+            .forEach(module => {
+                const card = Utils.createElement('div', { className: 'workflow-module-card' });
+                const header = Utils.createElement('div', { className: 'workflow-module-title', text: LocalizationRenderer.t(module.nameKey) });
+                const description = Utils.createElement('div', { className: 'workflow-module-description', text: LocalizationRenderer.t(module.descriptionKey) });
+                const tags = Utils.createElement('div', { className: 'workflow-module-tags' });
+                tags.appendChild(Utils.createElement('span', { className: 'workflow-tag', text: module.category }));
+                card.appendChild(header);
+                card.appendChild(description);
+                card.appendChild(tags);
+                card.addEventListener('click', () => this.addModuleToCanvas(module.id));
+                fragment.appendChild(card);
+            });
+        this.moduleListEl.appendChild(fragment);
+        if (window.feather) window.feather.replace();
+    },
+
+    renderHistory() {
+        if (!this.historyContainer) return;
+        this.historyContainer.innerHTML = '';
+        const workflows = Array.isArray(AppState.settings.customWorkflows) ? [...AppState.settings.customWorkflows] : [];
+        if (workflows.length === 0) {
+            const placeholder = Utils.createElement('div', { className: 'workflow-studio-placeholder' });
+            placeholder.innerHTML = `<i data-feather="aperture"></i><span>${LocalizationRenderer.t('workflow_history_empty')}</span>`;
+            this.historyContainer.appendChild(placeholder);
+            if (window.feather) window.feather.replace();
+            return;
+        }
+        workflows.forEach(workflow => {
+            const entry = Utils.createElement('div', { className: 'workflow-history-entry' });
+            const meta = Utils.createElement('div');
+            meta.innerHTML = `<h4>${Utils.escapeHtml(workflow.name || 'Workflow')}</h4><p>${Utils.escapeHtml(workflow.description || '')}</p>`;
+            const actions = Utils.createElement('div', { className: 'workflow-history-actions' });
+            const openButton = Utils.createElement('button', { text: LocalizationRenderer.t('workflow_history_edit') });
+            openButton.addEventListener('click', () => this.open(workflow.id));
+            const runButton = Utils.createElement('button', { text: LocalizationRenderer.t('workflow_history_run') });
+            runButton.addEventListener('click', () => WorkflowRuntime.launch({ type: 'workflow', payload: { workflowId: workflow.id } }));
+            actions.appendChild(openButton);
+            actions.appendChild(runButton);
+            entry.appendChild(meta);
+            entry.appendChild(actions);
+            this.historyContainer.appendChild(entry);
+        });
+    },
+
+    open(workflowId = null) {
+        this.overlay.classList.remove('hidden');
+        this.overlay.setAttribute('aria-hidden', 'false');
+        this.state.isOpen = true;
+        this.state.editingWorkflowId = workflowId;
+        const workflow = workflowId ? QuickActionManager.getWorkflowById(workflowId) : null;
+        if (workflow) {
+            this.loadWorkflow(workflow);
+        } else {
+            this.resetState();
+        }
+        if (window.feather) window.feather.replace();
+    },
+
+    openTemplate(templateId) {
+        const template = QuickActionManager.getTemplateById(templateId);
+        if (!template) return;
+        this.open();
+        this.state.nodes = template.nodes.map((node, index) => ({
+            uid: `${node.id}-${Date.now()}-${index}`,
+            moduleId: node.id,
+            position: { ...node.position },
+            config: WorkflowRuntime.autofillConfig(node.id)
+        }));
+        this.state.connections = template.connections.map(connection => ({ ...connection }));
+        this.nameInput.value = LocalizationRenderer.t(template.nameKey);
+        this.iconSelect.value = template.icon || 'zap';
+        this.renderCanvas();
+        this.renderInspector();
+    },
+
+    openForNew() {
+        this.open();
+        this.resetState();
+    },
+
+    close() {
+        this.overlay.classList.add('hidden');
+        this.overlay.setAttribute('aria-hidden', 'true');
+        this.state.isOpen = false;
+        this.state.editingWorkflowId = null;
+        this.state.nodes = [];
+        this.state.connections = [];
+        this.state.selectedNodeId = null;
+        this.renderCanvas();
+        this.renderInspector();
+    },
+
+    resetState() {
+        this.state.nodes = [];
+        this.state.connections = [];
+        this.state.selectedNodeId = null;
+        this.nameInput.value = '';
+        this.iconSelect.value = 'zap';
+        this.renderCanvas();
+        this.renderInspector();
+    },
+
+    loadWorkflow(workflow) {
+        this.nameInput.value = workflow.name || '';
+        this.iconSelect.value = workflow.icon || 'zap';
+        this.state.nodes = (workflow.nodes || []).map((node, index) => ({
+            uid: node.uid || `${node.id}-${Date.now()}-${index}`,
+            moduleId: node.id,
+            position: node.position || { x: 120 + index * 220, y: 120 },
+            config: node.config || {}
+        }));
+        this.state.connections = (workflow.connections || []).map(connection => ({ ...connection }));
+        this.renderCanvas();
+        this.renderInspector();
+    },
+
+    addModuleToCanvas(moduleId) {
+        const module = QuickActionManager.getModuleById(moduleId);
+        if (!module) return;
+        const uid = `${module.id}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        this.state.nodes.push({
+            uid,
+            moduleId: module.id,
+            position: { x: 180 + this.state.nodes.length * 140, y: 160 },
+            config: WorkflowRuntime.autofillConfig(module.id)
+        });
+        this.state.selectedNodeId = uid;
+        this.renderCanvas();
+        this.renderInspector();
+    },
+
+    renderCanvas() {
+        if (!this.canvasEl) return;
+        const existingNodes = Array.from(this.canvasEl.querySelectorAll('.workflow-node'));
+        existingNodes.forEach(node => node.remove());
+        (this.connectionSvg ? this.connectionSvg.innerHTML = '' : null);
+
+        const fragment = document.createDocumentFragment();
+        this.state.nodes.forEach(node => {
+            const module = QuickActionManager.getModuleById(node.moduleId);
+            const nodeEl = Utils.createElement('div', { className: 'workflow-node' });
+            nodeEl.style.left = `${node.position.x}px`;
+            nodeEl.style.top = `${node.position.y}px`;
+            if (this.state.selectedNodeId === node.uid) nodeEl.classList.add('selected');
+
+            const header = Utils.createElement('div', { className: 'workflow-node-header' });
+            const title = Utils.createElement('div', { className: 'workflow-node-title' });
+            const icon = Utils.createElement('i', { className: 'icon' });
+            icon.setAttribute('data-feather', module?.icon || 'box');
+            title.appendChild(icon);
+            title.appendChild(document.createTextNode(LocalizationRenderer.t(module?.nameKey || 'workflow_unknown_module')));
+            const type = Utils.createElement('span', { className: 'workflow-node-type', text: module?.category || '' });
+            header.appendChild(title);
+            header.appendChild(type);
+
+            const body = Utils.createElement('div', { className: 'workflow-node-body' });
+            const ports = Utils.createElement('div', { className: 'workflow-ports' });
+            const inputs = Utils.createElement('div', { className: 'workflow-port-list' });
+            const outputs = Utils.createElement('div', { className: 'workflow-port-list' });
+
+            (module?.inputs || []).forEach(input => {
+                const port = Utils.createElement('div', { className: 'workflow-port' });
+                const marker = Utils.createElement('span', { className: 'workflow-port-point' });
+                marker.dataset.port = input;
+                port.appendChild(marker);
+                port.appendChild(Utils.createElement('span', { text: input }));
+                inputs.appendChild(port);
+            });
+
+            (module?.outputs || []).forEach(output => {
+                const port = Utils.createElement('div', { className: 'workflow-port' });
+                port.appendChild(Utils.createElement('span', { text: output }));
+                const marker = Utils.createElement('span', { className: 'workflow-port-point' });
+                marker.dataset.port = output;
+                port.appendChild(marker);
+                outputs.appendChild(port);
+            });
+
+            ports.appendChild(inputs);
+            ports.appendChild(outputs);
+            body.appendChild(ports);
+
+            nodeEl.appendChild(header);
+            nodeEl.appendChild(body);
+
+            let isDragging = false;
+            let dragOffset = { x: 0, y: 0 };
+
+            nodeEl.addEventListener('mousedown', (event) => {
+                if (event.button !== 0) return;
+                isDragging = true;
+                dragOffset = {
+                    x: event.clientX - node.position.x,
+                    y: event.clientY - node.position.y
+                };
+                this.state.selectedNodeId = node.uid;
+                this.renderInspector();
+                nodeEl.classList.add('dragging');
+            });
+
+            document.addEventListener('mousemove', (event) => {
+                if (!isDragging) return;
+                node.position.x = event.clientX - dragOffset.x;
+                node.position.y = event.clientY - dragOffset.y;
+                nodeEl.style.left = `${node.position.x}px`;
+                nodeEl.style.top = `${node.position.y}px`;
+                this.renderConnections();
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (!isDragging) return;
+                isDragging = false;
+                nodeEl.classList.remove('dragging');
+                this.renderConnections();
+            }, { once: true });
+
+            nodeEl.addEventListener('click', (event) => {
+                event.stopPropagation();
+                this.state.selectedNodeId = node.uid;
+                this.renderInspector();
+                this.renderCanvas();
+            });
+
+            fragment.appendChild(nodeEl);
+        });
+
+        this.canvasEl.appendChild(fragment);
+        if (window.feather) window.feather.replace();
+        this.renderConnections();
+        Utils.getElement('#workflow-empty-state')?.classList.toggle('hidden', this.state.nodes.length > 0);
+    },
+
+    renderConnections() {
+        if (!this.connectionSvg) return;
+        this.connectionSvg.innerHTML = '';
+        this.state.connections.forEach(connection => {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('class', 'workflow-connection-path');
+            const fromNode = this.state.nodes[connection.from.node];
+            const toNode = this.state.nodes[connection.to.node];
+            if (!fromNode || !toNode) return;
+            const startX = fromNode.position.x + 260;
+            const startY = fromNode.position.y + 120;
+            const endX = toNode.position.x;
+            const endY = toNode.position.y + 120;
+            const curve = 120;
+            const d = `M ${startX} ${startY} C ${startX + curve} ${startY}, ${endX - curve} ${endY}, ${endX} ${endY}`;
+            path.setAttribute('d', d);
+            this.connectionSvg.appendChild(path);
+        });
+    },
+
+    renderInspector() {
+        if (!this.inspectorEl) return;
+        this.inspectorEl.innerHTML = '';
+        const selected = this.state.nodes.find(node => node.uid === this.state.selectedNodeId);
+        if (!selected) {
+            const empty = Utils.createElement('div', { className: 'inspector-empty', text: LocalizationRenderer.t('workflow_inspector_empty') });
+            this.inspectorEl.appendChild(empty);
+            return;
+        }
+        const module = QuickActionManager.getModuleById(selected.moduleId);
+        const header = Utils.createElement('div', { className: 'inspector-section' });
+        header.innerHTML = `<h4>${LocalizationRenderer.t('workflow_inspector_module')}</h4><p>${LocalizationRenderer.t(module?.nameKey || 'workflow_unknown_module')}</p>`;
+        this.inspectorEl.appendChild(header);
+
+        const configSection = Utils.createElement('div', { className: 'inspector-section' });
+        configSection.appendChild(Utils.createElement('h4', { text: LocalizationRenderer.t('workflow_inspector_configuration') }));
+
+        (module?.configSchema || []).forEach(field => {
+            const fieldWrapper = Utils.createElement('div', { className: 'inspector-field' });
+            fieldWrapper.appendChild(Utils.createElement('label', { text: LocalizationRenderer.t(field.labelKey || '') }));
+
+            if (field.type === 'textarea') {
+                const textarea = Utils.createElement('textarea');
+                textarea.value = selected.config[field.field] || '';
+                textarea.addEventListener('input', () => {
+                    selected.config[field.field] = textarea.value;
+                });
+                fieldWrapper.appendChild(textarea);
+            } else if (field.type === 'boolean') {
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = !!selected.config[field.field];
+                checkbox.addEventListener('change', () => {
+                    selected.config[field.field] = checkbox.checked;
+                });
+                fieldWrapper.appendChild(checkbox);
+            } else if (field.type === 'number') {
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.value = selected.config[field.field] ?? field.default ?? 0;
+                input.addEventListener('input', () => {
+                    selected.config[field.field] = parseFloat(input.value);
+                });
+                fieldWrapper.appendChild(input);
+            } else if (field.type === 'select') {
+                const select = document.createElement('select');
+                (field.options || []).forEach(option => {
+                    const optionEl = document.createElement('option');
+                    optionEl.value = option;
+                    optionEl.textContent = option;
+                    select.appendChild(optionEl);
+                });
+                select.value = selected.config[field.field] || field.options?.[0] || '';
+                select.addEventListener('change', () => {
+                    selected.config[field.field] = select.value;
+                });
+                fieldWrapper.appendChild(select);
+            } else if (field.type === 'multi-text' || field.type === 'list') {
+                const input = document.createElement('textarea');
+                const values = Array.isArray(selected.config[field.field]) ? selected.config[field.field] : [];
+                input.value = values.join('\n');
+                input.addEventListener('input', () => {
+                    selected.config[field.field] = input.value.split('\n').map(line => line.trim()).filter(Boolean);
+                });
+                fieldWrapper.appendChild(input);
+            } else {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = selected.config[field.field] || '';
+                input.placeholder = field.placeholderKey ? LocalizationRenderer.t(field.placeholderKey) : '';
+                input.addEventListener('input', () => {
+                    selected.config[field.field] = input.value;
+                });
+                fieldWrapper.appendChild(input);
+            }
+
+            configSection.appendChild(fieldWrapper);
+        });
+
+        const actions = Utils.createElement('div', { className: 'inspector-section' });
+        actions.appendChild(Utils.createElement('h4', { text: LocalizationRenderer.t('workflow_inspector_actions') }));
+        const deleteNodeButton = Utils.createElement('button', { className: 'toolbar-library-button danger', text: LocalizationRenderer.t('workflow_inspector_remove_node') });
+        deleteNodeButton.addEventListener('click', () => this.removeNode(selected.uid));
+        actions.appendChild(deleteNodeButton);
+
+        this.inspectorEl.appendChild(configSection);
+        this.inspectorEl.appendChild(actions);
+    },
+
+    removeNode(uid) {
+        this.state.nodes = this.state.nodes.filter(node => node.uid !== uid);
+        this.state.connections = this.state.connections.filter(connection => connection.from.node !== uid && connection.to.node !== uid);
+        this.state.selectedNodeId = null;
+        this.renderCanvas();
+        this.renderInspector();
+    },
+
+    save() {
+        const name = this.nameInput?.value.trim();
+        if (!name) {
+            alert(LocalizationRenderer.t('workflow_builder_error_name_required'));
+            return;
+        }
+        const workflow = {
+            id: this.state.editingWorkflowId || `workflow-${Date.now()}`,
+            name,
+            icon: this.iconSelect?.value || 'zap',
+            accent: 'violet',
+            description: '',
+            nodes: this.state.nodes.map(node => ({
+                id: node.moduleId,
+                uid: node.uid,
+                position: node.position,
+                config: node.config
+            })),
+            connections: [...this.state.connections]
+        };
+        QuickActionManager.upsertWorkflow(workflow);
+        QuickActionManager.setActiveActionIds([...new Set([...QuickActionManager.getActiveActionIds(), workflow.id])]);
+        this.state.editingWorkflowId = workflow.id;
+        this.renderHistory();
+        this.close();
+    },
+
+    deleteWorkflow() {
+        if (!this.state.editingWorkflowId) {
+            this.close();
+            return;
+        }
+        if (!window.confirm(LocalizationRenderer.t('workflow_builder_delete_confirm'))) return;
+        QuickActionManager.removeWorkflow(this.state.editingWorkflowId);
+        this.close();
+    }
+};
 
 // =================================================================================
 // === Система Локализации (Клиентская сторона) ===
@@ -204,11 +1363,6 @@ const LocalizationRenderer = {
 // =================================================================================
 // ... existing code ...
 const SettingsModule = {
-    builderState: {
-        base: 'clipboard',
-        blocks: []
-    },
-
     init: function() {
         this.setupEventListeners();
         this.setupTabs();
@@ -245,76 +1399,61 @@ const SettingsModule = {
             });
         });
 
-        const activeAddonsList = Utils.getElement('#active-addons-list');
-        if (activeAddonsList) {
-            activeAddonsList.addEventListener('click', (event) => {
-                const removeButton = event.target.closest('[data-action="remove-addon"]');
+        const resetDefaults = Utils.getElement('#addons-sync-defaults');
+        if (resetDefaults) {
+            resetDefaults.addEventListener('click', () => {
+                QuickActionManager.setActiveActionIds([...QuickActionDefaults]);
+                this.renderAddons();
+            });
+        }
+
+        const toolbarList = Utils.getElement('#toolbar-active-list');
+        if (toolbarList) {
+            toolbarList.addEventListener('click', (event) => {
+                const removeButton = event.target.closest('[data-action="remove"]');
                 if (removeButton) {
-                    const addonId = removeButton.getAttribute('data-addon-id');
-                    this.removeActiveAddon(addonId);
+                    const id = removeButton.getAttribute('data-action-id');
+                    this.toggleToolbarAction(id, false);
+                }
+                const moveButton = event.target.closest('[data-action="move"]');
+                if (moveButton) {
+                    const id = moveButton.getAttribute('data-action-id');
+                    const direction = moveButton.getAttribute('data-direction');
+                    this.moveToolbarAction(id, direction === 'up' ? -1 : 1);
                 }
             });
         }
 
-        const addonGallery = Utils.getElement('#addon-gallery');
-        if (addonGallery) {
-            addonGallery.addEventListener('click', (event) => {
-                const deleteButton = event.target.closest('[data-action="delete-custom-addon"]');
-                if (deleteButton) {
-                    const addonId = deleteButton.getAttribute('data-addon-id');
-                    this.deleteCustomAddon(addonId);
-                    return;
+        const libraryGrid = Utils.getElement('#toolbar-library-grid');
+        if (libraryGrid) {
+            libraryGrid.addEventListener('click', (event) => {
+                const toggle = event.target.closest('[data-action="toggle-action"]');
+                if (toggle) {
+                    const id = toggle.getAttribute('data-action-id');
+                    const active = toggle.getAttribute('data-active') === 'true';
+                    this.toggleToolbarAction(id, !active);
                 }
-                const addButton = event.target.closest('[data-action="add-addon"]');
-                if (addButton) {
-                    const addonId = addButton.getAttribute('data-addon-id');
-                    this.addAddonFromGallery(addonId);
+                const edit = event.target.closest('[data-action="edit-workflow"]');
+                if (edit) {
+                    const id = edit.getAttribute('data-action-id');
+                    WorkflowBuilder.open(id);
                 }
-            });
-        }
-
-        const builderStack = Utils.getElement('#builder-stack');
-        if (builderStack) {
-            builderStack.addEventListener('click', (event) => {
-                const removeBlock = event.target.closest('[data-action="remove-block"]');
-                if (removeBlock) {
-                    const index = parseInt(removeBlock.getAttribute('data-block-index'), 10);
-                    this.removeBuilderBlock(index);
+                const preview = event.target.closest('[data-action="preview-template"]');
+                if (preview) {
+                    const templateId = preview.getAttribute('data-template-id');
+                    WorkflowBuilder.openTemplate(templateId);
                 }
             });
         }
 
-        Utils.getAllElements('.builder-base-option').forEach(button => {
-            button.addEventListener('click', () => {
-                const base = button.getAttribute('data-base');
-                if (!base) return;
-                this.builderState.base = base;
-                this.highlightBuilderBase();
-                this.renderBuilderStack();
-            });
-        });
-
-        const addBlockButton = Utils.getElement('#builder-add-block');
-        if (addBlockButton) {
-            addBlockButton.addEventListener('click', () => {
-                const select = Utils.getElement('#builder-block-select');
-                if (!select) return;
-                const blockId = select.value;
-                if (!blockId) return;
-                if (!AddonBuilderBlocks.some(block => block.id === blockId)) return;
-                this.builderState.blocks.push(blockId);
-                this.renderBuilderStack();
-            });
+        const newWorkflowButton = Utils.getElement('#workflow-studio-new');
+        if (newWorkflowButton) {
+            newWorkflowButton.addEventListener('click', () => WorkflowBuilder.openForNew());
         }
 
-        const resetBuilderButton = Utils.getElement('#builder-reset');
-        if (resetBuilderButton) {
-            resetBuilderButton.addEventListener('click', () => this.resetBuilder());
-        }
-
-        const saveAddonButton = Utils.getElement('#builder-save-addon');
-        if (saveAddonButton) {
-            saveAddonButton.addEventListener('click', () => this.saveCustomAddon());
+        const openLibraryButton = Utils.getElement('#workflow-studio-open-library');
+        if (openLibraryButton) {
+            openLibraryButton.addEventListener('click', () => WorkflowBuilder.open());
         }
     },
     
@@ -591,336 +1730,149 @@ const SettingsModule = {
         }
     },
 
+
     renderAddons: function() {
-        const isActive = this.hasActiveSubscription();
-        const activeContainer = Utils.getElement('#active-addons-list');
-        const galleryContainer = Utils.getElement('#addon-gallery');
+        const shouldShow = this.hasActiveSubscription();
+        const manager = Utils.getElement('#toolbar-actions-manager');
+        if (manager) manager.classList.toggle('is-hidden', !shouldShow);
+        if (!shouldShow) return;
+        QuickActionManager.ensureSettingsIntegrity();
+        this.renderToolbar();
+    },
 
-        if (!isActive) {
-            if (activeContainer) activeContainer.innerHTML = '';
-            if (galleryContainer) galleryContainer.innerHTML = '';
-            return;
-        }
+    renderToolbar: function() {
+        const activeList = Utils.getElement('#toolbar-active-list');
+        const libraryGrid = Utils.getElement('#toolbar-library-grid');
+        if (!activeList || !libraryGrid) return;
 
-        const activeIds = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        const activeSet = new Set(activeIds);
+        const activeIds = QuickActionManager.getActiveActionIds();
+        activeList.innerHTML = '';
+        if (activeIds.length === 0) {
+            const empty = Utils.createElement('div', { className: 'toolbar-empty-state' });
+            empty.innerHTML = `<i data-feather="inbox"></i><span>${LocalizationRenderer.t('addons_toolbar_empty')}</span>`;
+            activeList.appendChild(empty);
+        } else {
+            activeIds.forEach((id, index) => {
+                const action = QuickActionManager.getActionDefinition(id);
+                if (!action) return;
+                const item = Utils.createElement('li', { className: 'toolbar-action-card' });
+                const handle = Utils.createElement('div', { className: 'toolbar-drag-handle', text: '⋮⋮' });
+                handle.setAttribute('data-action-id', id);
+                item.appendChild(handle);
 
-        if (activeContainer) {
-            activeContainer.innerHTML = '';
-            if (activeIds.length === 0) {
-                const empty = Utils.createElement('div', { className: 'addons-empty', text: LocalizationRenderer.t('addons_empty_state') });
-                activeContainer.appendChild(empty);
-            } else {
-                activeIds.forEach(id => {
-                    const addon = this.findAddonDefinition(id);
-                    if (!addon) return;
-                    const card = Utils.createElement('div', { className: 'addon-card active-addon' });
-                    const iconWrap = Utils.createElement('div', { className: 'addon-card-icon' });
-                    iconWrap.innerHTML = `<i data-feather="${addon.icon || 'box'}"></i>`;
-                    card.appendChild(iconWrap);
+                const icon = Utils.createElement('div', { className: 'toolbar-action-icon' });
+                icon.innerHTML = `<i data-feather="${action.icon || 'zap'}"></i>`;
+                item.appendChild(icon);
 
-                    const info = Utils.createElement('div', { className: 'addon-card-info' });
-                    const titleRow = Utils.createElement('div', { className: 'addon-card-title-row' });
-                    const title = Utils.createElement('h4', { className: 'addon-card-title', text: this.getAddonDisplayName(addon) });
-                    titleRow.appendChild(title);
-                    const typeBadge = Utils.createElement('span', { className: 'addon-badge', text: addon.type === 'custom' ? LocalizationRenderer.t('addon_tag_custom') : LocalizationRenderer.t('addon_tag_library') });
-                    titleRow.appendChild(typeBadge);
-                    info.appendChild(titleRow);
+                const info = Utils.createElement('div', { className: 'toolbar-action-content' });
+                info.appendChild(Utils.createElement('span', { className: 'toolbar-action-title', text: QuickActionManager.formatActionTitle(action) }));
+                const description = QuickActionManager.formatActionDescription(action);
+                if (description) info.appendChild(Utils.createElement('span', { className: 'toolbar-action-description', text: description }));
+                item.appendChild(info);
 
-                    const description = Utils.createElement('p', { className: 'addon-card-description', text: this.getAddonDisplayDescription(addon) });
-                    info.appendChild(description);
-
-                    const blockIds = Array.isArray(addon.blocks) ? addon.blocks.map(block => (typeof block === 'string' ? block : block.id)) : [];
-                    if (blockIds.length > 0) {
-                        const chips = Utils.createElement('div', { className: 'addon-block-chips' });
-                        blockIds.forEach(blockId => {
-                            const blockDef = AddonBuilderBlocks.find(block => block.id === blockId);
-                            const chip = Utils.createElement('span', { className: 'addon-chip', text: blockDef ? LocalizationRenderer.t(blockDef.nameKey) : blockId });
-                            chips.appendChild(chip);
-                        });
-                        info.appendChild(chips);
-                    }
-
-                    const meta = Utils.createElement('div', { className: 'addon-card-meta' });
-                    const baseLabel = this.getAddonBaseLabel(addon);
-                    if (baseLabel) {
-                        meta.appendChild(Utils.createElement('span', { className: 'addon-meta-pill', text: baseLabel }));
-                    }
-                    const blockCount = Array.isArray(blockIds) ? blockIds.length : 0;
-                    meta.appendChild(Utils.createElement('span', { className: 'addon-meta-pill subtle', text: LocalizationRenderer.t('addon_block_count', blockCount) }));
-                    info.appendChild(meta);
-
-                    card.appendChild(info);
-
-                    const actions = Utils.createElement('div', { className: 'addon-card-actions' });
-                    const removeBtn = Utils.createElement('button', { className: 'addon-pill-button danger', text: LocalizationRenderer.t('addons_remove_button') });
-                    removeBtn.setAttribute('data-action', 'remove-addon');
-                    removeBtn.setAttribute('data-addon-id', id);
-                    actions.appendChild(removeBtn);
-                    card.appendChild(actions);
-
-                    activeContainer.appendChild(card);
-                });
-            }
-        }
-
-        if (galleryContainer) {
-            galleryContainer.innerHTML = '';
-            const galleryItems = [
-                ...AddonLibrary,
-                ...(Array.isArray(AppState.settings.customAddons) ? AppState.settings.customAddons.map(addon => ({ ...addon, type: 'custom' })) : [])
-            ];
-
-            galleryItems.forEach(addon => {
-                const card = Utils.createElement('div', { className: 'addon-card gallery-addon' });
-                if (addon.type === 'custom') card.classList.add('is-custom');
-                const iconWrap = Utils.createElement('div', { className: 'addon-card-icon' });
-                iconWrap.innerHTML = `<i data-feather="${addon.icon || 'box'}"></i>`;
-                card.appendChild(iconWrap);
-
-                const info = Utils.createElement('div', { className: 'addon-card-info' });
-                const titleRow = Utils.createElement('div', { className: 'addon-card-title-row' });
-                const title = Utils.createElement('h4', { className: 'addon-card-title', text: this.getAddonDisplayName(addon) });
-                titleRow.appendChild(title);
-                const typeBadge = Utils.createElement('span', { className: 'addon-badge', text: addon.type === 'custom' ? LocalizationRenderer.t('addon_tag_custom') : LocalizationRenderer.t('addon_tag_library') });
-                titleRow.appendChild(typeBadge);
-                info.appendChild(titleRow);
-
-                const description = Utils.createElement('p', { className: 'addon-card-description', text: this.getAddonDisplayDescription(addon) });
-                info.appendChild(description);
-
-                const blockIds = Array.isArray(addon.blocks) ? addon.blocks.map(block => (typeof block === 'string' ? block : block.id)) : [];
-                if (blockIds.length > 0) {
-                    const chips = Utils.createElement('div', { className: 'addon-block-chips' });
-                    blockIds.forEach(blockId => {
-                        const blockDef = AddonBuilderBlocks.find(block => block.id === blockId);
-                        const chip = Utils.createElement('span', { className: 'addon-chip', text: blockDef ? LocalizationRenderer.t(blockDef.nameKey) : blockId });
-                        chips.appendChild(chip);
-                    });
-                    info.appendChild(chips);
-                }
-
-                card.appendChild(info);
-
-                const actions = Utils.createElement('div', { className: 'addon-card-actions stacked' });
-                const isAlreadyActive = activeSet.has(addon.id);
-                const addButton = Utils.createElement('button', { className: 'addon-pill-button primary', text: LocalizationRenderer.t(isAlreadyActive ? 'addons_gallery_added' : 'addons_gallery_add') });
-                addButton.setAttribute('data-addon-id', addon.id);
-                addButton.setAttribute('data-action', 'add-addon');
-                addButton.disabled = isAlreadyActive;
-                if (isAlreadyActive) addButton.classList.add('disabled');
-                actions.appendChild(addButton);
-
-                if (addon.type === 'custom') {
-                    const deleteButton = Utils.createElement('button', { className: 'addon-pill-button subtle-danger', text: LocalizationRenderer.t('addon_delete_custom') });
-                    deleteButton.setAttribute('data-addon-id', addon.id);
-                    deleteButton.setAttribute('data-action', 'delete-custom-addon');
-                    actions.appendChild(deleteButton);
-                }
-
-                card.appendChild(actions);
-                galleryContainer.appendChild(card);
+                const controls = Utils.createElement('div', { className: 'toolbar-action-controls' });
+                const up = Utils.createElement('button', { className: 'toolbar-library-button subtle', text: '↑' });
+                up.setAttribute('data-action', 'move');
+                up.setAttribute('data-direction', 'up');
+                up.setAttribute('data-action-id', id);
+                up.disabled = index === 0;
+                const down = Utils.createElement('button', { className: 'toolbar-library-button subtle', text: '↓' });
+                down.setAttribute('data-action', 'move');
+                down.setAttribute('data-direction', 'down');
+                down.setAttribute('data-action-id', id);
+                down.disabled = index === activeIds.length - 1;
+                const remove = Utils.createElement('button', { className: 'toolbar-library-button danger', text: LocalizationRenderer.t('addons_toolbar_remove') });
+                remove.setAttribute('data-action', 'remove');
+                remove.setAttribute('data-action-id', id);
+                controls.appendChild(up);
+                controls.appendChild(down);
+                controls.appendChild(remove);
+                item.appendChild(controls);
+                activeList.appendChild(item);
             });
         }
 
+        libraryGrid.innerHTML = '';
+        QuickActionManager.listAvailableLibrary().forEach(action => {
+            const card = Utils.createElement('div', { className: 'toolbar-library-card' });
+            const icon = Utils.createElement('div', { className: 'toolbar-action-icon' });
+            icon.innerHTML = `<i data-feather="${action.icon || 'zap'}"></i>`;
+            card.appendChild(icon);
+
+            const meta = Utils.createElement('div', { className: 'toolbar-library-meta' });
+            meta.appendChild(Utils.createElement('div', { className: 'toolbar-action-title', text: QuickActionManager.formatActionTitle(action) }));
+            meta.appendChild(Utils.createElement('div', { className: 'toolbar-action-description', text: QuickActionManager.formatActionDescription(action) }));
+            if (Array.isArray(action.tags) && action.tags.length > 0) {
+                meta.appendChild(Utils.createElement('span', { className: 'toolbar-library-tag', text: action.tags[0] }));
+            }
+            card.appendChild(meta);
+
+            const controls = Utils.createElement('div', { className: 'toolbar-library-controls' });
+            const toggle = Utils.createElement('button', { className: 'toolbar-library-button is-primary', text: action.isActive ? LocalizationRenderer.t('addons_toolbar_added') : LocalizationRenderer.t('addons_toolbar_add') });
+            toggle.setAttribute('data-action', 'toggle-action');
+            toggle.setAttribute('data-action-id', action.id);
+            toggle.setAttribute('data-active', action.isActive ? 'true' : 'false');
+            if (action.isActive) toggle.classList.add('is-disabled');
+            controls.appendChild(toggle);
+
+            if (action.source === 'custom') {
+                const edit = Utils.createElement('button', { className: 'toolbar-library-button', text: LocalizationRenderer.t('workflow_history_edit') });
+                edit.setAttribute('data-action', 'edit-workflow');
+                edit.setAttribute('data-action-id', action.id);
+                controls.appendChild(edit);
+            } else if (action.type === 'workflow' && action.payload?.templateId) {
+                const preview = Utils.createElement('button', { className: 'toolbar-library-button', text: LocalizationRenderer.t('workflow_template_preview') });
+                preview.setAttribute('data-action', 'preview-template');
+                preview.setAttribute('data-template-id', action.payload.templateId);
+                controls.appendChild(preview);
+            }
+
+            card.appendChild(controls);
+            libraryGrid.appendChild(card);
+        });
+
+        WorkflowBuilder.renderHistory();
         if (window.feather) window.feather.replace();
     },
 
+    toggleToolbarAction: function(id, value) {
+        const current = QuickActionManager.getActiveActionIds();
+        if (value) {
+            if (!current.includes(id)) {
+                current.push(id);
+                QuickActionManager.setActiveActionIds(current);
+                this.renderToolbar();
+            }
+        } else {
+            const filtered = current.filter(actionId => actionId !== id);
+            QuickActionManager.setActiveActionIds(filtered);
+            this.renderToolbar();
+        }
+    },
+
+    moveToolbarAction: function(id, delta) {
+        const current = QuickActionManager.getActiveActionIds();
+        const index = current.indexOf(id);
+        if (index === -1) return;
+        const target = index + delta;
+        if (target < 0 || target >= current.length) return;
+        const reordered = [...current];
+        const [item] = reordered.splice(index, 1);
+        reordered.splice(target, 0, item);
+        QuickActionManager.setActiveActionIds(reordered);
+        this.renderToolbar();
+    },
+
+    renderAddonBuilder: function() {
+        WorkflowBuilder.renderHistory();
+    },
+    renderAddonBuilder: function() {
+        WorkflowBuilder.renderHistory();
+    },
     renderAddonBuilder: function() {
         this.highlightBuilderBase();
         this.renderBuilderStack();
         this.refreshBuilderPlaceholders();
-    },
-
-    highlightBuilderBase: function() {
-        const buttons = Array.from(Utils.getAllElements('.builder-base-option'));
-        if (!buttons.length) return;
-        let found = false;
-        buttons.forEach(button => {
-            const base = button.getAttribute('data-base');
-            if (base === this.builderState.base) {
-                button.classList.add('active');
-                found = true;
-            } else {
-                button.classList.remove('active');
-            }
-        });
-        if (!found) {
-            const fallback = buttons[0];
-            fallback.classList.add('active');
-            this.builderState.base = fallback.getAttribute('data-base');
-        }
-    },
-
-    renderBuilderStack: function() {
-        const stack = Utils.getElement('#builder-stack');
-        if (!stack) return;
-        stack.innerHTML = '';
-
-        const base = AddonBuilderBases.find(item => item.id === this.builderState.base) || AddonBuilderBases[0];
-        if (base) {
-            const baseCard = Utils.createElement('div', { className: 'builder-block builder-block-base' });
-            const iconWrap = Utils.createElement('div', { className: 'builder-block-icon' });
-            iconWrap.innerHTML = `<i data-feather="${base.icon}"></i>`;
-            baseCard.appendChild(iconWrap);
-            const info = Utils.createElement('div', { className: 'builder-block-info' });
-            info.appendChild(Utils.createElement('div', { className: 'builder-block-title', text: LocalizationRenderer.t(base.nameKey) }));
-            info.appendChild(Utils.createElement('div', { className: 'builder-block-description', text: LocalizationRenderer.t(base.descriptionKey) }));
-            baseCard.appendChild(info);
-            stack.appendChild(baseCard);
-        }
-
-        if (!this.builderState.blocks.length) {
-            stack.appendChild(Utils.createElement('div', { className: 'builder-empty', text: LocalizationRenderer.t('addon_builder_empty_state') }));
-        } else {
-            this.builderState.blocks.forEach((blockId, index) => {
-                const block = AddonBuilderBlocks.find(item => item.id === blockId);
-                const blockCard = Utils.createElement('div', { className: 'builder-block' });
-                const iconWrap = Utils.createElement('div', { className: 'builder-block-icon' });
-                iconWrap.innerHTML = `<i data-feather="${block?.icon || 'tool'}"></i>`;
-                blockCard.appendChild(iconWrap);
-                const info = Utils.createElement('div', { className: 'builder-block-info' });
-                info.appendChild(Utils.createElement('div', { className: 'builder-block-title', text: block ? LocalizationRenderer.t(block.nameKey) : blockId }));
-                if (block?.descriptionKey) {
-                    info.appendChild(Utils.createElement('div', { className: 'builder-block-description', text: LocalizationRenderer.t(block.descriptionKey) }));
-                }
-                blockCard.appendChild(info);
-                const removeButton = Utils.createElement('button', { className: 'addon-pill-button subtle', text: LocalizationRenderer.t('addon_builder_remove_block') });
-                removeButton.setAttribute('data-action', 'remove-block');
-                removeButton.setAttribute('data-block-index', index);
-                blockCard.appendChild(removeButton);
-                stack.appendChild(blockCard);
-            });
-        }
-
-        if (window.feather) window.feather.replace();
-    },
-
-    refreshBuilderPlaceholders: function() {
-        const nameInput = Utils.getElement('#builder-addon-name');
-        if (nameInput) nameInput.placeholder = LocalizationRenderer.t('addon_builder_name_placeholder');
-        const descriptionInput = Utils.getElement('#builder-addon-description');
-        if (descriptionInput) descriptionInput.placeholder = LocalizationRenderer.t('addon_builder_description_placeholder');
-        const blockSelect = Utils.getElement('#builder-block-select');
-        if (blockSelect) {
-            Array.from(blockSelect.options).forEach(option => {
-                const key = option.getAttribute('data-i18n');
-                if (key) option.textContent = LocalizationRenderer.t(key);
-            });
-        }
-    },
-
-    findAddonDefinition: function(id) {
-        if (!id) return null;
-        const libraryAddon = AddonLibrary.find(addon => addon.id === id);
-        if (libraryAddon) return { ...libraryAddon };
-        const customAddon = (AppState.settings.customAddons || []).find(addon => addon.id === id);
-        if (customAddon) return { ...customAddon, type: 'custom' };
-        return null;
-    },
-
-    getAddonDisplayName: function(addon) {
-        if (!addon) return LocalizationRenderer.t('addon_unknown_name');
-        if (addon.nameKey) return LocalizationRenderer.t(addon.nameKey);
-        return addon.name || LocalizationRenderer.t('addon_unknown_name');
-    },
-
-    getAddonDisplayDescription: function(addon) {
-        if (!addon) return LocalizationRenderer.t('addon_default_description');
-        if (addon.descriptionKey) return LocalizationRenderer.t(addon.descriptionKey);
-        return addon.description || LocalizationRenderer.t('addon_default_description');
-    },
-
-    getAddonBaseLabel: function(addon) {
-        if (!addon) return '';
-        const base = AddonBuilderBases.find(option => option.id === addon.base);
-        return base ? LocalizationRenderer.t(base.nameKey) : '';
-    },
-
-    addAddonFromGallery: function(id) {
-        if (!id) return;
-        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        if (activeAddons.includes(id)) return;
-        activeAddons.push(id);
-        AppState.settings.activeAddons = activeAddons;
-        ipcRenderer.send('update-setting', 'activeAddons', activeAddons);
-        this.renderAddons();
-    },
-
-    removeActiveAddon: function(id) {
-        if (!id) return;
-        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        const updated = activeAddons.filter(addonId => addonId !== id);
-        if (updated.length === activeAddons.length) return;
-        AppState.settings.activeAddons = updated;
-        ipcRenderer.send('update-setting', 'activeAddons', updated);
-        this.renderAddons();
-    },
-
-    deleteCustomAddon: function(id) {
-        if (!id) return;
-        const customAddons = Array.isArray(AppState.settings.customAddons) ? [...AppState.settings.customAddons] : [];
-        if (!customAddons.some(addon => addon.id === id)) return;
-        if (!window.confirm(LocalizationRenderer.t('addon_delete_custom_confirm'))) return;
-        const updatedCustom = customAddons.filter(addon => addon.id !== id);
-        const updatedActive = (AppState.settings.activeAddons || []).filter(addonId => addonId !== id);
-        AppState.settings.customAddons = updatedCustom;
-        AppState.settings.activeAddons = updatedActive;
-        ipcRenderer.send('update-setting', 'customAddons', updatedCustom);
-        ipcRenderer.send('update-setting', 'activeAddons', updatedActive);
-        this.renderAddons();
-    },
-
-    removeBuilderBlock: function(index) {
-        if (!Number.isInteger(index)) return;
-        if (index < 0 || index >= this.builderState.blocks.length) return;
-        this.builderState.blocks.splice(index, 1);
-        this.renderBuilderStack();
-    },
-
-    resetBuilder: function() {
-        const defaultBase = AddonBuilderBases[0]?.id || 'clipboard';
-        this.builderState = { base: defaultBase, blocks: [] };
-        const nameInput = Utils.getElement('#builder-addon-name');
-        if (nameInput) nameInput.value = '';
-        const descriptionInput = Utils.getElement('#builder-addon-description');
-        if (descriptionInput) descriptionInput.value = '';
-        const blockSelect = Utils.getElement('#builder-block-select');
-        if (blockSelect) blockSelect.value = '';
-        this.renderAddonBuilder();
-    },
-
-    saveCustomAddon: function() {
-        const nameInput = Utils.getElement('#builder-addon-name');
-        const descriptionInput = Utils.getElement('#builder-addon-description');
-        const name = nameInput?.value.trim() || '';
-        if (!name) {
-            alert(LocalizationRenderer.t('addon_builder_error_name_required'));
-            return;
-        }
-        const description = descriptionInput?.value.trim() || '';
-        const baseId = this.builderState.base || (AddonBuilderBases[0]?.id || 'clipboard');
-        const base = AddonBuilderBases.find(item => item.id === baseId);
-        const blocks = this.builderState.blocks.map(blockId => ({ id: blockId }));
-        const icon = base?.icon || 'layers';
-        const customAddons = Array.isArray(AppState.settings.customAddons) ? [...AppState.settings.customAddons] : [];
-        const newAddon = {
-            id: `custom-${Date.now()}`,
-            name,
-            description,
-            base: baseId,
-            icon,
-            blocks
-        };
-        customAddons.push(newAddon);
-        const activeAddons = Array.isArray(AppState.settings.activeAddons) ? [...AppState.settings.activeAddons] : [];
-        activeAddons.push(newAddon.id);
-        AppState.settings.customAddons = customAddons;
-        AppState.settings.activeAddons = Array.from(new Set(activeAddons));
-        ipcRenderer.send('update-setting', 'customAddons', customAddons);
-        ipcRenderer.send('update-setting', 'activeAddons', Array.from(new Set(activeAddons)));
-        this.resetBuilder();
-        this.renderAddons();
     },
 
     setupShortcutRecorder: function() {
@@ -2884,6 +3836,8 @@ document.addEventListener('DOMContentLoaded', () => {
     PinnedAppsModule.init();
     AuxPanelManager.init();
     CustomSelect.init();
+    ToolbarQuickActions.init();
+    WorkflowBuilder.init();
 
     ipcRenderer.on('file-icon-response', (event, { path, dataUrl }) => {
         const relatedImages = [];
@@ -2919,6 +3873,9 @@ document.addEventListener('DOMContentLoaded', () => {
         AppState.translations = data.translations;
         AppState.appVersion = data.version;
         AppState.systemTheme = data.systemTheme; // Обновляем системную тему
+        QuickActionManager.init();
+        ToolbarQuickActions.refresh();
+        WorkflowBuilder.syncFromSettings();
         ViewManager.applyAppearanceSettings();
         LocalizationRenderer.applyTranslations();
         SettingsModule.populateSettingsUI();

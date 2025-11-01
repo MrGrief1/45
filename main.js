@@ -104,8 +104,8 @@ const DEFAULT_SETTINGS = {
         renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         features: ['addon-builder', 'extended-gallery', 'priority-support']
     },
-    activeAddons: ['clipboard-buffer'],
-    customAddons: []
+    toolbarActions: ['apps-library', 'files', 'commands', 'clipboard'],
+    customWorkflows: []
 };
 
 // =================================================================================
@@ -294,24 +294,29 @@ class SettingsManager {
             };
         }
 
-        if (!Array.isArray(currentSettings.activeAddons)) {
-            currentSettings.activeAddons = [...DEFAULT_SETTINGS.activeAddons];
+        const legacyToolbar = Array.isArray(currentSettings.activeAddons) ? currentSettings.activeAddons : null;
+        const legacyWorkflows = Array.isArray(currentSettings.customAddons) ? currentSettings.customAddons : null;
+
+        if (!Array.isArray(currentSettings.toolbarActions) || currentSettings.toolbarActions.length === 0) {
+            currentSettings.toolbarActions = legacyToolbar ? [...legacyToolbar] : [...DEFAULT_SETTINGS.toolbarActions];
         }
 
-        if (!Array.isArray(currentSettings.customAddons)) {
-            currentSettings.customAddons = [];
+        if (!Array.isArray(currentSettings.customWorkflows) || currentSettings.customWorkflows.length === 0) {
+            currentSettings.customWorkflows = legacyWorkflows ? [...legacyWorkflows] : [];
         }
 
-        currentSettings.activeAddons = Array.from(new Set(currentSettings.activeAddons.filter(Boolean)));
-        currentSettings.customAddons = currentSettings.customAddons
-            .filter(addon => addon && typeof addon === 'object' && addon.id && addon.name)
-            .map(addon => ({
-                ...addon,
-                base: addon.base || 'clipboard',
-                icon: addon.icon || 'layers',
-                description: addon.description || '',
-                blocks: Array.isArray(addon.blocks) ? addon.blocks : []
+        currentSettings.toolbarActions = Array.from(new Set(currentSettings.toolbarActions.filter(Boolean)));
+        currentSettings.customWorkflows = currentSettings.customWorkflows
+            .filter(flow => flow && typeof flow === 'object' && flow.id && flow.name)
+            .map(flow => ({
+                ...flow,
+                icon: flow.icon || 'zap',
+                accent: flow.accent || 'violet',
+                nodes: Array.isArray(flow.nodes) ? flow.nodes : [],
+                connections: Array.isArray(flow.connections) ? flow.connections : []
             }));
+        delete currentSettings.activeAddons;
+        delete currentSettings.customAddons;
 
         Logger.info(`App folders structure: ${JSON.stringify(currentSettings.appFolders.map(f => ({id: f.id, name: f.name, appsCount: f.apps.length})))}`);
     }
@@ -327,9 +332,9 @@ class SettingsManager {
     updateSetting(key, value) {
         let requiresReindex = false;
 
-        if (['indexedDirectories', 'customAutomations', 'customAddons', 'activeAddons', 'subscription'].includes(key)) {
+        if (['indexedDirectories', 'customAutomations', 'customWorkflows', 'toolbarActions', 'subscription'].includes(key)) {
             currentSettings[key] = value;
-            if (['customAddons', 'activeAddons', 'subscription'].includes(key)) {
+            if (['customWorkflows', 'toolbarActions', 'subscription'].includes(key)) {
                 this.validateSettings();
             }
             if (key === 'indexedDirectories') requiresReindex = true;
