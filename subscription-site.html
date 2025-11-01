@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подписка FlashSearch</title>
+    <link rel="stylesheet" href="subscription-site.css">
+    <link rel="icon" type="image/png" href="logo.png">
+</head>
+<body>
+    <div class="background-gradient"></div>
+    <header class="site-header">
+        <div class="brand">
+            <img src="logo.png" alt="FlashSearch logo" class="brand-logo">
+            <div class="brand-text">
+                <span class="brand-name">FlashSearch</span>
+                <span class="brand-tagline">Автоматизация без ограничений</span>
+            </div>
+        </div>
+        <nav class="site-nav">
+            <a href="#plans">Тарифы</a>
+            <a href="#features">Возможности</a>
+            <a href="#checkout" class="nav-cta">Оформить Pro</a>
+        </nav>
+    </header>
+
+    <main class="subscription-main">
+        <section class="hero" id="features">
+            <div class="hero-copy">
+                <h1>FlashSearch Pro для тех, кто автоматизирует по-серьёзному</h1>
+                <p>Получите полный доступ к Мастеру дополнений, создавайте неограниченное количество автоматизаций, общайтесь с поддержкой вне очереди и храните всю историю буфера обмена без потерь.</p>
+                <div class="hero-actions">
+                    <a href="#checkout" class="primary-button">Оформить Pro-подписку</a>
+                    <a href="#plans" class="secondary-button">Сравнить тарифы</a>
+                </div>
+            </div>
+            <div class="hero-highlight">
+                <div class="metric-card">
+                    <span class="metric-label">Успешность автоматизаций</span>
+                    <span class="metric-value">99,2%</span>
+                    <span class="metric-caption">у подписчиков Pro за последний месяц</span>
+                </div>
+                <ul class="hero-feature-list">
+                    <li>Мастер дополнений и собственные блоки</li>
+                    <li>Безлимитные личные автоматизации</li>
+                    <li>Приоритетная поддержка 24/7</li>
+                    <li>Полная история буфера обмена</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="plans" id="plans">
+            <article class="plan-card plan-free">
+                <h2>FlashSearch Free</h2>
+                <p class="plan-price">₽0 / месяц</p>
+                <ul class="plan-benefits">
+                    <li>Быстрый поиск и базовые модули</li>
+                    <li>До 3 собственных автоматизаций</li>
+                    <li>10 последних записей буфера обмена</li>
+                    <li>Без доступа к Мастеру дополнений</li>
+                </ul>
+            </article>
+            <article class="plan-card plan-pro">
+                <div class="plan-badge">Самый популярный</div>
+                <h2>FlashSearch Pro</h2>
+                <p class="plan-price">₽499 / месяц</p>
+                <ul class="plan-benefits">
+                    <li>Мастер дополнений и конструктор блоков</li>
+                    <li>Неограниченное число автоматизаций</li>
+                    <li>Приоритетная поддержка</li>
+                    <li>Вся история буфера обмена</li>
+                </ul>
+                <a href="#checkout" class="primary-button">Выбрать FlashSearch Pro</a>
+            </article>
+        </section>
+
+        <section class="checkout" id="checkout">
+            <div class="checkout-card">
+                <h3>Безопасная оплата картой</h3>
+                <p class="checkout-subtitle">Подписка активируется сразу после подтверждения платежа.</p>
+                <form class="payment-form">
+                    <label>
+                        <span>Имя на карте</span>
+                        <input type="text" name="cardholder" placeholder="Иван Иванов" required>
+                    </label>
+                    <label>
+                        <span>Номер карты</span>
+                        <input type="text" name="card-number" inputmode="numeric" maxlength="19" placeholder="0000 0000 0000 0000" required>
+                    </label>
+                    <div class="payment-row">
+                        <label>
+                            <span>Срок действия</span>
+                            <input type="text" name="expiry" inputmode="numeric" maxlength="5" placeholder="MM/YY" required>
+                        </label>
+                        <label>
+                            <span>CVC</span>
+                            <input type="text" name="cvc" inputmode="numeric" maxlength="4" placeholder="123" required>
+                        </label>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="remember" checked>
+                        <span>Запомнить карту для следующих продлений</span>
+                    </label>
+                    <button type="submit" class="primary-button full-width">Оплатить и включить Pro</button>
+                    <p class="secure-note">Платёжные данные шифруются и обрабатываются безопасно. Подписку можно отключить в настройках приложения.</p>
+                </form>
+            </div>
+            <div class="checkout-side">
+                <div class="testimonial">
+                    <p>«Перевели команду на FlashSearch Pro — автоматизации и дополнения экономят по два часа в день каждому»</p>
+                    <span class="author">— Алина Петрова, Product Lead</span>
+                </div>
+                <div class="feature-grid">
+                    <div>
+                        <h4>Мгновенное подключение</h4>
+                        <p>Все Pro-возможности открываются в приложении через несколько секунд после оплаты.</p>
+                    </div>
+                    <div>
+                        <h4>Без скрытых платежей</h4>
+                        <p>Одна прозрачная цена в месяц. Приостановите или отмените подписку сами.</p>
+                    </div>
+                    <div>
+                        <h4>Готово для команды</h4>
+                        <p>Добавляйте коллег и управляйте оплатой централизованно, когда придёт время.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <span>© <span id="year"></span> FlashSearch. Все права защищены.</span>
+        <div class="footer-links">
+            <a href="#">Условия</a>
+            <a href="#">Конфиденциальность</a>
+            <a href="mailto:support@flashsearch.app">support@flashsearch.app</a>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>

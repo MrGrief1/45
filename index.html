@@ -273,6 +273,7 @@
                         <div id="tab-automations" class="tab-content">
                             <h4 data-i18n="settings_custom_automations">Custom Automations</h4>
                             <div id="automations-list"></div>
+                            <p id="automation-limit-note" class="automation-limit-note is-hidden"></p>
 
                             <div class="automation-form">
                                 <input type="text" id="new-auto-name" data-i18n-placeholder="settings_auto_name" placeholder="Name">
@@ -296,35 +297,48 @@
                             <section class="settings-section-card subscription-section">
                                 <header class="subscription-header">
                                     <div class="subscription-header-text">
-                                        <h3 data-i18n="subscription_overview_title">Your subscription</h3>
-                                        <p class="subscription-subtitle" data-i18n="subscription_trial_message">Your add-on tools stay unlocked while the subscription is active.</p>
+                                        <h3 data-i18n="subscription_overview_title">Ваша подписка</h3>
+                                        <p id="subscription-plan-description" class="subscription-subtitle" data-i18n="subscription_trial_message">Инструменты дополнений доступны, пока подписка активна.</p>
                                     </div>
-                                    <span id="subscription-status-badge" class="subscription-badge">Active</span>
+                                    <span id="subscription-status-badge" class="subscription-badge">Неактивна</span>
                                 </header>
                                 <div class="subscription-metadata">
                                     <div class="subscription-metadata-item">
-                                        <span class="subscription-label" data-i18n="subscription_plan_label">Plan</span>
-                                        <p id="subscription-plan-name" class="subscription-value">FlashSearch Studio</p>
+                                        <span class="subscription-label" data-i18n="subscription_plan_label">Тариф</span>
+                                        <p id="subscription-plan-name" class="subscription-value">FlashSearch Free</p>
                                     </div>
                                     <div class="subscription-metadata-item">
-                                        <span class="subscription-label" data-i18n="subscription_status_label">Status</span>
-                                        <p id="subscription-status-text" class="subscription-value">Active</p>
+                                        <span class="subscription-label" data-i18n="subscription_status_label">Статус</span>
+                                        <p id="subscription-status-text" class="subscription-value">Неактивна</p>
                                     </div>
                                     <div class="subscription-metadata-item">
-                                        <span class="subscription-label" data-i18n="subscription_next_renewal">Next renewal</span>
+                                        <span class="subscription-label" data-i18n="subscription_next_renewal">Следующее продление</span>
                                         <p id="subscription-renewal-date" class="subscription-value">—</p>
                                     </div>
                                 </div>
+                                <div class="subscription-actions">
+                                    <button id="subscription-toggle" class="settings-button secondary" data-i18n="subscription_toggle_activate">Включить Pro</button>
+                                    <button id="subscription-manage-button" class="settings-button" data-i18n="subscription_manage">Открыть портал подписки</button>
+                                </div>
                                 <div class="subscription-perks">
-                                    <h4 data-i18n="subscription_perks_title">Included perks</h4>
+                                    <h4 data-i18n="subscription_perks_title">Что включено</h4>
                                     <ul id="subscription-feature-list" class="subscription-feature-list"></ul>
                                 </div>
-                                <button id="subscription-manage-button" class="settings-button external-link" data-url="https://flashsearch.app/account" data-i18n="subscription_manage">Manage subscription</button>
                             </section>
-                            <section class="settings-section-card subscription-lab-card">
-                                <div class="subscription-lab-text">
-                                    <h4 data-i18n="subscription_lab_title">Add-on Lab unlocked</h4>
-                                    <p data-i18n="subscription_lab_description">Use the Add-on Lab tab to combine building blocks and tailor FlashSearch to your workflow.</p>
+                            <section class="settings-section-card subscription-compare-card">
+                                <div class="subscription-compare-header">
+                                    <h4 data-i18n="subscription_compare_title">Сравнение тарифов</h4>
+                                    <p data-i18n="subscription_compare_subtitle">Выберите подходящий формат автоматизаций.</p>
+                                </div>
+                                <div class="subscription-compare-grid">
+                                    <div class="subscription-tier-card" data-tier="free">
+                                        <h5 data-i18n="subscription_free_plan_name">FlashSearch Free</h5>
+                                        <ul id="subscription-free-feature-list" class="subscription-feature-list"></ul>
+                                    </div>
+                                    <div class="subscription-tier-card" data-tier="pro">
+                                        <h5 data-i18n="subscription_premium_plan_name">FlashSearch Pro</h5>
+                                        <ul id="subscription-pro-feature-list" class="subscription-feature-list"></ul>
+                                    </div>
                                 </div>
                             </section>
                         </div>
