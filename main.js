@@ -60,6 +60,8 @@ let currentSettings = {};
 let applicationIsReady = false;
 let isHiding = false; 
 
+const DEFAULT_QUICK_ACTION_IDS = ['apps-library', 'files', 'commands', 'clipboard', 'settings'];
+
 const DEFAULT_SETTINGS = {
     theme: 'auto', // ИЗМЕНЕНО: Тема по умолчанию теперь 'auto'
     language: 'ru',
@@ -104,8 +106,10 @@ const DEFAULT_SETTINGS = {
         renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         features: ['addon-builder', 'extended-gallery', 'priority-support']
     },
-    activeAddons: ['clipboard-buffer'],
-    customAddons: []
+    quickActions: {
+        activeIds: [...DEFAULT_QUICK_ACTION_IDS],
+        customActions: []
+    }
 };
 
 // =================================================================================
@@ -145,9 +149,9 @@ class LocalizationManager {
 
     loadAllLocales() {
         try {
-            const localesDir = path.join(__dirname, 'locales');
+            let localesDir = path.join(__dirname, 'locales');
             if (!fs.existsSync(localesDir)) {
-                 localesDir = path.join(__dirname);
+                localesDir = path.join(__dirname);
             }
             const files = fs.readdirSync(localesDir);
             files.forEach(file => {
@@ -294,24 +298,42 @@ class SettingsManager {
             };
         }
 
-        if (!Array.isArray(currentSettings.activeAddons)) {
-            currentSettings.activeAddons = [...DEFAULT_SETTINGS.activeAddons];
+        if (!currentSettings.quickActions || typeof currentSettings.quickActions !== 'object') {
+            currentSettings.quickActions = {
+                activeIds: [...DEFAULT_QUICK_ACTION_IDS],
+                customActions: []
+            };
         }
 
-        if (!Array.isArray(currentSettings.customAddons)) {
-            currentSettings.customAddons = [];
+        if (!Array.isArray(currentSettings.quickActions.activeIds)) {
+            currentSettings.quickActions.activeIds = [...DEFAULT_QUICK_ACTION_IDS];
         }
 
-        currentSettings.activeAddons = Array.from(new Set(currentSettings.activeAddons.filter(Boolean)));
-        currentSettings.customAddons = currentSettings.customAddons
-            .filter(addon => addon && typeof addon === 'object' && addon.id && addon.name)
-            .map(addon => ({
+        if (!Array.isArray(currentSettings.quickActions.customActions)) {
+            currentSettings.quickActions.customActions = [];
+        }
+
+        if (Array.isArray(currentSettings.activeAddons)) {
+            currentSettings.quickActions.activeIds = Array.from(new Set([
+                ...currentSettings.quickActions.activeIds,
+                ...currentSettings.activeAddons
+            ].filter(Boolean)));
+        }
+
+        if (Array.isArray(currentSettings.customAddons) && currentSettings.customAddons.length > 0) {
+            currentSettings.quickActions.customActions = currentSettings.customAddons.map(addon => ({
                 ...addon,
-                base: addon.base || 'clipboard',
-                icon: addon.icon || 'layers',
-                description: addon.description || '',
-                blocks: Array.isArray(addon.blocks) ? addon.blocks : []
+                type: 'workflow',
+                workflow: addon.workflow || null
             }));
+        }
+
+        currentSettings.quickActions.activeIds = Array.from(new Set(currentSettings.quickActions.activeIds.filter(Boolean)));
+        currentSettings.quickActions.customActions = currentSettings.quickActions.customActions
+            .filter(addon => addon && typeof addon === 'object' && addon.id)
+            .map(addon => ({ ...addon }));
+        delete currentSettings.activeAddons;
+        delete currentSettings.customAddons;
 
         Logger.info(`App folders structure: ${JSON.stringify(currentSettings.appFolders.map(f => ({id: f.id, name: f.name, appsCount: f.apps.length})))}`);
     }
@@ -327,9 +349,9 @@ class SettingsManager {
     updateSetting(key, value) {
         let requiresReindex = false;
 
-        if (['indexedDirectories', 'customAutomations', 'customAddons', 'activeAddons', 'subscription'].includes(key)) {
+        if (['indexedDirectories', 'customAutomations', 'quickActions', 'subscription'].includes(key)) {
             currentSettings[key] = value;
-            if (['customAddons', 'activeAddons', 'subscription'].includes(key)) {
+            if (['quickActions', 'subscription'].includes(key)) {
                 this.validateSettings();
             }
             if (key === 'indexedDirectories') requiresReindex = true;
@@ -2890,6 +2912,21 @@ ipcMain.on('open-item', (event, itemPath) => {
 });
 ipcMain.on('copy-to-clipboard', (event, text) => clipboard.writeText(text));
 ipcMain.on('rebuild-index', () => FileIndexer.startIndexing(true));
+ipcMain.handle('quick-action-run-command', async (event, command) => {
+    if (typeof command !== 'string' || !command.trim()) {
+        return { success: false, error: 'Invalid command' };
+    }
+    try {
+        const { stdout, stderr } = await execPromise(command, { windowsHide: true });
+        if (stderr) {
+            Logger.warn(`Quick action command stderr: ${stderr.trim()}`);
+        }
+        return { success: true, output: stdout.trim(), error: stderr.trim() };
+    } catch (error) {
+        Logger.error(`Quick action command failed: ${error.message}`);
+        return { success: false, error: error.message };
+    }
+});
 ipcMain.handle('get-indexing-state', () => FileIndexer.status);
 ipcMain.handle('select-directory', async () => {
     const { filePaths } = await dialog.showOpenDialog(mainWindow, { properties: ['openDirectory'] });
