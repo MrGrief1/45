@@ -177,6 +177,8 @@ const QuickActionModuleDefinitions = [
     {
         id: 'manual-trigger',
         category: 'trigger',
+        nameKey: 'quick_actions_module_manual_trigger_name',
+        descriptionKey: 'quick_actions_module_manual_trigger_description',
         name: 'Manual trigger',
         description: 'Starts when you press the quick action button.',
         icon: 'play-circle',
@@ -191,6 +193,8 @@ const QuickActionModuleDefinitions = [
     {
         id: 'open-panel',
         category: 'action',
+        nameKey: 'quick_actions_module_open_panel_name',
+        descriptionKey: 'quick_actions_module_open_panel_description',
         name: 'Open panel',
         description: 'Show one of the auxiliary panels such as clipboard or files.',
         icon: 'layout',
@@ -222,6 +226,8 @@ const QuickActionModuleDefinitions = [
     {
         id: 'open-url',
         category: 'action',
+        nameKey: 'quick_actions_module_open_url_name',
+        descriptionKey: 'quick_actions_module_open_url_description',
         name: 'Open website',
         description: 'Launch a URL in your default browser.',
         icon: 'globe',
@@ -247,6 +253,8 @@ const QuickActionModuleDefinitions = [
     {
         id: 'copy-text',
         category: 'action',
+        nameKey: 'quick_actions_module_copy_text_name',
+        descriptionKey: 'quick_actions_module_copy_text_description',
         name: 'Copy text',
         description: 'Copy prepared text into the clipboard.',
         icon: 'clipboard',
@@ -269,6 +277,8 @@ const QuickActionModuleDefinitions = [
     {
         id: 'run-command',
         category: 'action',
+        nameKey: 'quick_actions_module_run_command_name',
+        descriptionKey: 'quick_actions_module_run_command_description',
         name: 'Run shell command',
         description: 'Execute a terminal command on your system.',
         icon: 'terminal',
@@ -292,6 +302,8 @@ const QuickActionModuleDefinitions = [
     {
         id: 'show-notification',
         category: 'action',
+        nameKey: 'quick_actions_module_show_notification_name',
+        descriptionKey: 'quick_actions_module_show_notification_description',
         name: 'Show notification',
         description: 'Display a desktop notification with custom text.',
         icon: 'bell',
@@ -317,6 +329,8 @@ const QuickActionModuleDefinitions = [
     {
         id: 'delay',
         category: 'utility',
+        nameKey: 'quick_actions_module_delay_name',
+        descriptionKey: 'quick_actions_module_delay_description',
         name: 'Delay',
         description: 'Pause the workflow for a specified time.',
         icon: 'clock',
@@ -339,6 +353,8 @@ const QuickActionModuleDefinitions = [
     {
         id: 'set-payload',
         category: 'utility',
+        nameKey: 'quick_actions_module_set_payload_name',
+        descriptionKey: 'quick_actions_module_set_payload_description',
         name: 'Set payload',
         description: 'Store a value that can be reused by next blocks.',
         icon: 'edit-3',
@@ -358,6 +374,8 @@ const QuickActionModuleDefinitions = [
     {
         id: 'use-payload-as-text',
         category: 'action',
+        nameKey: 'quick_actions_module_use_payload_name',
+        descriptionKey: 'quick_actions_module_use_payload_description',
         name: 'Use payload as text',
         description: 'Copy the current payload value to the clipboard.',
         icon: 'clipboard',
@@ -376,6 +394,8 @@ const QuickActionModuleDefinitions = [
     {
         id: 'fetch-json',
         category: 'utility',
+        nameKey: 'quick_actions_module_fetch_json_name',
+        descriptionKey: 'quick_actions_module_fetch_json_description',
         name: 'Fetch JSON',
         description: 'Request JSON data and store it as the workflow payload.',
         icon: 'download-cloud',
@@ -420,6 +440,8 @@ const QuickActionModuleDefinitions = [
     {
         id: 'transform-payload',
         category: 'utility',
+        nameKey: 'quick_actions_module_transform_payload_name',
+        descriptionKey: 'quick_actions_module_transform_payload_description',
         name: 'Transform text',
         description: 'Apply quick text transformations to the payload.',
         icon: 'type',
@@ -472,6 +494,8 @@ const QuickActionModuleDefinitions = [
     {
         id: 'store-variable',
         category: 'utility',
+        nameKey: 'quick_actions_module_store_variable_name',
+        descriptionKey: 'quick_actions_module_store_variable_description',
         name: 'Store variable',
         description: 'Save a named value in the workflow context.',
         icon: 'database',
@@ -498,6 +522,12 @@ const QuickActionModuleDefinitions = [
             return [clone];
         }
     }
+];
+
+const QuickActionIconOptions = [
+    'zap', 'grid', 'command', 'settings', 'layout', 'globe', 'clipboard', 'terminal', 'bell', 'clock', 'edit-3', 'download-cloud',
+    'type', 'database', 'bookmark', 'play', 'folder', 'file-text', 'search', 'link', 'message-circle', 'smartphone', 'sliders',
+    'target', 'users', 'check-circle', 'alert-circle', 'sun', 'moon', 'calendar', 'camera'
 ];
 
 const QuickActionModuleMap = new Map();
@@ -838,6 +868,8 @@ const QuickActionLab = {
     pendingBuilderSize: null,
     resizing: null,
     dragUpdateRaf: null,
+    boundIconPickerDismiss: null,
+    iconPickerOpen: false,
 
     init() {
         if (this.initialized) return;
@@ -875,7 +907,10 @@ const QuickActionLab = {
             actionLabelInput: Utils.getElement('#builder-action-label'),
             actionIconInput: Utils.getElement('#builder-action-icon'),
             actionColorInput: Utils.getElement('#builder-action-color'),
-            iconPreview: Utils.getElement('#builder-icon-preview')
+            iconPreview: Utils.getElement('#builder-icon-preview'),
+            iconPickerButton: Utils.getElement('#builder-icon-picker-button'),
+            iconPickerDropdown: Utils.getElement('#builder-icon-picker-dropdown'),
+            iconPickerGrid: Utils.getElement('#builder-icon-picker-dropdown .icon-picker-grid')
         };
 
         this.elements.dialog = document.querySelector('#quick-action-builder-modal .builder-dialog');
@@ -914,6 +949,9 @@ const QuickActionLab = {
             this.builderState.metadata.icon = event.target.value.trim() || 'zap';
             this.updateIconPreview();
         });
+
+        this.elements.iconPickerButton?.addEventListener('click', (event) => this.toggleIconPicker(event));
+        this.elements.iconPickerDropdown?.addEventListener('click', (event) => event.stopPropagation());
 
         this.elements.actionColorInput?.addEventListener('input', (event) => {
             if (!this.builderState) return;
@@ -1114,6 +1152,7 @@ const QuickActionLab = {
 
     openBuilder(actionId = null, options = {}) {
         QuickActionStore.ensureStructure();
+        this.closeIconPicker();
         this.builderState = this.createDefaultBuilderState();
         this.builderState.isOpen = true;
 
@@ -1220,6 +1259,7 @@ const QuickActionLab = {
             this.elements.modal.classList.remove('active');
             this.elements.modal.setAttribute('aria-hidden', 'true');
         }
+        this.closeIconPicker();
         this.builderState = null;
         this.elements.actionLabelInput.value = '';
         this.elements.actionIconInput.value = '';
@@ -1291,8 +1331,10 @@ const QuickActionLab = {
             items.forEach(module => {
                 const item = Utils.createElement('li', { className: 'builder-module-item' });
                 item.setAttribute('data-module-id', module.id);
-                const title = Utils.createElement('strong', { text: module.name });
-                const description = Utils.createElement('span', { text: module.description });
+                const localizedName = module.nameKey ? LocalizationRenderer.t(module.nameKey) : module.name;
+                const localizedDescription = module.descriptionKey ? LocalizationRenderer.t(module.descriptionKey) : module.description;
+                const title = Utils.createElement('strong', { text: localizedName || module.name });
+                const description = Utils.createElement('span', { text: localizedDescription || module.description || '' });
                 item.appendChild(title);
                 item.appendChild(description);
                 item.addEventListener('click', () => this.addNode(module.id));
@@ -1321,12 +1363,14 @@ const QuickActionLab = {
             nodeEl.setAttribute('data-node-id', node.id);
 
             const header = Utils.createElement('div', { className: 'builder-node-header' });
-            const title = Utils.createElement('h4', { text: moduleDef.name });
+            const localizedName = moduleDef.nameKey ? LocalizationRenderer.t(moduleDef.nameKey) : moduleDef.name;
+            const title = Utils.createElement('h4', { text: localizedName || moduleDef.name });
             header.appendChild(title);
             header.addEventListener('pointerdown', (event) => this.startNodeDrag(node.id, event));
             nodeEl.appendChild(header);
 
-            const body = Utils.createElement('div', { className: 'builder-node-body', text: moduleDef.description });
+            const localizedDescription = moduleDef.descriptionKey ? LocalizationRenderer.t(moduleDef.descriptionKey) : moduleDef.description;
+            const body = Utils.createElement('div', { className: 'builder-node-body', text: localizedDescription || moduleDef.description || '' });
             nodeEl.appendChild(body);
 
             const footer = Utils.createElement('div', { className: 'builder-node-footer' });
@@ -1676,11 +1720,120 @@ const QuickActionLab = {
     updateIconPreview() {
         if (!this.elements.iconPreview || !this.builderState) return;
         const iconName = this.builderState.metadata.icon || 'zap';
+        this.elements.iconPreview.innerHTML = '';
         if (window.feather?.icons?.[iconName]) {
-            this.elements.iconPreview.innerHTML = window.feather.icons[iconName].toSvg();
+            this.elements.iconPreview.innerHTML = window.feather.icons[iconName].toSvg({ width: 22, height: 22 });
         } else {
             this.elements.iconPreview.textContent = '⚡';
         }
+        this.highlightIconOption(iconName);
+    },
+
+    toggleIconPicker(event) {
+        if (!this.builderState) return;
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+        if (this.iconPickerOpen) {
+            this.closeIconPicker();
+        } else {
+            this.openIconPicker();
+        }
+    },
+
+    openIconPicker() {
+        if (!this.builderState) return;
+        if (!this.elements.iconPickerDropdown || !this.elements.iconPickerGrid) return;
+        this.renderIconPicker();
+        this.elements.iconPickerDropdown.classList.add('open');
+        this.elements.iconPickerButton?.setAttribute('aria-expanded', 'true');
+        this.iconPickerOpen = true;
+        if (!this.boundIconPickerDismiss) {
+            this.boundIconPickerDismiss = (event) => this.handleIconPickerDismiss(event);
+        }
+        document.addEventListener('click', this.boundIconPickerDismiss, { capture: true });
+    },
+
+    closeIconPicker() {
+        if (!this.iconPickerOpen) return;
+        this.elements.iconPickerDropdown?.classList.remove('open');
+        this.elements.iconPickerButton?.setAttribute('aria-expanded', 'false');
+        if (this.boundIconPickerDismiss) {
+            document.removeEventListener('click', this.boundIconPickerDismiss, { capture: true });
+        }
+        this.iconPickerOpen = false;
+    },
+
+    handleIconPickerDismiss(event) {
+        if (!this.elements.iconPickerDropdown) return;
+        if (this.elements.iconPickerDropdown.contains(event.target) || this.elements.iconPickerButton?.contains(event.target)) {
+            return;
+        }
+        this.closeIconPicker();
+    },
+
+    renderIconPicker() {
+        const grid = this.elements.iconPickerGrid;
+        if (!grid) return;
+        grid.innerHTML = '';
+        const activeIcon = (this.builderState?.metadata.icon || 'zap').trim();
+        const icons = [...QuickActionIconOptions];
+        if (activeIcon && !icons.includes(activeIcon)) {
+            icons.unshift(activeIcon);
+        }
+        icons.forEach(iconName => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'icon-picker-option';
+            button.dataset.value = iconName;
+            button.setAttribute('role', 'option');
+            const readable = iconName.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+            button.title = readable;
+            button.setAttribute('aria-label', readable);
+            const isActive = iconName === activeIcon;
+            button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            if (window.feather?.icons?.[iconName]) {
+                button.innerHTML = window.feather.icons[iconName].toSvg({ width: 22, height: 22 });
+            } else {
+                button.textContent = iconName.substring(0, 2).toUpperCase();
+            }
+            if (isActive) {
+                button.classList.add('selected');
+            }
+            button.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                this.setBuilderIcon(iconName);
+            });
+            grid.appendChild(button);
+        });
+    },
+
+    highlightIconOption(iconName) {
+        if (!this.elements.iconPickerGrid) return;
+        const normalized = (iconName || '').trim();
+        let found = false;
+        this.elements.iconPickerGrid.querySelectorAll('.icon-picker-option').forEach(option => {
+            const isSelected = option.dataset.value === normalized;
+            option.classList.toggle('selected', isSelected);
+            option.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+            if (isSelected) {
+                found = true;
+            }
+        });
+        if (this.iconPickerOpen && normalized && !found) {
+            this.renderIconPicker();
+        }
+    },
+
+    setBuilderIcon(iconName) {
+        if (!this.builderState) return;
+        const normalized = iconName?.trim() || 'zap';
+        this.builderState.metadata.icon = normalized;
+        if (this.elements.actionIconInput) {
+            this.elements.actionIconInput.value = normalized;
+        }
+        this.updateIconPreview();
+        this.closeIconPicker();
     },
 
     saveAction() {

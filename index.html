@@ -447,8 +447,16 @@
                             <input type="text" id="builder-action-label" placeholder="My quick action">
                             <label for="builder-action-icon">Icon</label>
                             <div class="inspector-icon-picker">
-                                <input type="text" id="builder-action-icon" placeholder="feather icon name">
-                                <div id="builder-icon-preview" class="icon-preview"></div>
+                                <div class="icon-input-group">
+                                    <input type="text" id="builder-action-icon" placeholder="feather icon name">
+                                    <button type="button" id="builder-icon-picker-button" class="icon-picker-button" aria-label="Choose icon" aria-haspopup="listbox" aria-expanded="false">
+                                        <i data-feather="grid"></i>
+                                    </button>
+                                </div>
+                                <div id="builder-icon-preview" class="icon-preview" aria-hidden="true"></div>
+                                <div id="builder-icon-picker-dropdown" class="icon-picker-dropdown" role="listbox" aria-label="Available icons">
+                                    <div class="icon-picker-grid"></div>
+                                </div>
                             </div>
                             <label for="builder-action-color">Accent colour</label>
                             <input type="color" id="builder-action-color" value="#5865f2">
