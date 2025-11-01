@@ -66,8 +66,8 @@ const DEFAULT_SETTINGS = {
     theme: 'auto', // ИЗМЕНЕНО: Тема по умолчанию теперь 'auto'
     language: 'ru',
     windowPosition: 'top-center',
-    width: 950, // ИЗМЕНЕНО: Начальная ширина
-    height: 70,  // ИЗМЕНЕНО: Начальная высота
+    width: 820, // ИЗМЕНЕНО: Начальная ширина
+    height: 84,  // ИЗМЕНЕНО: Начальная высота
     borderRadius: 24, // НОВОЕ: Скругление углов
     shortcut: 'Alt+Tab',
     animations: true,
@@ -257,6 +257,16 @@ class SettingsManager {
         }
         if (!Array.isArray(currentSettings.customAutomations)) {
             currentSettings.customAutomations = DEFAULT_SETTINGS.customAutomations;
+        }
+        if (!Number.isFinite(currentSettings.width)) {
+            currentSettings.width = DEFAULT_SETTINGS.width;
+        } else {
+            currentSettings.width = Math.min(1600, Math.max(220, Math.round(currentSettings.width)));
+        }
+        if (!Number.isFinite(currentSettings.height)) {
+            currentSettings.height = DEFAULT_SETTINGS.height;
+        } else {
+            currentSettings.height = Math.min(120, Math.max(70, Math.round(currentSettings.height)));
         }
         // НОВОЕ: Проверка для папок приложений
         if (!Array.isArray(currentSettings.appFolders) || currentSettings.appFolders.length === 0) {

@@ -4388,6 +4388,8 @@ const ViewManager = {
         this.updateDynamicStyles('opacity', AppState.settings.opacity);
         this.updateDynamicStyles('blurStrength', AppState.settings.blurStrength);
         this.updateDynamicStyles('selectionColorStyle', AppState.settings.selectionColorStyle || 'gray'); // НОВОЕ
+        this.updateDynamicStyles('width', AppState.settings.width);
+        this.updateDynamicStyles('height', AppState.settings.height);
         if (window.feather) window.feather.replace();
         this.handleStartupAnimation();
     },
@@ -4402,10 +4404,27 @@ const ViewManager = {
             document.documentElement.style.setProperty('--dynamic-opacity', base);
             document.documentElement.style.setProperty('--dynamic-opacity-top', 0.6 * base + 0.4 * Math.pow(base, 2));
         }
-        else if (settingKey === 'blurStrength') document.documentElement.style.setProperty('--dynamic-blur', `blur(${parseInt(value, 10) || 70}px)`);
-        else if (settingKey === 'width') document.documentElement.style.setProperty('--dynamic-width', `${parseInt(value, 10) || 950}px`);
-        else if (settingKey === 'height') document.documentElement.style.setProperty('--dynamic-height', `${parseInt(value, 10) || 90}px`);
-        else if (settingKey === 'borderRadius') document.documentElement.style.setProperty('--dynamic-border-radius', `${parseInt(value, 10) || 24}px`);
+        else if (settingKey === 'blurStrength') {
+            document.documentElement.style.setProperty('--dynamic-blur', `blur(${parseInt(value, 10) || 70}px)`);
+        }
+        else if (settingKey === 'width') {
+            const numeric = parseInt(value, 10);
+            const fallback = Number.isNaN(numeric) ? 820 : numeric;
+            const safeWidth = Math.min(1600, Math.max(220, fallback));
+            document.documentElement.style.setProperty('--dynamic-width', `${safeWidth}px`);
+            document.body.classList.toggle('compact-search-layout', safeWidth <= 760);
+            if (AppState.settings) AppState.settings.width = safeWidth;
+        }
+        else if (settingKey === 'height') {
+            const numeric = parseInt(value, 10);
+            const fallback = Number.isNaN(numeric) ? 84 : numeric;
+            const safeHeight = Math.min(120, Math.max(70, fallback));
+            document.documentElement.style.setProperty('--dynamic-height', `${safeHeight}px`);
+            if (AppState.settings) AppState.settings.height = safeHeight;
+        }
+        else if (settingKey === 'borderRadius') {
+            document.documentElement.style.setProperty('--dynamic-border-radius', `${parseInt(value, 10) || 24}px`);
+        }
         else if (settingKey === 'selectionColorStyle') {
             // НОВОЕ: Применяем цвет выделения
             const selectionColors = {
