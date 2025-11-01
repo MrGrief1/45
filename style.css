@@ -8,8 +8,8 @@
   --dynamic-blur: blur(40px);
   --dynamic-opacity: 0.85;
   --dynamic-opacity-top: calc(var(--dynamic-opacity) * 0.6);
-  --dynamic-width: 850px;
-  --dynamic-height: 80px;
+  --dynamic-width: 780px;
+  --dynamic-height: 88px;
   --dynamic-border-radius: 24px;
   --selection-color: rgba(0, 0, 0, 0.08);
 
@@ -666,7 +666,8 @@ body.dark-theme .aux-header {
 #main-layout {
   width: var(--dynamic-width);
   min-height: var(--dynamic-height);
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: stretch;
   padding: clamp(10px, calc(var(--dynamic-height) * 0.18), 16px);
   gap: clamp(10px, calc(var(--dynamic-height) * 0.22), 20px);
@@ -714,8 +715,11 @@ body.dark-theme .aux-header {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  flex: 0 0 auto;
   min-height: var(--dynamic-height);
+  padding: 0 clamp(18px, calc(var(--dynamic-height) * 0.3), 28px);
+  border-radius: var(--dynamic-border-radius);
+  background-color: rgba(var(--secondary-bg-color-rgb), var(--dynamic-opacity));
+  box-shadow: inset 0 0 0 1px var(--border-color);
   min-width: 0;
 }
 
@@ -739,6 +743,36 @@ body.dark-theme .aux-header {
   color: var(--icon-color);
   opacity: 0.7;
   padding: 8px 10px;
+}
+#main-layout,
+#quick-action-shell,
+#quick-action-bar {
+  min-width: 0;
+}
+
+#quick-action-shell,
+#search-box {
+  width: 100%;
+}
+
+#quick-action-shell {
+  backdrop-filter: var(--dynamic-blur);
+  -webkit-backdrop-filter: var(--dynamic-blur);
+}
+
+#quick-action-bar {
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  #main-layout {
+    grid-template-columns: 1fr;
+  }
+
+  #quick-action-shell,
+  #quick-action-bar {
+    justify-content: center;
+  }
 }
 #search-input::placeholder {
   color: var(--icon-color);
@@ -1881,7 +1915,7 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 .custom-select-trigger {
   padding: 8px 12px;
-  border-radius: 12px !important; /* Fixed radius */
+  border-radius: max(12px, calc(var(--dynamic-border-radius) - 8px)) !important;
   border: 1px solid var(--border-color);
   backdrop-filter: var(--dynamic-blur) saturate(180%);
   -webkit-backdrop-filter: var(--dynamic-blur) saturate(180%);
@@ -1918,7 +1952,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   left: 0;
   right: 0;
   z-index: 10;
-  border-radius: var(--dynamic-border-radius);
+  border-radius: max(14px, calc(var(--dynamic-border-radius) - 6px));
   padding: 8px;
   display: none;
   overflow: hidden;
@@ -1949,7 +1983,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   transition: background-color 0.2s ease;
   display: flex;
   align-items: center;
-  border-radius: 8px; /* Base radius for all options */
+  border-radius: max(8px, calc(var(--dynamic-border-radius) - 10px));
 }
 
 .custom-option:first-child {
@@ -3187,25 +3221,26 @@ input[type="range"]:active::-webkit-slider-thumb {
   line-height: 1.5;
 }
 
-.inspector-icon-picker {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
-  align-items: center;
-  position: relative;
-}
+  .inspector-icon-picker {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    position: relative;
+  }
 
-.inspector-icon-picker input {
-  width: 100%;
-}
+  .inspector-icon-picker input {
+    width: 100%;
+  }
 
-.icon-preview {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+  .icon-preview {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
 .icon-preview svg,
 .icon-preview i {
@@ -3217,15 +3252,15 @@ input[type="range"]:active::-webkit-slider-thumb {
 .icon-picker-toggle {
   border: 1px solid rgba(var(--border-color-rgb, 148, 163, 184), 0.45);
   background: rgba(var(--secondary-bg-color-rgb), var(--dynamic-opacity));
-  border-radius: max(12px, calc(var(--dynamic-border-radius) - 6px));
+  border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-  padding: 0;
+  padding: 4px;
 }
 
 .icon-picker-toggle:hover,
@@ -3246,15 +3281,16 @@ input[type="range"]:active::-webkit-slider-thumb {
   right: 0;
   background: rgba(var(--base-bg-color-rgb), 0.96);
   border: 1px solid var(--border-color);
-  border-radius: max(12px, calc(var(--dynamic-border-radius) - 6px));
+  border-radius: max(16px, calc(var(--dynamic-border-radius) - 6px));
   box-shadow: 0 28px 60px rgba(15, 23, 42, 0.25);
   padding: 16px;
   display: grid;
-  grid-template-columns: repeat(6, minmax(36px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(6, minmax(48px, 1fr));
+  gap: 12px;
+  justify-items: center;
   max-height: 260px;
   overflow-y: auto;
-  min-width: 260px;
+  min-width: 288px;
   z-index: 30;
 }
 
@@ -3264,13 +3300,13 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 .icon-picker button {
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: 50%;
   background: rgba(var(--secondary-bg-color-rgb), 0.75);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
   padding: 0;
@@ -3340,21 +3376,23 @@ input[type="range"]:active::-webkit-slider-thumb {
 }
 
 .inspector-icon-picker {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr auto;
   gap: 12px;
+  align-items: center;
 }
 
 .icon-preview {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: rgba(var(--base-bg-color-rgb), 0.85);
   color: var(--button-icon-color);
   border: 1px solid var(--border-color);
+  box-shadow: inset 0 0 0 1px rgba(var(--border-color-rgb, 148, 163, 184), 0.25);
 }
 
 .builder-footer {
