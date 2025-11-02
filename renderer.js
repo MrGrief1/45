@@ -3905,6 +3905,13 @@ const QuickActionLab = {
         this.elements.resetView?.addEventListener('click', () => this.resetView());
         this.elements.clearWorkspace?.addEventListener('click', () => this.clearWorkspace());
 
+        // Zoom with mouse wheel
+        this.elements.canvas?.addEventListener('wheel', (event) => {
+            event.preventDefault();
+            const delta = event.deltaY > 0 ? -0.1 : 0.1;
+            this.adjustZoom(delta);
+        }, { passive: false });
+
         this.elements.moduleSearch?.addEventListener('input', Utils.debounce((event) => {
             this.moduleSearchTerm = String(event.target.value || '').trim().toLowerCase();
             this.renderModuleList();
