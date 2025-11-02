@@ -3812,7 +3812,12 @@ const QuickActionLab = {
             blockExplorer: Utils.getElement('#builder-block-explorer'),
             blockExplorerList: Utils.getElement('#block-explorer-list'),
             blockExplorerSearch: Utils.getElement('#block-explorer-search'),
-            closeExplorer: Utils.getElement('#block-explorer-close')
+            closeExplorer: Utils.getElement('#block-explorer-close'),
+            confirmDialog: Utils.getElement('#builder-confirm-dialog'),
+            confirmTitle: Utils.getElement('#builder-confirm-title'),
+            confirmMessage: Utils.getElement('#builder-confirm-message'),
+            confirmOk: Utils.getElement('#builder-confirm-ok'),
+            confirmCancel: Utils.getElement('#builder-confirm-cancel')
         };
         this.blockExplorerFilters = Array.from(Utils.getAllElements('[data-block-category]'));
 
@@ -4140,8 +4145,11 @@ const QuickActionLab = {
                 controls.appendChild(editBtn);
 
                 const deleteBtn = Utils.createElement('button', { className: 'settings-button secondary', text: LocalizationRenderer.t('quick_actions_delete') || 'Delete' });
-                deleteBtn.addEventListener('click', () => {
-                    if (window.confirm(LocalizationRenderer.t('quick_actions_delete_confirm') || 'Delete this quick action?')) {
+                deleteBtn.addEventListener('click', async () => {
+                    const confirmed = await this.showConfirm(
+                        LocalizationRenderer.t('quick_actions_delete_confirm') || 'Delete this quick action?'
+                    );
+                    if (confirmed) {
                         QuickActionStore.deleteCustomAction(action.id);
                         QuickActionManager.refresh();
                         this.renderAll();
@@ -5128,14 +5136,74 @@ const QuickActionLab = {
         this.renderBuilder();
     },
 
-    clearWorkspace() {
+    async clearWorkspace() {
         if (!this.builderState) return;
-        if (!window.confirm(LocalizationRenderer.t('quick_actions_clear_confirm') || 'Clear the workspace?')) return;
+        const confirmed = await this.showConfirm(
+            LocalizationRenderer.t('quick_actions_clear_confirm') || 'Очистить рабочее поле?'
+        );
+        if (!confirmed) return;
         const manual = this.builderState.nodes.find(node => node.moduleId === 'manual-trigger');
         this.builderState.nodes = manual ? [manual] : [this.createNodeDefinition('manual-trigger', { x: 120, y: 200 })];
         this.builderState.connections = [];
         this.builderState.selectedNodeId = this.builderState.nodes[0].id;
         this.renderBuilder();
+    },
+
+    showConfirm(message, title = '') {
+        return new Promise((resolve) => {
+            if (!this.elements.confirmDialog) {
+                resolve(false);
+                return;
+            }
+
+            if (this.elements.confirmMessage) {
+                this.elements.confirmMessage.textContent = message;
+            }
+            
+            this.elements.confirmDialog.setAttribute('aria-hidden', 'false');
+            
+            // Refresh feather icons
+            if (window.feather) {
+                feather.replace();
+            }
+
+            const cleanup = () => {
+                this.elements.confirmDialog?.setAttribute('aria-hidden', 'true');
+                this.elements.confirmOk?.removeEventListener('click', handleOk);
+                this.elements.confirmCancel?.removeEventListener('click', handleCancel);
+                this.elements.confirmDialog?.removeEventListener('click', handleBackdrop);
+                document.removeEventListener('keydown', handleEscape);
+            };
+
+            const handleOk = () => {
+                cleanup();
+                resolve(true);
+            };
+
+            const handleCancel = () => {
+                cleanup();
+                resolve(false);
+            };
+
+            const handleBackdrop = (event) => {
+                if (event.target.classList.contains('builder-confirm-backdrop')) {
+                    cleanup();
+                    resolve(false);
+                }
+            };
+
+            const handleEscape = (event) => {
+                if (event.key === 'Escape') {
+                    cleanup();
+                    resolve(false);
+                }
+            };
+
+            this.elements.confirmOk?.addEventListener('click', handleOk);
+            this.elements.confirmCancel?.addEventListener('click', handleCancel);
+            this.elements.confirmDialog?.addEventListener('click', handleBackdrop);
+            document.addEventListener('keydown', handleEscape);
+        });
     },
 
     updateZoomIndicator() {
