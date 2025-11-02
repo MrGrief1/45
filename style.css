@@ -3287,6 +3287,14 @@ input[type="range"]:active::-webkit-slider-thumb {
   min-height: 0;
 }
 
+#quick-action-canvas {
+  cursor: grab;
+}
+
+#quick-action-canvas:active {
+  cursor: grabbing;
+}
+
 .builder-toolbar {
   display: inline-flex;
   gap: 10px;

@@ -3912,6 +3912,63 @@ const QuickActionLab = {
             this.adjustZoom(delta);
         }, { passive: false });
 
+        // Pan with right mouse button
+        let isPanning = false;
+        let panStartX = 0;
+        let panStartY = 0;
+        let panStartOffsetX = 0;
+        let panStartOffsetY = 0;
+
+        this.elements.canvas?.addEventListener('mousedown', (event) => {
+            if (event.button === 2) { // Right mouse button
+                event.preventDefault();
+                isPanning = true;
+                panStartX = event.clientX;
+                panStartY = event.clientY;
+                if (this.builderState) {
+                    panStartOffsetX = this.builderState.panX || 0;
+                    panStartOffsetY = this.builderState.panY || 0;
+                }
+                this.elements.canvas.style.cursor = 'grabbing';
+            }
+        });
+
+        this.elements.canvas?.addEventListener('mousemove', (event) => {
+            if (isPanning && this.builderState) {
+                const deltaX = event.clientX - panStartX;
+                const deltaY = event.clientY - panStartY;
+                this.builderState.panX = panStartOffsetX + deltaX;
+                this.builderState.panY = panStartOffsetY + deltaY;
+                this.renderBuilder();
+            }
+        });
+
+        const stopPanning = () => {
+            if (isPanning) {
+                isPanning = false;
+                if (this.elements.canvas) {
+                    this.elements.canvas.style.cursor = '';
+                }
+            }
+        };
+
+        this.elements.canvas?.addEventListener('mouseup', (event) => {
+            if (event.button === 2) {
+                stopPanning();
+            }
+        });
+
+        this.elements.canvas?.addEventListener('mouseleave', stopPanning);
+
+        // Prevent context menu on right click in builder
+        this.elements.canvas?.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+        });
+
+        this.elements.modal?.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+        });
+
         this.elements.moduleSearch?.addEventListener('input', Utils.debounce((event) => {
             this.moduleSearchTerm = String(event.target.value || '').trim().toLowerCase();
             this.renderModuleList();
@@ -4195,6 +4252,12 @@ const QuickActionLab = {
                 if (existing.workflow.zoom) {
                     this.builderState.zoom = existing.workflow.zoom;
                 }
+                if (existing.workflow.panX !== undefined) {
+                    this.builderState.panX = existing.workflow.panX;
+                }
+                if (existing.workflow.panY !== undefined) {
+                    this.builderState.panY = existing.workflow.panY;
+                }
                 if (existing.workflow.initialPayload !== undefined) {
                     this.builderState.metadata.initialPayload = existing.workflow.initialPayload;
                 }
@@ -4302,6 +4365,8 @@ const QuickActionLab = {
             nodes: [manualNode],
             connections: [],
             zoom: 1,
+            panX: 0,
+            panY: 0,
             selectedNodeId: manualNode.id,
             pendingConnection: null,
             isOpen: false,
@@ -4554,8 +4619,10 @@ const QuickActionLab = {
         nodeLayer.innerHTML = '';
         connectionLayer.innerHTML = '';
 
-        nodeLayer.style.transform = `scale(${this.builderState.zoom})`;
-        connectionLayer.style.transform = `scale(${this.builderState.zoom})`;
+        const panX = this.builderState.panX || 0;
+        const panY = this.builderState.panY || 0;
+        nodeLayer.style.transform = `translate(${panX}px, ${panY}px) scale(${this.builderState.zoom})`;
+        connectionLayer.style.transform = `translate(${panX}px, ${panY}px) scale(${this.builderState.zoom})`;
 
         this.builderState.nodes.forEach(node => {
             const moduleDef = QuickActionModuleMap.get(node.moduleId);
@@ -5055,6 +5122,8 @@ const QuickActionLab = {
     resetView() {
         if (!this.builderState) return;
         this.builderState.zoom = 1;
+        this.builderState.panX = 0;
+        this.builderState.panY = 0;
         this.renderBuilder();
     },
 
@@ -5250,6 +5319,8 @@ const QuickActionLab = {
                 nodes,
                 connections,
                 zoom: this.builderState.zoom,
+                panX: this.builderState.panX || 0,
+                panY: this.builderState.panY || 0,
                 initialPayload: this.builderState.metadata.initialPayload ?? null
             }
         };
@@ -7764,7 +7835,14 @@ const ViewManager = {
     setupEventListeners: function() {
         if (Utils.getElement('#settings-button')) Utils.getElement('#settings-button').addEventListener('click', () => this.switchView('settings'));
         if (Utils.getElement('#settings-back-button')) Utils.getElement('#settings-back-button').addEventListener('click', () => this.switchView('search'));
-        window.addEventListener('contextmenu', (e) => { e.preventDefault(); ipcRenderer.send('show-context-menu'); }, false);
+        window.addEventListener('contextmenu', (e) => { 
+            e.preventDefault(); 
+            // Don't show context menu if builder is open
+            if (QuickActionBuilder.builderState?.isOpen || document.querySelector('#quick-action-builder-modal.active')) {
+                return;
+            }
+            ipcRenderer.send('show-context-menu'); 
+        }, false);
     },
     switchView: function(viewName) {
         if (AppState.currentView === viewName) return;
