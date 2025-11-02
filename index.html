@@ -374,10 +374,10 @@
                                     </div>
                                 </div>
                                 <div id="quick-action-import-area" class="quick-action-import-area" hidden>
-                                    <textarea id="quick-action-import-text" placeholder="Paste configuration JSON here"></textarea>
+                                    <textarea id="quick-action-import-text" placeholder="Paste configuration JSON here" data-i18n-placeholder="quick_actions_builder_import_placeholder"></textarea>
                                     <div class="quick-action-import-controls">
-                                        <button id="confirm-quick-action-import" class="settings-button">Import</button>
-                                        <button id="cancel-quick-action-import" class="settings-button secondary">Cancel</button>
+                                        <button id="confirm-quick-action-import" class="settings-button" data-i18n="quick_actions_builder_import_confirm">Import</button>
+                                        <button id="cancel-quick-action-import" class="settings-button secondary" data-i18n="quick_actions_builder_import_cancel">Cancel</button>
                                     </div>
                                 </div>
                             </section>
@@ -403,14 +403,14 @@
         <div class="builder-dialog" role="dialog" aria-modal="true" aria-labelledby="quick-action-builder-title">
             <header class="builder-dialog-header">
                 <div class="builder-title-group">
-                    <h2 id="quick-action-builder-title">Quick action studio</h2>
-                    <p id="quick-action-builder-subtitle">Connect blocks visually to craft new buttons for the search bar.</p>
+                    <h2 id="quick-action-builder-title" data-i18n="quick_actions_builder_modal_title">Quick action studio</h2>
+                    <p id="quick-action-builder-subtitle" data-i18n="quick_actions_builder_modal_subtitle">Connect blocks visually to craft new buttons for the search bar.</p>
                 </div>
                 <div class="builder-header-actions">
-                    <button id="builder-export-action" class="builder-header-button" title="Export configuration">
+                    <button id="builder-export-action" class="builder-header-button" data-i18n-title="quick_actions_builder_export_title" title="Export configuration">
                         <i data-feather="share-2"></i>
                     </button>
-                    <button id="close-quick-action-builder" class="builder-header-button" title="Close">
+                    <button id="close-quick-action-builder" class="builder-header-button" data-i18n-title="quick_actions_builder_close_title" title="Close">
                         <i data-feather="x"></i>
                     </button>
                 </div>
@@ -418,33 +418,33 @@
             <div class="builder-body">
                 <aside class="builder-sidebar">
                     <div class="builder-sidebar-controls">
-                        <label class="sr-only" for="builder-module-search">Search blocks</label>
-                        <input type="search" id="builder-module-search" class="builder-module-search" placeholder="Search blocks">
+                        <label class="sr-only" for="builder-module-search" data-i18n="quick_actions_builder_search_label">Search blocks</label>
+                        <input type="search" id="builder-module-search" class="builder-module-search" placeholder="Search blocks" data-i18n-placeholder="quick_actions_builder_search_placeholder">
                         <button id="builder-open-explorer" class="builder-sidebar-button" type="button">
                             <i data-feather="grid"></i>
-                            <span>Open block explorer</span>
+                            <span data-i18n="quick_actions_builder_open_explorer">Open block explorer</span>
                         </button>
                     </div>
                     <div class="builder-sidebar-section">
-                        <h3>Triggers</h3>
+                        <h3 data-i18n="quick_actions_builder_section_triggers">Triggers</h3>
                         <ul id="builder-trigger-list" class="builder-module-list"></ul>
                     </div>
                     <div class="builder-sidebar-section">
-                        <h3>Actions</h3>
+                        <h3 data-i18n="quick_actions_builder_section_actions">Actions</h3>
                         <ul id="builder-action-list" class="builder-module-list"></ul>
                     </div>
                     <div class="builder-sidebar-section">
-                        <h3>Utilities</h3>
+                        <h3 data-i18n="quick_actions_builder_section_utilities">Utilities</h3>
                         <ul id="builder-utility-list" class="builder-module-list"></ul>
                     </div>
                 </aside>
                 <div class="builder-canvas-wrapper">
                     <div class="builder-toolbar">
-                        <button id="builder-zoom-out" class="builder-toolbar-button" title="Zoom out">-</button>
+                        <button id="builder-zoom-out" class="builder-toolbar-button" title="Zoom out" data-i18n-title="quick_actions_builder_toolbar_zoom_out" data-i18n-aria-label="quick_actions_builder_toolbar_zoom_out" aria-label="Zoom out">-</button>
                         <span id="builder-zoom-indicator">100%</span>
-                        <button id="builder-zoom-in" class="builder-toolbar-button" title="Zoom in">+</button>
-                        <button id="builder-reset-view" class="builder-toolbar-button" title="Reset view">Reset</button>
-                        <button id="builder-clear-workspace" class="builder-toolbar-button destructive" title="Clear canvas">Clear</button>
+                        <button id="builder-zoom-in" class="builder-toolbar-button" title="Zoom in" data-i18n-title="quick_actions_builder_toolbar_zoom_in" data-i18n-aria-label="quick_actions_builder_toolbar_zoom_in" aria-label="Zoom in">+</button>
+                        <button id="builder-reset-view" class="builder-toolbar-button" title="Reset view" data-i18n="quick_actions_builder_toolbar_reset">Reset</button>
+                        <button id="builder-clear-workspace" class="builder-toolbar-button destructive" title="Clear canvas" data-i18n="quick_actions_builder_toolbar_clear">Clear</button>
                     </div>
                     <div id="quick-action-canvas" class="builder-canvas" tabindex="0">
                         <svg id="builder-connection-layer" class="builder-connection-layer"></svg>
@@ -498,16 +498,26 @@
                 <div class="block-explorer-dialog" role="dialog" aria-modal="true" aria-labelledby="block-explorer-title">
                     <header class="block-explorer-header">
                         <div>
-                            <h3 id="block-explorer-title">Block explorer</h3>
-                            <p>Browse the full catalogue, read descriptions and drop blocks into the canvas.</p>
+                            <h3 id="block-explorer-title" data-i18n="quick_actions_builder_block_explorer_title">Block explorer</h3>
+                            <p data-i18n="quick_actions_builder_block_explorer_description">Browse the full catalogue, read descriptions and drop blocks into the canvas.</p>
                         </div>
-                        <button type="button" id="block-explorer-close" class="block-explorer-close" title="Close explorer">
+                        <button type="button" id="block-explorer-close" class="block-explorer-close" title="Close explorer" data-i18n-title="quick_actions_builder_close_title" data-i18n-aria-label="quick_actions_builder_close_title" aria-label="Close explorer">
                             <i data-feather="x"></i>
                         </button>
                     </header>
-                    <div class="block-explorer-search">
-                        <i data-feather="search"></i>
-                        <input type="search" id="block-explorer-search" placeholder="Search blocks by name, description or tag">
+                    <div class="block-explorer-controls">
+                        <div class="block-explorer-search">
+                            <i data-feather="search"></i>
+                            <label class="sr-only" for="block-explorer-search" data-i18n="quick_actions_builder_block_explorer_search_label">Search catalog</label>
+                            <input type="search" id="block-explorer-search" placeholder="Search the entire catalog" data-i18n-placeholder="quick_actions_builder_block_explorer_search_placeholder">
+                        </div>
+                        <div class="block-explorer-filter-group" role="toolbar" aria-label="Block categories" data-i18n-aria-label="quick_actions_builder_block_explorer_filters_label">
+                            <span class="sr-only" data-i18n="quick_actions_builder_block_explorer_filters_label">Filter blocks by category</span>
+                            <button type="button" class="block-explorer-filter active" data-block-category="all" aria-pressed="true" data-i18n="quick_actions_builder_block_explorer_filter_all">All blocks</button>
+                            <button type="button" class="block-explorer-filter" data-block-category="trigger" aria-pressed="false" data-i18n="quick_actions_builder_block_explorer_filter_triggers">Triggers</button>
+                            <button type="button" class="block-explorer-filter" data-block-category="action" aria-pressed="false" data-i18n="quick_actions_builder_block_explorer_filter_actions">Actions</button>
+                            <button type="button" class="block-explorer-filter" data-block-category="utility" aria-pressed="false" data-i18n="quick_actions_builder_block_explorer_filter_utilities">Utilities</button>
+                        </div>
                     </div>
                     <div id="block-explorer-list" class="block-explorer-list" role="list"></div>
                 </div>

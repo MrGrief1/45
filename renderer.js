@@ -3683,6 +3683,7 @@ const QuickActionLab = {
     boundOutsideClick: null,
     builderSelectWrappers: new Set(),
     boundSelectOutsideClick: null,
+    blockExplorerFilters: [],
 
     init() {
         if (this.initialized) return;
@@ -3697,6 +3698,7 @@ const QuickActionLab = {
         this.builderSelectWrappers = new Set();
         this.moduleSearchTerm = '';
         this.blockExplorerSearchTerm = '';
+        this.blockExplorerCategory = 'all';
         this.elements = {
             activeList: Utils.getElement('#quick-action-active-list'),
             catalog: Utils.getElement('#quick-action-catalog'),
@@ -3738,6 +3740,7 @@ const QuickActionLab = {
             blockExplorerSearch: Utils.getElement('#block-explorer-search'),
             closeExplorer: Utils.getElement('#block-explorer-close')
         };
+        this.blockExplorerFilters = Array.from(Utils.getAllElements('[data-block-category]'));
 
         this.elements.dialog = document.querySelector('#quick-action-builder-modal .builder-dialog');
         this.elements.resizeHandle = document.querySelector('#quick-action-builder-modal .builder-resize-handle');
@@ -3844,6 +3847,13 @@ const QuickActionLab = {
             this.blockExplorerSearchTerm = String(event.target.value || '').trim().toLowerCase();
             this.renderBlockExplorer();
         }, 150));
+
+        this.blockExplorerFilters.forEach(button => {
+            button.addEventListener('click', () => {
+                const category = button.getAttribute('data-block-category') || 'all';
+                this.setBlockExplorerCategory(category);
+            });
+        });
 
         this.elements.modal?.addEventListener('keydown', (event) => {
             const target = event.target;
@@ -4301,9 +4311,65 @@ const QuickActionLab = {
             module?.id,
             this.getModuleName(module),
             this.getModuleDescription(module),
+            this.getCategoryLabel(module?.category),
             ...(Array.isArray(module?.tags) ? module.tags : [])
         ];
         return fields.some(field => typeof field === 'string' && field.toLowerCase().includes(lower));
+    },
+
+    normalizeCategory(category) {
+        const value = String(category || '').toLowerCase();
+        if (!value || value === 'all') return 'all';
+        if (value.startsWith('trigger')) return 'trigger';
+        if (value.startsWith('util')) return 'utility';
+        return 'action';
+    },
+
+    setBlockExplorerCategory(category, options = {}) {
+        const normalized = this.normalizeCategory(category);
+        this.blockExplorerCategory = normalized;
+        this.updateBlockExplorerFilters();
+        if (options.render !== false) {
+            this.renderBlockExplorer();
+        }
+    },
+
+    updateBlockExplorerFilters() {
+        if (!this.blockExplorerFilters?.length) return;
+        const current = this.blockExplorerCategory || 'all';
+        this.blockExplorerFilters.forEach(button => {
+            const category = button.getAttribute('data-block-category') || 'all';
+            const normalized = this.normalizeCategory(category);
+            const isActive = current === normalized;
+            button.classList.toggle('active', isActive);
+            button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+    },
+
+    getCategoryLabel(category) {
+        let normalized = this.normalizeCategory(category);
+        if (!category && normalized === 'all') {
+            normalized = 'action';
+        }
+        const keyMap = {
+            trigger: 'quick_actions_builder_category_trigger',
+            action: 'quick_actions_builder_category_action',
+            utility: 'quick_actions_builder_category_utility'
+        };
+        const fallbackMap = {
+            trigger: 'Trigger',
+            action: 'Action',
+            utility: 'Utility'
+        };
+        if (normalized === 'all') {
+            const allTranslation = LocalizationRenderer.t('quick_actions_builder_block_explorer_filter_all');
+            return allTranslation && !allTranslation.startsWith('Missing:') ? allTranslation : 'All blocks';
+        }
+        const key = keyMap[normalized];
+        const fallback = fallbackMap[normalized] || 'Action';
+        if (!key) return fallback;
+        const translation = LocalizationRenderer.t(key);
+        return translation && !translation.startsWith('Missing:') ? translation : fallback;
     },
 
     isBlockExplorerOpen() {
@@ -4313,6 +4379,7 @@ const QuickActionLab = {
     openBlockExplorer() {
         if (!this.elements.blockExplorer) return;
         this.blockExplorerSearchTerm = '';
+        this.setBlockExplorerCategory('all', { render: false });
         if (this.elements.blockExplorerSearch) {
             this.elements.blockExplorerSearch.value = '';
         }
@@ -4334,11 +4401,20 @@ const QuickActionLab = {
         const container = this.elements.blockExplorerList;
         if (!container) return;
         container.innerHTML = '';
-        const searchTerm = (this.blockExplorerSearchTerm || '').toLowerCase();
+        const searchTerm = this.blockExplorerSearchTerm || '';
         const modules = QuickActionModuleDefinitions.slice().sort((a, b) =>
             this.getModuleName(a).localeCompare(this.getModuleName(b))
         );
-        const filtered = modules.filter(module => this.moduleMatchesSearch(module, searchTerm));
+        const filtered = modules.filter(module => {
+            if (!this.moduleMatchesSearch(module, searchTerm)) return false;
+            const category = this.normalizeCategory(module?.category || 'action');
+            if (this.blockExplorerCategory && this.blockExplorerCategory !== 'all') {
+                return category === this.blockExplorerCategory;
+            }
+            return true;
+        });
+
+        this.updateBlockExplorerFilters();
 
         if (filtered.length === 0) {
             container.appendChild(Utils.createElement('div', {
@@ -4368,7 +4444,7 @@ const QuickActionLab = {
             card.appendChild(header);
 
             const tags = Utils.createElement('div', { className: 'block-explorer-tags' });
-            const categoryTag = Utils.createElement('span', { className: 'block-explorer-tag', text: module.category || 'action' });
+            const categoryTag = Utils.createElement('span', { className: 'block-explorer-tag', text: this.getCategoryLabel(module.category) });
             tags.appendChild(categoryTag);
             (module.tags || []).slice(0, 4).forEach(tag => {
                 tags.appendChild(Utils.createElement('span', { className: 'block-explorer-tag', text: tag }));
@@ -5248,6 +5324,9 @@ const LocalizationRenderer = {
         });
         Utils.getAllElements('[data-i18n-title]').forEach(element => {
             element.title = this.t(element.getAttribute('data-i18n-title'));
+        });
+        Utils.getAllElements('[data-i18n-aria-label]').forEach(element => {
+            element.setAttribute('aria-label', this.t(element.getAttribute('data-i18n-aria-label')));
         });
         this.refreshLanguageDependentUI();
         if (typeof CustomSelect?.refreshAll === 'function') {
