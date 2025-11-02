@@ -5266,13 +5266,37 @@ const QuickActionLab = {
 
     getModuleName(module) {
         if (!module) return '';
-        if (module.nameKey) return LocalizationRenderer.t(module.nameKey);
+        if (module.nameKey) {
+            const translation = LocalizationRenderer.t(module.nameKey);
+            if (translation && !String(translation).startsWith('Missing:')) {
+                return translation;
+            }
+        }
+        if (module.id) {
+            const autoKey = `quick_actions_module_${module.id}_name`;
+            const translation = LocalizationRenderer.t(autoKey);
+            if (translation && !String(translation).startsWith('Missing:')) {
+                return translation;
+            }
+        }
         return module.name || '';
     },
 
     getModuleDescription(module) {
         if (!module) return '';
-        if (module.descriptionKey) return LocalizationRenderer.t(module.descriptionKey);
+        if (module.descriptionKey) {
+            const translation = LocalizationRenderer.t(module.descriptionKey);
+            if (translation && !String(translation).startsWith('Missing:')) {
+                return translation;
+            }
+        }
+        if (module.id) {
+            const autoKey = `quick_actions_module_${module.id}_description`;
+            const translation = LocalizationRenderer.t(autoKey);
+            if (translation && !String(translation).startsWith('Missing:')) {
+                return translation;
+            }
+        }
         return module.description || '';
     },
 

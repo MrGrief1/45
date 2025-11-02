@@ -3449,13 +3449,14 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 .block-explorer-card {
   border: 1px solid rgba(var(--text-color-rgb, 29, 29, 31), 0.12);
-  border-radius: 18px;
-  padding: 18px;
-  background: rgba(var(--secondary-bg-color-rgb), 0.85);
+  border-radius: 16px;
+  padding: 16px;
+  background: rgba(var(--base-bg-color-rgb), 0.92);
   display: grid;
   gap: 12px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
 
 .block-explorer-card::after {
@@ -3464,37 +3465,45 @@ input[type="range"]:active::-webkit-slider-thumb {
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.block-explorer-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(var(--text-color-rgb, 29, 29, 31), 0.24);
+  background: rgba(var(--base-bg-color-rgb), 0.96);
 }
 
 .block-explorer-card-header {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-height: 0;
 }
 
 .block-explorer-card-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
   display: grid;
   place-items: center;
-  font-size: 20px;
-  background: rgba(var(--base-bg-color-rgb), 0.95);
+  font-size: 18px;
+  background: rgba(var(--secondary-bg-color-rgb), 0.92);
   color: var(--text-color);
-  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.18);
+  border: 1px solid rgba(var(--text-color-rgb, 29, 29, 31), 0.08);
+  box-shadow: none;
 }
 
 .block-explorer-card h4 {
   margin: 0;
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .block-explorer-card p {
   margin: 0;
   font-size: 13px;
-  line-height: 1.4;
-  color: rgba(var(--text-color-rgb, 29, 29, 31), 0.72);
+  line-height: 1.5;
+  color: rgba(var(--text-color-rgb, 29, 29, 31), 0.68);
 }
 
 .block-explorer-tags {
@@ -3506,12 +3515,12 @@ input[type="range"]:active::-webkit-slider-thumb {
 .block-explorer-tag {
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(var(--base-bg-color-rgb), 0.92);
+  background: rgba(var(--secondary-bg-color-rgb), 0.88);
   font-size: 11px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: rgba(var(--text-color-rgb, 29, 29, 31), 0.65);
-  border: 1px solid rgba(var(--text-color-rgb, 29, 29, 31), 0.12);
+  color: rgba(var(--text-color-rgb, 29, 29, 31), 0.6);
+  border: 1px solid rgba(var(--text-color-rgb, 29, 29, 31), 0.1);
 }
 
 .block-explorer-footer {
