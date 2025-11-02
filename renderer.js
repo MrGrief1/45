@@ -3697,6 +3697,7 @@ const QuickActionLab = {
         this.builderSelectWrappers = new Set();
         this.moduleSearchTerm = '';
         this.blockExplorerSearchTerm = '';
+        this.blockExplorerSelectedCategory = 'all';
         this.elements = {
             activeList: Utils.getElement('#quick-action-active-list'),
             catalog: Utils.getElement('#quick-action-catalog'),
@@ -3736,6 +3737,7 @@ const QuickActionLab = {
             blockExplorer: Utils.getElement('#builder-block-explorer'),
             blockExplorerList: Utils.getElement('#block-explorer-list'),
             blockExplorerSearch: Utils.getElement('#block-explorer-search'),
+            blockExplorerMenu: Utils.getElement('#block-explorer-menu'),
             closeExplorer: Utils.getElement('#block-explorer-close')
         };
 
@@ -4306,6 +4308,30 @@ const QuickActionLab = {
         return fields.some(field => typeof field === 'string' && field.toLowerCase().includes(lower));
     },
 
+    getNormalizedModuleCategory(category) {
+        return typeof category === 'string' && category.trim()
+            ? category.trim().toLowerCase()
+            : 'uncategorized';
+    },
+
+    getModuleCategoryLabel(category) {
+        const normalized = this.getNormalizedModuleCategory(category);
+        if (normalized === 'all') {
+            const label = LocalizationRenderer.t('quick_actions_block_explorer_category_all');
+            return label.startsWith('Missing:') ? 'All blocks' : label;
+        }
+        const key = `quick_actions_block_category_${normalized}`;
+        const translation = LocalizationRenderer.t(key);
+        if (!translation.startsWith('Missing:')) {
+            return translation;
+        }
+        return normalized
+            .split(/[-_\s]+/)
+            .filter(Boolean)
+            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(' ');
+    },
+
     isBlockExplorerOpen() {
         return !!this.elements.blockExplorer && this.elements.blockExplorer.classList.contains('active');
     },
@@ -4313,6 +4339,7 @@ const QuickActionLab = {
     openBlockExplorer() {
         if (!this.elements.blockExplorer) return;
         this.blockExplorerSearchTerm = '';
+        this.blockExplorerSelectedCategory = 'all';
         if (this.elements.blockExplorerSearch) {
             this.elements.blockExplorerSearch.value = '';
         }
@@ -4332,13 +4359,70 @@ const QuickActionLab = {
 
     renderBlockExplorer() {
         const container = this.elements.blockExplorerList;
-        if (!container) return;
+        const menu = this.elements.blockExplorerMenu;
+        if (!container || !menu) return;
         container.innerHTML = '';
+        menu.innerHTML = '';
+        container.scrollTop = 0;
+
         const searchTerm = (this.blockExplorerSearchTerm || '').toLowerCase();
         const modules = QuickActionModuleDefinitions.slice().sort((a, b) =>
             this.getModuleName(a).localeCompare(this.getModuleName(b))
         );
-        const filtered = modules.filter(module => this.moduleMatchesSearch(module, searchTerm));
+
+        const normalizedSelected = this.blockExplorerSelectedCategory === 'all'
+            ? 'all'
+            : this.getNormalizedModuleCategory(this.blockExplorerSelectedCategory);
+        const selectedCategory = normalizedSelected === 'all' ? 'all' : normalizedSelected;
+
+        const categoryOrder = ['trigger', 'action', 'utility'];
+        const categories = Array.from(new Set(modules.map(module => this.getNormalizedModuleCategory(module.category))));
+        categories.sort((a, b) => {
+            const aIndex = categoryOrder.indexOf(a);
+            const bIndex = categoryOrder.indexOf(b);
+            if (aIndex !== -1 || bIndex !== -1) {
+                if (aIndex === -1) return 1;
+                if (bIndex === -1) return -1;
+                return aIndex - bIndex;
+            }
+            if (a === 'uncategorized' && b !== 'uncategorized') return 1;
+            if (b === 'uncategorized' && a !== 'uncategorized') return -1;
+            return a.localeCompare(b);
+        });
+
+        const buildMenuButton = (value) => {
+            const button = Utils.createElement('button', { className: 'block-explorer-menu-button' });
+            button.type = 'button';
+            const normalized = value === 'all' ? 'all' : this.getNormalizedModuleCategory(value);
+            const isActive = normalized === selectedCategory || (normalized === 'all' && selectedCategory === 'all');
+            button.textContent = this.getModuleCategoryLabel(value === 'all' ? 'all' : normalized);
+            button.setAttribute('role', 'listitem');
+            if (isActive) {
+                button.classList.add('active');
+                button.setAttribute('aria-pressed', 'true');
+            } else {
+                button.setAttribute('aria-pressed', 'false');
+            }
+            button.dataset.category = normalized;
+            button.addEventListener('click', () => {
+                if (this.blockExplorerSelectedCategory === normalized) return;
+                this.blockExplorerSelectedCategory = normalized;
+                this.renderBlockExplorer();
+            });
+            return button;
+        };
+
+        menu.appendChild(buildMenuButton('all'));
+        categories.forEach(category => {
+            menu.appendChild(buildMenuButton(category));
+        });
+
+        const filtered = modules.filter(module => {
+            const matchesSearch = this.moduleMatchesSearch(module, searchTerm);
+            if (!matchesSearch) return false;
+            if (selectedCategory === 'all') return true;
+            return this.getNormalizedModuleCategory(module.category) === selectedCategory;
+        });
 
         if (filtered.length === 0) {
             container.appendChild(Utils.createElement('div', {
@@ -4368,7 +4452,10 @@ const QuickActionLab = {
             card.appendChild(header);
 
             const tags = Utils.createElement('div', { className: 'block-explorer-tags' });
-            const categoryTag = Utils.createElement('span', { className: 'block-explorer-tag', text: module.category || 'action' });
+            const categoryTag = Utils.createElement('span', {
+                className: 'block-explorer-tag',
+                text: this.getModuleCategoryLabel(module.category)
+            });
             tags.appendChild(categoryTag);
             (module.tags || []).slice(0, 4).forEach(tag => {
                 tags.appendChild(Utils.createElement('span', { className: 'block-explorer-tag', text: tag }));

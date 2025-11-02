@@ -498,18 +498,28 @@
                 <div class="block-explorer-dialog" role="dialog" aria-modal="true" aria-labelledby="block-explorer-title">
                     <header class="block-explorer-header">
                         <div>
-                            <h3 id="block-explorer-title">Block explorer</h3>
-                            <p>Browse the full catalogue, read descriptions and drop blocks into the canvas.</p>
+                            <h3 id="block-explorer-title" data-i18n="quick_actions_block_explorer_title">Block explorer</h3>
+                            <p data-i18n="quick_actions_block_explorer_subtitle">Search, filter, and drop blocks into your workflow.</p>
                         </div>
-                        <button type="button" id="block-explorer-close" class="block-explorer-close" title="Close explorer">
+                        <button type="button" id="block-explorer-close" class="block-explorer-close" data-i18n-title="quick_actions_block_explorer_close">
+                            <span class="sr-only" data-i18n="quick_actions_block_explorer_close">Close explorer</span>
                             <i data-feather="x"></i>
                         </button>
                     </header>
-                    <div class="block-explorer-search">
-                        <i data-feather="search"></i>
-                        <input type="search" id="block-explorer-search" placeholder="Search blocks by name, description or tag">
+                    <div class="block-explorer-content">
+                        <div class="block-explorer-toolbar">
+                            <label class="block-explorer-search">
+                                <span class="sr-only" data-i18n="quick_actions_block_explorer_search_placeholder">Search blocks by name, description or tag</span>
+                                <i data-feather="search"></i>
+                                <input type="search" id="block-explorer-search" data-i18n-placeholder="quick_actions_block_explorer_search_placeholder" placeholder="Search blocks by name, description or tag">
+                            </label>
+                            <div class="block-explorer-menu-wrapper">
+                                <span id="block-explorer-menu-label" class="block-explorer-menu-label" data-i18n="quick_actions_block_explorer_categories">Categories</span>
+                                <div id="block-explorer-menu" class="block-explorer-menu" role="list" aria-labelledby="block-explorer-menu-label"></div>
+                            </div>
+                        </div>
+                        <div id="block-explorer-list" class="block-explorer-list" role="list"></div>
                     </div>
-                    <div id="block-explorer-list" class="block-explorer-list" role="list"></div>
                 </div>
             </div>
         </div>
