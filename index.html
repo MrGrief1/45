@@ -417,6 +417,14 @@
             </header>
             <div class="builder-body">
                 <aside class="builder-sidebar">
+                    <div class="builder-sidebar-controls">
+                        <label class="sr-only" for="builder-module-search">Search blocks</label>
+                        <input type="search" id="builder-module-search" class="builder-module-search" placeholder="Search blocks">
+                        <button id="builder-open-explorer" class="builder-sidebar-button" type="button">
+                            <i data-feather="grid"></i>
+                            <span>Open block explorer</span>
+                        </button>
+                    </div>
                     <div class="builder-sidebar-section">
                         <h3>Triggers</h3>
                         <ul id="builder-trigger-list" class="builder-module-list"></ul>
@@ -485,6 +493,25 @@
                 </div>
             </footer>
             <div class="builder-resize-handle" aria-hidden="true"></div>
+            <div id="builder-block-explorer" class="builder-block-explorer" aria-hidden="true">
+                <div class="block-explorer-backdrop"></div>
+                <div class="block-explorer-dialog" role="dialog" aria-modal="true" aria-labelledby="block-explorer-title">
+                    <header class="block-explorer-header">
+                        <div>
+                            <h3 id="block-explorer-title">Block explorer</h3>
+                            <p>Browse the full catalogue, read descriptions and drop blocks into the canvas.</p>
+                        </div>
+                        <button type="button" id="block-explorer-close" class="block-explorer-close" title="Close explorer">
+                            <i data-feather="x"></i>
+                        </button>
+                    </header>
+                    <div class="block-explorer-search">
+                        <i data-feather="search"></i>
+                        <input type="search" id="block-explorer-search" placeholder="Search blocks by name, description or tag">
+                    </div>
+                    <div id="block-explorer-list" class="block-explorer-list" role="list"></div>
+                </div>
+            </div>
         </div>
     </div>
 

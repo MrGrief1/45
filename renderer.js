@@ -215,6 +215,526 @@ const QuickActionCatalog = [
 
 const QuickActionDefaultOrder = ['apps-library', 'files', 'commands', 'clipboard', 'settings'];
 
+const QuickActionTools = {
+    toText(value) {
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'string') return value;
+        if (typeof value === 'object') {
+            try {
+                return JSON.stringify(value, null, 2);
+            } catch (error) {
+                console.warn('Failed to stringify object', error);
+                return String(value);
+            }
+        }
+        return String(value);
+    },
+
+    toLines(value) {
+        return this.toText(value).split(/\r?\n/);
+    },
+
+    fromLines(lines) {
+        return Array.isArray(lines) ? lines.join('\n') : '';
+    },
+
+    parseJson(value) {
+        if (value === null || value === undefined || value === '') {
+            return { data: null, error: null };
+        }
+        if (typeof value === 'object') {
+            try {
+                return { data: JSON.parse(JSON.stringify(value)), error: null };
+            } catch (error) {
+                return { data: null, error: error.message };
+            }
+        }
+        const text = String(value).trim();
+        if (!text) {
+            return { data: null, error: null };
+        }
+        try {
+            return { data: JSON.parse(text), error: null };
+        } catch (error) {
+            return { data: null, error: error.message };
+        }
+    },
+
+    ensureObject(value) {
+        const parsed = this.parseJson(value);
+        if (!parsed || parsed.error || typeof parsed.data !== 'object' || parsed.data === null) {
+            return {};
+        }
+        return parsed.data;
+    },
+
+    splitPath(path) {
+        if (typeof path !== 'string') return [];
+        return path
+            .replace(/\[(\d+)\]/g, '.$1')
+            .split('.')
+            .map(segment => segment.trim())
+            .filter(Boolean);
+    },
+
+    getPath(source, path) {
+        if (!source) return undefined;
+        const segments = this.splitPath(path);
+        let current = source;
+        for (const segment of segments) {
+            if (current === undefined || current === null) return undefined;
+            const key = /^\d+$/.test(segment) ? Number(segment) : segment;
+            current = current[key];
+        }
+        return current;
+    },
+
+    setPath(source, path, value) {
+        if (typeof source !== 'object' || source === null) return source;
+        const segments = this.splitPath(path);
+        if (segments.length === 0) return source;
+        let current = source;
+        segments.forEach((segment, index) => {
+            const key = /^\d+$/.test(segment) ? Number(segment) : segment;
+            const isLast = index === segments.length - 1;
+            if (isLast) {
+                current[key] = value;
+            } else {
+                const nextSegment = segments[index + 1];
+                const shouldBeArray = /^\d+$/.test(nextSegment);
+                if (typeof current[key] !== 'object' || current[key] === null) {
+                    current[key] = shouldBeArray ? [] : {};
+                }
+                current = current[key];
+            }
+        });
+        return source;
+    },
+
+    deepMerge(target, source) {
+        const base = (typeof target === 'object' && target !== null) ? (Array.isArray(target) ? [...target] : { ...target }) : {};
+        if (typeof source !== 'object' || source === null) return base;
+        Object.keys(source).forEach(key => {
+            const value = source[key];
+            if (Array.isArray(value)) {
+                base[key] = value.slice();
+            } else if (typeof value === 'object' && value !== null) {
+                base[key] = this.deepMerge(base[key], value);
+            } else {
+                base[key] = value;
+            }
+        });
+        return base;
+    },
+
+    clone(value) {
+        if (typeof structuredClone === 'function') {
+            try {
+                return structuredClone(value);
+            } catch (error) {
+                console.warn('structuredClone failed, fallback to JSON clone', error);
+            }
+        }
+        try {
+            return JSON.parse(JSON.stringify(value));
+        } catch (error) {
+            return value;
+        }
+    },
+
+    randomString(length = 12) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        if (window.crypto?.getRandomValues) {
+            const array = new Uint32Array(length);
+            window.crypto.getRandomValues(array);
+            return Array.from(array, value => chars[value % chars.length]).join('');
+        }
+        let output = '';
+        for (let i = 0; i < length; i += 1) {
+            output += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return output;
+    },
+
+    randomNumber(min = 0, max = 1) {
+        const safeMin = Number(min);
+        const safeMax = Number(max);
+        if (!Number.isFinite(safeMin) || !Number.isFinite(safeMax)) return Math.random();
+        return safeMin + Math.random() * (safeMax - safeMin);
+    },
+
+    uuid() {
+        if (window.crypto?.randomUUID) {
+            return window.crypto.randomUUID();
+        }
+        return `${Date.now().toString(16)}-${this.randomString(12)}`;
+    },
+
+    unique(values) {
+        return Array.from(new Set(Array.isArray(values) ? values : []));
+    },
+
+    shuffle(values) {
+        const array = Array.isArray(values) ? values.slice() : [];
+        for (let i = array.length - 1; i > 0; i -= 1) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    },
+
+    escapeRegExp(value) {
+        return this.toText(value).replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    },
+
+    formatNumber(value, locales = 'en-US', options = {}) {
+        const number = Number(value);
+        if (!Number.isFinite(number)) return String(value ?? '');
+        try {
+            return new Intl.NumberFormat(locales || undefined, options || undefined).format(number);
+        } catch (error) {
+            console.warn('Number formatting failed', error);
+            return String(number);
+        }
+    },
+
+    formatDate(value, locales = 'en-US', options = {}) {
+        const date = value instanceof Date ? value : new Date(value);
+        if (Number.isNaN(date.getTime())) return String(value ?? '');
+        try {
+            return new Intl.DateTimeFormat(locales || undefined, options || undefined).format(date);
+        } catch (error) {
+            console.warn('Date formatting failed', error);
+            return date.toISOString();
+        }
+    },
+
+    dateDiff(start, end, unit = 'seconds') {
+        const startDate = start instanceof Date ? start : new Date(start);
+        const endDate = end instanceof Date ? end : new Date(end);
+        if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+            return NaN;
+        }
+        const diffMs = endDate.getTime() - startDate.getTime();
+        switch (unit) {
+            case 'minutes':
+                return diffMs / 60000;
+            case 'hours':
+                return diffMs / 3600000;
+            case 'days':
+                return diffMs / 86400000;
+            case 'milliseconds':
+                return diffMs;
+            case 'seconds':
+            default:
+                return diffMs / 1000;
+        }
+    },
+
+    base64Encode(value) {
+        try {
+            return btoa(unescape(encodeURIComponent(this.toText(value))));
+        } catch (error) {
+            console.warn('Base64 encode failed', error);
+            return this.toText(value);
+        }
+    },
+
+    base64Decode(value) {
+        try {
+            return decodeURIComponent(escape(atob(this.toText(value))));
+        } catch (error) {
+            console.warn('Base64 decode failed', error);
+            return this.toText(value);
+        }
+    },
+
+    urlEncode(value) {
+        try {
+            return encodeURIComponent(this.toText(value));
+        } catch (error) {
+            return this.toText(value);
+        }
+    },
+
+    urlDecode(value) {
+        try {
+            return decodeURIComponent(this.toText(value));
+        } catch (error) {
+            return this.toText(value);
+        }
+    },
+
+    applyTemplate(template, context = {}, config = {}) {
+        if (typeof template !== 'string') return template;
+        const payloadText = this.toText(context.payload);
+        let result = template.replace(/\{\{\s*payload\s*\}\}/gi, payloadText);
+        result = result.replace(/\{\{\s*var\.([a-z0-9_-]+)\s*\}\}/gi, (_, key) => {
+            const value = context.vars?.[key];
+            return value === undefined ? '' : this.toText(value);
+        });
+        result = result.replace(/\{\{\s*config\.([a-z0-9_-]+)\s*\}\}/gi, (_, key) => {
+            const value = config?.[key];
+            return value === undefined ? '' : this.toText(value);
+        });
+        return result;
+    }
+};
+
+const QuickActionApi = {
+    async request(endpoint, options = {}) {
+        const url = String(endpoint || '').trim();
+        if (!url) {
+            return { error: 'Endpoint is empty.' };
+        }
+        try {
+            const response = await fetch(url, {
+                method: options.method || 'GET',
+                headers: options.headers,
+                body: options.body
+            });
+            let text = '';
+            if (options.readBody !== false) {
+                text = await response.text();
+            }
+            return { response, text, status: response.status, ok: response.ok };
+        } catch (error) {
+            return { error: error.message };
+        }
+    },
+
+    async requestJson(endpoint, options = {}) {
+        const result = await this.request(endpoint, options);
+        if (result.error) return result;
+        if (options.readBody === false) {
+            return { ...result, data: null };
+        }
+        if (!result.text) {
+            return { ...result, data: null };
+        }
+        try {
+            const data = JSON.parse(result.text);
+            return { ...result, data };
+        } catch (error) {
+            return { ...result, data: null, parseError: error.message };
+        }
+    }
+};
+
+function createAiChatModule({ id, name, description, icon, accent, tags = [], systemPrompt, userPrompt, extraConfig = [] }) {
+    const extraDefaults = {};
+    const extraFormFields = extraConfig.map(field => {
+        if (field?.key) {
+            extraDefaults[field.key] = field.defaultValue ?? '';
+        }
+        return {
+            key: field.key,
+            label: field.label,
+            type: field.type || 'text',
+            placeholder: field.placeholder || '',
+            rows: field.rows,
+            options: field.options,
+            min: field.min,
+            max: field.max,
+            step: field.step
+        };
+    });
+
+    return {
+        id,
+        category: 'action',
+        name,
+        description,
+        icon,
+        accent,
+        tags,
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            endpoint: 'https://api.openai.com/v1/chat/completions',
+            apiKey: '',
+            model: 'gpt-3.5-turbo',
+            temperature: 0.7,
+            systemPrompt,
+            userPrompt,
+            ...extraDefaults
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'text', placeholder: 'https://api.openai.com/v1/chat/completions' },
+            { key: 'apiKey', label: 'API key (optional)', type: 'text', placeholder: 'sk-…' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'gpt-3.5-turbo' },
+            { key: 'temperature', label: 'Temperature', type: 'number', min: 0, max: 2, step: 0.1 },
+            { key: 'systemPrompt', label: 'System prompt', type: 'textarea', rows: 2, placeholder: systemPrompt },
+            { key: 'userPrompt', label: 'User prompt', type: 'textarea', rows: 3, placeholder: userPrompt },
+            ...extraFormFields
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const endpoint = String(config?.endpoint || '').trim();
+            if (!endpoint) {
+                clone.logs.push(`${name} skipped: endpoint is missing.`);
+                return [clone];
+            }
+
+            const headers = { 'Content-Type': 'application/json' };
+            if (config?.apiKey) {
+                headers.Authorization = `Bearer ${config.apiKey}`;
+            }
+
+            const temperature = Number(config?.temperature);
+            const safeTemperature = Number.isFinite(temperature) ? Math.min(Math.max(temperature, 0), 2) : 0.7;
+            const system = QuickActionTools.applyTemplate(config?.systemPrompt ?? systemPrompt, clone, config);
+            const user = QuickActionTools.applyTemplate(config?.userPrompt ?? userPrompt, clone, config);
+
+            const body = JSON.stringify({
+                model: config?.model || 'gpt-3.5-turbo',
+                temperature: safeTemperature,
+                messages: [
+                    { role: 'system', content: system || 'You are a helpful assistant.' },
+                    { role: 'user', content: user || QuickActionTools.toText(clone.payload) }
+                ]
+            });
+
+            const result = await QuickActionApi.requestJson(endpoint, { method: 'POST', headers, body });
+            if (result.error) {
+                clone.logs.push(`${name} failed: ${result.error}`);
+                return [clone];
+            }
+
+            let output = '';
+            if (Array.isArray(result.data?.choices) && result.data.choices.length > 0) {
+                output = result.data.choices[0]?.message?.content || '';
+            }
+            if (!output) {
+                output = typeof result.data === 'string' ? result.data : (result.text || '');
+            }
+
+            clone.payload = output;
+            if (result.data !== undefined) {
+                clone.vars.lastAiResponse = result.data;
+            }
+            clone.vars.lastStatus = result.status ?? clone.vars.lastStatus;
+            clone.logs.push(`${name} completed with status ${result.status ?? 'n/a'}.`);
+            return [clone];
+        }
+    };
+}
+
+function createHttpModule({ id, name, description, method, icon, accent, tags = [], includeBody = false, bodyPlaceholder = '{"key":"value"}' }) {
+    return {
+        id,
+        category: 'action',
+        name,
+        description,
+        icon,
+        accent,
+        tags,
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            url: 'https://api.example.com/resource',
+            headers: '',
+            body: includeBody ? bodyPlaceholder : '',
+            bodyMode: includeBody ? 'custom' : 'payload'
+        },
+        form: [
+            { key: 'url', label: 'Request URL', type: 'text', placeholder: 'https://api.example.com/resource' },
+            { key: 'headers', label: 'Headers (JSON)', type: 'textarea', rows: 3, placeholder: '{ "Authorization": "Bearer token" }' },
+            ...(includeBody ? [
+                {
+                    key: 'bodyMode',
+                    label: 'Body source',
+                    type: 'select',
+                    options: [
+                        { value: 'payload', label: 'Use current payload' },
+                        { value: 'custom', label: 'Custom JSON body' }
+                    ]
+                },
+                { key: 'body', label: 'Body (JSON)', type: 'textarea', rows: 4, placeholder: bodyPlaceholder }
+            ] : [])
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const url = String(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push(`${name} skipped: URL is missing.`);
+                return [clone];
+            }
+
+            let headers = {};
+            if (config?.headers) {
+                const parsedHeaders = QuickActionTools.parseJson(config.headers);
+                if (parsedHeaders.error) {
+                    clone.logs.push(`${name} headers error: ${parsedHeaders.error}`);
+                } else if (parsedHeaders.data) {
+                    headers = parsedHeaders.data;
+                }
+            }
+
+            let body;
+            if (includeBody) {
+                const mode = config?.bodyMode || 'custom';
+                if (mode === 'payload') {
+                    body = QuickActionTools.toText(clone.payload);
+                } else if (config?.body) {
+                    body = config.body;
+                }
+                if (body && typeof body === 'object') {
+                    body = JSON.stringify(body);
+                }
+                if (body && !headers['Content-Type']) {
+                    headers['Content-Type'] = 'application/json';
+                }
+            }
+
+            const options = { method, headers, body };
+            if (method === 'HEAD') {
+                options.readBody = false;
+            }
+
+            const result = await QuickActionApi.requestJson(url, options);
+            if (result.error) {
+                clone.logs.push(`${name} failed: ${result.error}`);
+                return [clone];
+            }
+
+            const status = result.status ?? result.response?.status ?? 'n/a';
+            clone.vars.lastStatus = status;
+            if (result.response?.headers) {
+                const headerStore = {};
+                try {
+                    result.response.headers.forEach((value, key) => {
+                        headerStore[key] = value;
+                    });
+                    clone.vars.lastResponseHeaders = headerStore;
+                } catch (error) {
+                    console.warn('Failed to serialise headers', error);
+                }
+            }
+
+            if (method === 'HEAD') {
+                clone.payload = `HEAD ${status}`;
+                clone.logs.push(`${name} completed with status ${status}.`);
+                return [clone];
+            }
+
+            if (result.data !== null && result.data !== undefined) {
+                clone.vars.lastResponse = result.data;
+                clone.payload = typeof result.data === 'string' ? result.data : JSON.stringify(result.data, null, 2);
+            } else {
+                clone.vars.lastResponse = result.text;
+                clone.payload = result.text || '';
+                if (result.parseError) {
+                    clone.logs.push(`${name} parse warning: ${result.parseError}`);
+                }
+            }
+
+            clone.logs.push(`${name} completed with status ${status}.`);
+            return [clone];
+        }
+    };
+}
+
 const QuickActionModuleDefinitions = [
     {
         id: 'manual-trigger',
@@ -565,6 +1085,2249 @@ const QuickActionModuleDefinitions = [
         }
     }
 ];
+
+const QuickActionAdditionalModules = [
+    createAiChatModule({
+        id: 'ai-chat-assistant',
+        name: 'AI chat assistant',
+        description: 'Send a conversation prompt to your AI endpoint.',
+        icon: 'message-circle',
+        accent: '#8b5cf6',
+        tags: ['ai', 'chat', 'assistant'],
+        systemPrompt: 'You are a helpful assistant who writes concise, actionable answers.',
+        userPrompt: '{{payload}}'
+    }),
+    createAiChatModule({
+        id: 'ai-summary',
+        name: 'AI summariser',
+        description: 'Generate a compact summary of the current payload.',
+        icon: 'file-text',
+        accent: '#f97316',
+        tags: ['ai', 'summary', 'writing'],
+        systemPrompt: 'You specialise in concise executive summaries.',
+        userPrompt: 'Summarise the following content in three bullet points and a one-line takeaway.\n\n{{payload}}'
+    }),
+    createAiChatModule({
+        id: 'ai-translation',
+        name: 'AI translation',
+        description: 'Translate text into another language using your AI provider.',
+        icon: 'globe',
+        accent: '#22c55e',
+        tags: ['ai', 'translation'],
+        systemPrompt: 'You translate text accurately while preserving tone and intent.',
+        userPrompt: 'Translate the following text to {{config.targetLanguage}}. Keep formatting when possible.\n\n{{payload}}',
+        extraConfig: [
+            { key: 'targetLanguage', label: 'Target language', type: 'text', placeholder: 'English', defaultValue: 'English' }
+        ]
+    }),
+    createAiChatModule({
+        id: 'ai-keywords',
+        name: 'AI keywords extractor',
+        description: 'Ask the model to return the most relevant keywords.',
+        icon: 'tag',
+        accent: '#ec4899',
+        tags: ['ai', 'keywords', 'seo'],
+        systemPrompt: 'You extract keyword lists for search and tagging.',
+        userPrompt: 'Extract the 8 most important keywords from the following text. Return them as a comma-separated list with no numbering.\n\n{{payload}}'
+    }),
+    createAiChatModule({
+        id: 'ai-tone-review',
+        name: 'AI tone review',
+        description: 'Analyse the tone and risks of the current message.',
+        icon: 'activity',
+        accent: '#14b8a6',
+        tags: ['ai', 'analysis'],
+        systemPrompt: 'You are a communication analyst who highlights tone, sentiment, and potential risks.',
+        userPrompt: 'Analyse the tone, sentiment, and potential risks of this message. Provide bullet points with actionable advice.\n\n{{payload}}'
+    }),
+    createAiChatModule({
+        id: 'ai-email-drafter',
+        name: 'AI email drafter',
+        description: 'Turn notes into a polished email with greeting and signature.',
+        icon: 'mail',
+        accent: '#facc15',
+        tags: ['ai', 'email', 'writing'],
+        systemPrompt: 'You craft professional, empathetic emails with clear next steps.',
+        userPrompt: 'Write a polished email to {{config.audience}} using the context below. Include a subject line and closing signature.\n\n{{payload}}',
+        extraConfig: [
+            { key: 'audience', label: 'Audience', type: 'text', placeholder: 'our customer', defaultValue: 'our customer' }
+        ]
+    }),
+    createAiChatModule({
+        id: 'ai-title-generator',
+        name: 'AI title generator',
+        description: 'Produce multiple headline ideas for the payload.',
+        icon: 'type',
+        accent: '#38bdf8',
+        tags: ['ai', 'title', 'content'],
+        systemPrompt: 'You create catchy yet descriptive titles.',
+        userPrompt: 'Suggest five compelling titles in a {{config.style}} tone for the following content:\n\n{{payload}}',
+        extraConfig: [
+            { key: 'style', label: 'Tone or style', type: 'text', placeholder: 'concise and professional', defaultValue: 'concise and professional' }
+        ]
+    }),
+    createAiChatModule({
+        id: 'ai-tagline-generator',
+        name: 'AI tagline generator',
+        description: 'Brainstorm marketing taglines for a product or idea.',
+        icon: 'zap',
+        accent: '#fb7185',
+        tags: ['ai', 'marketing'],
+        systemPrompt: 'You craft short, memorable marketing taglines and slogans.',
+        userPrompt: 'Generate five short taglines in a {{config.tone}} tone for this product or idea:\n\n{{payload}}',
+        extraConfig: [
+            { key: 'tone', label: 'Tone', type: 'text', placeholder: 'friendly', defaultValue: 'friendly' }
+        ]
+    }),
+    createAiChatModule({
+        id: 'ai-code-review',
+        name: 'AI code review',
+        description: 'Let the AI inspect code and highlight improvements.',
+        icon: 'code',
+        accent: '#6366f1',
+        tags: ['ai', 'code', 'review'],
+        systemPrompt: 'You review code for correctness, readability, and best practices.',
+        userPrompt: 'Review the following code with focus on {{config.focusArea}}. List issues and suggested improvements:\n\n{{payload}}',
+        extraConfig: [
+            { key: 'focusArea', label: 'Focus area', type: 'text', placeholder: 'bugs and readability', defaultValue: 'bugs and readability' }
+        ]
+    }),
+    createAiChatModule({
+        id: 'ai-bug-explainer',
+        name: 'AI bug explainer',
+        description: 'Explain a technical issue in plain language and outline next steps.',
+        icon: 'help-circle',
+        accent: '#f472b6',
+        tags: ['ai', 'debug'],
+        systemPrompt: 'You explain technical issues clearly and propose next steps.',
+        userPrompt: 'Explain the root cause of this bug to a teammate and propose the next debugging steps:\n\n{{payload}}'
+    }),
+    createAiChatModule({
+        id: 'ai-sql-builder',
+        name: 'AI SQL builder',
+        description: 'Convert natural language requests into SQL queries.',
+        icon: 'database',
+        accent: '#0ea5e9',
+        tags: ['ai', 'sql'],
+        systemPrompt: 'You convert requirements into efficient SQL queries using best practices.',
+        userPrompt: 'Produce a SQL query for {{config.dialect}} that satisfies this request. Include a short explanation afterwards:\n\n{{payload}}',
+        extraConfig: [
+            { key: 'dialect', label: 'SQL dialect', type: 'text', placeholder: 'PostgreSQL', defaultValue: 'PostgreSQL' }
+        ]
+    }),
+    createAiChatModule({
+        id: 'ai-release-notes',
+        name: 'AI release notes',
+        description: 'Transform raw changelog entries into friendly release notes.',
+        icon: 'clipboard',
+        accent: '#34d399',
+        tags: ['ai', 'product'],
+        systemPrompt: 'You write friendly product release notes emphasising user benefits.',
+        userPrompt: 'Write concise release notes for {{config.productName}} based on the following raw changelog. Highlight the benefits for users:\n\n{{payload}}',
+        extraConfig: [
+            { key: 'productName', label: 'Product name', type: 'text', placeholder: 'FlashSearch', defaultValue: 'FlashSearch' }
+        ]
+    }),
+    createAiChatModule({
+        id: 'ai-brainstorm',
+        name: 'AI brainstorm',
+        description: 'Generate creative ideas or next steps from the payload.',
+        icon: 'feather',
+        accent: '#a855f7',
+        tags: ['ai', 'ideas'],
+        systemPrompt: 'You are a creative strategist who proposes practical and original ideas.',
+        userPrompt: 'Brainstorm five creative ideas or next steps for the following brief. Include one bold or unusual suggestion:\n\n{{payload}}'
+    }),
+    {
+        id: 'ai-embedding',
+        category: 'action',
+        name: 'Generate embeddings',
+        description: 'Create vector embeddings from text and store them for later blocks.',
+        icon: 'layers',
+        accent: '#10b981',
+        tags: ['ai', 'embedding'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            endpoint: 'https://api.openai.com/v1/embeddings',
+            apiKey: '',
+            model: 'text-embedding-3-small',
+            inputMode: 'payload',
+            inputText: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'text', placeholder: 'https://api.openai.com/v1/embeddings' },
+            { key: 'apiKey', label: 'API key (optional)', type: 'text', placeholder: 'sk-…' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'text-embedding-3-small' },
+            {
+                key: 'inputMode',
+                label: 'Input source',
+                type: 'select',
+                options: [
+                    { value: 'payload', label: 'Use current payload' },
+                    { value: 'custom', label: 'Custom text' }
+                ]
+            },
+            { key: 'inputText', label: 'Custom text', type: 'textarea', rows: 3, placeholder: 'Text to embed' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const endpoint = String(config?.endpoint || '').trim();
+            if (!endpoint) {
+                clone.logs.push('Generate embeddings skipped: endpoint is missing.');
+                return [clone];
+            }
+
+            const headers = { 'Content-Type': 'application/json' };
+            if (config?.apiKey) {
+                headers.Authorization = `Bearer ${config.apiKey}`;
+            }
+
+            const inputSource = config?.inputMode === 'custom'
+                ? config?.inputText
+                : QuickActionTools.toText(clone.payload);
+            const input = (inputSource || '').trim();
+            if (!input) {
+                clone.logs.push('Generate embeddings skipped: input text is empty.');
+                return [clone];
+            }
+
+            const body = JSON.stringify({
+                model: config?.model || 'text-embedding-3-small',
+                input
+            });
+
+            const result = await QuickActionApi.requestJson(endpoint, { method: 'POST', headers, body });
+            if (result.error) {
+                clone.logs.push(`Generate embeddings failed: ${result.error}`);
+                return [clone];
+            }
+
+            const vector = result.data?.data?.[0]?.embedding;
+            if (Array.isArray(vector)) {
+                clone.vars.lastEmbedding = vector;
+                clone.payload = JSON.stringify(vector);
+            } else {
+                clone.payload = typeof result.data === 'string'
+                    ? result.data
+                    : JSON.stringify(result.data, null, 2);
+            }
+            clone.vars.lastResponse = result.data ?? clone.vars.lastResponse;
+            clone.vars.lastStatus = result.status ?? clone.vars.lastStatus;
+            clone.logs.push(`Generate embeddings completed with status ${result.status ?? 'n/a'}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'ai-moderation',
+        category: 'action',
+        name: 'AI moderation check',
+        description: 'Send text to an AI moderation endpoint and record the result.',
+        icon: 'shield',
+        accent: '#ef4444',
+        tags: ['ai', 'moderation'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            endpoint: 'https://api.openai.com/v1/moderations',
+            apiKey: '',
+            model: 'omni-moderation-latest',
+            inputMode: 'payload',
+            inputText: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'text', placeholder: 'https://api.openai.com/v1/moderations' },
+            { key: 'apiKey', label: 'API key (optional)', type: 'text', placeholder: 'sk-…' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'omni-moderation-latest' },
+            {
+                key: 'inputMode',
+                label: 'Input source',
+                type: 'select',
+                options: [
+                    { value: 'payload', label: 'Use current payload' },
+                    { value: 'custom', label: 'Custom text' }
+                ]
+            },
+            { key: 'inputText', label: 'Custom text', type: 'textarea', rows: 3, placeholder: 'Text to moderate' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const endpoint = String(config?.endpoint || '').trim();
+            if (!endpoint) {
+                clone.logs.push('AI moderation skipped: endpoint is missing.');
+                return [clone];
+            }
+
+            const headers = { 'Content-Type': 'application/json' };
+            if (config?.apiKey) {
+                headers.Authorization = `Bearer ${config.apiKey}`;
+            }
+
+            const inputSource = config?.inputMode === 'custom'
+                ? config?.inputText
+                : QuickActionTools.toText(clone.payload);
+            const input = (inputSource || '').trim();
+            if (!input) {
+                clone.logs.push('AI moderation skipped: input text is empty.');
+                return [clone];
+            }
+
+            const body = JSON.stringify({
+                model: config?.model || 'omni-moderation-latest',
+                input
+            });
+
+            const result = await QuickActionApi.requestJson(endpoint, { method: 'POST', headers, body });
+            if (result.error) {
+                clone.logs.push(`AI moderation failed: ${result.error}`);
+                return [clone];
+            }
+
+            clone.vars.lastModeration = result.data;
+            clone.vars.lastStatus = result.status ?? clone.vars.lastStatus;
+            clone.payload = JSON.stringify(result.data, null, 2);
+            clone.logs.push(`AI moderation completed with status ${result.status ?? 'n/a'}.`);
+            return [clone];
+        }
+    },
+    createHttpModule({
+        id: 'http-get',
+        name: 'HTTP GET request',
+        description: 'Perform a GET request and store the response.',
+        method: 'GET',
+        icon: 'download',
+        accent: '#38bdf8',
+        tags: ['http', 'api', 'get']
+    }),
+    createHttpModule({
+        id: 'http-post',
+        name: 'HTTP POST request',
+        description: 'Send JSON data to an API endpoint and capture the reply.',
+        method: 'POST',
+        icon: 'upload',
+        accent: '#f97316',
+        tags: ['http', 'api', 'post'],
+        includeBody: true,
+        bodyPlaceholder: '{"name":"FlashSearch"}'
+    }),
+    createHttpModule({
+        id: 'http-put',
+        name: 'HTTP PUT request',
+        description: 'Replace a resource with a JSON payload.',
+        method: 'PUT',
+        icon: 'refresh-cw',
+        accent: '#6366f1',
+        tags: ['http', 'api', 'put'],
+        includeBody: true,
+        bodyPlaceholder: '{"enabled":true}'
+    }),
+    createHttpModule({
+        id: 'http-patch',
+        name: 'HTTP PATCH request',
+        description: 'Partially update a resource with JSON data.',
+        method: 'PATCH',
+        icon: 'tool',
+        accent: '#f59e0b',
+        tags: ['http', 'api', 'patch'],
+        includeBody: true,
+        bodyPlaceholder: '{"status":"done"}'
+    }),
+    createHttpModule({
+        id: 'http-delete',
+        name: 'HTTP DELETE request',
+        description: 'Send a DELETE request to remove a resource.',
+        method: 'DELETE',
+        icon: 'trash-2',
+        accent: '#ef4444',
+        tags: ['http', 'api', 'delete'],
+        includeBody: true,
+        bodyPlaceholder: '{"reason":"cleanup"}'
+    }),
+    createHttpModule({
+        id: 'http-head',
+        name: 'HTTP HEAD request',
+        description: 'Inspect response headers without downloading the body.',
+        method: 'HEAD',
+        icon: 'info',
+        accent: '#0f172a',
+        tags: ['http', 'api', 'head']
+    }),
+    {
+        id: 'payload-append',
+        category: 'utility',
+        name: 'Append text',
+        description: 'Append custom text after the current payload.',
+        icon: 'plus-square',
+        accent: '#f59e0b',
+        tags: ['text', 'payload', 'edit'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { text: '\n-- Sent from FlashSearch' },
+        form: [
+            { key: 'text', label: 'Text to append', type: 'textarea', rows: 2, placeholder: 'Signature or closing text' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const base = QuickActionTools.toText(clone.payload);
+            clone.payload = base + (config?.text ?? '');
+            clone.logs.push('Appended text to payload.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-prepend',
+        category: 'utility',
+        name: 'Prepend text',
+        description: 'Add custom text before the current payload.',
+        icon: 'corner-left-up',
+        accent: '#f97316',
+        tags: ['text', 'payload', 'edit'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { text: 'FlashSearch — ' },
+        form: [
+            { key: 'text', label: 'Text to prepend', type: 'textarea', rows: 2, placeholder: 'Prefix text' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const base = QuickActionTools.toText(clone.payload);
+            clone.payload = (config?.text ?? '') + base;
+            clone.logs.push('Prepended text to payload.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-clear',
+        category: 'utility',
+        name: 'Clear payload',
+        description: 'Remove any existing payload content.',
+        icon: 'slash',
+        accent: '#94a3b8',
+        tags: ['text', 'payload', 'cleanup'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = '';
+            clone.logs.push('Cleared payload.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-trim',
+        category: 'utility',
+        name: 'Trim whitespace',
+        description: 'Remove leading and trailing whitespace from the payload.',
+        icon: 'scissors',
+        accent: '#22d3ee',
+        tags: ['text', 'cleanup'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = QuickActionTools.toText(clone.payload).trim();
+            clone.logs.push('Trimmed payload.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-truncate',
+        category: 'utility',
+        name: 'Truncate text',
+        description: 'Limit the payload to a specific number of characters.',
+        icon: 'crop',
+        accent: '#fbbf24',
+        tags: ['text', 'limit'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { limit: 160, suffix: '…' },
+        form: [
+            { key: 'limit', label: 'Character limit', type: 'number', placeholder: '160' },
+            { key: 'suffix', label: 'Suffix', type: 'text', placeholder: '…' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const source = QuickActionTools.toText(clone.payload);
+            const limit = Math.max(0, parseInt(config?.limit, 10) || 0);
+            if (limit <= 0 || source.length <= limit) {
+                clone.payload = source;
+            } else {
+                clone.payload = source.slice(0, limit) + (config?.suffix ?? '');
+            }
+            clone.logs.push(`Truncated payload to ${limit || source.length} characters.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-slice',
+        category: 'utility',
+        name: 'Slice text',
+        description: 'Extract a specific substring from the payload.',
+        icon: 'columns',
+        accent: '#4ade80',
+        tags: ['text', 'slice'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { start: 0, end: 100 },
+        form: [
+            { key: 'start', label: 'Start index', type: 'number', placeholder: '0' },
+            { key: 'end', label: 'End index', type: 'number', placeholder: '100' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const source = QuickActionTools.toText(clone.payload);
+            const start = parseInt(config?.start, 10);
+            const end = parseInt(config?.end, 10);
+            const safeStart = Number.isNaN(start) ? 0 : start;
+            const safeEnd = Number.isNaN(end) ? source.length : end;
+            clone.payload = source.slice(safeStart, safeEnd);
+            clone.logs.push(`Sliced payload from ${safeStart} to ${safeEnd}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-count-words',
+        category: 'utility',
+        name: 'Count words',
+        description: 'Count how many words the payload contains.',
+        icon: 'hash',
+        accent: '#0ea5e9',
+        tags: ['text', 'analysis'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const words = QuickActionTools.toText(clone.payload)
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+            const count = words.length;
+            clone.vars.wordCount = count;
+            clone.payload = String(count);
+            clone.logs.push(`Counted ${count} words.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-count-lines',
+        category: 'utility',
+        name: 'Count lines',
+        description: 'Count how many lines exist in the payload.',
+        icon: 'align-left',
+        accent: '#f87171',
+        tags: ['text', 'analysis'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const lines = QuickActionTools.toLines(clone.payload);
+            const count = lines.filter(line => line.length > 0).length;
+            clone.vars.lineCount = count;
+            clone.payload = String(count);
+            clone.logs.push(`Counted ${count} lines.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-split-lines',
+        category: 'utility',
+        name: 'Split into lines',
+        description: 'Break the payload into an array of lines.',
+        icon: 'list',
+        accent: '#60a5fa',
+        tags: ['text', 'list'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const lines = QuickActionTools.toLines(clone.payload);
+            clone.vars.lastList = lines;
+            clone.payload = JSON.stringify(lines, null, 2);
+            clone.logs.push('Split payload into lines.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-join-lines',
+        category: 'utility',
+        name: 'Join lines',
+        description: 'Join an array of lines into a single string.',
+        icon: 'link',
+        accent: '#f472b6',
+        tags: ['text', 'list'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { source: 'lastList', separator: '\n' },
+        form: [
+            {
+                key: 'source',
+                label: 'Source list',
+                type: 'select',
+                options: [
+                    { value: 'lastList', label: 'Use last list from context' },
+                    { value: 'payload', label: 'Split current payload first' }
+                ]
+            },
+            { key: 'separator', label: 'Separator', type: 'text', placeholder: '\n' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            let list = [];
+            if (config?.source === 'payload') {
+                list = QuickActionTools.toLines(clone.payload);
+            } else if (Array.isArray(clone.vars.lastList)) {
+                list = clone.vars.lastList;
+            }
+            const separator = config?.separator ?? '\n';
+            clone.payload = list.join(separator);
+            clone.logs.push('Joined lines into payload.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-unique-lines',
+        category: 'utility',
+        name: 'Unique lines',
+        description: 'Remove duplicate lines from the payload.',
+        icon: 'filter',
+        accent: '#14b8a6',
+        tags: ['text', 'dedupe'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const lines = QuickActionTools.unique(QuickActionTools.toLines(clone.payload));
+            clone.vars.lastList = lines;
+            clone.payload = lines.join('\n');
+            clone.logs.push('Removed duplicate lines.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-sort-lines',
+        category: 'utility',
+        name: 'Sort lines',
+        description: 'Sort lines alphabetically.',
+        icon: 'arrow-up',
+        accent: '#94a3b8',
+        tags: ['text', 'sort'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { direction: 'asc' },
+        form: [
+            {
+                key: 'direction',
+                label: 'Direction',
+                type: 'select',
+                options: [
+                    { value: 'asc', label: 'Ascending' },
+                    { value: 'desc', label: 'Descending' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const lines = QuickActionTools.toLines(clone.payload).sort((a, b) => a.localeCompare(b));
+            if (config?.direction === 'desc') {
+                lines.reverse();
+            }
+            clone.vars.lastList = lines;
+            clone.payload = lines.join('\n');
+            clone.logs.push('Sorted lines.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-shuffle-lines',
+        category: 'utility',
+        name: 'Shuffle lines',
+        description: 'Shuffle the order of lines randomly.',
+        icon: 'shuffle',
+        accent: '#a78bfa',
+        tags: ['text', 'random'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const lines = QuickActionTools.shuffle(QuickActionTools.toLines(clone.payload));
+            clone.vars.lastList = lines;
+            clone.payload = lines.join('\n');
+            clone.logs.push('Shuffled lines.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-filter-lines',
+        category: 'utility',
+        name: 'Filter lines',
+        description: 'Keep or remove lines matching a keyword.',
+        icon: 'search',
+        accent: '#f87171',
+        tags: ['text', 'filter'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { keyword: '', mode: 'includes', caseSensitive: 'no' },
+        form: [
+            { key: 'keyword', label: 'Keyword', type: 'text', placeholder: 'error' },
+            {
+                key: 'mode',
+                label: 'Mode',
+                type: 'select',
+                options: [
+                    { value: 'includes', label: 'Keep lines that include the keyword' },
+                    { value: 'excludes', label: 'Remove lines that include the keyword' }
+                ]
+            },
+            {
+                key: 'caseSensitive',
+                label: 'Case sensitive',
+                type: 'select',
+                options: [
+                    { value: 'no', label: 'No' },
+                    { value: 'yes', label: 'Yes' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const keyword = String(config?.keyword || '');
+            if (!keyword) {
+                clone.logs.push('Filter lines skipped: keyword is empty.');
+                return [clone];
+            }
+            const caseSensitive = config?.caseSensitive === 'yes';
+            const comparator = caseSensitive ? keyword : keyword.toLowerCase();
+            const lines = QuickActionTools.toLines(clone.payload).filter(line => {
+                const haystack = caseSensitive ? line : line.toLowerCase();
+                const contains = haystack.includes(comparator);
+                return config?.mode === 'excludes' ? !contains : contains;
+            });
+            clone.vars.lastList = lines;
+            clone.payload = lines.join('\n');
+            clone.logs.push(`Filtered lines using keyword "${keyword}".`);
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-regex-replace',
+        category: 'utility',
+        name: 'Regex replace',
+        description: 'Replace text using a regular expression.',
+        icon: 'edit',
+        accent: '#22c55e',
+        tags: ['text', 'regex'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { pattern: '(?i)flashsearch', replacement: 'FlashSearch', flags: 'g' },
+        form: [
+            { key: 'pattern', label: 'Pattern', type: 'text', placeholder: '(?i)flashsearch' },
+            { key: 'replacement', label: 'Replacement', type: 'text', placeholder: 'FlashSearch' },
+            { key: 'flags', label: 'Flags', type: 'text', placeholder: 'g' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            try {
+                const regex = new RegExp(config?.pattern || '', config?.flags || '');
+                clone.payload = QuickActionTools.toText(clone.payload).replace(regex, config?.replacement ?? '');
+                clone.logs.push('Applied regex replacement.');
+            } catch (error) {
+                clone.logs.push(`Regex replace failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-regex-extract',
+        category: 'utility',
+        name: 'Regex extract',
+        description: 'Capture regex matches and store them as JSON.',
+        icon: 'target',
+        accent: '#fb7185',
+        tags: ['text', 'regex'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { pattern: '(\\d+)', flags: 'g' },
+        form: [
+            { key: 'pattern', label: 'Pattern', type: 'text', placeholder: '(\\d+)' },
+            { key: 'flags', label: 'Flags', type: 'text', placeholder: 'g' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            try {
+                const regex = new RegExp(config?.pattern || '', config?.flags || '');
+                const matches = QuickActionTools.toText(clone.payload).match(regex) || [];
+                clone.vars.lastMatches = matches;
+                clone.payload = JSON.stringify(matches, null, 2);
+                clone.logs.push('Extracted regex matches.');
+            } catch (error) {
+                clone.logs.push(`Regex extract failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-number-format',
+        category: 'utility',
+        name: 'Format number',
+        description: 'Format a number using locale-aware settings.',
+        icon: 'dollar-sign',
+        accent: '#0ea5e9',
+        tags: ['number', 'format'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { locale: 'en-US', style: 'decimal', currency: 'USD' },
+        form: [
+            { key: 'locale', label: 'Locale', type: 'text', placeholder: 'en-US' },
+            {
+                key: 'style',
+                label: 'Style',
+                type: 'select',
+                options: [
+                    { value: 'decimal', label: 'Decimal' },
+                    { value: 'currency', label: 'Currency' },
+                    { value: 'percent', label: 'Percent' }
+                ]
+            },
+            { key: 'currency', label: 'Currency code', type: 'text', placeholder: 'USD' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const style = config?.style || 'decimal';
+            const options = { style };
+            if (style === 'currency') {
+                options.currency = (config?.currency || 'USD').toUpperCase();
+            }
+            const formatted = QuickActionTools.formatNumber(clone.payload, config?.locale || 'en-US', options);
+            clone.payload = formatted;
+            clone.logs.push('Formatted number.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-date-format',
+        category: 'utility',
+        name: 'Format date',
+        description: 'Format a date using locale-aware presets.',
+        icon: 'calendar',
+        accent: '#f59e0b',
+        tags: ['date', 'format'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { locale: 'en-US', style: 'datetime' },
+        form: [
+            { key: 'locale', label: 'Locale', type: 'text', placeholder: 'en-US' },
+            {
+                key: 'style',
+                label: 'Style',
+                type: 'select',
+                options: [
+                    { value: 'datetime', label: 'Date and time' },
+                    { value: 'date', label: 'Date only' },
+                    { value: 'time', label: 'Time only' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const value = clone.payload ?? new Date();
+            const style = config?.style || 'datetime';
+            const options = {
+                datetime: { dateStyle: 'medium', timeStyle: 'short' },
+                date: { dateStyle: 'long' },
+                time: { timeStyle: 'medium' }
+            }[style] || { dateStyle: 'medium', timeStyle: 'short' };
+            clone.payload = QuickActionTools.formatDate(value, config?.locale || 'en-US', options);
+            clone.logs.push('Formatted date.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-date-diff',
+        category: 'utility',
+        name: 'Date difference',
+        description: 'Compute the difference between two dates.',
+        icon: 'clock',
+        accent: '#22c55e',
+        tags: ['date', 'analysis'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { startSource: 'payload', endSource: 'now', startDate: '', endDate: '', unit: 'hours' },
+        form: [
+            {
+                key: 'startSource',
+                label: 'Start date',
+                type: 'select',
+                options: [
+                    { value: 'payload', label: 'Use payload' },
+                    { value: 'custom', label: 'Custom date' }
+                ]
+            },
+            { key: 'startDate', label: 'Custom start date', type: 'text', placeholder: '2024-01-01T00:00:00Z' },
+            {
+                key: 'endSource',
+                label: 'End date',
+                type: 'select',
+                options: [
+                    { value: 'now', label: 'Current time' },
+                    { value: 'custom', label: 'Custom date' }
+                ]
+            },
+            { key: 'endDate', label: 'Custom end date', type: 'text', placeholder: '2024-01-02T00:00:00Z' },
+            {
+                key: 'unit',
+                label: 'Unit',
+                type: 'select',
+                options: [
+                    { value: 'seconds', label: 'Seconds' },
+                    { value: 'minutes', label: 'Minutes' },
+                    { value: 'hours', label: 'Hours' },
+                    { value: 'days', label: 'Days' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const start = config?.startSource === 'custom'
+                ? config?.startDate
+                : QuickActionTools.toText(clone.payload);
+            const end = config?.endSource === 'custom'
+                ? config?.endDate
+                : new Date();
+            const diff = QuickActionTools.dateDiff(start, end, config?.unit || 'hours');
+            if (Number.isNaN(diff)) {
+                clone.logs.push('Date difference failed: invalid date.');
+                return [clone];
+            }
+            clone.payload = String(diff);
+            clone.logs.push(`Calculated date difference: ${diff} ${config?.unit || 'hours'}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-markdown-to-html',
+        category: 'utility',
+        name: 'Markdown to HTML',
+        description: 'Convert simple Markdown into HTML.',
+        icon: 'book-open',
+        accent: '#6366f1',
+        tags: ['markdown', 'html'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const source = QuickActionTools.toText(clone.payload);
+            let html = source
+                .replace(/^### (.*)$/gm, '<h3>$1</h3>')
+                .replace(/^## (.*)$/gm, '<h2>$1</h2>')
+                .replace(/^# (.*)$/gm, '<h1>$1</h1>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/\n\n/g, '</p><p>');
+            html = `<p>${html}</p>`;
+            clone.payload = html;
+            clone.logs.push('Converted Markdown to HTML.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-html-to-text',
+        category: 'utility',
+        name: 'HTML to text',
+        description: 'Strip HTML tags and keep the plain text.',
+        icon: 'file-text',
+        accent: '#f97316',
+        tags: ['html', 'text'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(QuickActionTools.toText(clone.payload), 'text/html');
+            clone.payload = doc.body?.textContent?.trim() || '';
+            clone.logs.push('Converted HTML to text.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-base64-encode',
+        category: 'utility',
+        name: 'Base64 encode',
+        description: 'Encode the payload using Base64.',
+        icon: 'lock',
+        accent: '#22c55e',
+        tags: ['encoding', 'base64'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = QuickActionTools.base64Encode(clone.payload);
+            clone.logs.push('Encoded payload to Base64.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-base64-decode',
+        category: 'utility',
+        name: 'Base64 decode',
+        description: 'Decode the payload from Base64.',
+        icon: 'unlock',
+        accent: '#f87171',
+        tags: ['encoding', 'base64'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = QuickActionTools.base64Decode(clone.payload);
+            clone.logs.push('Decoded Base64 payload.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-url-encode',
+        category: 'utility',
+        name: 'URL encode',
+        description: 'Escape the payload for use in URLs.',
+        icon: 'external-link',
+        accent: '#60a5fa',
+        tags: ['encoding', 'url'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = QuickActionTools.urlEncode(clone.payload);
+            clone.logs.push('URL-encoded payload.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-url-decode',
+        category: 'utility',
+        name: 'URL decode',
+        description: 'Decode URL-encoded payload back to text.',
+        icon: 'corner-right-down',
+        accent: '#34d399',
+        tags: ['encoding', 'url'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = QuickActionTools.urlDecode(clone.payload);
+            clone.logs.push('URL-decoded payload.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-random-number',
+        category: 'utility',
+        name: 'Random number',
+        description: 'Generate a random number and store it as the payload.',
+        icon: 'dice',
+        accent: '#facc15',
+        tags: ['random', 'number'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { min: 0, max: 1, decimals: 2 },
+        form: [
+            { key: 'min', label: 'Minimum', type: 'number', placeholder: '0' },
+            { key: 'max', label: 'Maximum', type: 'number', placeholder: '1' },
+            { key: 'decimals', label: 'Decimals', type: 'number', placeholder: '2' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const min = Number(config?.min ?? 0);
+            const max = Number(config?.max ?? 1);
+            const decimals = Math.max(0, parseInt(config?.decimals, 10) || 0);
+            const value = QuickActionTools.randomNumber(min, max);
+            clone.payload = decimals > 0 ? value.toFixed(decimals) : String(Math.round(value));
+            clone.logs.push('Generated random number.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-random-string',
+        category: 'utility',
+        name: 'Random string',
+        description: 'Create a random alphanumeric string.',
+        icon: 'italic',
+        accent: '#c084fc',
+        tags: ['random', 'text'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { length: 12 },
+        form: [
+            { key: 'length', label: 'Length', type: 'number', placeholder: '12' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const length = Math.max(1, parseInt(config?.length, 10) || 12);
+            clone.payload = QuickActionTools.randomString(length);
+            clone.logs.push('Generated random string.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-generate-uuid',
+        category: 'utility',
+        name: 'Generate UUID',
+        description: 'Generate a unique identifier as the payload.',
+        icon: 'key',
+        accent: '#f472b6',
+        tags: ['random', 'uuid'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = QuickActionTools.uuid();
+            clone.logs.push('Generated UUID.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-template',
+        category: 'utility',
+        name: 'Apply template',
+        description: 'Build text from a template referencing payload, variables, or config.',
+        icon: 'file-plus',
+        accent: '#38bdf8',
+        tags: ['template', 'text'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { template: 'Hello {{payload}}' },
+        form: [
+            { key: 'template', label: 'Template', type: 'textarea', rows: 3, placeholder: 'Hello {{payload}}' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = QuickActionTools.applyTemplate(config?.template ?? '', clone, config);
+            clone.logs.push('Applied template to payload.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-json-parse',
+        category: 'utility',
+        name: 'Parse JSON',
+        description: 'Parse the payload as JSON and store the object in context.',
+        icon: 'code',
+        accent: '#10b981',
+        tags: ['json', 'parse'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const parsed = QuickActionTools.parseJson(clone.payload);
+            if (parsed.error) {
+                clone.logs.push(`JSON parse failed: ${parsed.error}`);
+                return [clone];
+            }
+            clone.vars.lastJson = parsed.data;
+            clone.payload = parsed.data ? JSON.stringify(parsed.data, null, 2) : '';
+            clone.logs.push('Parsed JSON payload.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-json-stringify',
+        category: 'utility',
+        name: 'Stringify JSON',
+        description: 'Convert stored JSON back into a string.',
+        icon: 'file-text',
+        accent: '#6366f1',
+        tags: ['json', 'stringify'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { source: 'lastJson', variable: 'data', customJson: '{"example":true}' },
+        form: [
+            {
+                key: 'source',
+                label: 'Source',
+                type: 'select',
+                options: [
+                    { value: 'lastJson', label: 'Last parsed JSON' },
+                    { value: 'payload', label: 'Parse payload first' },
+                    { value: 'variable', label: 'Variable value' },
+                    { value: 'custom', label: 'Custom JSON' }
+                ]
+            },
+            { key: 'variable', label: 'Variable name', type: 'text', placeholder: 'data' },
+            { key: 'customJson', label: 'Custom JSON', type: 'textarea', rows: 3, placeholder: '{ "example": true }' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            let value;
+            switch (config?.source) {
+                case 'payload': {
+                    const parsed = QuickActionTools.parseJson(clone.payload);
+                    if (parsed.error) {
+                        clone.logs.push(`JSON stringify failed: ${parsed.error}`);
+                        return [clone];
+                    }
+                    value = parsed.data;
+                    break;
+                }
+                case 'variable':
+                    value = clone.vars?.[config?.variable];
+                    break;
+                case 'custom': {
+                    const parsedCustom = QuickActionTools.parseJson(config?.customJson);
+                    if (parsedCustom.error) {
+                        clone.logs.push(`Custom JSON invalid: ${parsedCustom.error}`);
+                        return [clone];
+                    }
+                    value = parsedCustom.data;
+                    break;
+                }
+                case 'lastJson':
+                default:
+                    value = clone.vars.lastJson;
+                    break;
+            }
+            clone.payload = value !== undefined ? JSON.stringify(value, null, 2) : '';
+            clone.logs.push('Stringified JSON data.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-json-merge',
+        category: 'utility',
+        name: 'Merge JSON',
+        description: 'Merge additional JSON into the existing object.',
+        icon: 'git-merge',
+        accent: '#f97316',
+        tags: ['json', 'merge'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { baseSource: 'lastJson', patchJson: '{"ready":true}' },
+        form: [
+            {
+                key: 'baseSource',
+                label: 'Base object',
+                type: 'select',
+                options: [
+                    { value: 'lastJson', label: 'Last parsed JSON' },
+                    { value: 'payload', label: 'Parse payload first' }
+                ]
+            },
+            { key: 'patchJson', label: 'JSON to merge', type: 'textarea', rows: 3, placeholder: '{ "ready": true }' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const base = config?.baseSource === 'payload'
+                ? QuickActionTools.ensureObject(clone.payload)
+                : QuickActionTools.clone(clone.vars.lastJson || {});
+            const patch = QuickActionTools.ensureObject(config?.patchJson);
+            const merged = QuickActionTools.deepMerge(base, patch);
+            clone.vars.lastJson = merged;
+            clone.payload = JSON.stringify(merged, null, 2);
+            clone.logs.push('Merged JSON objects.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-json-get-path',
+        category: 'utility',
+        name: 'Get JSON path',
+        description: 'Read a value from JSON using dot notation.',
+        icon: 'corner-right-up',
+        accent: '#34d399',
+        tags: ['json', 'path'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { path: 'user.name', source: 'lastJson' },
+        form: [
+            { key: 'path', label: 'Path (dot notation)', type: 'text', placeholder: 'user.name' },
+            {
+                key: 'source',
+                label: 'Source object',
+                type: 'select',
+                options: [
+                    { value: 'lastJson', label: 'Last parsed JSON' },
+                    { value: 'payload', label: 'Parse payload first' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const base = config?.source === 'payload'
+                ? QuickActionTools.ensureObject(clone.payload)
+                : clone.vars.lastJson;
+            const value = QuickActionTools.getPath(base, config?.path || '');
+            clone.payload = value !== undefined ? QuickActionTools.toText(value) : '';
+            clone.logs.push(`Read JSON path ${config?.path || ''}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-json-set-path',
+        category: 'utility',
+        name: 'Set JSON path',
+        description: 'Update a value in JSON using dot notation.',
+        icon: 'corner-left-down',
+        accent: '#f59e0b',
+        tags: ['json', 'path'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { path: 'user.name', value: 'FlashSearch', baseSource: 'lastJson' },
+        form: [
+            { key: 'path', label: 'Path', type: 'text', placeholder: 'user.name' },
+            { key: 'value', label: 'Value', type: 'text', placeholder: 'FlashSearch' },
+            {
+                key: 'baseSource',
+                label: 'Base object',
+                type: 'select',
+                options: [
+                    { value: 'lastJson', label: 'Last parsed JSON' },
+                    { value: 'payload', label: 'Parse payload first' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const base = config?.baseSource === 'payload'
+                ? QuickActionTools.ensureObject(clone.payload)
+                : QuickActionTools.clone(clone.vars.lastJson || {});
+            QuickActionTools.setPath(base, config?.path || '', config?.value ?? null);
+            clone.vars.lastJson = base;
+            clone.payload = JSON.stringify(base, null, 2);
+            clone.logs.push(`Updated JSON path ${config?.path || ''}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-condition-flag',
+        category: 'utility',
+        name: 'Payload condition flag',
+        description: 'Check if the payload contains a keyword and store the result as a variable.',
+        icon: 'help-circle',
+        accent: '#fb7185',
+        tags: ['logic', 'condition'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { keyword: '', flagName: 'payloadContains', caseSensitive: 'no' },
+        form: [
+            { key: 'keyword', label: 'Keyword', type: 'text', placeholder: 'success' },
+            { key: 'flagName', label: 'Variable name', type: 'text', placeholder: 'payloadContains' },
+            {
+                key: 'caseSensitive',
+                label: 'Case sensitive',
+                type: 'select',
+                options: [
+                    { value: 'no', label: 'No' },
+                    { value: 'yes', label: 'Yes' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const keyword = String(config?.keyword || '');
+            const flagName = String(config?.flagName || 'payloadContains');
+            if (!keyword) {
+                clone.logs.push('Condition flag skipped: keyword is empty.');
+                return [clone];
+            }
+            const haystack = QuickActionTools.toText(clone.payload);
+            const match = config?.caseSensitive === 'yes'
+                ? haystack.includes(keyword)
+                : haystack.toLowerCase().includes(keyword.toLowerCase());
+            clone.vars[flagName] = match;
+            clone.logs.push(`Stored condition flag ${flagName}=${match}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'workflow-delay-random',
+        category: 'utility',
+        name: 'Random delay',
+        description: 'Wait for a random duration between two values.',
+        icon: 'timer',
+        accent: '#94a3b8',
+        tags: ['delay', 'random'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { minMs: 500, maxMs: 1500 },
+        form: [
+            { key: 'minMs', label: 'Minimum delay (ms)', type: 'number', placeholder: '500' },
+            { key: 'maxMs', label: 'Maximum delay (ms)', type: 'number', placeholder: '1500' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const min = Math.max(0, parseInt(config?.minMs, 10) || 0);
+            const max = Math.max(min, parseInt(config?.maxMs, 10) || min);
+            const delay = Math.round(QuickActionTools.randomNumber(min, max));
+            await new Promise(resolve => setTimeout(resolve, delay));
+            clone.logs.push(`Delayed workflow by ${delay} ms.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'log-message',
+        category: 'utility',
+        name: 'Log message',
+        description: 'Add a custom entry to the workflow logs.',
+        icon: 'message-square',
+        accent: '#38bdf8',
+        tags: ['log', 'debug'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { message: 'Workflow checkpoint', includePayload: 'no' },
+        form: [
+            { key: 'message', label: 'Message', type: 'textarea', rows: 2, placeholder: 'Workflow checkpoint' },
+            {
+                key: 'includePayload',
+                label: 'Include payload',
+                type: 'select',
+                options: [
+                    { value: 'no', label: 'No' },
+                    { value: 'yes', label: 'Yes' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            let message = config?.message || '';
+            if (config?.includePayload === 'yes') {
+                message += `\nPayload: ${QuickActionTools.toText(clone.payload)}`;
+            }
+            clone.logs.push(message || 'Log entry');
+            return [clone];
+        }
+    },
+    {
+        id: 'log-payload',
+        category: 'utility',
+        name: 'Log payload',
+        description: 'Store the current payload value in the logs.',
+        icon: 'clipboard',
+        accent: '#64748b',
+        tags: ['log', 'debug'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push(`Payload snapshot: ${QuickActionTools.toText(clone.payload)}`);
+            return [clone];
+        }
+    },
+    {
+        id: 'prompt-input',
+        category: 'utility',
+        name: 'Prompt for input',
+        description: 'Display a prompt dialog and store the user response.',
+        icon: 'edit-3',
+        accent: '#f59e0b',
+        tags: ['prompt', 'interaction'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { title: 'Enter value', defaultValue: '' },
+        form: [
+            { key: 'title', label: 'Prompt title', type: 'text', placeholder: 'Enter value' },
+            { key: 'defaultValue', label: 'Default value', type: 'text', placeholder: '' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const response = window.prompt(config?.title || 'Enter value', config?.defaultValue || '');
+            if (response !== null) {
+                clone.payload = response;
+                clone.logs.push('User provided input via prompt.');
+            } else {
+                clone.logs.push('Prompt cancelled by user.');
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'prompt-confirm',
+        category: 'utility',
+        name: 'Prompt confirm',
+        description: 'Ask the user for confirmation and store the boolean result.',
+        icon: 'help-circle',
+        accent: '#f97316',
+        tags: ['prompt', 'interaction'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { message: 'Do you want to continue?' },
+        form: [
+            { key: 'message', label: 'Message', type: 'text', placeholder: 'Do you want to continue?' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const answer = window.confirm(config?.message || 'Do you want to continue?');
+            clone.vars.lastConfirmation = answer;
+            clone.logs.push(`Confirmation result: ${answer}`);
+            return [clone];
+        }
+    },
+    {
+        id: 'notify-from-payload',
+        category: 'action',
+        name: 'Notify from payload',
+        description: 'Show a desktop notification using the payload value.',
+        icon: 'bell',
+        accent: '#facc15',
+        tags: ['notification'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { title: 'FlashSearch' },
+        form: [
+            { key: 'title', label: 'Notification title', type: 'text', placeholder: 'FlashSearch' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            if (Notification.permission === 'default') {
+                Notification.requestPermission().catch(() => {});
+            }
+            if (Notification.permission === 'granted') {
+                new Notification(config?.title || 'FlashSearch', { body: QuickActionTools.toText(clone.payload) });
+            }
+            clone.logs.push('Notification requested.');
+            return [clone];
+        }
+    },
+    {
+        id: 'open-payload-url',
+        category: 'action',
+        name: 'Open payload URL',
+        description: 'Open the payload value as a URL in the browser.',
+        icon: 'external-link',
+        accent: '#38bdf8',
+        tags: ['url', 'open'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const url = QuickActionTools.toText(clone.payload).trim();
+            if (url) {
+                try {
+                    await shell.openExternal(url);
+                    clone.logs.push(`Opened URL ${url}.`);
+                } catch (error) {
+                    clone.logs.push(`Failed to open URL: ${error.message}`);
+                }
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'search-web',
+        category: 'action',
+        name: 'Search the web',
+        description: 'Open a search query in your preferred engine.',
+        icon: 'search',
+        accent: '#4ade80',
+        tags: ['search', 'web'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { engine: 'google' },
+        form: [
+            {
+                key: 'engine',
+                label: 'Search engine',
+                type: 'select',
+                options: [
+                    { value: 'google', label: 'Google' },
+                    { value: 'duckduckgo', label: 'DuckDuckGo' },
+                    { value: 'bing', label: 'Bing' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const query = encodeURIComponent(QuickActionTools.toText(clone.payload));
+            const engine = config?.engine || 'google';
+            const urls = {
+                google: `https://www.google.com/search?q=${query}`,
+                duckduckgo: `https://duckduckgo.com/?q=${query}`,
+                bing: `https://www.bing.com/search?q=${query}`
+            };
+            const target = urls[engine] || urls.google;
+            try {
+                await shell.openExternal(target);
+                clone.logs.push(`Opened search ${engine}.`);
+            } catch (error) {
+                clone.logs.push(`Search failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'vars-set-from-payload',
+        category: 'utility',
+        name: 'Set variable from payload',
+        description: 'Store the current payload value in a named variable.',
+        icon: 'save',
+        accent: '#22c55e',
+        tags: ['variables'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'result' },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'result' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = String(config?.key || '').trim();
+            if (!key) {
+                clone.logs.push('Set variable skipped: name is empty.');
+                return [clone];
+            }
+            clone.vars[key] = QuickActionTools.toText(clone.payload);
+            clone.logs.push(`Stored payload in variable ${key}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'vars-copy-to-payload',
+        category: 'utility',
+        name: 'Load variable into payload',
+        description: 'Replace the payload with a stored variable value.',
+        icon: 'download',
+        accent: '#60a5fa',
+        tags: ['variables'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'result' },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'result' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = String(config?.key || '').trim();
+            clone.payload = key ? QuickActionTools.toText(clone.vars?.[key]) : '';
+            clone.logs.push(`Loaded variable ${key || ''} into payload.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'vars-delete',
+        category: 'utility',
+        name: 'Delete variable',
+        description: 'Remove a variable from the workflow context.',
+        icon: 'trash',
+        accent: '#ef4444',
+        tags: ['variables'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'result' },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'result' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = String(config?.key || '').trim();
+            if (key) {
+                delete clone.vars[key];
+                clone.logs.push(`Deleted variable ${key}.`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'vars-increment',
+        category: 'utility',
+        name: 'Increment variable',
+        description: 'Increment a numeric variable by a given step.',
+        icon: 'plus',
+        accent: '#4ade80',
+        tags: ['variables'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'counter', step: 1 },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'counter' },
+            { key: 'step', label: 'Step', type: 'number', placeholder: '1' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = String(config?.key || '').trim();
+            if (!key) return [clone];
+            const step = Number(config?.step ?? 1);
+            const current = Number(clone.vars?.[key] ?? 0);
+            const result = current + step;
+            clone.vars[key] = result;
+            clone.logs.push(`Variable ${key} incremented to ${result}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'vars-toggle',
+        category: 'utility',
+        name: 'Toggle boolean',
+        description: 'Toggle a boolean variable between true and false.',
+        icon: 'toggle-right',
+        accent: '#f59e0b',
+        tags: ['variables'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'enabled' },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'enabled' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = String(config?.key || '').trim();
+            if (!key) return [clone];
+            clone.vars[key] = !clone.vars[key];
+            clone.logs.push(`Variable ${key} toggled to ${clone.vars[key]}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'vars-store-timestamp',
+        category: 'utility',
+        name: 'Store timestamp',
+        description: 'Save the current ISO timestamp into a variable.',
+        icon: 'clock',
+        accent: '#38bdf8',
+        tags: ['variables', 'time'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'timestamp' },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'timestamp' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = String(config?.key || '').trim();
+            if (!key) return [clone];
+            clone.vars[key] = new Date().toISOString();
+            clone.logs.push(`Stored timestamp in variable ${key}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'vars-generate-uuid',
+        category: 'utility',
+        name: 'Variable UUID',
+        description: 'Generate a UUID and store it in a variable.',
+        icon: 'aperture',
+        accent: '#a855f7',
+        tags: ['variables', 'uuid'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'uuid' },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'uuid' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = String(config?.key || '').trim();
+            if (!key) return [clone];
+            clone.vars[key] = QuickActionTools.uuid();
+            clone.logs.push(`Stored UUID in variable ${key}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'vars-clear-all',
+        category: 'utility',
+        name: 'Clear variables',
+        description: 'Remove all stored workflow variables.',
+        icon: 'refresh-ccw',
+        accent: '#ef4444',
+        tags: ['variables', 'cleanup'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.vars = {};
+            clone.logs.push('Cleared all workflow variables.');
+            return [clone];
+        }
+    },
+    {
+        id: 'vars-merge-json',
+        category: 'utility',
+        name: 'Merge into variables',
+        description: 'Merge JSON data into the variables object.',
+        icon: 'database',
+        accent: '#0ea5e9',
+        tags: ['variables', 'json'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { json: '{"feature":"automation"}' },
+        form: [
+            { key: 'json', label: 'JSON to merge', type: 'textarea', rows: 3, placeholder: '{ "feature": "automation" }' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const patch = QuickActionTools.ensureObject(config?.json);
+            clone.vars = QuickActionTools.deepMerge(clone.vars || {}, patch);
+            clone.logs.push('Merged JSON into variables.');
+            return [clone];
+        }
+    },
+    createAiChatModule({
+        id: 'ai-meeting-agenda',
+        name: 'AI meeting agenda',
+        description: 'Turn talking points into a time-boxed meeting agenda.',
+        icon: 'calendar',
+        accent: '#0ea5e9',
+        tags: ['ai', 'meeting', 'planning'],
+        systemPrompt: 'You design efficient, collaborative meetings with clear timings and owners.',
+        userPrompt: 'Create a detailed agenda for a {{config.meetingType}} meeting lasting {{config.duration}} minutes. Include sections, objectives and recommended time allocations.\n\n{{payload}}',
+        extraConfig: [
+            { key: 'meetingType', label: 'Meeting type', type: 'text', placeholder: 'product sync', defaultValue: 'product sync' },
+            { key: 'duration', label: 'Duration (minutes)', type: 'number', placeholder: '30', defaultValue: 30 }
+        ]
+    }),
+    createAiChatModule({
+        id: 'ai-meeting-recap',
+        name: 'AI meeting recap',
+        description: 'Summarise meeting notes with decisions and owners.',
+        icon: 'check-circle',
+        accent: '#10b981',
+        tags: ['ai', 'meeting', 'summary'],
+        systemPrompt: 'You write crisp meeting summaries that highlight decisions, action items, and owners.',
+        userPrompt: 'Summarise the following meeting transcript. Include key decisions, action items with owners, deadlines, and open questions.\n\n{{payload}}'
+    }),
+    createAiChatModule({
+        id: 'ai-support-reply',
+        name: 'AI support reply',
+        description: 'Draft a helpful customer support response.',
+        icon: 'life-buoy',
+        accent: '#f97316',
+        tags: ['ai', 'support', 'email'],
+        systemPrompt: 'You are a compassionate product support specialist focused on resolving customer issues.',
+        userPrompt: 'Write a {{config.tone}} reply to the following support ticket about {{config.product}}. Include empathy, a concise diagnosis, and next steps.\n\n{{payload}}',
+        extraConfig: [
+            { key: 'tone', label: 'Tone', type: 'text', placeholder: 'friendly and reassuring', defaultValue: 'friendly and reassuring' },
+            { key: 'product', label: 'Product', type: 'text', placeholder: 'FlashSearch', defaultValue: 'FlashSearch' }
+        ]
+    }),
+    createAiChatModule({
+        id: 'ai-social-caption',
+        name: 'AI social caption',
+        description: 'Generate engaging captions for social media posts.',
+        icon: 'share-2',
+        accent: '#ec4899',
+        tags: ['ai', 'marketing', 'social'],
+        systemPrompt: 'You craft concise and catchy social media copy that drives engagement.',
+        userPrompt: 'Write three caption options for {{config.platform}} including a suggested call to action and relevant hashtags.\n\n{{payload}}',
+        extraConfig: [
+            { key: 'platform', label: 'Platform', type: 'text', placeholder: 'Instagram', defaultValue: 'Instagram' }
+        ]
+    }),
+    createAiChatModule({
+        id: 'ai-product-brief',
+        name: 'AI product brief',
+        description: 'Turn loose notes into a structured product brief.',
+        icon: 'file',
+        accent: '#6366f1',
+        tags: ['ai', 'product', 'planning'],
+        systemPrompt: 'You translate raw ideas into actionable product briefs with goals, scope, and metrics.',
+        userPrompt: 'Create a structured product brief including problem statement, goals, success metrics, risks, and rollout plan.\n\n{{payload}}'
+    }),
+    createAiChatModule({
+        id: 'ai-test-plan',
+        name: 'AI test plan',
+        description: 'Outline manual and automated tests for a feature.',
+        icon: 'check-square',
+        accent: '#14b8a6',
+        tags: ['ai', 'qa', 'testing'],
+        systemPrompt: 'You design comprehensive yet pragmatic software test plans.',
+        userPrompt: 'Develop a test plan covering manual scenarios, automation candidates, edge cases, and success criteria for this feature:\n\n{{payload}}'
+    }),
+    createAiChatModule({
+        id: 'ai-job-description',
+        name: 'AI job description',
+        description: 'Draft a compelling job description with requirements.',
+        icon: 'briefcase',
+        accent: '#facc15',
+        tags: ['ai', 'hiring'],
+        systemPrompt: 'You create inclusive, exciting job descriptions tailored to the right candidates.',
+        userPrompt: 'Write a job description for a {{config.seniority}} {{config.role}}. Include responsibilities, qualifications, and a short pitch.\n\n{{payload}}',
+        extraConfig: [
+            { key: 'role', label: 'Role', type: 'text', placeholder: 'Product Manager', defaultValue: 'Product Manager' },
+            { key: 'seniority', label: 'Seniority', type: 'text', placeholder: 'Senior', defaultValue: 'Senior' }
+        ]
+    }),
+    createAiChatModule({
+        id: 'ai-brainstorm-ideas',
+        name: 'AI idea brainstorm',
+        description: 'Produce a list of creative ideas or concepts.',
+        icon: 'sunrise',
+        accent: '#a855f7',
+        tags: ['ai', 'brainstorm'],
+        systemPrompt: 'You brainstorm diverse, creative ideas grounded in the provided context.',
+        userPrompt: 'Generate {{config.count}} creative ideas related to the following request. Provide a short description and potential impact for each.\n\n{{payload}}',
+        extraConfig: [
+            { key: 'count', label: 'Number of ideas', type: 'number', placeholder: '5', defaultValue: 5 }
+        ]
+    }),
+    createAiChatModule({
+        id: 'ai-content-calendar',
+        name: 'AI content calendar',
+        description: 'Plan a multi-week content calendar.',
+        icon: 'layout',
+        accent: '#fb7185',
+        tags: ['ai', 'marketing', 'planning'],
+        systemPrompt: 'You design pragmatic editorial calendars aligned with strategic goals.',
+        userPrompt: 'Create a {{config.duration}} week content calendar for {{config.channel}} focusing on {{config.theme}}. Include publish dates, topics, and formats.\n\n{{payload}}',
+        extraConfig: [
+            { key: 'duration', label: 'Duration (weeks)', type: 'number', placeholder: '4', defaultValue: 4 },
+            { key: 'channel', label: 'Primary channel', type: 'text', placeholder: 'blog', defaultValue: 'blog' },
+            { key: 'theme', label: 'Theme', type: 'text', placeholder: 'product announcements', defaultValue: 'product announcements' }
+        ]
+    }),
+    createHttpModule({
+        id: 'http-graphql',
+        name: 'GraphQL query',
+        description: 'Execute a GraphQL query with variables.',
+        method: 'POST',
+        icon: 'grid',
+        accent: '#6366f1',
+        tags: ['http', 'graphql', 'api'],
+        includeBody: true,
+        bodyPlaceholder: '{\n  "query": "query Example { viewer { login } }",\n  "variables": {}\n}'
+    }),
+    {
+        id: 'http-form-post',
+        category: 'action',
+        name: 'HTTP form POST',
+        description: 'Send form-encoded data to an endpoint.',
+        icon: 'send',
+        accent: '#f59e0b',
+        tags: ['http', 'form', 'api'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            url: 'https://example.com/webhook',
+            formData: 'name=FlashSearch',
+            payloadField: ''
+        },
+        form: [
+            { key: 'url', label: 'Request URL', type: 'text', placeholder: 'https://example.com/webhook' },
+            { key: 'formData', label: 'Form data (key=value per line)', type: 'textarea', rows: 4, placeholder: 'name=FlashSearch' },
+            { key: 'payloadField', label: 'Attach payload under field', type: 'text', placeholder: 'message' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const url = String(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('HTTP form POST skipped: URL is missing.');
+                return [clone];
+            }
+
+            const params = new URLSearchParams();
+            const lines = String(config?.formData || '')
+                .split(/\r?\n/)
+                .map(line => line.trim())
+                .filter(Boolean);
+            lines.forEach(line => {
+                const [key, ...rest] = line.split('=');
+                if (!key) return;
+                params.append(key.trim(), rest.join('=') || '');
+            });
+            const payloadField = String(config?.payloadField || '').trim();
+            if (payloadField) {
+                params.append(payloadField, QuickActionTools.toText(clone.payload));
+            }
+
+            const result = await QuickActionApi.request(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                body: params.toString()
+            });
+
+            if (result.error) {
+                clone.logs.push(`HTTP form POST failed: ${result.error}`);
+                return [clone];
+            }
+
+            clone.vars.lastStatus = result.status ?? clone.vars.lastStatus;
+            clone.payload = result.text || QuickActionTools.toText(clone.payload);
+            clone.logs.push(`HTTP form POST completed with status ${result.status ?? 'n/a'}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'notify-slack-webhook',
+        category: 'action',
+        name: 'Slack webhook notify',
+        description: 'Send a message to a Slack incoming webhook.',
+        icon: 'slack',
+        accent: '#c084fc',
+        tags: ['notification', 'slack'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            webhookUrl: '',
+            message: '{{payload}}',
+            username: 'FlashSearch Bot',
+            channel: '',
+            iconEmoji: ''
+        },
+        form: [
+            { key: 'webhookUrl', label: 'Webhook URL', type: 'text', placeholder: 'https://hooks.slack.com/services/…' },
+            { key: 'message', label: 'Message template', type: 'textarea', rows: 3, placeholder: '{{payload}}' },
+            { key: 'username', label: 'Username', type: 'text', placeholder: 'FlashSearch Bot' },
+            { key: 'channel', label: 'Channel (optional)', type: 'text', placeholder: '#alerts' },
+            { key: 'iconEmoji', label: 'Icon emoji (optional)', type: 'text', placeholder: ':rocket:' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const url = String(config?.webhookUrl || '').trim();
+            if (!url) {
+                clone.logs.push('Slack webhook notify skipped: webhook URL is missing.');
+                return [clone];
+            }
+
+            const message = QuickActionTools.applyTemplate(config?.message ?? '{{payload}}', clone, config).trim();
+            if (!message) {
+                clone.logs.push('Slack webhook notify skipped: message is empty.');
+                return [clone];
+            }
+
+            const payload = { text: message };
+            if (config?.username) payload.username = config.username;
+            if (config?.channel) payload.channel = config.channel;
+            if (config?.iconEmoji) payload.icon_emoji = config.iconEmoji;
+
+            const result = await QuickActionApi.request(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (result.error) {
+                clone.logs.push(`Slack webhook notify failed: ${result.error}`);
+                return [clone];
+            }
+
+            clone.vars.lastStatus = result.status ?? clone.vars.lastStatus;
+            clone.payload = message;
+            clone.logs.push(`Slack webhook notify completed with status ${result.status ?? 'n/a'}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'notify-discord-webhook',
+        category: 'action',
+        name: 'Discord webhook notify',
+        description: 'Post a message to a Discord webhook endpoint.',
+        icon: 'message-circle',
+        accent: '#60a5fa',
+        tags: ['notification', 'discord'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            webhookUrl: '',
+            message: '{{payload}}',
+            username: 'FlashSearch Bot'
+        },
+        form: [
+            { key: 'webhookUrl', label: 'Webhook URL', type: 'text', placeholder: 'https://discord.com/api/webhooks/…' },
+            { key: 'message', label: 'Message template', type: 'textarea', rows: 3, placeholder: '{{payload}}' },
+            { key: 'username', label: 'Username', type: 'text', placeholder: 'FlashSearch Bot' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const url = String(config?.webhookUrl || '').trim();
+            if (!url) {
+                clone.logs.push('Discord webhook notify skipped: webhook URL is missing.');
+                return [clone];
+            }
+
+            const message = QuickActionTools.applyTemplate(config?.message ?? '{{payload}}', clone, config).trim();
+            if (!message) {
+                clone.logs.push('Discord webhook notify skipped: message is empty.');
+                return [clone];
+            }
+
+            const payload = { content: message };
+            if (config?.username) payload.username = config.username;
+
+            const result = await QuickActionApi.request(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (result.error) {
+                clone.logs.push(`Discord webhook notify failed: ${result.error}`);
+                return [clone];
+            }
+
+            clone.vars.lastStatus = result.status ?? clone.vars.lastStatus;
+            clone.payload = message;
+            clone.logs.push(`Discord webhook notify completed with status ${result.status ?? 'n/a'}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-sort-lines',
+        category: 'utility',
+        name: 'Sort lines',
+        description: 'Sort the payload lines alphabetically.',
+        icon: 'filter',
+        accent: '#34d399',
+        tags: ['text', 'sort'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { order: 'asc', caseSensitive: false },
+        form: [
+            {
+                key: 'order',
+                label: 'Order',
+                type: 'select',
+                options: [
+                    { value: 'asc', label: 'Ascending' },
+                    { value: 'desc', label: 'Descending' }
+                ]
+            },
+            { key: 'caseSensitive', label: 'Case sensitive', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const lines = QuickActionTools.toLines(clone.payload);
+            const caseSensitive = Boolean(config?.caseSensitive);
+            const sorted = lines.slice().sort((a, b) => {
+                const left = caseSensitive ? a : a.toLowerCase();
+                const right = caseSensitive ? b : b.toLowerCase();
+                if (left < right) return -1;
+                if (left > right) return 1;
+                return 0;
+            });
+            if ((config?.order || 'asc') === 'desc') {
+                sorted.reverse();
+            }
+            clone.payload = sorted.join('\n');
+            clone.logs.push('Sorted payload lines.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-unique-lines',
+        category: 'utility',
+        name: 'Unique lines',
+        description: 'Remove duplicate lines from the payload.',
+        icon: 'layers',
+        accent: '#38bdf8',
+        tags: ['text', 'dedupe'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { caseSensitive: false },
+        form: [
+            { key: 'caseSensitive', label: 'Case sensitive', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const lines = QuickActionTools.toLines(clone.payload);
+            const seen = new Map();
+            const caseSensitive = Boolean(config?.caseSensitive);
+            lines.forEach(line => {
+                const key = caseSensitive ? line : line.toLowerCase();
+                if (!seen.has(key)) {
+                    seen.set(key, line);
+                }
+            });
+            clone.payload = Array.from(seen.values()).join('\n');
+            clone.logs.push('Removed duplicate lines.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-find-replace',
+        category: 'utility',
+        name: 'Find & replace',
+        description: 'Replace matching text inside the payload.',
+        icon: 'edit-3',
+        accent: '#f97316',
+        tags: ['text', 'replace'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { search: '', replace: '', caseSensitive: false },
+        form: [
+            { key: 'search', label: 'Find', type: 'text', placeholder: 'Search text' },
+            { key: 'replace', label: 'Replace with', type: 'text', placeholder: 'Replacement text' },
+            { key: 'caseSensitive', label: 'Case sensitive', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const search = String(config?.search || '');
+            if (!search) {
+                clone.logs.push('Find & replace skipped: search text is empty.');
+                return [clone];
+            }
+            const source = QuickActionTools.toText(clone.payload);
+            const replaceText = String(config?.replace ?? '');
+            const caseSensitive = Boolean(config?.caseSensitive);
+            const pattern = caseSensitive
+                ? new RegExp(QuickActionTools.escapeRegExp(search), 'g')
+                : new RegExp(QuickActionTools.escapeRegExp(search), 'gi');
+            clone.payload = source.replace(pattern, replaceText);
+            clone.logs.push('Performed find & replace on payload.');
+            return [clone];
+        }
+    },
+    {
+        id: 'payload-join-lines',
+        category: 'utility',
+        name: 'Join lines',
+        description: 'Join an array or multi-line text into a single string.',
+        icon: 'link',
+        accent: '#f472b6',
+        tags: ['text', 'format'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { separator: '\n' },
+        form: [
+            { key: 'separator', label: 'Separator', type: 'text', placeholder: '\\n' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const separator = config?.separator ?? '\n';
+            let source = clone.payload;
+            if (Array.isArray(source)) {
+                source = source.map(item => QuickActionTools.toText(item));
+            } else {
+                source = QuickActionTools.toLines(source);
+            }
+            clone.payload = source.join(separator);
+            clone.logs.push('Joined lines into single payload.');
+            return [clone];
+        }
+    }
+];
+
+QuickActionModuleDefinitions.push(...QuickActionAdditionalModules);
 
 const QuickActionModuleMap = new Map();
 const QuickActionModulesByCategory = { triggers: [], actions: [], utilities: [] };
@@ -932,6 +3695,8 @@ const QuickActionLab = {
         this.iconPickerOpen = false;
         this.windowExpanded = false;
         this.builderSelectWrappers = new Set();
+        this.moduleSearchTerm = '';
+        this.blockExplorerSearchTerm = '';
         this.elements = {
             activeList: Utils.getElement('#quick-action-active-list'),
             catalog: Utils.getElement('#quick-action-catalog'),
@@ -950,6 +3715,8 @@ const QuickActionLab = {
             zoomOut: Utils.getElement('#builder-zoom-out'),
             resetView: Utils.getElement('#builder-reset-view'),
             clearWorkspace: Utils.getElement('#builder-clear-workspace'),
+            moduleSearch: Utils.getElement('#builder-module-search'),
+            openExplorer: Utils.getElement('#builder-open-explorer'),
             zoomIndicator: Utils.getElement('#builder-zoom-indicator'),
             triggerList: Utils.getElement('#builder-trigger-list'),
             actionList: Utils.getElement('#builder-action-list'),
@@ -965,7 +3732,11 @@ const QuickActionLab = {
             iconPreview: Utils.getElement('#builder-icon-preview'),
             iconPickerToggle: Utils.getElement('#builder-icon-picker-toggle'),
             iconPicker: Utils.getElement('#builder-icon-picker'),
-            inspector: document.querySelector('.builder-inspector')
+            inspector: document.querySelector('.builder-inspector'),
+            blockExplorer: Utils.getElement('#builder-block-explorer'),
+            blockExplorerList: Utils.getElement('#block-explorer-list'),
+            blockExplorerSearch: Utils.getElement('#block-explorer-search'),
+            closeExplorer: Utils.getElement('#block-explorer-close')
         };
 
         this.elements.dialog = document.querySelector('#quick-action-builder-modal .builder-dialog');
@@ -1057,6 +3828,23 @@ const QuickActionLab = {
         this.elements.resetView?.addEventListener('click', () => this.resetView());
         this.elements.clearWorkspace?.addEventListener('click', () => this.clearWorkspace());
 
+        this.elements.moduleSearch?.addEventListener('input', Utils.debounce((event) => {
+            this.moduleSearchTerm = String(event.target.value || '').trim().toLowerCase();
+            this.renderModuleList();
+        }, 120));
+
+        this.elements.openExplorer?.addEventListener('click', () => this.openBlockExplorer());
+        this.elements.closeExplorer?.addEventListener('click', () => this.closeBlockExplorer());
+        this.elements.blockExplorer?.addEventListener('click', (event) => {
+            if (event.target === this.elements.blockExplorer || event.target.classList.contains('block-explorer-backdrop')) {
+                this.closeBlockExplorer();
+            }
+        });
+        this.elements.blockExplorerSearch?.addEventListener('input', Utils.debounce((event) => {
+            this.blockExplorerSearchTerm = String(event.target.value || '').trim().toLowerCase();
+            this.renderBlockExplorer();
+        }, 150));
+
         this.elements.modal?.addEventListener('keydown', (event) => {
             const target = event.target;
             const element = target instanceof HTMLElement ? target : null;
@@ -1068,6 +3856,12 @@ const QuickActionLab = {
             );
 
             if (event.key === 'Escape') {
+                if (this.isBlockExplorerOpen()) {
+                    this.closeBlockExplorer();
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
+                }
                 if (isEditableField && typeof element?.blur === 'function') {
                     element.blur();
                 }
@@ -1284,6 +4078,12 @@ const QuickActionLab = {
         this.windowExpanded = false;
         this.builderState = this.createDefaultBuilderState();
         this.builderState.isOpen = true;
+        this.moduleSearchTerm = '';
+        if (this.elements.moduleSearch) {
+            this.elements.moduleSearch.value = '';
+        }
+        this.blockExplorerSearchTerm = '';
+        this.closeBlockExplorer();
 
         if (actionId) {
             const existing = QuickActionStore.getDefinition(actionId);
@@ -1387,6 +4187,7 @@ const QuickActionLab = {
     },
 
     closeBuilder() {
+        this.closeBlockExplorer();
         if (this.elements.modal) {
             this.elements.modal.classList.remove('active');
             this.elements.modal.setAttribute('aria-hidden', 'true');
@@ -1449,6 +4250,9 @@ const QuickActionLab = {
         this.elements.actionLabelInput.value = this.builderState.metadata.label;
         this.elements.actionIconInput.value = this.builderState.metadata.icon;
         this.elements.actionColorInput.value = this.builderState.metadata.accent;
+        if (this.elements.moduleSearch) {
+            this.elements.moduleSearch.value = this.moduleSearchTerm;
+        }
         this.updateIconPreview();
         this.renderModuleList();
         this.renderCanvas();
@@ -1466,7 +4270,15 @@ const QuickActionLab = {
         lists.forEach(({ container, items }) => {
             if (!container) return;
             container.innerHTML = '';
-            items.forEach(module => {
+            const filtered = items.filter(module => this.moduleMatchesSearch(module, this.moduleSearchTerm));
+            if (filtered.length === 0) {
+                container.appendChild(Utils.createElement('li', {
+                    className: 'builder-module-empty',
+                    text: LocalizationRenderer.t('quick_actions_builder_no_results') || 'No blocks found.'
+                }));
+                return;
+            }
+            filtered.forEach(module => {
                 const item = Utils.createElement('li', { className: 'builder-module-item' });
                 item.setAttribute('data-module-id', module.id);
                 const title = Utils.createElement('strong', { text: this.getModuleName(module) });
@@ -1476,6 +4288,103 @@ const QuickActionLab = {
                 item.addEventListener('click', () => this.addNode(module.id));
                 container.appendChild(item);
             });
+        });
+        if (this.isBlockExplorerOpen()) {
+            this.renderBlockExplorer();
+        }
+    },
+
+    moduleMatchesSearch(module, term = '') {
+        if (!term) return true;
+        const lower = term.toLowerCase();
+        const fields = [
+            module?.id,
+            this.getModuleName(module),
+            this.getModuleDescription(module),
+            ...(Array.isArray(module?.tags) ? module.tags : [])
+        ];
+        return fields.some(field => typeof field === 'string' && field.toLowerCase().includes(lower));
+    },
+
+    isBlockExplorerOpen() {
+        return !!this.elements.blockExplorer && this.elements.blockExplorer.classList.contains('active');
+    },
+
+    openBlockExplorer() {
+        if (!this.elements.blockExplorer) return;
+        this.blockExplorerSearchTerm = '';
+        if (this.elements.blockExplorerSearch) {
+            this.elements.blockExplorerSearch.value = '';
+        }
+        this.renderBlockExplorer();
+        this.elements.blockExplorer.classList.add('active');
+        this.elements.blockExplorer.setAttribute('aria-hidden', 'false');
+        requestAnimationFrame(() => {
+            this.elements.blockExplorerSearch?.focus({ preventScroll: true });
+        });
+    },
+
+    closeBlockExplorer() {
+        if (!this.elements.blockExplorer) return;
+        this.elements.blockExplorer.classList.remove('active');
+        this.elements.blockExplorer.setAttribute('aria-hidden', 'true');
+    },
+
+    renderBlockExplorer() {
+        const container = this.elements.blockExplorerList;
+        if (!container) return;
+        container.innerHTML = '';
+        const searchTerm = (this.blockExplorerSearchTerm || '').toLowerCase();
+        const modules = QuickActionModuleDefinitions.slice().sort((a, b) =>
+            this.getModuleName(a).localeCompare(this.getModuleName(b))
+        );
+        const filtered = modules.filter(module => this.moduleMatchesSearch(module, searchTerm));
+
+        if (filtered.length === 0) {
+            container.appendChild(Utils.createElement('div', {
+                className: 'block-explorer-empty',
+                text: LocalizationRenderer.t('quick_actions_builder_no_results') || 'No blocks match your search.'
+            }));
+            return;
+        }
+
+        filtered.forEach(module => {
+            const card = Utils.createElement('article', { className: 'block-explorer-card' });
+
+            const header = Utils.createElement('div', { className: 'block-explorer-card-header' });
+            const iconWrapper = Utils.createElement('div', { className: 'block-explorer-card-icon' });
+            const iconName = module.icon || 'box';
+            if (window.feather?.icons?.[iconName]) {
+                iconWrapper.innerHTML = window.feather.icons[iconName].toSvg();
+            } else {
+                iconWrapper.textContent = '⚡';
+            }
+            header.appendChild(iconWrapper);
+
+            const titleWrap = Utils.createElement('div');
+            titleWrap.appendChild(Utils.createElement('h4', { text: this.getModuleName(module) }));
+            titleWrap.appendChild(Utils.createElement('p', { text: this.getModuleDescription(module) }));
+            header.appendChild(titleWrap);
+            card.appendChild(header);
+
+            const tags = Utils.createElement('div', { className: 'block-explorer-tags' });
+            const categoryTag = Utils.createElement('span', { className: 'block-explorer-tag', text: module.category || 'action' });
+            tags.appendChild(categoryTag);
+            (module.tags || []).slice(0, 4).forEach(tag => {
+                tags.appendChild(Utils.createElement('span', { className: 'block-explorer-tag', text: tag }));
+            });
+            card.appendChild(tags);
+
+            const footer = Utils.createElement('div', { className: 'block-explorer-footer' });
+            const addButton = Utils.createElement('button', { className: 'block-explorer-add', text: LocalizationRenderer.t('addon_builder_add_block') || 'Add block' });
+            addButton.addEventListener('click', () => {
+                this.addNode(module.id);
+                this.closeBlockExplorer();
+            });
+            footer.appendChild(addButton);
+            card.appendChild(footer);
+
+            container.appendChild(card);
         });
     },
 
