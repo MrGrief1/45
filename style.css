@@ -3044,8 +3044,9 @@ input[type="range"]:active::-webkit-slider-thumb {
 .builder-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(var(--base-bg-color-rgb), 0.35);
-  backdrop-filter: blur(22px);
+  background: transparent;
+  backdrop-filter: none;
+  pointer-events: none;
 }
 
 .builder-dialog {
@@ -3066,6 +3067,15 @@ input[type="range"]:active::-webkit-slider-thumb {
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
   overflow: hidden;
   color: rgba(var(--text-color-rgb, 29, 29, 31), 0.9);
+  opacity: 0;
+  transform: scale(0.95) translateY(20px);
+  transition: opacity 0.3s cubic-bezier(0.23, 1, 0.32, 1), 
+              transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.quick-action-builder-modal.active .builder-dialog {
+  opacity: 1;
+  transform: scale(1) translateY(0);
 }
 
 .builder-dialog-header {
@@ -3309,9 +3319,9 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 .block-explorer-dialog {
   position: relative;
-  max-width: 920px;
-  width: min(92vw, 920px);
-  max-height: min(85vh, 760px);
+  max-width: 1000px;
+  width: min(95vw, 1000px);
+  max-height: min(90vh, 800px);
   background: rgba(var(--base-bg-color-rgb), 0.98);
   border-radius: 28px;
   border: 1px solid rgba(var(--text-color-rgb, 29, 29, 31), 0.12);
@@ -3326,7 +3336,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
-  padding: 24px 28px 16px 28px;
+  padding: 20px 24px 12px 24px;
 }
 
 .block-explorer-header h3 {
@@ -3363,7 +3373,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   flex-wrap: wrap;
   gap: 16px;
   align-items: center;
-  padding: 0 28px 20px 28px;
+  padding: 0 24px 16px 24px;
 }
 
 .block-explorer-search {
@@ -3430,7 +3440,7 @@ input[type="range"]:active::-webkit-slider-thumb {
 }
 
 .block-explorer-list {
-  padding: 0 28px 28px 28px;
+  padding: 0 24px 24px 24px;
   overflow-y: auto;
   display: grid;
   gap: 16px;

@@ -6952,6 +6952,26 @@ const PinnedAppsModule = {
     }
 };
 
+// CSS for animations
+const style = document.createElement('style');
+style.textContent = `
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+`;
+document.head.appendChild(style);
+
+// Hide second layer square
+if (QuickActionLab?.elements?.nodeLayer) {
+    QuickActionLab.elements.nodeLayer.style.display = 'none';
+}
+
 // =================================================================================
 // === Менеджер Видов и Анимаций (View Manager) ===
 // =================================================================================
