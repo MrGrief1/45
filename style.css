@@ -3479,7 +3479,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   display: grid;
   gap: 12px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .block-explorer-card::after {
