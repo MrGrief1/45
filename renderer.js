@@ -4622,7 +4622,8 @@ const QuickActionLab = {
         const panX = this.builderState.panX || 0;
         const panY = this.builderState.panY || 0;
         nodeLayer.style.transform = `translate(${panX}px, ${panY}px) scale(${this.builderState.zoom})`;
-        connectionLayer.style.transform = `translate(${panX}px, ${panY}px) scale(${this.builderState.zoom})`;
+        // Connection layer doesn't need translate because it uses getBoundingClientRect which already includes transforms
+        connectionLayer.style.transform = `scale(${this.builderState.zoom})`;
 
         this.builderState.nodes.forEach(node => {
             const moduleDef = QuickActionModuleMap.get(node.moduleId);
@@ -6931,10 +6932,20 @@ const PinnedAppsModule = {
 
         const finishCreating = (commit = true) => {
             const newName = input.value.trim();
+            tempItem.remove();
             if (commit && newName) {
                 ipcRenderer.send('create-folder-with-name', newName);
             }
-            tempItem.remove();
+            // Force multiple resizes after removing temp item to ensure proper layout
+            requestAnimationFrame(() => {
+                ViewManager.resizeWindow();
+                setTimeout(() => {
+                    ViewManager.resizeWindow();
+                    setTimeout(() => {
+                        ViewManager.resizeWindow();
+                    }, 100);
+                }, 50);
+            });
         };
 
         input.addEventListener('blur', () => finishCreating(true));
@@ -7037,8 +7048,16 @@ const PinnedAppsModule = {
         }
         
         container.appendChild(fragment);
+        // Force layout recalculation
+        void container.offsetHeight;
         SearchModule.loadIconsForResults();
-        ViewManager.resizeWindow(); // Recalculate window size after render
+        // Recalculate window size after render with delays to ensure DOM updates
+        requestAnimationFrame(() => {
+            ViewManager.resizeWindow();
+            setTimeout(() => {
+                ViewManager.resizeWindow();
+            }, 100);
+        });
     },
 
     createPinnedItem: function(name, iconName, onClick, path = null, options = {}) {
@@ -7885,6 +7904,11 @@ const ViewManager = {
             const auxPanel = Utils.getElement('#aux-panel');
 
             if (mainLayout) {
+                // Force layout recalculation for pinned apps
+                if (pinnedAppsContainer && pinnedAppsContainer.classList.contains('visible')) {
+                    void pinnedAppsContainer.offsetHeight;
+                }
+                
                 const resultsHeight = (resultsArea && resultsArea.classList.contains('visible')) ? resultsArea.scrollHeight + 10 : 0;
                 const pinnedAppsHeight = (pinnedAppsContainer && pinnedAppsContainer.classList.contains('visible')) ? pinnedAppsContainer.scrollHeight + 10 : 0;
                 const auxPanelHeight = (auxPanel && auxPanel.classList.contains('visible')) ? auxPanel.offsetHeight + 10 : 0;
@@ -8104,7 +8128,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (AuxPanelManager.currentPanel === 'apps-library') {
             AuxPanelManager.loadAppsLibrary();
         }
-        ViewManager.resizeWindow(); // Always resize after settings update
+        // Triple resize with delays to ensure proper layout after all renders complete
+        requestAnimationFrame(() => {
+            ViewManager.resizeWindow();
+            setTimeout(() => {
+                ViewManager.resizeWindow();
+                setTimeout(() => {
+                    ViewManager.resizeWindow();
+                }, 50);
+            }, 50);
+        });
     });
 
     // НОВОЕ: Слушатель смены системной темы
