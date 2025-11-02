@@ -521,7 +521,7 @@ const QuickActionApi = {
     }
 };
 
-function createAiChatModule({ id, name, description, icon, accent, tags = [], systemPrompt, userPrompt, extraConfig = [] }) {
+function createAiChatModule({ id, name, nameKey, description, descriptionKey, icon, accent, tags = [], systemPrompt, userPrompt, extraConfig = [] }) {
     const extraDefaults = {};
     const extraFormFields = extraConfig.map(field => {
         if (field?.key) {
@@ -544,7 +544,9 @@ function createAiChatModule({ id, name, description, icon, accent, tags = [], sy
         id,
         category: 'action',
         name,
+        nameKey,
         description,
+        descriptionKey,
         icon,
         accent,
         tags,
@@ -1090,7 +1092,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-chat-assistant',
         name: 'AI chat assistant',
+        nameKey: 'qa_module_ai_chat_assistant_name',
         description: 'Send a conversation prompt to your AI endpoint.',
+        descriptionKey: 'qa_module_ai_chat_assistant_description',
         icon: 'message-circle',
         accent: '#8b5cf6',
         tags: ['ai', 'chat', 'assistant'],
@@ -1100,7 +1104,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-summary',
         name: 'AI summariser',
+        nameKey: 'qa_module_ai_summary_name',
         description: 'Generate a compact summary of the current payload.',
+        descriptionKey: 'qa_module_ai_summary_description',
         icon: 'file-text',
         accent: '#f97316',
         tags: ['ai', 'summary', 'writing'],
@@ -1110,7 +1116,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-translation',
         name: 'AI translation',
+        nameKey: 'qa_module_ai_translation_name',
         description: 'Translate text into another language using your AI provider.',
+        descriptionKey: 'qa_module_ai_translation_description',
         icon: 'globe',
         accent: '#22c55e',
         tags: ['ai', 'translation'],
@@ -1123,7 +1131,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-keywords',
         name: 'AI keywords extractor',
+        nameKey: 'qa_module_ai_keywords_name',
         description: 'Ask the model to return the most relevant keywords.',
+        descriptionKey: 'qa_module_ai_keywords_description',
         icon: 'tag',
         accent: '#ec4899',
         tags: ['ai', 'keywords', 'seo'],
@@ -1133,7 +1143,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-tone-review',
         name: 'AI tone review',
+        nameKey: 'qa_module_ai_tone_review_name',
         description: 'Analyse the tone and risks of the current message.',
+        descriptionKey: 'qa_module_ai_tone_review_description',
         icon: 'activity',
         accent: '#14b8a6',
         tags: ['ai', 'analysis'],
@@ -1143,7 +1155,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-email-drafter',
         name: 'AI email drafter',
+        nameKey: 'qa_module_ai_email_drafter_name',
         description: 'Turn notes into a polished email with greeting and signature.',
+        descriptionKey: 'qa_module_ai_email_drafter_description',
         icon: 'mail',
         accent: '#facc15',
         tags: ['ai', 'email', 'writing'],
@@ -1156,7 +1170,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-title-generator',
         name: 'AI title generator',
+        nameKey: 'qa_module_ai_title_generator_name',
         description: 'Produce multiple headline ideas for the payload.',
+        descriptionKey: 'qa_module_ai_title_generator_description',
         icon: 'type',
         accent: '#38bdf8',
         tags: ['ai', 'title', 'content'],
@@ -1169,7 +1185,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-tagline-generator',
         name: 'AI tagline generator',
+        nameKey: 'qa_module_ai_tagline_generator_name',
         description: 'Brainstorm marketing taglines for a product or idea.',
+        descriptionKey: 'qa_module_ai_tagline_generator_description',
         icon: 'zap',
         accent: '#fb7185',
         tags: ['ai', 'marketing'],
@@ -1182,7 +1200,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-code-review',
         name: 'AI code review',
+        nameKey: 'qa_module_ai_code_review_name',
         description: 'Let the AI inspect code and highlight improvements.',
+        descriptionKey: 'qa_module_ai_code_review_description',
         icon: 'code',
         accent: '#6366f1',
         tags: ['ai', 'code', 'review'],
@@ -1195,7 +1215,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-bug-explainer',
         name: 'AI bug explainer',
+        nameKey: 'qa_module_ai_bug_explainer_name',
         description: 'Explain a technical issue in plain language and outline next steps.',
+        descriptionKey: 'qa_module_ai_bug_explainer_description',
         icon: 'help-circle',
         accent: '#f472b6',
         tags: ['ai', 'debug'],
@@ -1205,7 +1227,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-sql-builder',
         name: 'AI SQL builder',
+        nameKey: 'qa_module_ai_sql_builder_name',
         description: 'Convert natural language requests into SQL queries.',
+        descriptionKey: 'qa_module_ai_sql_builder_description',
         icon: 'database',
         accent: '#0ea5e9',
         tags: ['ai', 'sql'],
@@ -1218,7 +1242,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-release-notes',
         name: 'AI release notes',
+        nameKey: 'qa_module_ai_release_notes_name',
         description: 'Transform raw changelog entries into friendly release notes.',
+        descriptionKey: 'qa_module_ai_release_notes_description',
         icon: 'clipboard',
         accent: '#34d399',
         tags: ['ai', 'product'],
@@ -1231,7 +1257,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-brainstorm',
         name: 'AI brainstorm',
+        nameKey: 'qa_module_ai_brainstorm_name',
         description: 'Generate creative ideas or next steps from the payload.',
+        descriptionKey: 'qa_module_ai_brainstorm_description',
         icon: 'feather',
         accent: '#a855f7',
         tags: ['ai', 'ideas'],
@@ -1242,7 +1270,9 @@ const QuickActionAdditionalModules = [
         id: 'ai-embedding',
         category: 'action',
         name: 'Generate embeddings',
+        nameKey: 'qa_module_ai_generate_embeddings_name',
         description: 'Create vector embeddings from text and store them for later blocks.',
+        descriptionKey: 'qa_module_ai_generate_embeddings_description',
         icon: 'layers',
         accent: '#10b981',
         tags: ['ai', 'embedding'],
@@ -1322,7 +1352,9 @@ const QuickActionAdditionalModules = [
         id: 'ai-moderation',
         category: 'action',
         name: 'AI moderation check',
+        nameKey: 'qa_module_ai_moderation_name',
         description: 'Send text to an AI moderation endpoint and record the result.',
+        descriptionKey: 'qa_module_ai_moderation_description',
         icon: 'shield',
         accent: '#ef4444',
         tags: ['ai', 'moderation'],
@@ -2896,7 +2928,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-meeting-agenda',
         name: 'AI meeting agenda',
+        nameKey: 'qa_module_ai_meeting_agenda_name',
         description: 'Turn talking points into a time-boxed meeting agenda.',
+        descriptionKey: 'qa_module_ai_meeting_agenda_description',
         icon: 'calendar',
         accent: '#0ea5e9',
         tags: ['ai', 'meeting', 'planning'],
@@ -2910,7 +2944,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-meeting-recap',
         name: 'AI meeting recap',
+        nameKey: 'qa_module_ai_meeting_recap_name',
         description: 'Summarise meeting notes with decisions and owners.',
+        descriptionKey: 'qa_module_ai_meeting_recap_description',
         icon: 'check-circle',
         accent: '#10b981',
         tags: ['ai', 'meeting', 'summary'],
@@ -2920,7 +2956,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-support-reply',
         name: 'AI support reply',
+        nameKey: 'qa_module_ai_support_reply_name',
         description: 'Draft a helpful customer support response.',
+        descriptionKey: 'qa_module_ai_support_reply_description',
         icon: 'life-buoy',
         accent: '#f97316',
         tags: ['ai', 'support', 'email'],
@@ -2934,7 +2972,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-social-caption',
         name: 'AI social caption',
+        nameKey: 'qa_module_ai_social_caption_name',
         description: 'Generate engaging captions for social media posts.',
+        descriptionKey: 'qa_module_ai_social_caption_description',
         icon: 'share-2',
         accent: '#ec4899',
         tags: ['ai', 'marketing', 'social'],
@@ -2947,7 +2987,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-product-brief',
         name: 'AI product brief',
+        nameKey: 'qa_module_ai_product_brief_name',
         description: 'Turn loose notes into a structured product brief.',
+        descriptionKey: 'qa_module_ai_product_brief_description',
         icon: 'file',
         accent: '#6366f1',
         tags: ['ai', 'product', 'planning'],
@@ -2957,7 +2999,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-test-plan',
         name: 'AI test plan',
+        nameKey: 'qa_module_ai_test_plan_name',
         description: 'Outline manual and automated tests for a feature.',
+        descriptionKey: 'qa_module_ai_test_plan_description',
         icon: 'check-square',
         accent: '#14b8a6',
         tags: ['ai', 'qa', 'testing'],
@@ -2967,7 +3011,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-job-description',
         name: 'AI job description',
+        nameKey: 'qa_module_ai_job_description_name',
         description: 'Draft a compelling job description with requirements.',
+        descriptionKey: 'qa_module_ai_job_description_description',
         icon: 'briefcase',
         accent: '#facc15',
         tags: ['ai', 'hiring'],
@@ -2981,7 +3027,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-brainstorm-ideas',
         name: 'AI idea brainstorm',
+        nameKey: 'qa_module_ai_idea_brainstorm_name',
         description: 'Produce a list of creative ideas or concepts.',
+        descriptionKey: 'qa_module_ai_idea_brainstorm_description',
         icon: 'sunrise',
         accent: '#a855f7',
         tags: ['ai', 'brainstorm'],
@@ -2994,7 +3042,9 @@ const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-content-calendar',
         name: 'AI content calendar',
+        nameKey: 'qa_module_ai_content_calendar_name',
         description: 'Plan a multi-week content calendar.',
+        descriptionKey: 'qa_module_ai_content_calendar_description',
         icon: 'layout',
         accent: '#fb7185',
         tags: ['ai', 'marketing', 'planning'],
