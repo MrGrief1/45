@@ -1,5 +1,104 @@
 // renderer.js
-const { ipcRenderer, shell } = require('electron');
+const { ipcRenderer, shell, clipboard } = require('electron');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const crypto = require('crypto');
+
+const ModuleUtils = {
+    ensureText(value) {
+        if (typeof value === 'string') return value;
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'object') {
+            try {
+                return JSON.stringify(value, null, 2);
+            } catch (error) {
+                return String(value);
+            }
+        }
+        return String(value);
+    },
+    toLines(value) {
+        const text = ModuleUtils.ensureText(value);
+        return text.split(/\r?\n/);
+    },
+    fromLines(lines, delimiter = '\n') {
+        if (!Array.isArray(lines)) return '';
+        return lines.join(delimiter);
+    },
+    safeJsonParse(value) {
+        if (typeof value === 'object') return value;
+        const text = ModuleUtils.ensureText(value).trim();
+        if (!text) return null;
+        try {
+            return JSON.parse(text);
+        } catch (error) {
+            return null;
+        }
+    },
+    formatJson(value, pretty = true) {
+        try {
+            if (typeof value === 'string') {
+                const parsed = JSON.parse(value);
+                return pretty ? JSON.stringify(parsed, null, 2) : JSON.stringify(parsed);
+            }
+            return pretty ? JSON.stringify(value, null, 2) : JSON.stringify(value);
+        } catch (error) {
+            return ModuleUtils.ensureText(value);
+        }
+    },
+    slugify(value) {
+        return ModuleUtils.ensureText(value)
+            .trim()
+            .toLowerCase()
+            .replace(/[^\p{L}\p{N}\s-]/gu, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+    },
+    hash(value, algorithm = 'sha256') {
+        try {
+            return crypto.createHash(algorithm).update(ModuleUtils.ensureText(value)).digest('hex');
+        } catch (error) {
+            return '';
+        }
+    },
+
+    renderTemplate(template, context = {}) {
+        const base = ModuleUtils.ensureText(template);
+        if (!base) return '';
+        const payload = context.payload !== undefined ? context.payload : '';
+        const vars = context.vars && typeof context.vars === 'object' ? context.vars : {};
+        const extra = context.extra && typeof context.extra === 'object' ? context.extra : {};
+        return base.replace(/\{\{\s*([^}\s]+)\s*\}\}/g, (match, token) => {
+            if (!token) return match;
+            if (token === 'payload') {
+                return ModuleUtils.ensureText(payload);
+            }
+            if (token.startsWith('var.')) {
+                const key = token.slice(4);
+                if (key && Object.prototype.hasOwnProperty.call(vars, key)) {
+                    return ModuleUtils.ensureText(vars[key]);
+                }
+                return '';
+            }
+            if (Object.prototype.hasOwnProperty.call(extra, token)) {
+                return ModuleUtils.ensureText(extra[token]);
+            }
+            return match;
+        });
+    }
+};
+
+async function performHttpRequest(url, options = {}) {
+    const response = await fetch(url, options);
+    const contentType = response.headers?.get?.('content-type') || '';
+    const text = await response.text();
+    let json = null;
+    if (contentType.includes('application/json')) {
+        json = ModuleUtils.safeJsonParse(text);
+    }
+    return { response, text, json, contentType };
+}
 
 // =================================================================================
 // === Глобальное Состояние и Утилиты ===
@@ -563,6 +662,3065 @@ const QuickActionModuleDefinitions = [
             clone.logs.push(`Stored variable "${key}"`);
             return [clone];
         }
+
+const fsPromises = fs.promises;
+
+function parseHeaders(headersText = '') {
+    if (!headersText) return {};
+    const direct = ModuleUtils.safeJsonParse(headersText);
+    if (direct && typeof direct === 'object' && !Array.isArray(direct)) {
+        return Object.keys(direct).reduce((acc, key) => {
+            acc[key] = String(direct[key]);
+            return acc;
+        }, {});
+    }
+    const result = {};
+    ModuleUtils.ensureText(headersText)
+        .split(/
+?
+/)
+        .map(line => line.trim())
+        .filter(Boolean)
+        .forEach(line => {
+            const separatorIndex = line.indexOf(':');
+            if (separatorIndex === -1) return;
+            const key = line.slice(0, separatorIndex).trim();
+            const value = line.slice(separatorIndex + 1).trim();
+            if (key) result[key] = value;
+        });
+    return result;
+}
+
+function registerTriggerModules(descriptors = []) {
+    descriptors.forEach(descriptor => {
+        QuickActionModuleDefinitions.push({
+            id: descriptor.id,
+            category: 'trigger',
+            name: descriptor.name,
+            description: descriptor.description,
+            icon: descriptor.icon || 'zap',
+            accent: descriptor.accent || '#38bdf8',
+            inputs: [],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: descriptor.defaultConfig || {},
+            form: descriptor.form || [],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                await descriptor.handler(clone, config || {});
+                return [clone];
+            }
+        });
+    });
+}
+
+function registerActionModules(descriptors = []) {
+    descriptors.forEach(descriptor => {
+        QuickActionModuleDefinitions.push({
+            id: descriptor.id,
+            category: 'action',
+            name: descriptor.name,
+            description: descriptor.description,
+            icon: descriptor.icon || 'zap',
+            accent: descriptor.accent || '#38bdf8',
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: descriptor.defaultConfig || {},
+            form: descriptor.form || [],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                await descriptor.handler(clone, config || {});
+                return [clone];
+            }
+        });
+    });
+}
+
+function registerUtilityModules(descriptors = [], options = {}) {
+    descriptors.forEach(descriptor => {
+        QuickActionModuleDefinitions.push({
+            id: descriptor.id,
+            category: 'utility',
+            name: descriptor.name,
+            description: descriptor.description,
+            icon: descriptor.icon || options.icon || 'type',
+            accent: descriptor.accent || options.accent || '#6366f1',
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: descriptor.defaultConfig || {},
+            form: descriptor.form || [],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                await descriptor.handler(clone, config || {});
+                return [clone];
+            }
+        });
+    });
+}
+
+
+
+function flattenObject(input, prefix = '', result = {}) {
+    if (Array.isArray(input)) {
+        input.forEach((value, index) => {
+            flattenObject(value, prefix ? `${prefix}[${index}]` : `[${index}]`, result);
+        });
+        return result;
+    }
+    if (input && typeof input === 'object') {
+        Object.keys(input).forEach((key) => {
+            const value = input[key];
+            const nextPrefix = prefix ? `${prefix}.${key}` : key;
+            flattenObject(value, nextPrefix, result);
+        });
+        return result;
+    }
+    result[prefix] = input;
+    return result;
+}
+
+function toTitleCase(value = '') {
+    return ModuleUtils.ensureText(value).toLowerCase().replace(/\b\w+/g, (word) => word.charAt(0).toUpperCase() + word.slice(1));
+}
+
+function toSentenceCase(value = '') {
+    const text = ModuleUtils.ensureText(value).toLowerCase();
+    return text.replace(/(^|[.!?]\s+)([a-zа-яё])/giu, (match, boundary, char) => boundary + char.toUpperCase());
+}
+
+function shuffleArray(array = []) {
+    const clone = Array.from(array);
+    for (let i = clone.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [clone[i], clone[j]] = [clone[j], clone[i]];
+    }
+    return clone;
+}
+
+function wrapTextToWidth(text = '', width = 80) {
+    const sanitizedWidth = Math.max(10, Math.floor(width));
+    const words = ModuleUtils.ensureText(text).split(/\s+/).filter(Boolean);
+    const lines = [];
+    let current = '';
+    words.forEach(word => {
+        if (!current) {
+            current = word;
+            return;
+        }
+        if ((current + ' ' + word).length <= sanitizedWidth) {
+            current += ' ' + word;
+        } else {
+            lines.push(current);
+            current = word;
+        }
+    });
+    if (current) {
+        lines.push(current);
+    }
+    return lines.join('\\n');
+}
+
+function stripHtmlTags(text = '') {
+    return ModuleUtils.ensureText(text).replace(/<[^>]*>/g, '');
+}
+
+function parseCsv(text = '') {
+    const lines = ModuleUtils.toLines(text).filter(line => line.trim() !== '');
+    if (!lines.length) return { headers: [], rows: [] };
+    const headers = parseCsvLine(lines[0]);
+    const rows = lines.slice(1).map(parseCsvLine);
+    return { headers, rows };
+}
+
+function parseCsvLine(line = '') {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i += 1) {
+        const char = line[i];
+        if (char === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+                current += '"';
+                i += 1;
+            } else {
+                inQuotes = !inQuotes;
+            }
+        } else if (char === ',' && !inQuotes) {
+            result.push(current);
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    result.push(current);
+    return result.map(value => value.trim());
+}
+
+function csvStringify(headers = [], rows = []) {
+    const escape = (value) => {
+        const text = ModuleUtils.ensureText(value);
+        if (text.includes('"') || text.includes(',') || /\s/.test(text)) {
+            return '"' + text.replace(/"/g, '""') + '"';
+        }
+        return text;
+    };
+    const lines = [headers.map(escape).join(',')];
+    rows.forEach(row => {
+        const values = headers.map((header, index) => escape(row[index] !== undefined ? row[index] : ''));
+        lines.push(values.join(','));
+    });
+    return lines.join('\\n');
+}
+
+
+
+const TriggerModuleDescriptors = [
+    {
+        id: 'prompt-trigger',
+        name: 'Ask for input',
+        description: 'Prompt the user for a value before the workflow starts.',
+        icon: 'help-circle',
+        accent: '#f97316',
+        defaultConfig: { message: 'Provide a value for the workflow' },
+        form: [
+            { key: 'message', label: 'Prompt message', type: 'text', placeholder: 'What should we do?' }
+        ],
+        handler: async (clone, config) => {
+            const question = config?.message || 'Provide a value for the workflow';
+            const response = window.prompt(question, ModuleUtils.ensureText(clone.payload));
+            clone.payload = response ?? '';
+            clone.logs.push('Collected input from prompt.');
+        }
+    },
+    {
+        id: 'clipboard-trigger',
+        name: 'Use clipboard content',
+        description: 'Start the workflow with the current clipboard text.',
+        icon: 'clipboard',
+        accent: '#22c55e',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            clone.payload = clipboard.readText();
+            clone.logs.push('Loaded payload from clipboard.');
+        }
+    },
+    {
+        id: 'static-payload-trigger',
+        name: 'Static payload',
+        description: 'Begin the workflow with a predefined payload value.',
+        icon: 'file-text',
+        accent: '#a855f7',
+        defaultConfig: { text: 'Sample payload', format: 'text' },
+        form: [
+            { key: 'text', label: 'Payload value', type: 'textarea', rows: 4, placeholder: 'Initial payload' },
+            { key: 'format', label: 'Format', type: 'select', options: [
+                { value: 'text', label: 'Plain text' },
+                { value: 'json', label: 'JSON' }
+            ] }
+        ],
+        handler: async (clone, config) => {
+            if (config?.format === 'json') {
+                const parsed = ModuleUtils.safeJsonParse(config?.text);
+                clone.payload = parsed !== null ? parsed : config?.text;
+            } else {
+                clone.payload = config?.text ?? '';
+            }
+            clone.logs.push('Loaded static payload.');
+        }
+    },
+    {
+        id: 'url-fetch-trigger',
+        name: 'Fetch URL (trigger)',
+        description: 'Fetch data from a URL before running the workflow.',
+        icon: 'download',
+        accent: '#38bdf8',
+        defaultConfig: { url: 'https://api.example.com/data', format: 'text' },
+        form: [
+            { key: 'url', label: 'Request URL', type: 'text', placeholder: 'https://api.example.com/data' },
+            { key: 'format', label: 'Store as', type: 'select', options: [
+                { value: 'text', label: 'Text' },
+                { value: 'json', label: 'Pretty JSON' }
+            ] }
+        ],
+        handler: async (clone, config) => {
+            const url = String(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('URL trigger skipped: missing URL.');
+                return;
+            }
+            try {
+                const result = await performHttpRequest(url, { method: 'GET' });
+                clone.logs.push(`Fetched trigger data from ${url} → ${result.response.status}`);
+                if (config?.format === 'json' && result.json !== null) {
+                    clone.payload = ModuleUtils.formatJson(result.json);
+                    clone.vars.lastResponse = result.json;
+                } else {
+                    clone.payload = result.text;
+                }
+            } catch (error) {
+                clone.logs.push(`URL trigger failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'file-read-trigger',
+        name: 'Read file (trigger)',
+        description: 'Load a file from disk and use its contents as the payload.',
+        icon: 'file',
+        accent: '#f97316',
+        defaultConfig: { filePath: path.join(os.homedir(), 'Documents', 'note.txt'), encoding: 'utf8' },
+        form: [
+            { key: 'filePath', label: 'File path', type: 'text', placeholder: 'C:/Documents/note.txt' },
+            { key: 'encoding', label: 'Encoding', type: 'text', placeholder: 'utf8' }
+        ],
+        handler: async (clone, config) => {
+            const filePath = String(config?.filePath || '').trim();
+            if (!filePath) {
+                clone.logs.push('File trigger skipped: missing path.');
+                return;
+            }
+            try {
+                const encoding = config?.encoding || 'utf8';
+                const data = await fsPromises.readFile(filePath, encoding);
+                clone.payload = data;
+                clone.logs.push(`Loaded payload from ${filePath}.`);
+            } catch (error) {
+                clone.logs.push(`File trigger failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'random-string-trigger',
+        name: 'Random string',
+        description: 'Generate a random string before running the workflow.',
+        icon: 'shuffle',
+        accent: '#ec4899',
+        defaultConfig: { length: 16 },
+        form: [
+            { key: 'length', label: 'Length', type: 'number', min: 4 }
+        ],
+        handler: async (clone, config) => {
+            const length = Math.max(4, parseInt(config?.length, 10) || 16);
+            const bytes = crypto.randomBytes(Math.ceil(length / 2));
+            clone.payload = bytes.toString('hex').slice(0, length);
+            clone.logs.push('Generated random string payload.');
+        }
+    },
+    {
+        id: 'ai-chat-trigger',
+        name: 'AI chat (trigger)',
+        description: 'Ask an AI model for text before the workflow starts.',
+        icon: 'message-circle',
+        accent: '#6366f1',
+        defaultConfig: {
+            apiKey: '',
+            model: 'gpt-3.5-turbo',
+            systemPrompt: 'You are a helpful assistant.',
+            userPrompt: 'Summarise: {{payload}}'
+        },
+        form: [
+            { key: 'apiKey', label: 'OpenAI API key', type: 'text', placeholder: 'sk-...' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'gpt-3.5-turbo' },
+            { key: 'systemPrompt', label: 'System prompt', type: 'textarea', rows: 2, placeholder: 'You are a helpful assistant.' },
+            { key: 'userPrompt', label: 'User prompt', type: 'textarea', rows: 3, placeholder: 'Summarise: {{payload}}' }
+        ],
+        handler: async (clone, config) => {
+            const apiKey = String(config?.apiKey || '').trim();
+            if (!apiKey) {
+                clone.logs.push('AI trigger skipped: missing API key.');
+                return;
+            }
+            const userPrompt = ModuleUtils.ensureText(config?.userPrompt || 'Respond to the payload').replace('{{payload}}', ModuleUtils.ensureText(clone.payload));
+            try {
+                const body = {
+                    model: config?.model || 'gpt-3.5-turbo',
+                    messages: [
+                        { role: 'system', content: config?.systemPrompt || 'You are a helpful assistant.' },
+                        { role: 'user', content: userPrompt }
+                    ]
+                };
+                const result = await performHttpRequest('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify(body)
+                });
+                const reply = result.json?.choices?.[0]?.message?.content || result.text;
+                clone.payload = reply || '';
+                clone.vars.lastAiResponse = result.json || result.text;
+                clone.logs.push('Fetched AI response for trigger payload.');
+            } catch (error) {
+                clone.logs.push(`AI trigger failed: ${error.message}`);
+            }
+        }
+    }
+];
+
+registerTriggerModules(TriggerModuleDescriptors);
+
+
+const ActionModuleDescriptors = [
+    {
+        id: 'open-external-application',
+        name: 'Open external application',
+        description: 'Launch any application or script with optional arguments.',
+        icon: 'play',
+        accent: '#f97316',
+        defaultConfig: { command: 'notepad.exe', arguments: '' },
+        form: [
+            { key: 'command', label: 'Executable path', type: 'text', placeholder: 'C:/Windows/System32/notepad.exe' },
+            { key: 'arguments', label: 'Arguments', type: 'text', placeholder: '"C:/Documents/note.txt"' }
+        ],
+        handler: async (clone, config) => {
+            const command = String(config?.command || '').trim();
+            if (!command) {
+                clone.logs.push('Open application skipped: missing command.');
+                return;
+            }
+            const args = String(config?.arguments || '').trim();
+            const fullCommand = args ? `${command} ${args}` : command;
+            ipcRenderer.invoke('quick-action-run-command', fullCommand).catch(() => {});
+            clone.logs.push(`Launched command: ${fullCommand}`);
+        }
+    },
+    {
+        id: 'open-folder-path',
+        name: 'Open folder',
+        description: 'Reveal a folder in your file manager.',
+        icon: 'folder',
+        accent: '#22c55e',
+        defaultConfig: { folderPath: os.homedir() },
+        form: [
+            { key: 'folderPath', label: 'Folder path', type: 'text', placeholder: 'C:/Users/me/Documents' }
+        ],
+        handler: async (clone, config) => {
+            const folder = String(config?.folderPath || '').trim();
+            if (!folder) {
+                clone.logs.push('Open folder skipped: missing path.');
+                return;
+            }
+            shell.openPath(folder);
+            clone.logs.push(`Opened folder: ${folder}`);
+        }
+    },
+    {
+        id: 'open-web-search',
+        name: 'Search the web',
+        description: 'Open a web search using the current payload as the query.',
+        icon: 'search',
+        accent: '#0ea5e9',
+        defaultConfig: { template: 'https://www.google.com/search?q={{payload}}' },
+        form: [
+            { key: 'template', label: 'Search URL', type: 'text', placeholder: 'https://www.google.com/search?q={{payload}}' }
+        ],
+        handler: async (clone, config) => {
+            const template = config?.template || 'https://www.google.com/search?q={{payload}}';
+            const query = encodeURIComponent(ModuleUtils.ensureText(clone.payload));
+            const url = template.replace('{{payload}}', query);
+            shell.openExternal(url);
+            clone.logs.push(`Opened search URL: ${url}`);
+        }
+    },
+    {
+        id: 'show-alert-message',
+        name: 'Show alert',
+        description: 'Display an alert dialog with custom text.',
+        icon: 'alert-circle',
+        accent: '#facc15',
+        defaultConfig: { message: 'Workflow reached this step.' },
+        form: [
+            { key: 'message', label: 'Message', type: 'textarea', rows: 3, placeholder: 'Workflow reached this step.' }
+        ],
+        handler: async (clone, config) => {
+            window.alert(config?.message || 'Workflow reached this step.');
+            clone.logs.push('Displayed alert to user.');
+        }
+    },
+    {
+        id: 'confirm-before-continue',
+        name: 'Confirm before continuing',
+        description: 'Ask the user for confirmation and record the answer.',
+        icon: 'check-square',
+        accent: '#14b8a6',
+        defaultConfig: { question: 'Continue with the workflow?' },
+        form: [
+            { key: 'question', label: 'Confirmation question', type: 'text', placeholder: 'Continue with the workflow?' }
+        ],
+        handler: async (clone, config) => {
+            const confirmed = window.confirm(config?.question || 'Continue with the workflow?');
+            clone.logs.push(confirmed ? 'User confirmed to continue.' : 'User cancelled but workflow continues.');
+            clone.vars.lastConfirmation = confirmed;
+        }
+    },
+    {
+        id: 'prompt-for-value',
+        name: 'Prompt for value',
+        description: 'Ask the user for text mid-workflow and store it as the payload.',
+        icon: 'edit-3',
+        accent: '#8b5cf6',
+        defaultConfig: { message: 'Enter a value:' },
+        form: [
+            { key: 'message', label: 'Prompt message', type: 'text', placeholder: 'Enter a value:' }
+        ],
+        handler: async (clone, config) => {
+            const response = window.prompt(config?.message || 'Enter a value:', ModuleUtils.ensureText(clone.payload));
+            if (response !== null) {
+                clone.payload = response;
+            }
+            clone.logs.push('Prompted for value during workflow.');
+        }
+    },
+    {
+        id: 'copy-payload-as-json',
+        name: 'Copy as JSON',
+        description: 'Copy the payload to the clipboard as JSON text.',
+        icon: 'copy',
+        accent: '#22c55e',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            ipcRenderer.send('copy-to-clipboard', ModuleUtils.formatJson(clone.payload));
+            clone.logs.push('Copied payload as JSON.');
+        }
+    },
+    {
+        id: 'append-payload-to-file',
+        name: 'Append to file',
+        description: 'Append the payload text to a file, creating it if necessary.',
+        icon: 'file-plus',
+        accent: '#f97316',
+        defaultConfig: { filePath: path.join(os.homedir(), 'Documents', 'flashsearch-log.txt') },
+        form: [
+            { key: 'filePath', label: 'File path', type: 'text', placeholder: 'C:/Documents/notes.txt' }
+        ],
+        handler: async (clone, config) => {
+            const filePath = String(config?.filePath || '').trim();
+            if (!filePath) {
+                clone.logs.push('Append to file skipped: missing path.');
+                return;
+            }
+            try {
+                await fsPromises.mkdir(path.dirname(filePath), { recursive: true });
+                await fsPromises.appendFile(filePath, ModuleUtils.ensureText(clone.payload) + os.EOL, 'utf8');
+                clone.logs.push(`Appended payload to ${filePath}.`);
+            } catch (error) {
+                clone.logs.push(`Append to file failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'write-payload-to-file',
+        name: 'Write file',
+        description: 'Overwrite a file with the current payload value.',
+        icon: 'save',
+        accent: '#38bdf8',
+        defaultConfig: { filePath: path.join(os.homedir(), 'Documents', 'flashsearch-output.txt') },
+        form: [
+            { key: 'filePath', label: 'File path', type: 'text', placeholder: 'C:/Documents/output.txt' }
+        ],
+        handler: async (clone, config) => {
+            const filePath = String(config?.filePath || '').trim();
+            if (!filePath) {
+                clone.logs.push('Write file skipped: missing path.');
+                return;
+            }
+            try {
+                await fsPromises.mkdir(path.dirname(filePath), { recursive: true });
+                await fsPromises.writeFile(filePath, ModuleUtils.ensureText(clone.payload), 'utf8');
+                clone.logs.push(`Wrote payload to ${filePath}.`);
+            } catch (error) {
+                clone.logs.push(`Write file failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'list-directory-contents',
+        name: 'List directory',
+        description: 'List files in a directory and store them as the payload.',
+        icon: 'list',
+        accent: '#14b8a6',
+        defaultConfig: { directoryPath: os.homedir() },
+        form: [
+            { key: 'directoryPath', label: 'Directory path', type: 'text', placeholder: 'C:/Users/me/Documents' }
+        ],
+        handler: async (clone, config) => {
+            const dir = String(config?.directoryPath || '').trim();
+            if (!dir) {
+                clone.logs.push('List directory skipped: missing path.');
+                return;
+            }
+            try {
+                const items = await fsPromises.readdir(dir);
+                clone.payload = items.join('\n');
+                clone.logs.push(`Listed ${items.length} items from ${dir}.`);
+            } catch (error) {
+                clone.logs.push(`List directory failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'create-folder',
+        name: 'Create folder',
+        description: 'Create a folder if it does not exist.',
+        icon: 'folder-plus',
+        accent: '#facc15',
+        defaultConfig: { directoryPath: path.join(os.homedir(), 'Documents', 'New Folder') },
+        form: [
+            { key: 'directoryPath', label: 'Folder path', type: 'text', placeholder: 'C:/Projects/New Folder' }
+        ],
+        handler: async (clone, config) => {
+            const dir = String(config?.directoryPath || '').trim();
+            if (!dir) {
+                clone.logs.push('Create folder skipped: missing path.');
+                return;
+            }
+            try {
+                await fsPromises.mkdir(dir, { recursive: true });
+                clone.logs.push(`Ensured folder exists: ${dir}`);
+            } catch (error) {
+                clone.logs.push(`Create folder failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'send-email-mailto',
+        name: 'Compose email',
+        description: 'Open the default mail client with a pre-filled message.',
+        icon: 'send',
+        accent: '#ef4444',
+        defaultConfig: { to: '', subject: 'FlashSearch quick action', bodyTemplate: '{{payload}}' },
+        form: [
+            { key: 'to', label: 'Recipient', type: 'text', placeholder: 'team@example.com' },
+            { key: 'subject', label: 'Subject', type: 'text', placeholder: 'FlashSearch quick action' },
+            { key: 'bodyTemplate', label: 'Body template', type: 'textarea', rows: 3, placeholder: 'Message: {{payload}}' }
+        ],
+        handler: async (clone, config) => {
+            const to = encodeURIComponent(config?.to || '');
+            const subject = encodeURIComponent(config?.subject || 'FlashSearch quick action');
+            const body = encodeURIComponent((config?.bodyTemplate || '{{payload}}').replace('{{payload}}', ModuleUtils.ensureText(clone.payload)));
+            const url = `mailto:${to}?subject=${subject}&body=${body}`;
+            shell.openExternal(url);
+            clone.logs.push('Opened email client via mailto link.');
+        }
+    },
+    {
+        id: 'copy-payload-as-text',
+        name: 'Copy as text',
+        description: 'Copy the payload as plain text to the clipboard.',
+        icon: 'clipboard',
+        accent: '#4ade80',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            ipcRenderer.send('copy-to-clipboard', ModuleUtils.ensureText(clone.payload));
+            clone.logs.push('Copied payload as plain text.');
+        }
+    },
+    {
+        id: 'copy-payload-as-html',
+        name: 'Copy as HTML',
+        description: 'Wrap the payload in basic HTML and copy it to the clipboard.',
+        icon: 'code',
+        accent: '#3b82f6',
+        defaultConfig: { tag: 'p' },
+        form: [
+            { key: 'tag', label: 'HTML tag', type: 'text', placeholder: 'p' }
+        ],
+        handler: async (clone, config) => {
+            const tag = (config?.tag || 'p').replace(/[^a-z0-9-]/gi, '') || 'p';
+            const html = `<${tag}>${ModuleUtils.ensureText(clone.payload)}</${tag}>`;
+            ipcRenderer.send('copy-to-clipboard', html);
+            clone.logs.push(`Copied payload as HTML <${tag}>.`);
+        }
+    },
+    {
+        id: 'copy-payload-as-markdown',
+        name: 'Copy as Markdown',
+        description: 'Copy the payload wrapped in a Markdown code block.',
+        icon: 'clipboard',
+        accent: '#6366f1',
+        defaultConfig: { language: 'text' },
+        form: [
+            { key: 'language', label: 'Code language', type: 'text', placeholder: 'text' }
+        ],
+        handler: async (clone, config) => {
+            const lang = (config?.language || 'text').trim();
+            const markdown = `\`\`\`${lang}
+${ModuleUtils.ensureText(clone.payload)}
+\`\`\``;
+            ipcRenderer.send('copy-to-clipboard', markdown);
+            clone.logs.push('Copied payload as Markdown.');
+        }
+    }
+];
+
+registerActionModules(ActionModuleDescriptors);
+
+
+const RawHttpModuleDescriptors = [
+    { id: 'http-get', name: 'HTTP GET request', description: 'Send a GET request and store the response.', method: 'GET', allowBody: false, allowCustomMethod: false },
+    { id: 'http-post', name: 'HTTP POST request', description: 'Send a POST request with an optional body.', method: 'POST', allowBody: true, allowCustomMethod: false },
+    { id: 'http-put', name: 'HTTP PUT request', description: 'Send a PUT request with an optional body.', method: 'PUT', allowBody: true, allowCustomMethod: false },
+    { id: 'http-delete', name: 'HTTP DELETE request', description: 'Send a DELETE request.', method: 'DELETE', allowBody: false, allowCustomMethod: false },
+    { id: 'http-custom-request', name: 'HTTP custom request', description: 'Send a custom HTTP request with configurable method.', method: 'POST', allowBody: true, allowCustomMethod: true }
+];
+
+const HttpModuleDescriptors = RawHttpModuleDescriptors.map(definition => ({
+    id: definition.id,
+    name: definition.name,
+    description: definition.description,
+    icon: 'cloud',
+    accent: '#0ea5e9',
+    defaultConfig: {
+        url: 'https://example.com',
+        headers: '',
+        body: '',
+        method: definition.method
+    },
+    form: [
+        { key: 'url', label: 'Request URL', type: 'text', placeholder: 'https://example.com' },
+        ...(definition.allowCustomMethod ? [{ key: 'method', label: 'HTTP method', type: 'text', placeholder: definition.method || 'GET' }] : []),
+        { key: 'headers', label: 'Headers (JSON or key:value per line)', type: 'textarea', rows: 3, placeholder: '{"Authorization":"Bearer token"}' },
+        ...(definition.allowBody ? [
+            { key: 'body', label: 'Request body', type: 'textarea', rows: 4, placeholder: '{"message":"Hello"}' },
+            { key: 'sendPayloadWhenEmpty', label: 'Use payload if body empty (true/false)', type: 'text', placeholder: 'true' }
+        ] : [])
+    ],
+    handler: async (clone, config) => {
+        const url = String(config?.url || '').trim();
+        if (!url) {
+            clone.logs.push(`${definition.name}: missing URL.`);
+            return;
+        }
+        const selectedMethod = definition.allowCustomMethod ? (config?.method || definition.method || 'GET') : definition.method;
+        const headers = parseHeaders(config?.headers);
+        const fetchOptions = {
+            method: (selectedMethod || 'GET').toUpperCase(),
+            headers: { ...headers }
+        };
+        if (definition.allowBody) {
+            let body = config?.body;
+            const wantsPayload = String(config?.sendPayloadWhenEmpty || '').toLowerCase() === 'true';
+            if ((!body || body.trim() === '') && wantsPayload) {
+                body = ModuleUtils.ensureText(clone.payload);
+            }
+            if (body !== undefined && body !== null && fetchOptions.method !== 'GET' && fetchOptions.method !== 'HEAD') {
+                fetchOptions.body = ModuleUtils.ensureText(body);
+                if (!fetchOptions.headers['Content-Type'] && !fetchOptions.headers['content-type']) {
+                    fetchOptions.headers['Content-Type'] = 'application/json';
+                }
+            }
+        }
+        try {
+            const result = await performHttpRequest(url, fetchOptions);
+            clone.logs.push(`${fetchOptions.method} ${url} → ${result.response.status}`);
+            if (result.json !== null) {
+                clone.payload = ModuleUtils.formatJson(result.json);
+                clone.vars.lastResponse = result.json;
+            } else {
+                clone.payload = result.text;
+            }
+        } catch (error) {
+            clone.logs.push(`${definition.name} failed: ${error.message}`);
+        }
+    }
+}));
+
+registerActionModules(HttpModuleDescriptors);
+
+
+const AdditionalHttpModuleDescriptors = [
+    {
+        id: 'http-get-json-pretty',
+        name: 'HTTP: GET JSON (pretty)',
+        description: 'Fetch JSON from a URL and format it with indentation.',
+        icon: 'download',
+        accent: '#38bdf8',
+        defaultConfig: { url: 'https://api.example.com/data', headers: '' },
+        form: [
+            { key: 'url', label: 'Request URL', type: 'text', placeholder: 'https://api.example.com/data' },
+            { key: 'headers', label: 'Headers (JSON or key:value per line)', type: 'textarea', rows: 3, placeholder: '{"Authorization":"Bearer"}' }
+        ],
+        handler: async (clone, config) => {
+            const url = String(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('GET JSON skipped: missing URL.');
+                return;
+            }
+            try {
+                const result = await performHttpRequest(url, { method: 'GET', headers: parseHeaders(config?.headers) });
+                if (result.json !== null) {
+                    clone.payload = ModuleUtils.formatJson(result.json);
+                    clone.vars.lastResponse = result.json;
+                } else {
+                    clone.payload = result.text;
+                }
+                clone.logs.push(`GET ${url} → ${result.response.status}`);
+            } catch (error) {
+                clone.logs.push(`GET JSON failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'http-get-text',
+        name: 'HTTP: GET text',
+        description: 'Download plain text content from the specified URL.',
+        icon: 'file-text',
+        accent: '#14b8a6',
+        defaultConfig: { url: 'https://example.com/readme.txt' },
+        form: [
+            { key: 'url', label: 'Request URL', type: 'text', placeholder: 'https://example.com/readme.txt' }
+        ],
+        handler: async (clone, config) => {
+            const url = String(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('GET text skipped: missing URL.');
+                return;
+            }
+            try {
+                const result = await performHttpRequest(url, { method: 'GET' });
+                clone.payload = result.text;
+                clone.logs.push(`Fetched text from ${url}.`);
+            } catch (error) {
+                clone.logs.push(`GET text failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'http-post-json-body',
+        name: 'HTTP: POST JSON body',
+        description: 'Send a JSON payload compiled from the workflow payload.',
+        icon: 'send',
+        accent: '#f97316',
+        defaultConfig: { url: 'https://api.example.com/items', bodyTemplate: '{"data":"{{payload}}"}', headers: '{"Content-Type":"application/json"}' },
+        form: [
+            { key: 'url', label: 'Endpoint URL', type: 'text', placeholder: 'https://api.example.com/items' },
+            { key: 'bodyTemplate', label: 'Body template', type: 'textarea', rows: 3, placeholder: '{"data":"{{payload}}"}' },
+            { key: 'headers', label: 'Headers (JSON)', type: 'textarea', rows: 3, placeholder: '{"Content-Type":"application/json"}' }
+        ],
+        handler: async (clone, config) => {
+            const url = String(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('POST JSON skipped: missing URL.');
+                return;
+            }
+            const headers = parseHeaders(config?.headers || '{"Content-Type":"application/json"}');
+            const bodyTemplate = ModuleUtils.renderTemplate(config?.bodyTemplate || '{}', { payload: clone.payload, vars: clone.vars });
+            try {
+                const { json, text, response } = await performHttpRequest(url, {
+                    method: 'POST',
+                    headers,
+                    body: bodyTemplate
+                });
+                clone.payload = json !== null ? ModuleUtils.formatJson(json) : text;
+                clone.logs.push(`POST ${url} → ${response.status}`);
+            } catch (error) {
+                clone.logs.push(`POST JSON failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'http-post-form-encoded',
+        name: 'HTTP: POST form encoded',
+        description: 'Submit application/x-www-form-urlencoded data built from key/value pairs.',
+        icon: 'clipboard',
+        accent: '#eab308',
+        defaultConfig: { url: 'https://api.example.com/submit', fields: 'title={{payload}}&status=draft' },
+        form: [
+            { key: 'url', label: 'Endpoint URL', type: 'text', placeholder: 'https://api.example.com/submit' },
+            { key: 'fields', label: 'Form fields', type: 'textarea', rows: 3, placeholder: 'title={{payload}}&status=draft' }
+        ],
+        handler: async (clone, config) => {
+            const url = String(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('POST form skipped: missing URL.');
+                return;
+            }
+            const fields = ModuleUtils.renderTemplate(config?.fields || '', { payload: clone.payload, vars: clone.vars });
+            try {
+                const result = await performHttpRequest(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: fields
+                });
+                clone.payload = result.text;
+                clone.logs.push(`POST form to ${url} → ${result.response.status}`);
+            } catch (error) {
+                clone.logs.push(`POST form failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'http-put-json-body',
+        name: 'HTTP: PUT JSON body',
+        description: 'Send an idempotent JSON request with the payload merged into a template.',
+        icon: 'upload-cloud',
+        accent: '#0ea5e9',
+        defaultConfig: { url: 'https://api.example.com/items/1', bodyTemplate: '{"payload":{{payload}}}', headers: '{"Content-Type":"application/json"}' },
+        form: [
+            { key: 'url', label: 'Endpoint URL', type: 'text', placeholder: 'https://api.example.com/items/1' },
+            { key: 'bodyTemplate', label: 'Body template', type: 'textarea', rows: 3, placeholder: '{"payload":{{payload}}}' },
+            { key: 'headers', label: 'Headers (JSON)', type: 'textarea', rows: 3, placeholder: '{"Content-Type":"application/json"}' }
+        ],
+        handler: async (clone, config) => {
+            const url = String(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('PUT JSON skipped: missing URL.');
+                return;
+            }
+            const headers = parseHeaders(config?.headers || '{"Content-Type":"application/json"}');
+            const body = ModuleUtils.renderTemplate(config?.bodyTemplate || '{}', { payload: clone.payload, vars: clone.vars });
+            try {
+                const { json, text, response } = await performHttpRequest(url, {
+                    method: 'PUT',
+                    headers,
+                    body
+                });
+                clone.payload = json !== null ? ModuleUtils.formatJson(json) : text;
+                clone.logs.push(`PUT ${url} → ${response.status}`);
+            } catch (error) {
+                clone.logs.push(`PUT JSON failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'http-delete-extended',
+        name: 'HTTP: DELETE resource',
+        description: 'Send a DELETE request and capture the response text.',
+        icon: 'trash-2',
+        accent: '#ef4444',
+        defaultConfig: { url: 'https://api.example.com/items/1', headers: '' },
+        form: [
+            { key: 'url', label: 'Request URL', type: 'text', placeholder: 'https://api.example.com/items/1' },
+            { key: 'headers', label: 'Headers (JSON or key:value per line)', type: 'textarea', rows: 3, placeholder: '{"Authorization":"Bearer"}' }
+        ],
+        handler: async (clone, config) => {
+            const url = String(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('DELETE skipped: missing URL.');
+                return;
+            }
+            try {
+                const result = await performHttpRequest(url, { method: 'DELETE', headers: parseHeaders(config?.headers) });
+                clone.payload = result.text;
+                clone.logs.push(`DELETE ${url} → ${result.response.status}`);
+            } catch (error) {
+                clone.logs.push(`DELETE request failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'http-head-check',
+        name: 'HTTP: HEAD check',
+        description: 'Perform a HEAD request and store headers as JSON.',
+        icon: 'info',
+        accent: '#6366f1',
+        defaultConfig: { url: 'https://example.com', headers: '' },
+        form: [
+            { key: 'url', label: 'Request URL', type: 'text', placeholder: 'https://example.com' },
+            { key: 'headers', label: 'Headers (JSON or key:value per line)', type: 'textarea', rows: 3, placeholder: '{"User-Agent":"FlashSearch"}' }
+        ],
+        handler: async (clone, config) => {
+            const url = String(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('HEAD skipped: missing URL.');
+                return;
+            }
+            try {
+                const { response } = await performHttpRequest(url, { method: 'HEAD', headers: parseHeaders(config?.headers) });
+                const headersObj = {};
+                response.headers?.forEach?.((value, key) => {
+                    headersObj[key] = value;
+                });
+                clone.payload = ModuleUtils.formatJson(headersObj);
+                clone.logs.push(`HEAD ${url} → ${response.status}`);
+            } catch (error) {
+                clone.logs.push(`HEAD request failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'http-graphql-query',
+        name: 'HTTP: GraphQL query',
+        description: 'Send a GraphQL query with variables and format the result.',
+        icon: 'hexagon',
+        accent: '#ec4899',
+        defaultConfig: {
+            url: 'https://api.spacex.land/graphql/',
+            query: 'query Launches { launchesPast(limit: 1) { mission_name } }',
+            variables: '{}'
+        },
+        form: [
+            { key: 'url', label: 'GraphQL endpoint', type: 'text', placeholder: 'https://api.spacex.land/graphql/' },
+            { key: 'query', label: 'Query', type: 'textarea', rows: 5, placeholder: 'query Example { field }' },
+            { key: 'variables', label: 'Variables JSON', type: 'textarea', rows: 3, placeholder: '{"key":"value"}' }
+        ],
+        handler: async (clone, config) => {
+            const url = String(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('GraphQL skipped: missing endpoint.');
+                return;
+            }
+            const variables = ModuleUtils.safeJsonParse(config?.variables) || {};
+            try {
+                const { json, text, response } = await performHttpRequest(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: config?.query || '', variables })
+                });
+                clone.payload = json !== null ? ModuleUtils.formatJson(json) : text;
+                clone.logs.push(`GraphQL ${url} → ${response.status}`);
+            } catch (error) {
+                clone.logs.push(`GraphQL request failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'http-download-base64',
+        name: 'HTTP: Download as base64',
+        description: 'Download binary data and convert it into a base64 data URL.',
+        icon: 'archive',
+        accent: '#8b5cf6',
+        defaultConfig: { url: 'https://example.com/image.png', mimeType: 'image/png' },
+        form: [
+            { key: 'url', label: 'File URL', type: 'text', placeholder: 'https://example.com/image.png' },
+            { key: 'mimeType', label: 'MIME type', type: 'text', placeholder: 'image/png' }
+        ],
+        handler: async (clone, config) => {
+            const url = String(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('Download skipped: missing URL.');
+                return;
+            }
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`${response.status} ${text}`);
+                }
+                const buffer = Buffer.from(await response.arrayBuffer());
+                const mime = config?.mimeType || response.headers.get('content-type') || 'application/octet-stream';
+                clone.payload = `data:${mime};base64,${buffer.toString('base64')}`;
+                clone.logs.push(`Downloaded ${buffer.length} bytes from ${url}.`);
+            } catch (error) {
+                clone.logs.push(`Download failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'http-upload-payload',
+        name: 'HTTP: Upload payload',
+        description: 'Send the current payload as-is to an endpoint with a configurable method.',
+        icon: 'corner-up-right',
+        accent: '#22d3ee',
+        defaultConfig: { url: 'https://api.example.com/ingest', method: 'POST', headers: '{"Content-Type":"text/plain"}' },
+        form: [
+            { key: 'url', label: 'Endpoint URL', type: 'text', placeholder: 'https://api.example.com/ingest' },
+            { key: 'method', label: 'HTTP method', type: 'text', placeholder: 'POST' },
+            { key: 'headers', label: 'Headers (JSON)', type: 'textarea', rows: 3, placeholder: '{"Content-Type":"text/plain"}' }
+        ],
+        handler: async (clone, config) => {
+            const url = String(config?.url || '').trim();
+            const method = (config?.method || 'POST').toUpperCase();
+            if (!url) {
+                clone.logs.push('Upload skipped: missing URL.');
+                return;
+            }
+            try {
+                const { json, text, response } = await performHttpRequest(url, {
+                    method,
+                    headers: parseHeaders(config?.headers),
+                    body: ModuleUtils.ensureText(clone.payload)
+                });
+                clone.payload = json !== null ? ModuleUtils.formatJson(json) : text;
+                clone.logs.push(`${method} ${url} → ${response.status}`);
+            } catch (error) {
+                clone.logs.push(`Upload failed: ${error.message}`);
+            }
+        }
+    }
+];
+
+registerActionModules(AdditionalHttpModuleDescriptors);
+
+
+const AiModuleDescriptors = [
+    {
+        id: 'ai-openai-chat',
+        name: 'AI: OpenAI chat',
+        description: 'Call the OpenAI Chat Completions API with the current payload.',
+        icon: 'message-circle',
+        accent: '#6366f1',
+        defaultConfig: {
+            apiKey: '',
+            model: 'gpt-3.5-turbo',
+            systemPrompt: 'You are a helpful assistant.',
+            userPrompt: 'Respond to this: {{payload}}'
+        },
+        form: [
+            { key: 'apiKey', label: 'OpenAI API key', type: 'text', placeholder: 'sk-...' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'gpt-3.5-turbo' },
+            { key: 'systemPrompt', label: 'System prompt', type: 'textarea', rows: 2, placeholder: 'You are a helpful assistant.' },
+            { key: 'userPrompt', label: 'User prompt', type: 'textarea', rows: 3, placeholder: 'Respond to this: {{payload}}' }
+        ],
+        handler: async (clone, config) => {
+            const apiKey = String(config?.apiKey || '').trim();
+            if (!apiKey) {
+                clone.logs.push('OpenAI chat skipped: missing API key.');
+                return;
+            }
+            const userPrompt = ModuleUtils.ensureText(config?.userPrompt || 'Respond to this: {{payload}}').replace('{{payload}}', ModuleUtils.ensureText(clone.payload));
+            const body = {
+                model: config?.model || 'gpt-3.5-turbo',
+                messages: [
+                    { role: 'system', content: config?.systemPrompt || 'You are a helpful assistant.' },
+                    { role: 'user', content: userPrompt }
+                ]
+            };
+            const result = await performHttpRequest('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify(body)
+            });
+            const reply = result.json?.choices?.[0]?.message?.content || result.text;
+            clone.payload = reply || '';
+            clone.vars.lastAiResponse = result.json || result.text;
+            clone.logs.push(`OpenAI chat response (${(reply || '').length} chars).`);
+        }
+    },
+    {
+        id: 'ai-openai-completion',
+        name: 'AI: OpenAI completion',
+        description: 'Call the legacy OpenAI text completion endpoint.',
+        icon: 'type',
+        accent: '#a855f7',
+        defaultConfig: {
+            apiKey: '',
+            model: 'text-davinci-003',
+            prompt: 'Rewrite this: {{payload}}'
+        },
+        form: [
+            { key: 'apiKey', label: 'OpenAI API key', type: 'text', placeholder: 'sk-...' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'text-davinci-003' },
+            { key: 'prompt', label: 'Prompt', type: 'textarea', rows: 3, placeholder: 'Rewrite this: {{payload}}' }
+        ],
+        handler: async (clone, config) => {
+            const apiKey = String(config?.apiKey || '').trim();
+            if (!apiKey) {
+                clone.logs.push('OpenAI completion skipped: missing API key.');
+                return;
+            }
+            const prompt = ModuleUtils.ensureText(config?.prompt || 'Rewrite this: {{payload}}').replace('{{payload}}', ModuleUtils.ensureText(clone.payload));
+            const body = {
+                model: config?.model || 'text-davinci-003',
+                prompt,
+                max_tokens: 256,
+                temperature: 0.2
+            };
+            const result = await performHttpRequest('https://api.openai.com/v1/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify(body)
+            });
+            const reply = result.json?.choices?.[0]?.text || result.text;
+            clone.payload = reply || '';
+            clone.vars.lastAiResponse = result.json || result.text;
+            clone.logs.push('OpenAI completion executed.');
+        }
+    },
+    {
+        id: 'ai-openai-embedding',
+        name: 'AI: OpenAI embedding',
+        description: 'Create embeddings for the payload using the OpenAI API.',
+        icon: 'grid',
+        accent: '#0ea5e9',
+        defaultConfig: { apiKey: '', model: 'text-embedding-3-small' },
+        form: [
+            { key: 'apiKey', label: 'OpenAI API key', type: 'text', placeholder: 'sk-...' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'text-embedding-3-small' }
+        ],
+        handler: async (clone, config) => {
+            const apiKey = String(config?.apiKey || '').trim();
+            if (!apiKey) {
+                clone.logs.push('OpenAI embedding skipped: missing API key.');
+                return;
+            }
+            const body = {
+                model: config?.model || 'text-embedding-3-small',
+                input: ModuleUtils.ensureText(clone.payload)
+            };
+            const result = await performHttpRequest('https://api.openai.com/v1/embeddings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify(body)
+            });
+            const vector = result.json?.data?.[0]?.embedding || [];
+            clone.payload = Array.isArray(vector) ? vector.join(', ') : result.text;
+            clone.vars.lastAiResponse = result.json || result.text;
+            clone.logs.push('OpenAI embedding generated.');
+        }
+    },
+    {
+        id: 'ai-huggingface-text',
+        name: 'AI: Hugging Face text',
+        description: 'Query a Hugging Face text generation model.',
+        icon: 'feather',
+        accent: '#f97316',
+        defaultConfig: { apiKey: '', model: 'gpt2', prompt: 'Complete this: {{payload}}' },
+        form: [
+            { key: 'apiKey', label: 'Hugging Face token', type: 'text', placeholder: 'hf_...' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'gpt2' },
+            { key: 'prompt', label: 'Prompt', type: 'textarea', rows: 3, placeholder: 'Complete this: {{payload}}' }
+        ],
+        handler: async (clone, config) => {
+            const model = String(config?.model || 'gpt2').trim();
+            const apiKey = String(config?.apiKey || '').trim();
+            const prompt = ModuleUtils.ensureText(config?.prompt || 'Complete this: {{payload}}').replace('{{payload}}', ModuleUtils.ensureText(clone.payload));
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+            const url = `https://api-inference.huggingface.co/models/${model}`;
+            const result = await performHttpRequest(url, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ inputs: prompt })
+            });
+            let reply = result.text;
+            if (Array.isArray(result.json) && result.json[0]?.generated_text) {
+                reply = result.json[0].generated_text;
+            }
+            clone.payload = reply || '';
+            clone.vars.lastAiResponse = result.json || result.text;
+            clone.logs.push('Hugging Face text generation completed.');
+        }
+    },
+    {
+        id: 'ai-huggingface-image',
+        name: 'AI: Hugging Face image',
+        description: 'Generate an image and store it as a data URL.',
+        icon: 'image',
+        accent: '#22c55e',
+        defaultConfig: { apiKey: '', model: 'stabilityai/stable-diffusion-2-1', prompt: 'A futuristic city skyline' },
+        form: [
+            { key: 'apiKey', label: 'Hugging Face token', type: 'text', placeholder: 'hf_...' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'stabilityai/stable-diffusion-2-1' },
+            { key: 'prompt', label: 'Prompt', type: 'textarea', rows: 3, placeholder: 'A futuristic city skyline' }
+        ],
+        handler: async (clone, config) => {
+            const model = String(config?.model || 'stabilityai/stable-diffusion-2-1').trim();
+            const apiKey = String(config?.apiKey || '').trim();
+            const prompt = ModuleUtils.ensureText(config?.prompt || ModuleUtils.ensureText(clone.payload));
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+            const url = `https://api-inference.huggingface.co/models/${model}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ inputs: prompt })
+            });
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Hugging Face error ${response.status}: ${text}`);
+            }
+            const buffer = Buffer.from(await response.arrayBuffer());
+            const mime = response.headers.get('content-type') || 'image/png';
+            clone.payload = `data:${mime};base64,${buffer.toString('base64')}`;
+            clone.logs.push('Generated Hugging Face image.');
+        }
+    },
+    {
+        id: 'ai-generic-endpoint',
+        name: 'AI: Generic endpoint',
+        description: 'Call any AI-style HTTP endpoint with custom headers and body.',
+        icon: 'cpu',
+        accent: '#8b5cf6',
+        defaultConfig: {
+            url: 'https://example.com/api',
+            method: 'POST',
+            headers: '{"Content-Type":"application/json"}',
+            body: '{"prompt":"{{payload}}"}',
+            usePayloadWhenEmpty: 'false'
+        },
+        form: [
+            { key: 'url', label: 'Endpoint URL', type: 'text', placeholder: 'https://example.com/api' },
+            { key: 'method', label: 'HTTP method', type: 'text', placeholder: 'POST' },
+            { key: 'headers', label: 'Headers (JSON)', type: 'textarea', rows: 3, placeholder: '{"Authorization":"Bearer"}' },
+            { key: 'body', label: 'Request body', type: 'textarea', rows: 4, placeholder: '{"prompt":"{{payload}}"}' },
+            { key: 'usePayloadWhenEmpty', label: 'Use payload if body empty (true/false)', type: 'text', placeholder: 'false' }
+        ],
+        handler: async (clone, config) => {
+            const url = String(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('Generic AI call skipped: missing URL.');
+                return;
+            }
+            const headers = parseHeaders(config?.headers);
+            const method = (config?.method || 'POST').toUpperCase();
+            let body = config?.body;
+            if ((!body || body.trim() === '') && String(config?.usePayloadWhenEmpty || '').toLowerCase() === 'true') {
+                body = ModuleUtils.ensureText(clone.payload);
+            }
+            const preparedBody = body ? body.replace('{{payload}}', ModuleUtils.ensureText(clone.payload)) : null;
+            const result = await performHttpRequest(url, {
+                method,
+                headers,
+                body: preparedBody ? ModuleUtils.ensureText(preparedBody) : undefined
+            });
+            if (result.json !== null) {
+                clone.payload = ModuleUtils.formatJson(result.json);
+                clone.vars.lastResponse = result.json;
+            } else {
+                clone.payload = result.text;
+            }
+            clone.logs.push(`Generic AI endpoint responded with ${result.response.status}.`);
+        }
+    }
+];
+
+registerActionModules(AiModuleDescriptors);
+
+
+const AdditionalAiModuleDescriptors = [
+    {
+        id: 'ai-openai-chat-plus',
+        name: 'AI: OpenAI chat (advanced)',
+        description: 'Call the OpenAI Chat Completions API with custom prompts and store the reply.',
+        icon: 'message-circle',
+        accent: '#818cf8',
+        defaultConfig: {
+            endpoint: 'https://api.openai.com/v1/chat/completions',
+            apiKey: '',
+            model: 'gpt-4o-mini',
+            systemPrompt: 'You are a helpful assistant that answers succinctly.',
+            userPrompt: 'Please help with: {{payload}}'
+        },
+        form: [
+            { key: 'endpoint', label: 'Endpoint URL', type: 'text', placeholder: 'https://api.openai.com/v1/chat/completions' },
+            { key: 'apiKey', label: 'API key', type: 'text', placeholder: 'sk-...' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'gpt-4o-mini' },
+            { key: 'systemPrompt', label: 'System prompt', type: 'textarea', rows: 2, placeholder: 'You are a helpful assistant.' },
+            { key: 'userPrompt', label: 'User prompt', type: 'textarea', rows: 3, placeholder: 'Please help with: {{payload}}' }
+        ],
+        handler: async (clone, config) => {
+            const apiKey = String(config?.apiKey || '').trim();
+            if (!apiKey) {
+                clone.logs.push('OpenAI chat skipped: missing API key.');
+                return;
+            }
+            const endpoint = String(config?.endpoint || 'https://api.openai.com/v1/chat/completions');
+            const systemPrompt = ModuleUtils.renderTemplate(config?.systemPrompt || '', { payload: clone.payload, vars: clone.vars });
+            const userPrompt = ModuleUtils.renderTemplate(config?.userPrompt || ModuleUtils.ensureText(clone.payload), { payload: clone.payload, vars: clone.vars });
+            const body = {
+                model: config?.model || 'gpt-4o-mini',
+                messages: []
+            };
+            if (systemPrompt) {
+                body.messages.push({ role: 'system', content: systemPrompt });
+            }
+            body.messages.push({ role: 'user', content: userPrompt || ModuleUtils.ensureText(clone.payload) });
+            try {
+                const { json, text } = await performHttpRequest(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify(body)
+                });
+                const content = json?.choices?.[0]?.message?.content || text || '';
+                clone.payload = content;
+                clone.vars.lastAiResponse = json || text;
+                clone.logs.push('OpenAI chat response received.');
+            } catch (error) {
+                clone.logs.push(`OpenAI chat failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'ai-openai-completion',
+        name: 'AI: OpenAI text completion',
+        description: 'Send a prompt to the legacy completions endpoint and store the text output.',
+        icon: 'type',
+        accent: '#38bdf8',
+        defaultConfig: {
+            endpoint: 'https://api.openai.com/v1/completions',
+            apiKey: '',
+            model: 'gpt-3.5-turbo-instruct',
+            prompt: 'Rewrite in simpler words: {{payload}}',
+            maxTokens: 256
+        },
+        form: [
+            { key: 'endpoint', label: 'Endpoint URL', type: 'text', placeholder: 'https://api.openai.com/v1/completions' },
+            { key: 'apiKey', label: 'API key', type: 'text', placeholder: 'sk-...' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'gpt-3.5-turbo-instruct' },
+            { key: 'prompt', label: 'Prompt', type: 'textarea', rows: 3, placeholder: 'Rewrite in simpler words: {{payload}}' },
+            { key: 'maxTokens', label: 'Max tokens', type: 'number' }
+        ],
+        handler: async (clone, config) => {
+            const apiKey = String(config?.apiKey || '').trim();
+            if (!apiKey) {
+                clone.logs.push('OpenAI completion skipped: missing API key.');
+                return;
+            }
+            const prompt = ModuleUtils.renderTemplate(config?.prompt || ModuleUtils.ensureText(clone.payload), { payload: clone.payload, vars: clone.vars });
+            try {
+                const { json, text } = await performHttpRequest(config?.endpoint || 'https://api.openai.com/v1/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: config?.model || 'gpt-3.5-turbo-instruct',
+                        prompt,
+                        max_tokens: Number(config?.maxTokens ?? 256)
+                    })
+                });
+                const content = json?.choices?.[0]?.text || text || '';
+                clone.payload = content.trim();
+                clone.vars.lastAiResponse = json || text;
+                clone.logs.push('OpenAI completion returned text.');
+            } catch (error) {
+                clone.logs.push(`OpenAI completion failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'ai-openai-embeddings',
+        name: 'AI: OpenAI embeddings',
+        description: 'Generate an embedding vector and store it as JSON.',
+        icon: 'grid',
+        accent: '#facc15',
+        defaultConfig: {
+            endpoint: 'https://api.openai.com/v1/embeddings',
+            apiKey: '',
+            model: 'text-embedding-3-small',
+            input: '{{payload}}'
+        },
+        form: [
+            { key: 'endpoint', label: 'Endpoint URL', type: 'text', placeholder: 'https://api.openai.com/v1/embeddings' },
+            { key: 'apiKey', label: 'API key', type: 'text', placeholder: 'sk-...' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'text-embedding-3-small' },
+            { key: 'input', label: 'Input text', type: 'textarea', rows: 3, placeholder: '{{payload}}' }
+        ],
+        handler: async (clone, config) => {
+            const apiKey = String(config?.apiKey || '').trim();
+            if (!apiKey) {
+                clone.logs.push('OpenAI embeddings skipped: missing API key.');
+                return;
+            }
+            const input = ModuleUtils.renderTemplate(config?.input || ModuleUtils.ensureText(clone.payload), { payload: clone.payload, vars: clone.vars });
+            try {
+                const { json, text } = await performHttpRequest(config?.endpoint || 'https://api.openai.com/v1/embeddings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: config?.model || 'text-embedding-3-small',
+                        input
+                    })
+                });
+                if (json?.data?.[0]?.embedding) {
+                    clone.payload = ModuleUtils.formatJson(json.data[0].embedding);
+                    clone.vars.lastEmbedding = json.data[0].embedding;
+                    clone.logs.push('OpenAI embedding generated.');
+                } else {
+                    clone.payload = text || '';
+                    clone.logs.push('OpenAI embedding response stored as text.');
+                }
+            } catch (error) {
+                clone.logs.push(`OpenAI embeddings failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'ai-openai-moderation',
+        name: 'AI: OpenAI moderation',
+        description: 'Send payload to the moderation endpoint and store the result.',
+        icon: 'shield',
+        accent: '#f87171',
+        defaultConfig: {
+            endpoint: 'https://api.openai.com/v1/moderations',
+            apiKey: '',
+            model: 'omni-moderation-latest',
+            input: '{{payload}}'
+        },
+        form: [
+            { key: 'endpoint', label: 'Endpoint URL', type: 'text', placeholder: 'https://api.openai.com/v1/moderations' },
+            { key: 'apiKey', label: 'API key', type: 'text', placeholder: 'sk-...' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'omni-moderation-latest' },
+            { key: 'input', label: 'Input text', type: 'textarea', rows: 3, placeholder: '{{payload}}' }
+        ],
+        handler: async (clone, config) => {
+            const apiKey = String(config?.apiKey || '').trim();
+            if (!apiKey) {
+                clone.logs.push('OpenAI moderation skipped: missing API key.');
+                return;
+            }
+            const input = ModuleUtils.renderTemplate(config?.input || ModuleUtils.ensureText(clone.payload), { payload: clone.payload, vars: clone.vars });
+            try {
+                const { json, text } = await performHttpRequest(config?.endpoint || 'https://api.openai.com/v1/moderations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: config?.model || 'omni-moderation-latest',
+                        input
+                    })
+                });
+                clone.payload = ModuleUtils.formatJson(json ?? text ?? '');
+                clone.vars.lastModeration = json ?? text ?? '';
+                clone.logs.push('OpenAI moderation response stored.');
+            } catch (error) {
+                clone.logs.push(`OpenAI moderation failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'ai-anthropic-messages',
+        name: 'AI: Anthropic Claude',
+        description: 'Call the Anthropic Messages API and store the assistant reply.',
+        icon: 'sun',
+        accent: '#fbbf24',
+        defaultConfig: {
+            endpoint: 'https://api.anthropic.com/v1/messages',
+            apiKey: '',
+            model: 'claude-3-haiku-20240307',
+            systemPrompt: 'You are a concise assistant.',
+            userPrompt: 'Analyse: {{payload}}'
+        },
+        form: [
+            { key: 'endpoint', label: 'Endpoint URL', type: 'text', placeholder: 'https://api.anthropic.com/v1/messages' },
+            { key: 'apiKey', label: 'API key', type: 'text', placeholder: 'sk-ant-...' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'claude-3-haiku-20240307' },
+            { key: 'systemPrompt', label: 'System prompt', type: 'textarea', rows: 2, placeholder: 'You are a concise assistant.' },
+            { key: 'userPrompt', label: 'User prompt', type: 'textarea', rows: 3, placeholder: 'Analyse: {{payload}}' }
+        ],
+        handler: async (clone, config) => {
+            const apiKey = String(config?.apiKey || '').trim();
+            if (!apiKey) {
+                clone.logs.push('Anthropic request skipped: missing API key.');
+                return;
+            }
+            const userPrompt = ModuleUtils.renderTemplate(config?.userPrompt || ModuleUtils.ensureText(clone.payload), { payload: clone.payload, vars: clone.vars });
+            try {
+                const { json, text } = await performHttpRequest(config?.endpoint || 'https://api.anthropic.com/v1/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': apiKey,
+                        'anthropic-version': '2023-06-01'
+                    },
+                    body: JSON.stringify({
+                        model: config?.model || 'claude-3-haiku-20240307',
+                        system: ModuleUtils.renderTemplate(config?.systemPrompt || '', { payload: clone.payload, vars: clone.vars }),
+                        messages: [{ role: 'user', content: userPrompt }]
+                    })
+                });
+                const reply = json?.content?.[0]?.text || text || '';
+                clone.payload = reply;
+                clone.vars.lastAiResponse = json || text;
+                clone.logs.push('Anthropic reply received.');
+            } catch (error) {
+                clone.logs.push(`Anthropic call failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'ai-azure-openai-chat',
+        name: 'AI: Azure OpenAI chat',
+        description: 'Call an Azure OpenAI deployment with a chat prompt.',
+        icon: 'cloud',
+        accent: '#38bdf8',
+        defaultConfig: {
+            endpoint: 'https://example-resource.openai.azure.com/openai/deployments/my-deployment/chat/completions?api-version=2024-02-01',
+            apiKey: '',
+            userPrompt: 'Summarise: {{payload}}'
+        },
+        form: [
+            { key: 'endpoint', label: 'Deployment URL', type: 'text', placeholder: 'https://resource.openai.azure.com/openai/.../chat/completions?api-version=...' },
+            { key: 'apiKey', label: 'API key', type: 'text', placeholder: 'Azure key' },
+            { key: 'userPrompt', label: 'User prompt', type: 'textarea', rows: 3, placeholder: 'Summarise: {{payload}}' }
+        ],
+        handler: async (clone, config) => {
+            const apiKey = String(config?.apiKey || '').trim();
+            if (!apiKey) {
+                clone.logs.push('Azure OpenAI skipped: missing API key.');
+                return;
+            }
+            const endpoint = String(config?.endpoint || '').trim();
+            if (!endpoint) {
+                clone.logs.push('Azure OpenAI skipped: missing endpoint.');
+                return;
+            }
+            const prompt = ModuleUtils.renderTemplate(config?.userPrompt || ModuleUtils.ensureText(clone.payload), { payload: clone.payload, vars: clone.vars });
+            try {
+                const { json, text } = await performHttpRequest(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'api-key': apiKey
+                    },
+                    body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+                });
+                const reply = json?.choices?.[0]?.message?.content || text || '';
+                clone.payload = reply;
+                clone.logs.push('Azure OpenAI responded.');
+            } catch (error) {
+                clone.logs.push(`Azure OpenAI failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'ai-cohere-generate',
+        name: 'AI: Cohere generate',
+        description: 'Send a prompt to Cohere generate endpoint and capture the text.',
+        icon: 'feather',
+        accent: '#f472b6',
+        defaultConfig: {
+            endpoint: 'https://api.cohere.ai/v1/generate',
+            apiKey: '',
+            model: 'command',
+            prompt: 'Improve this text: {{payload}}'
+        },
+        form: [
+            { key: 'endpoint', label: 'Endpoint URL', type: 'text', placeholder: 'https://api.cohere.ai/v1/generate' },
+            { key: 'apiKey', label: 'API key', type: 'text', placeholder: 'cohere key' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'command' },
+            { key: 'prompt', label: 'Prompt', type: 'textarea', rows: 3, placeholder: 'Improve this text: {{payload}}' }
+        ],
+        handler: async (clone, config) => {
+            const apiKey = String(config?.apiKey || '').trim();
+            if (!apiKey) {
+                clone.logs.push('Cohere request skipped: missing API key.');
+                return;
+            }
+            const prompt = ModuleUtils.renderTemplate(config?.prompt || ModuleUtils.ensureText(clone.payload), { payload: clone.payload, vars: clone.vars });
+            try {
+                const { json, text } = await performHttpRequest(config?.endpoint || 'https://api.cohere.ai/v1/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: config?.model || 'command',
+                        prompt
+                    })
+                });
+                const reply = json?.generations?.[0]?.text || text || '';
+                clone.payload = reply.trim();
+                clone.logs.push('Cohere generation completed.');
+            } catch (error) {
+                clone.logs.push(`Cohere request failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'ai-replicate-prediction',
+        name: 'AI: Replicate prediction',
+        description: 'Trigger a Replicate model prediction and store the response payload.',
+        icon: 'refresh-cw',
+        accent: '#34d399',
+        defaultConfig: {
+            endpoint: 'https://api.replicate.com/v1/predictions',
+            apiKey: '',
+            version: '',
+            inputJson: '{"prompt":"{{payload}}"}'
+        },
+        form: [
+            { key: 'endpoint', label: 'Endpoint URL', type: 'text', placeholder: 'https://api.replicate.com/v1/predictions' },
+            { key: 'apiKey', label: 'API token', type: 'text', placeholder: 'r8_' },
+            { key: 'version', label: 'Model version', type: 'text', placeholder: 'replicate model version ID' },
+            { key: 'inputJson', label: 'Input JSON', type: 'textarea', rows: 3, placeholder: '{"prompt":"{{payload}}"}' }
+        ],
+        handler: async (clone, config) => {
+            const apiKey = String(config?.apiKey || '').trim();
+            const version = String(config?.version || '').trim();
+            if (!apiKey || !version) {
+                clone.logs.push('Replicate skipped: missing API key or version.');
+                return;
+            }
+            const inputJson = ModuleUtils.renderTemplate(config?.inputJson || '{}', { payload: clone.payload, vars: clone.vars });
+            let parsedInput = ModuleUtils.safeJsonParse(inputJson);
+            if (!parsedInput) {
+                parsedInput = { prompt: ModuleUtils.ensureText(clone.payload) };
+            }
+            try {
+                const { json, text } = await performHttpRequest(config?.endpoint || 'https://api.replicate.com/v1/predictions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({ version, input: parsedInput })
+                });
+                clone.payload = ModuleUtils.formatJson(json ?? text ?? '');
+                clone.vars.lastAiResponse = json ?? text ?? '';
+                clone.logs.push('Replicate prediction created.');
+            } catch (error) {
+                clone.logs.push(`Replicate request failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'ai-stability-text-image-lite',
+        name: 'AI: Stability image (lite)',
+        description: 'Send a prompt to Stability AI image API and store the image as base64.',
+        icon: 'image',
+        accent: '#f472b6',
+        defaultConfig: {
+            endpoint: 'https://api.stability.ai/v1/images/generations',
+            apiKey: '',
+            prompt: 'A concept illustration of {{payload}}'
+        },
+        form: [
+            { key: 'endpoint', label: 'Endpoint URL', type: 'text', placeholder: 'https://api.stability.ai/v1/images/generations' },
+            { key: 'apiKey', label: 'API key', type: 'text', placeholder: 'sk-stable...' },
+            { key: 'prompt', label: 'Prompt', type: 'textarea', rows: 3, placeholder: 'A concept illustration of {{payload}}' }
+        ],
+        handler: async (clone, config) => {
+            const apiKey = String(config?.apiKey || '').trim();
+            if (!apiKey) {
+                clone.logs.push('Stability request skipped: missing API key.');
+                return;
+            }
+            const prompt = ModuleUtils.renderTemplate(config?.prompt || ModuleUtils.ensureText(clone.payload), { payload: clone.payload, vars: clone.vars });
+            try {
+                const response = await fetch(config?.endpoint || 'https://api.stability.ai/v1/images/generations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({ text_prompts: [{ text: prompt }] })
+                });
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(`Stability error ${response.status}: ${errText}`);
+                }
+                const result = await response.json();
+                const imageBase64 = result?.artifacts?.[0]?.base64;
+                if (imageBase64) {
+                    clone.payload = `data:image/png;base64,${imageBase64}`;
+                    clone.logs.push('Stability image generated.');
+                } else {
+                    clone.payload = ModuleUtils.formatJson(result);
+                    clone.logs.push('Stability responded without image, stored JSON.');
+                }
+            } catch (error) {
+                clone.logs.push(`Stability request failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'ai-ollama-local',
+        name: 'AI: Ollama local model',
+        description: 'Send a prompt to a locally hosted Ollama model.',
+        icon: 'cpu',
+        accent: '#0ea5e9',
+        defaultConfig: {
+            endpoint: 'http://localhost:11434/api/generate',
+            model: 'llama3',
+            prompt: 'Summarise: {{payload}}'
+        },
+        form: [
+            { key: 'endpoint', label: 'Endpoint URL', type: 'text', placeholder: 'http://localhost:11434/api/generate' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'llama3' },
+            { key: 'prompt', label: 'Prompt', type: 'textarea', rows: 3, placeholder: 'Summarise: {{payload}}' }
+        ],
+        handler: async (clone, config) => {
+            const endpoint = String(config?.endpoint || '').trim();
+            if (!endpoint) {
+                clone.logs.push('Ollama request skipped: missing endpoint.');
+                return;
+            }
+            const prompt = ModuleUtils.renderTemplate(config?.prompt || ModuleUtils.ensureText(clone.payload), { payload: clone.payload, vars: clone.vars });
+            try {
+                const { json, text } = await performHttpRequest(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: config?.model || 'llama3', prompt })
+                });
+                if (json?.response) {
+                    clone.payload = json.response;
+                } else {
+                    clone.payload = text || '';
+                }
+                clone.logs.push('Ollama response captured.');
+            } catch (error) {
+                clone.logs.push(`Ollama request failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'ai-custom-chain',
+        name: 'AI: Custom pipeline',
+        description: 'Call a sequence of two HTTP AI endpoints and merge their responses.',
+        icon: 'git-merge',
+        accent: '#f59e0b',
+        defaultConfig: {
+            firstUrl: 'https://example.com/step1',
+            firstBody: '{"prompt":"{{payload}}"}',
+            secondUrl: 'https://example.com/step2',
+            secondBody: '{"data":{{step1}}}'
+        },
+        form: [
+            { key: 'firstUrl', label: 'First endpoint', type: 'text', placeholder: 'https://example.com/step1' },
+            { key: 'firstBody', label: 'First request body', type: 'textarea', rows: 3, placeholder: '{"prompt":"{{payload}}"}' },
+            { key: 'secondUrl', label: 'Second endpoint', type: 'text', placeholder: 'https://example.com/step2' },
+            { key: 'secondBody', label: 'Second request body', type: 'textarea', rows: 3, placeholder: '{"data":{{step1}}}' }
+        ],
+        handler: async (clone, config) => {
+            const firstUrl = String(config?.firstUrl || '').trim();
+            const secondUrl = String(config?.secondUrl || '').trim();
+            if (!firstUrl || !secondUrl) {
+                clone.logs.push('Custom pipeline skipped: missing endpoints.');
+                return;
+            }
+            try {
+                const firstBodyTemplate = ModuleUtils.renderTemplate(config?.firstBody || '{}', { payload: clone.payload, vars: clone.vars });
+                const firstResult = await performHttpRequest(firstUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: firstBodyTemplate
+                });
+                const firstPayload = firstResult.json ?? ModuleUtils.safeJsonParse(firstResult.text) ?? firstResult.text;
+                const secondBody = ModuleUtils.renderTemplate(config?.secondBody || '{}', {
+                    payload: clone.payload,
+                    vars: clone.vars,
+                    extra: { step1: ModuleUtils.ensureText(typeof firstPayload === 'string' ? firstPayload : JSON.stringify(firstPayload)) }
+                });
+                const secondResult = await performHttpRequest(secondUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: secondBody
+                });
+                const combined = {
+                    step1: firstResult.json ?? firstResult.text,
+                    step2: secondResult.json ?? secondResult.text
+                };
+                clone.payload = ModuleUtils.formatJson(combined);
+                clone.logs.push('Custom AI pipeline executed.');
+            } catch (error) {
+                clone.logs.push(`Custom pipeline failed: ${error.message}`);
+            }
+        }
+    }
+];
+
+registerActionModules(AdditionalAiModuleDescriptors);
+
+const UtilityModuleDescriptors = [
+    {
+        id: 'json-parse',
+        name: 'Parse JSON',
+        description: 'Parse the payload as JSON and store the object for later nodes.',
+        icon: 'braces',
+        accent: '#22c55e',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const parsed = ModuleUtils.safeJsonParse(clone.payload);
+            if (parsed === null) {
+                clone.logs.push('JSON parse failed. Payload left unchanged.');
+                return;
+            }
+            clone.payload = parsed;
+            clone.vars.lastJson = parsed;
+            clone.logs.push('Parsed payload as JSON.');
+        }
+    },
+    {
+        id: 'json-stringify',
+        name: 'Stringify JSON',
+        description: 'Convert the payload to formatted JSON text.',
+        icon: 'code',
+        accent: '#0ea5e9',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            clone.payload = ModuleUtils.formatJson(clone.payload);
+            clone.logs.push('Converted payload to JSON string.');
+        }
+    },
+    {
+        id: 'json-get-path',
+        name: 'Get JSON path',
+        description: 'Extract a property from the payload using a dotted path.',
+        icon: 'crosshair',
+        accent: '#f97316',
+        defaultConfig: { path: 'data.value' },
+        form: [
+            { key: 'path', label: 'Path (dot notation)', type: 'text', placeholder: 'data.value' }
+        ],
+        handler: async (clone, config) => {
+            const pathKey = String(config?.path || '').trim();
+            if (!pathKey) {
+                clone.logs.push('JSON path skipped: missing path.');
+                return;
+            }
+            const segments = pathKey.split('.');
+            let target = typeof clone.payload === 'object' && clone.payload !== null ? clone.payload : ModuleUtils.safeJsonParse(clone.payload);
+            for (const segment of segments) {
+                if (target && typeof target === 'object' && segment in target) {
+                    target = target[segment];
+                } else {
+                    target = undefined;
+                    break;
+                }
+            }
+            if (target === undefined) {
+                clone.logs.push(`JSON path not found: ${pathKey}`);
+                clone.payload = '';
+            } else {
+                clone.payload = target;
+                clone.logs.push(`Extracted JSON path ${pathKey}.`);
+            }
+        }
+    },
+    {
+        id: 'json-merge',
+        name: 'Merge JSON',
+        description: 'Merge JSON from the configuration into the payload object.',
+        icon: 'layers',
+        accent: '#facc15',
+        defaultConfig: { json: '{"status":"processed"}' },
+        form: [
+            { key: 'json', label: 'JSON to merge', type: 'textarea', rows: 3, placeholder: '{"status":"processed"}' }
+        ],
+        handler: async (clone, config) => {
+            const base = typeof clone.payload === 'object' && clone.payload !== null ? { ...clone.payload } : ModuleUtils.safeJsonParse(clone.payload) || {};
+            const addition = ModuleUtils.safeJsonParse(config?.json);
+            if (!addition || typeof addition !== 'object') {
+                clone.logs.push('Merge skipped: invalid JSON input.');
+                return;
+            }
+            clone.payload = { ...base, ...addition };
+            clone.logs.push('Merged JSON into payload.');
+        }
+    },
+    {
+        id: 'payload-clear',
+        name: 'Clear payload',
+        description: 'Reset the payload to an empty string.',
+        icon: 'eraser',
+        accent: '#ef4444',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            clone.payload = '';
+            clone.logs.push('Cleared payload value.');
+        }
+    },
+    {
+        id: 'payload-ensure-array',
+        name: 'Ensure array payload',
+        description: 'Convert the payload into an array by splitting lines when needed.',
+        icon: 'list',
+        accent: '#3b82f6',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            if (Array.isArray(clone.payload)) {
+                clone.logs.push('Payload already an array.');
+                return;
+            }
+            const lines = ModuleUtils.toLines(clone.payload);
+            clone.payload = lines;
+            clone.logs.push(`Converted payload to array with ${lines.length} items.`);
+        }
+    },
+    {
+        id: 'array-unique',
+        name: 'Unique array items',
+        description: 'Remove duplicate entries from an array or newline list.',
+        icon: 'zap',
+        accent: '#6366f1',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const values = Array.isArray(clone.payload) ? clone.payload : ModuleUtils.toLines(clone.payload);
+            const unique = Array.from(new Set(values.filter(item => ModuleUtils.ensureText(item).trim() !== '')));
+            clone.payload = Array.isArray(clone.payload) ? unique : unique.join('\\n');
+            clone.logs.push(`Reduced to ${unique.length} unique entries.`);
+        }
+    },
+    {
+        id: 'math-evaluate',
+        name: 'Evaluate expression',
+        description: 'Evaluate a JavaScript expression using payload and workflow variables.',
+        icon: 'percent',
+        accent: '#22c55e',
+        defaultConfig: { expression: 'payload.length' },
+        form: [
+            { key: 'expression', label: 'Expression', type: 'text', placeholder: 'payload.length' }
+        ],
+        handler: async (clone, config) => {
+            const expression = String(config?.expression || '').trim();
+            if (!expression) {
+                clone.logs.push('Math evaluation skipped: missing expression.');
+                return;
+            }
+            try {
+                const fn = new Function('payload', 'vars', `return (${expression});`);
+                const result = fn(clone.payload, clone.vars);
+                clone.payload = result;
+                clone.logs.push('Evaluated expression successfully.');
+            } catch (error) {
+                clone.logs.push(`Expression failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'random-number',
+        name: 'Random number',
+        description: 'Generate a random number between the configured bounds.',
+        icon: 'dice',
+        accent: '#f97316',
+        defaultConfig: { min: 0, max: 100 },
+        form: [
+            { key: 'min', label: 'Minimum', type: 'number' },
+            { key: 'max', label: 'Maximum', type: 'number' }
+        ],
+        handler: async (clone, config) => {
+            const min = Number(config?.min ?? 0);
+            const max = Number(config?.max ?? 100);
+            const value = Math.random() * (max - min) + min;
+            clone.payload = value;
+            clone.logs.push(`Generated random number ${value.toFixed(2)}.`);
+        }
+    },
+    {
+        id: 'log-payload',
+        name: 'Log payload',
+        description: 'Append the current payload to the workflow log without changing it.',
+        icon: 'align-left',
+        accent: '#64748b',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            clone.logs.push(`Payload snapshot: ${ModuleUtils.ensureText(clone.payload).slice(0, 80)}`);
+        }
+    },
+    {
+        id: 'get-variable',
+        name: 'Get workflow variable',
+        description: 'Load a saved workflow variable into the payload.',
+        icon: 'database',
+        accent: '#a855f7',
+        defaultConfig: { key: 'name' },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'name' }
+        ],
+        handler: async (clone, config) => {
+            const key = String(config?.key || '').trim();
+            if (!key) {
+                clone.logs.push('Get variable skipped: missing key.');
+                return;
+            }
+            clone.payload = clone.vars[key] ?? '';
+            clone.logs.push(`Loaded workflow variable ${key}.`);
+        }
+    }
+];
+
+registerUtilityModules(UtilityModuleDescriptors);
+
+
+const AdvancedDataUtilityDescriptors = [
+    {
+        id: 'text-to-upper',
+        name: 'Text: Uppercase',
+        description: 'Convert the payload to uppercase characters.',
+        icon: 'type',
+        accent: '#2563eb',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const text = ModuleUtils.ensureText(clone.payload).toUpperCase();
+            clone.payload = text;
+            clone.logs.push('Converted payload to uppercase.');
+        }
+    },
+    {
+        id: 'text-to-lower',
+        name: 'Text: Lowercase',
+        description: 'Convert the payload to lowercase characters.',
+        icon: 'type',
+        accent: '#0ea5e9',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const text = ModuleUtils.ensureText(clone.payload).toLowerCase();
+            clone.payload = text;
+            clone.logs.push('Converted payload to lowercase.');
+        }
+    },
+    {
+        id: 'text-to-title',
+        name: 'Text: Title case',
+        description: 'Apply title casing to the payload.',
+        icon: 'italic',
+        accent: '#22d3ee',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            clone.payload = toTitleCase(clone.payload);
+            clone.logs.push('Applied title case to payload.');
+        }
+    },
+    {
+        id: 'text-to-sentence',
+        name: 'Text: Sentence case',
+        description: 'Convert the payload so sentences begin with uppercase letters.',
+        icon: 'align-left',
+        accent: '#14b8a6',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            clone.payload = toSentenceCase(clone.payload);
+            clone.logs.push('Applied sentence case to payload.');
+        }
+    },
+    {
+        id: 'text-reverse-characters',
+        name: 'Text: Reverse characters',
+        description: 'Reverse the characters inside the payload.',
+        icon: 'refresh-ccw',
+        accent: '#f97316',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const text = ModuleUtils.ensureText(clone.payload);
+            clone.payload = text.split('').reverse().join('');
+            clone.logs.push('Reversed payload characters.');
+        }
+    },
+    {
+        id: 'text-trim-whitespace',
+        name: 'Text: Trim whitespace',
+        description: 'Trim leading and trailing whitespace from the payload.',
+        icon: 'scissors',
+        accent: '#f59e0b',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            clone.payload = ModuleUtils.ensureText(clone.payload).trim();
+            clone.logs.push('Trimmed whitespace from payload.');
+        }
+    },
+    {
+        id: 'text-collapse-spaces',
+        name: 'Text: Collapse spaces',
+        description: 'Replace repeated whitespace with single spaces.',
+        icon: 'minus',
+        accent: '#6366f1',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            clone.payload = ModuleUtils.ensureText(clone.payload).replace(/\s+/g, ' ').trim();
+            clone.logs.push('Collapsed whitespace inside payload.');
+        }
+    },
+    {
+        id: 'text-remove-blank-lines',
+        name: 'Text: Remove blank lines',
+        description: 'Remove empty lines from the payload.',
+        icon: 'trash',
+        accent: '#ef4444',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const lines = ModuleUtils.toLines(clone.payload).filter(line => line.trim() !== '');
+            clone.payload = lines.join('\\n');
+            clone.logs.push(`Removed blank lines, ${lines.length} remain.`);
+        }
+    },
+    {
+        id: 'text-sort-lines-alpha',
+        name: 'Text: Sort lines',
+        description: 'Sort lines alphabetically, case insensitive.',
+        icon: 'list',
+        accent: '#4ade80',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const lines = ModuleUtils.toLines(clone.payload);
+            const sorted = lines.slice().sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+            clone.payload = sorted.join('\\n');
+            clone.logs.push('Sorted payload lines alphabetically.');
+        }
+    },
+    {
+        id: 'text-shuffle-lines',
+        name: 'Text: Shuffle lines',
+        description: 'Shuffle the order of lines randomly.',
+        icon: 'shuffle',
+        accent: '#f472b6',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const lines = ModuleUtils.toLines(clone.payload);
+            clone.payload = shuffleArray(lines).join('\\n');
+            clone.logs.push('Shuffled payload lines.');
+        }
+    },
+    {
+        id: 'text-dedent-lines',
+        name: 'Text: Dedent lines',
+        description: 'Remove shared indentation from all lines.',
+        icon: 'corner-down-left',
+        accent: '#8b5cf6',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const lines = ModuleUtils.toLines(clone.payload);
+            const indents = lines
+                .filter(line => line.trim() !== '')
+                .map(line => line.match(/^\s*/)[0].length);
+            const minIndent = indents.length ? Math.min(...indents) : 0;
+            const trimmed = minIndent > 0 ? lines.map(line => line.slice(minIndent)) : lines;
+            clone.payload = trimmed.join('\\n');
+            clone.logs.push(`Removed ${minIndent} leading spaces from each line.`);
+        }
+    },
+    {
+        id: 'text-wrap-width',
+        name: 'Text: Wrap width',
+        description: 'Wrap the payload to a maximum line width.',
+        icon: 'align-justify',
+        accent: '#22c55e',
+        defaultConfig: { width: 80 },
+        form: [
+            { key: 'width', label: 'Line width', type: 'number', min: 10 }
+        ],
+        handler: async (clone, config) => {
+            const width = Number(config?.width ?? 80) || 80;
+            clone.payload = wrapTextToWidth(clone.payload, width);
+            clone.logs.push(`Wrapped payload to ${Math.max(10, Math.floor(width))} columns.`);
+        }
+    },
+    {
+        id: 'text-pad-lines',
+        name: 'Text: Pad lines',
+        description: 'Add a prefix and suffix to every line.',
+        icon: 'code',
+        accent: '#facc15',
+        defaultConfig: { prefix: '', suffix: '' },
+        form: [
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: '> ' },
+            { key: 'suffix', label: 'Suffix', type: 'text', placeholder: '' }
+        ],
+        handler: async (clone, config) => {
+            const prefix = ModuleUtils.ensureText(config?.prefix || '');
+            const suffix = ModuleUtils.ensureText(config?.suffix || '');
+            const lines = ModuleUtils.toLines(clone.payload).map(line => `${prefix}${line}${suffix}`);
+            clone.payload = lines.join('\\n');
+            clone.logs.push('Padded each line with prefix and suffix.');
+        }
+    },
+    {
+        id: 'text-split-chunks',
+        name: 'Text: Split into chunks',
+        description: 'Split the payload into fixed-length chunks separated by newlines.',
+        icon: 'grid',
+        accent: '#0ea5e9',
+        defaultConfig: { chunkSize: 120 },
+        form: [
+            { key: 'chunkSize', label: 'Chunk size', type: 'number', min: 10 }
+        ],
+        handler: async (clone, config) => {
+            const size = Math.max(10, parseInt(config?.chunkSize, 10) || 120);
+            const text = ModuleUtils.ensureText(clone.payload);
+            const chunks = [];
+            for (let i = 0; i < text.length; i += size) {
+                chunks.push(text.slice(i, i + size));
+            }
+            clone.payload = chunks.join('\\n');
+            clone.logs.push(`Split payload into ${chunks.length} chunks of ${size} characters.`);
+        }
+    },
+    {
+        id: 'json-flatten-object',
+        name: 'JSON: Flatten object',
+        description: 'Flatten nested JSON objects into dot notation keys.',
+        icon: 'layers',
+        accent: '#10b981',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const source = typeof clone.payload === 'object' && clone.payload !== null
+                ? clone.payload
+                : ModuleUtils.safeJsonParse(clone.payload);
+            if (!source || typeof source !== 'object') {
+                clone.logs.push('Flatten skipped: payload is not JSON.');
+                return;
+            }
+            const flattened = flattenObject(source);
+            clone.payload = ModuleUtils.formatJson(flattened);
+            clone.logs.push(`Flattened JSON into ${Object.keys(flattened).length} keys.`);
+        }
+    },
+    {
+        id: 'json-to-csv-table',
+        name: 'JSON: Convert to CSV',
+        description: 'Convert an array of JSON objects into CSV text.',
+        icon: 'table',
+        accent: '#6366f1',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const parsed = Array.isArray(clone.payload)
+                ? clone.payload
+                : ModuleUtils.safeJsonParse(clone.payload);
+            const rows = Array.isArray(parsed) ? parsed : (parsed && typeof parsed === 'object' ? [parsed] : null);
+            if (!rows || !rows.length) {
+                clone.logs.push('CSV conversion skipped: payload is not an array.');
+                return;
+            }
+            const headers = Array.from(new Set(rows.flatMap(item => Object.keys(item || {}))));
+            const values = rows.map(item => headers.map(header => (item && item[header] !== undefined ? item[header] : '')));
+            clone.payload = csvStringify(headers, values);
+            clone.logs.push(`Converted JSON to CSV with ${rows.length} rows.`);
+        }
+    },
+    {
+        id: 'csv-to-json-array',
+        name: 'CSV: Convert to JSON',
+        description: 'Parse CSV text into an array of JSON objects.',
+        icon: 'file',
+        accent: '#f472b6',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const { headers, rows } = parseCsv(clone.payload);
+            if (!headers.length) {
+                clone.logs.push('CSV parse skipped: missing header row.');
+                return;
+            }
+            const objects = rows.map(row => {
+                const obj = {};
+                headers.forEach((header, index) => {
+                    obj[header] = row[index] ?? '';
+                });
+                return obj;
+            });
+            clone.payload = ModuleUtils.formatJson(objects);
+            clone.logs.push(`Parsed CSV into ${objects.length} objects.`);
+        }
+    },
+    {
+        id: 'html-strip-tags',
+        name: 'HTML: Strip tags',
+        description: 'Remove HTML tags and return plain text.',
+        icon: 'file-text',
+        accent: '#fb7185',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            clone.payload = stripHtmlTags(clone.payload);
+            clone.logs.push('Stripped HTML tags from payload.');
+        }
+    },
+    {
+        id: 'markdown-table-to-json',
+        name: 'Markdown: Table to JSON',
+        description: 'Convert a Markdown table into an array of JSON objects.',
+        icon: 'grid',
+        accent: '#06b6d4',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const lines = ModuleUtils.toLines(clone.payload).filter(line => line.trim().startsWith('|'));
+            if (lines.length < 2) {
+                clone.logs.push('Markdown parse skipped: table not detected.');
+                return;
+            }
+            const headerCells = lines[0].split('|').map(cell => cell.trim()).filter(Boolean);
+            const dataLines = lines.slice(2);
+            const objects = dataLines.map(line => {
+                const cells = line.split('|').map(cell => cell.trim()).filter(Boolean);
+                const record = {};
+                headerCells.forEach((header, index) => {
+                    record[header] = cells[index] ?? '';
+                });
+                return record;
+            });
+            clone.payload = ModuleUtils.formatJson(objects);
+            clone.logs.push(`Converted Markdown table with ${objects.length} rows.`);
+        }
+    }
+];
+
+registerUtilityModules(AdvancedDataUtilityDescriptors, { accent: '#2563eb', icon: 'sliders' });
+
+
+const WorkflowAutomationUtilityDescriptors = [
+    {
+        id: 'automation-delay',
+        name: 'Automation: Delay',
+        description: 'Pause the workflow for the specified number of milliseconds.',
+        icon: 'clock',
+        accent: '#f97316',
+        defaultConfig: { milliseconds: 500 },
+        form: [
+            { key: 'milliseconds', label: 'Delay (ms)', type: 'number', min: 0 }
+        ],
+        handler: async (clone, config) => {
+            const ms = Math.max(0, parseInt(config?.milliseconds, 10) || 0);
+            if (ms > 0) {
+                await new Promise(resolve => setTimeout(resolve, ms));
+            }
+            clone.logs.push(`Delayed workflow for ${ms} ms.`);
+        }
+    },
+    {
+        id: 'automation-repeat',
+        name: 'Automation: Repeat text',
+        description: 'Repeat the payload text a number of times with an optional separator.',
+        icon: 'repeat',
+        accent: '#22c55e',
+        defaultConfig: { times: 2, separator: '\n' },
+        form: [
+            { key: 'times', label: 'Times', type: 'number', min: 1 },
+            { key: 'separator', label: 'Separator', type: 'text', placeholder: '\n' }
+        ],
+        handler: async (clone, config) => {
+            const times = Math.max(1, parseInt(config?.times, 10) || 1);
+            const separator = config?.separator !== undefined ? ModuleUtils.ensureText(config.separator) : '
+';
+            const payload = ModuleUtils.ensureText(clone.payload);
+            clone.payload = Array(times).fill(payload).join(separator);
+            clone.logs.push(`Repeated payload ${times} times.`);
+        }
+    },
+    {
+        id: 'automation-default-variable',
+        name: 'Automation: Default variable',
+        description: 'Ensure a workflow variable has a default value if not set.',
+        icon: 'settings',
+        accent: '#0ea5e9',
+        defaultConfig: { key: 'status', value: 'ready' },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'status' },
+            { key: 'value', label: 'Default value', type: 'text', placeholder: 'ready' }
+        ],
+        handler: async (clone, config) => {
+            const key = String(config?.key || '').trim();
+            if (!key) {
+                clone.logs.push('Default variable skipped: missing key.');
+                return;
+            }
+            if (clone.vars[key] === undefined) {
+                clone.vars[key] = config?.value ?? '';
+                clone.logs.push(`Initialized variable ${key}.`);
+            } else {
+                clone.logs.push(`Variable ${key} already set.`);
+            }
+        }
+    },
+    {
+        id: 'automation-append-variable',
+        name: 'Automation: Append to variable',
+        description: 'Append the payload to a workflow variable separated by a delimiter.',
+        icon: 'plus',
+        accent: '#f59e0b',
+        defaultConfig: { key: 'log', separator: '\n' },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'log' },
+            { key: 'separator', label: 'Separator', type: 'text', placeholder: '\n' }
+        ],
+        handler: async (clone, config) => {
+            const key = String(config?.key || '').trim();
+            if (!key) {
+                clone.logs.push('Append variable skipped: missing key.');
+                return;
+            }
+            const separator = config?.separator !== undefined ? ModuleUtils.ensureText(config.separator) : '
+';
+            const existing = ModuleUtils.ensureText(clone.vars[key] ?? '');
+            const addition = ModuleUtils.ensureText(clone.payload);
+            clone.vars[key] = existing ? `${existing}${separator}${addition}` : addition;
+            clone.logs.push(`Appended payload to variable ${key}.`);
+        }
+    },
+    {
+        id: 'automation-increment-variable',
+        name: 'Automation: Increment counter',
+        description: 'Increment a numeric workflow variable by a given step.',
+        icon: 'trending-up',
+        accent: '#a855f7',
+        defaultConfig: { key: 'counter', step: 1 },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'counter' },
+            { key: 'step', label: 'Step', type: 'number' }
+        ],
+        handler: async (clone, config) => {
+            const key = String(config?.key || '').trim();
+            if (!key) {
+                clone.logs.push('Increment skipped: missing key.');
+                return;
+            }
+            const step = Number(config?.step ?? 1) || 1;
+            const current = Number(clone.vars[key] ?? 0) || 0;
+            const next = current + step;
+            clone.vars[key] = next;
+            clone.payload = next;
+            clone.logs.push(`Incremented ${key} to ${next}.`);
+        }
+    },
+    {
+        id: 'automation-record-timestamp',
+        name: 'Automation: Record timestamp',
+        description: 'Store the current timestamp in ISO or locale format.',
+        icon: 'calendar',
+        accent: '#22c55e',
+        defaultConfig: { key: 'timestamp', format: 'iso' },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'timestamp' },
+            { key: 'format', label: 'Format (iso/locale)', type: 'text', placeholder: 'iso' }
+        ],
+        handler: async (clone, config) => {
+            const key = String(config?.key || '').trim();
+            if (!key) {
+                clone.logs.push('Timestamp skipped: missing key.');
+                return;
+            }
+            const now = new Date();
+            const format = String(config?.format || 'iso').toLowerCase();
+            const value = format === 'locale' ? now.toLocaleString() : now.toISOString();
+            clone.vars[key] = value;
+            clone.logs.push(`Stored timestamp ${value} in ${key}.`);
+        }
+    },
+    {
+        id: 'automation-assert-not-empty',
+        name: 'Automation: Assert not empty',
+        description: 'Ensure the payload contains text and log a warning if it does not.',
+        icon: 'alert-triangle',
+        accent: '#ef4444',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            if (ModuleUtils.ensureText(clone.payload).trim() === '') {
+                clone.logs.push('Assertion failed: payload is empty.');
+            } else {
+                clone.logs.push('Assertion passed: payload is not empty.');
+            }
+        }
+    },
+    {
+        id: 'automation-assert-contains',
+        name: 'Automation: Assert contains text',
+        description: 'Check whether the payload contains a specific substring.',
+        icon: 'search',
+        accent: '#38bdf8',
+        defaultConfig: { phrase: '' },
+        form: [
+            { key: 'phrase', label: 'Phrase', type: 'text', placeholder: 'keyword' }
+        ],
+        handler: async (clone, config) => {
+            const phrase = ModuleUtils.ensureText(config?.phrase || '');
+            if (!phrase) {
+                clone.logs.push('Contains check skipped: missing phrase.');
+                return;
+            }
+            const text = ModuleUtils.ensureText(clone.payload);
+            const includes = text.includes(phrase);
+            clone.logs.push(includes ? `Payload contains "${phrase}".` : `Payload missing "${phrase}".`);
+        }
+    },
+    {
+        id: 'automation-count-lines',
+        name: 'Automation: Count lines',
+        description: 'Count the number of lines in the payload and store it as the payload.',
+        icon: 'hash',
+        accent: '#0ea5e9',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const lines = ModuleUtils.toLines(clone.payload);
+            clone.payload = lines.length;
+            clone.logs.push(`Counted ${lines.length} lines.`);
+        }
+    },
+    {
+        id: 'automation-payload-length',
+        name: 'Automation: Payload length',
+        description: 'Measure the payload length in characters and expose it.',
+        icon: 'bar-chart-2',
+        accent: '#6366f1',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const length = ModuleUtils.ensureText(clone.payload).length;
+            clone.payload = length;
+            clone.logs.push(`Payload length is ${length} characters.`);
+        }
+    },
+    {
+        id: 'automation-toggle-flag',
+        name: 'Automation: Toggle flag',
+        description: 'Toggle a boolean workflow flag and expose the current value.',
+        icon: 'toggle-right',
+        accent: '#f59e0b',
+        defaultConfig: { key: 'flag' },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'flag' }
+        ],
+        handler: async (clone, config) => {
+            const key = String(config?.key || '').trim();
+            if (!key) {
+                clone.logs.push('Toggle flag skipped: missing key.');
+                return;
+            }
+            const current = Boolean(clone.vars[key]);
+            const next = !current;
+            clone.vars[key] = next;
+            clone.payload = next;
+            clone.logs.push(`Toggled ${key} to ${next}.`);
+        }
+    },
+    {
+        id: 'automation-remember-history',
+        name: 'Automation: Remember history',
+        description: 'Store the payload in an array variable keeping the latest entries.',
+        icon: 'archive',
+        accent: '#fb7185',
+        defaultConfig: { key: 'history', limit: 20 },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'history' },
+            { key: 'limit', label: 'Max items', type: 'number', min: 1 }
+        ],
+        handler: async (clone, config) => {
+            const key = String(config?.key || '').trim();
+            if (!key) {
+                clone.logs.push('History skipped: missing key.');
+                return;
+            }
+            const limit = Math.max(1, parseInt(config?.limit, 10) || 20);
+            const list = Array.isArray(clone.vars[key]) ? clone.vars[key] : [];
+            list.push(clone.payload);
+            while (list.length > limit) {
+                list.shift();
+            }
+            clone.vars[key] = list;
+            clone.logs.push(`Stored payload in ${key}. Items: ${list.length}/${limit}.`);
+        }
+    }
+];
+
+registerUtilityModules(WorkflowAutomationUtilityDescriptors, { accent: '#f97316', icon: 'settings' });
+
+
+const TextTransformDescriptorsPart1 = [
+    {
+        id: 'text-trim-lines',
+        name: 'Trim blank lines',
+        description: 'Remove empty lines at the start and end of the payload.',
+        icon: 'chevron-up',
+        accent: '#38bdf8',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const lines = ModuleUtils.toLines(clone.payload);
+            while (lines.length && !ModuleUtils.ensureText(lines[0]).trim()) lines.shift();
+            while (lines.length && !ModuleUtils.ensureText(lines[lines.length - 1]).trim()) lines.pop();
+            clone.payload = lines.join('\\n');
+            clone.logs.push('Trimmed blank lines.');
+        }
+    },
+    {
+        id: 'text-remove-empty-lines',
+        name: 'Remove empty lines',
+        description: 'Strip all empty lines from the payload.',
+        icon: 'minus',
+        accent: '#22c55e',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const lines = ModuleUtils.toLines(clone.payload).filter(line => ModuleUtils.ensureText(line).trim() !== '');
+            clone.payload = lines.join('\\n');
+            clone.logs.push('Removed empty lines.');
+        }
+    },
+    {
+        id: 'text-deduplicate-lines',
+        name: 'Deduplicate lines',
+        description: 'Keep only the first occurrence of each line.',
+        icon: 'filter',
+        accent: '#f97316',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const lines = ModuleUtils.toLines(clone.payload);
+            const unique = Array.from(new Set(lines));
+            clone.payload = unique.join('\\n');
+            clone.logs.push(`Reduced to ${unique.length} unique lines.`);
+        }
+    },
+    {
+        id: 'text-sort-lines',
+        name: 'Sort lines',
+        description: 'Sort lines alphabetically.',
+        icon: 'arrow-down',
+        accent: '#a855f7',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const lines = ModuleUtils.toLines(clone.payload).sort((a, b) => a.localeCompare(b));
+            clone.payload = lines.join('\\n');
+            clone.logs.push('Sorted lines alphabetically.');
+        }
+    },
+    {
+        id: 'text-reverse-lines',
+        name: 'Reverse lines',
+        description: 'Reverse the order of lines.',
+        icon: 'repeat',
+        accent: '#14b8a6',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const lines = ModuleUtils.toLines(clone.payload).reverse();
+            clone.payload = lines.join('\\n');
+            clone.logs.push('Reversed line order.');
+        }
+    },
+    {
+        id: 'text-limit-lines',
+        name: 'Limit lines',
+        description: 'Keep only the first N lines of the payload.',
+        icon: 'corner-down-right',
+        accent: '#ef4444',
+        defaultConfig: { count: 5 },
+        form: [
+            { key: 'count', label: 'Number of lines', type: 'number', min: 1 }
+        ],
+        handler: async (clone, config) => {
+            const count = Math.max(1, parseInt(config?.count, 10) || 5);
+            const lines = ModuleUtils.toLines(clone.payload).slice(0, count);
+            clone.payload = lines.join('\\n');
+            clone.logs.push(`Limited to ${lines.length} lines.`);
+        }
+    },
+    {
+        id: 'text-keep-last-lines',
+        name: 'Keep last lines',
+        description: 'Retain only the last N lines of the payload.',
+        icon: 'corner-up-left',
+        accent: '#0ea5e9',
+        defaultConfig: { count: 5 },
+        form: [
+            { key: 'count', label: 'Number of lines', type: 'number', min: 1 }
+        ],
+        handler: async (clone, config) => {
+            const count = Math.max(1, parseInt(config?.count, 10) || 5);
+            const lines = ModuleUtils.toLines(clone.payload);
+            clone.payload = lines.slice(-count).join('\\n');
+            clone.logs.push(`Kept last ${Math.min(lines.length, count)} lines.`);
+        }
+    },
+    {
+        id: 'text-add-prefix',
+        name: 'Add prefix',
+        description: 'Add a prefix to every line of the payload.',
+        icon: 'corner-right-down',
+        accent: '#6366f1',
+        defaultConfig: { prefix: '> ' },
+        form: [
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: '> ' }
+        ],
+        handler: async (clone, config) => {
+            const prefix = config?.prefix ?? '> ';
+            const lines = ModuleUtils.toLines(clone.payload).map(line => `${prefix}${line}`);
+            clone.payload = lines.join('\\n');
+            clone.logs.push('Added prefix to lines.');
+        }
+    },
+    {
+        id: 'text-add-suffix',
+        name: 'Add suffix',
+        description: 'Add a suffix to every line of the payload.',
+        icon: 'corner-left-up',
+        accent: '#facc15',
+        defaultConfig: { suffix: ' ✔' },
+        form: [
+            { key: 'suffix', label: 'Suffix', type: 'text', placeholder: ' ✔' }
+        ],
+        handler: async (clone, config) => {
+            const suffix = config?.suffix ?? ' ✔';
+            const lines = ModuleUtils.toLines(clone.payload).map(line => `${line}${suffix}`);
+            clone.payload = lines.join('\\n');
+            clone.logs.push('Added suffix to lines.');
+        }
+    },
+    {
+        id: 'text-wrap-text',
+        name: 'Wrap text',
+        description: 'Wrap the payload with a prefix and suffix.',
+        icon: 'square',
+        accent: '#22c55e',
+        defaultConfig: { prefix: '"', suffix: '"' },
+        form: [
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: '"' },
+            { key: 'suffix', label: 'Suffix', type: 'text', placeholder: '"' }
+        ],
+        handler: async (clone, config) => {
+            const prefix = config?.prefix ?? '"';
+            const suffix = config?.suffix ?? '"';
+            clone.payload = `${prefix}${ModuleUtils.ensureText(clone.payload)}${suffix}`;
+            clone.logs.push('Wrapped payload with prefix and suffix.');
+        }
+    },
+    {
+        id: 'text-replace-text',
+        name: 'Replace text',
+        description: 'Replace exact text matches within the payload.',
+        icon: 'replace',
+        accent: '#f97316',
+        defaultConfig: { search: 'foo', replace: 'bar' },
+        form: [
+            { key: 'search', label: 'Search for', type: 'text', placeholder: 'foo' },
+            { key: 'replace', label: 'Replace with', type: 'text', placeholder: 'bar' }
+        ],
+        handler: async (clone, config) => {
+            const search = config?.search ?? '';
+            const replace = config?.replace ?? '';
+            clone.payload = ModuleUtils.ensureText(clone.payload).split(search).join(replace);
+            clone.logs.push('Replaced occurrences of text.');
+        }
+    },
+    {
+        id: 'text-regex-replace',
+        name: 'Regex replace',
+        description: 'Replace text using a regular expression.',
+        icon: 'hash',
+        accent: '#8b5cf6',
+        defaultConfig: { pattern: '(\d+)', replace: '#$1' },
+        form: [
+            { key: 'pattern', label: 'Pattern', type: 'text', placeholder: '(\d+)' },
+            { key: 'replace', label: 'Replace with', type: 'text', placeholder: '#$1' }
+        ],
+        handler: async (clone, config) => {
+            try {
+                const regex = new RegExp(config?.pattern || '', 'g');
+                clone.payload = ModuleUtils.ensureText(clone.payload).replace(regex, config?.replace ?? '');
+                clone.logs.push('Applied regex replacement.');
+            } catch (error) {
+                clone.logs.push(`Regex replace failed: ${error.message}`);
+            }
+        }
+    }
+];
+
+registerUtilityModules(TextTransformDescriptorsPart1, { accent: '#0ea5e9', icon: 'type' });
+
+
+const TextTransformDescriptorsPart2 = [
+    {
+        id: 'text-regex-extract',
+        name: 'Regex extract',
+        description: 'Extract matches from the payload using a regular expression.',
+        icon: 'target',
+        accent: '#22c55e',
+        defaultConfig: { pattern: '(https?:\/\/\S+)', mode: 'all' },
+        form: [
+            { key: 'pattern', label: 'Pattern', type: 'text', placeholder: '(https?:\/\/\S+)' },
+            { key: 'mode', label: 'Mode (first/all)', type: 'text', placeholder: 'all' }
+        ],
+        handler: async (clone, config) => {
+            try {
+                const regex = new RegExp(config?.pattern || '', 'g');
+                const matches = ModuleUtils.ensureText(clone.payload).match(regex) || [];
+                clone.payload = (config?.mode || 'all') === 'first' ? (matches[0] || '') : matches.join('\n');
+                clone.logs.push(`Extracted ${matches.length} matches.`);
+            } catch (error) {
+                clone.logs.push(`Regex extract failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'text-extract-urls',
+        name: 'Extract URLs',
+        description: 'Find all URLs in the payload.',
+        icon: 'link',
+        accent: '#0ea5e9',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const matches = ModuleUtils.ensureText(clone.payload).match(/https?:\/\/[^\s]+/g) || [];
+            clone.payload = matches.join('\n');
+            clone.logs.push(`Found ${matches.length} URLs.`);
+        }
+    },
+    {
+        id: 'text-extract-emails',
+        name: 'Extract emails',
+        description: 'Find all email addresses in the payload.',
+        icon: 'mail',
+        accent: '#f97316',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const matches = ModuleUtils.ensureText(clone.payload).match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g) || [];
+            clone.payload = matches.join('\n');
+            clone.logs.push(`Found ${matches.length} email addresses.`);
+        }
+    },
+    {
+        id: 'text-count-words',
+        name: 'Count words',
+        description: 'Count the number of words in the payload.',
+        icon: 'type',
+        accent: '#6366f1',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const words = ModuleUtils.ensureText(clone.payload).trim().split(/\s+/).filter(Boolean);
+            clone.payload = String(words.length);
+            clone.logs.push(`Counted ${words.length} words.`);
+        }
+    },
+    {
+        id: 'text-count-characters',
+        name: 'Count characters',
+        description: 'Count the number of characters in the payload.',
+        icon: 'hash',
+        accent: '#a855f7',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const length = ModuleUtils.ensureText(clone.payload).length;
+            clone.payload = String(length);
+            clone.logs.push(`Counted ${length} characters.`);
+        }
+    },
+    {
+        id: 'text-slugify',
+        name: 'Slugify text',
+        description: 'Convert the payload into a URL-friendly slug.',
+        icon: 'minus',
+        accent: '#22c55e',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            clone.payload = ModuleUtils.slugify(clone.payload);
+            clone.logs.push('Converted text to slug.');
+        }
+    },
+    {
+        id: 'text-base64-encode',
+        name: 'Base64 encode',
+        description: 'Encode the payload as base64 text.',
+        icon: 'shield',
+        accent: '#38bdf8',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            clone.payload = Buffer.from(ModuleUtils.ensureText(clone.payload), 'utf8').toString('base64');
+            clone.logs.push('Encoded payload to base64.');
+        }
+    },
+    {
+        id: 'text-base64-decode',
+        name: 'Base64 decode',
+        description: 'Decode base64 text into UTF-8.',
+        icon: 'unlock',
+        accent: '#f97316',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            try {
+                clone.payload = Buffer.from(ModuleUtils.ensureText(clone.payload).trim(), 'base64').toString('utf8');
+                clone.logs.push('Decoded base64 payload.');
+            } catch (error) {
+                clone.logs.push('Base64 decode failed.');
+                clone.payload = '';
+            }
+        }
+    },
+    {
+        id: 'text-hash-sha256',
+        name: 'SHA-256 hash',
+        description: 'Generate a SHA-256 hash of the payload.',
+        icon: 'shield-off',
+        accent: '#facc15',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            clone.payload = ModuleUtils.hash(clone.payload, 'sha256');
+            clone.logs.push('Generated SHA-256 hash.');
+        }
+    },
+    {
+        id: 'text-generate-uuid',
+        name: 'Generate UUID',
+        description: 'Generate a random UUID and store it as the payload.',
+        icon: 'aperture',
+        accent: '#ef4444',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const uuid = crypto.randomUUID ? crypto.randomUUID() : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.randomBytes(1)[0] & 15 >> c / 4).toString(16));
+            clone.payload = uuid;
+            clone.logs.push('Generated UUID.');
+        }
+    },
+    {
+        id: 'text-truncate',
+        name: 'Truncate text',
+        description: 'Limit the payload to a maximum number of characters.',
+        icon: 'crop',
+        accent: '#14b8a6',
+        defaultConfig: { maxLength: 120 },
+        form: [
+            { key: 'maxLength', label: 'Max length', type: 'number', min: 1 }
+        ],
+        handler: async (clone, config) => {
+            const maxLength = Math.max(1, parseInt(config?.maxLength, 10) || 120);
+            const text = ModuleUtils.ensureText(clone.payload);
+            clone.payload = text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
+            clone.logs.push(`Truncated payload to ${maxLength} characters.`);
+        }
+    },
+    {
+        id: 'text-extract-domain',
+        name: 'Extract domain',
+        description: 'Extract the first domain name from the payload.',
+        icon: 'globe',
+        accent: '#6366f1',
+        defaultConfig: {},
+        form: [],
+        handler: async (clone) => {
+            const match = ModuleUtils.ensureText(clone.payload).match(/https?:\/\/([^\s\/]+)/i);
+            clone.payload = match ? match[1] : '';
+            clone.logs.push('Extracted domain from payload.');
+        }
+    }
+];
+
+registerUtilityModules(TextTransformDescriptorsPart2, { accent: '#38bdf8', icon: 'type' });
+
     }
 ];
 
@@ -920,6 +4078,9 @@ const QuickActionLab = {
     boundOutsideClick: null,
     builderSelectWrappers: new Set(),
     boundSelectOutsideClick: null,
+    moduleSearchQuery: '',
+    blockExplorerWindow: null,
+    blockExplorerSelectedId: null,
 
     init() {
         if (this.initialized) return;
@@ -965,7 +4126,10 @@ const QuickActionLab = {
             iconPreview: Utils.getElement('#builder-icon-preview'),
             iconPickerToggle: Utils.getElement('#builder-icon-picker-toggle'),
             iconPicker: Utils.getElement('#builder-icon-picker'),
-            inspector: document.querySelector('.builder-inspector')
+            inspector: document.querySelector('.builder-inspector'),
+            moduleSearchInput: Utils.getElement('#builder-module-search'),
+            globalSearchInput: Utils.getElement('#builder-global-search'),
+            openBlockExplorer: Utils.getElement('#builder-open-block-explorer')
         };
 
         this.elements.dialog = document.querySelector('#quick-action-builder-modal .builder-dialog');
@@ -998,6 +4162,41 @@ const QuickActionLab = {
         return !!(AppState.settings?.subscription?.entitlements?.hasAddonBuilder);
     },
 
+    setModuleSearchQuery(value = '', { skipExplorerSync = false } = {}) {
+        const normalized = value || '';
+        if (this.moduleSearchQuery === normalized) {
+            this.syncSearchInputs(normalized);
+            return;
+        }
+        this.moduleSearchQuery = normalized;
+        this.syncSearchInputs(normalized);
+        this.renderModuleList();
+        if (!skipExplorerSync && this.blockExplorerWindow && !this.blockExplorerWindow.closed) {
+            try {
+                this.blockExplorerWindow.postMessage({ type: 'builder-search', query: normalized }, '*');
+            } catch (error) {
+                console.warn('Failed to sync block explorer search', error);
+            }
+        }
+    },
+
+    syncSearchInputs(value = this.moduleSearchQuery) {
+        if (this.elements.moduleSearchInput && this.elements.moduleSearchInput.value !== value) {
+            this.elements.moduleSearchInput.value = value;
+        }
+        if (this.elements.globalSearchInput && this.elements.globalSearchInput.value !== value) {
+            this.elements.globalSearchInput.value = value;
+        }
+    },
+
+    updateModuleSearchFromExplorer(value = '') {
+        this.setModuleSearchQuery(value, { skipExplorerSync: true });
+    },
+
+    setBlockExplorerSelection(id = null) {
+        this.blockExplorerSelectedId = id || null;
+    },
+
     attachEvents() {
         this.boundDragMove = (event) => this.handleNodeDrag(event);
         this.boundDragEnd = (event) => this.stopNodeDrag(event);
@@ -1008,6 +4207,22 @@ const QuickActionLab = {
         this.elements.importToggle?.addEventListener('click', () => this.toggleImportArea(true));
         this.elements.importCancel?.addEventListener('click', () => this.toggleImportArea(false));
         this.elements.importConfirm?.addEventListener('click', () => this.handleImport());
+
+        if (this.elements.moduleSearchInput) {
+            const onSearchInput = Utils.debounce((event) => {
+                this.setModuleSearchQuery(event.target.value || '');
+            }, 120);
+            this.elements.moduleSearchInput.addEventListener('input', onSearchInput);
+        }
+
+        if (this.elements.globalSearchInput) {
+            const onGlobalSearch = Utils.debounce((event) => {
+                this.setModuleSearchQuery(event.target.value || '');
+            }, 120);
+            this.elements.globalSearchInput.addEventListener('input', onGlobalSearch);
+        }
+
+        this.elements.openBlockExplorer?.addEventListener('click', () => this.openBlockExplorer());
 
         this.elements.actionLabelInput?.addEventListener('input', (event) => {
             if (!this.builderState) return;
@@ -1098,6 +4313,10 @@ const QuickActionLab = {
         this.updateBuilderAccessState();
         this.renderActiveList();
         this.renderCatalog();
+        this.renderModuleList();
+        if (this.blockExplorerWindow && !this.blockExplorerWindow.closed) {
+            this.renderBlockExplorerWindow();
+        }
     },
 
     updateBuilderAccessState() {
@@ -1284,6 +4503,7 @@ const QuickActionLab = {
         this.windowExpanded = false;
         this.builderState = this.createDefaultBuilderState();
         this.builderState.isOpen = true;
+        this.setModuleSearchQuery('', { skipExplorerSync: true });
 
         if (actionId) {
             const existing = QuickActionStore.getDefinition(actionId);
@@ -1457,6 +4677,7 @@ const QuickActionLab = {
     },
 
     renderModuleList() {
+        this.syncSearchInputs();
         const lists = [
             { container: this.elements.triggerList, items: QuickActionModulesByCategory.triggers },
             { container: this.elements.actionList, items: QuickActionModulesByCategory.actions },
@@ -1466,7 +4687,16 @@ const QuickActionLab = {
         lists.forEach(({ container, items }) => {
             if (!container) return;
             container.innerHTML = '';
-            items.forEach(module => {
+            const filtered = this.filterModules(items);
+            if (!filtered.length) {
+                const empty = Utils.createElement('li', {
+                    className: 'builder-module-empty',
+                    text: this.moduleSearchQuery ? 'No blocks match your search.' : 'No blocks available.'
+                });
+                container.appendChild(empty);
+                return;
+            }
+            filtered.forEach(module => {
                 const item = Utils.createElement('li', { className: 'builder-module-item' });
                 item.setAttribute('data-module-id', module.id);
                 const title = Utils.createElement('strong', { text: this.getModuleName(module) });
@@ -1477,6 +4707,464 @@ const QuickActionLab = {
                 container.appendChild(item);
             });
         });
+    },
+
+    filterModules(modules = []) {
+        if (!this.moduleSearchQuery) return modules;
+        const query = this.moduleSearchQuery.toLowerCase();
+        return modules.filter(module => {
+            const text = [
+                this.getModuleName(module),
+                this.getModuleDescription(module),
+                module.category || '',
+                Array.isArray(module.tags) ? module.tags.join('') : ''
+            ].join('').toLowerCase();
+            return text.includes(query);
+        });
+    },
+
+    openBlockExplorer() {
+        try {
+            if (this.blockExplorerWindow && !this.blockExplorerWindow.closed) {
+                this.blockExplorerWindow.focus();
+                this.renderBlockExplorerWindow();
+                return;
+            }
+            this.blockExplorerWindow = window.open('', 'quickActionBlockExplorer', 'width=760,height=820');
+        } catch (error) {
+            console.warn('Failed to open block explorer window', error);
+            this.blockExplorerWindow = null;
+            return;
+        }
+
+        if (!this.blockExplorerWindow) {
+            alert('Unable to open block explorer window.');
+            return;
+        }
+
+        this.blockExplorerWindow.addEventListener('beforeunload', () => {
+            this.blockExplorerWindow = null;
+        });
+
+        this.renderBlockExplorerWindow();
+    },
+
+    getBlockExplorerData() {
+        return QuickActionModuleDefinitions.map(module => ({
+            id: module.id,
+            name: this.getModuleName(module),
+            description: this.getModuleDescription(module),
+            category: module.category || 'action',
+            icon: module.icon || 'zap',
+            accent: module.accent || '#5865f2',
+            tags: module.tags || [],
+            form: Array.isArray(module.form) ? module.form : [],
+            defaultConfig: module.defaultConfig || {},
+            inputs: Array.isArray(module.inputs) ? module.inputs : [],
+            outputs: Array.isArray(module.outputs) ? module.outputs : []
+        })).sort((a, b) => a.name.localeCompare(b.name));
+    },
+
+    renderBlockExplorerWindow() {
+        if (!this.blockExplorerWindow) return;
+        const data = this.getBlockExplorerData();
+        const serialized = JSON.stringify(data).replace(/</g, '\\u003c');
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Block explorer</title>
+    <style>
+        :root {
+            color-scheme: dark light;
+        }
+        body {
+            margin: 0;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: #0f172a;
+            color: rgba(226, 232, 240, 0.92);
+            height: 100vh;
+            display: grid;
+            grid-template-rows: auto 1fr;
+        }
+        header {
+            padding: 18px clamp(16px, 4vw, 32px);
+            background: rgba(15, 23, 42, 0.92);
+            border-bottom: 1px solid rgba(94, 114, 228, 0.25);
+            display: grid;
+            gap: 12px;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        header p {
+            margin: 0;
+            font-size: 13px;
+            color: rgba(148, 163, 184, 0.9);
+        }
+        .explorer-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        #explorer-search {
+            flex: 1;
+            min-width: 220px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(94, 114, 228, 0.35);
+            background: rgba(15, 23, 42, 0.65);
+            color: inherit;
+        }
+        #explorer-search:focus {
+            outline: none;
+            border-color: rgba(59, 130, 246, 0.6);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.18);
+        }
+        #explorer-count {
+            font-size: 12px;
+            color: rgba(148, 163, 184, 0.8);
+        }
+        main {
+            display: grid;
+            grid-template-columns: minmax(260px, 1fr) minmax(360px, 2fr);
+            gap: 0;
+            height: 100%;
+        }
+        #explorer-sidebar {
+            border-right: 1px solid rgba(94, 114, 228, 0.2);
+            background: linear-gradient(180deg, rgba(30, 41, 59, 0.75), rgba(15, 23, 42, 0.9));
+            overflow-y: auto;
+            padding: 24px clamp(16px, 4vw, 28px);
+        }
+        #explorer-list {
+            display: grid;
+            gap: 10px;
+        }
+        .block-card {
+            border: 1px solid rgba(94, 114, 228, 0.25);
+            border-radius: 14px;
+            background: rgba(15, 23, 42, 0.72);
+            color: inherit;
+            padding: 14px;
+            text-align: left;
+            display: grid;
+            gap: 6px;
+            cursor: pointer;
+            transition: border-color 0.2s ease, transform 0.15s ease;
+        }
+        .block-card:hover {
+            border-color: rgba(59, 130, 246, 0.55);
+            transform: translateX(4px);
+        }
+        .block-card.selected {
+            border-color: rgba(94, 234, 212, 0.7);
+            box-shadow: 0 6px 18px rgba(8, 47, 73, 0.45);
+        }
+        .block-card small {
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(148, 163, 184, 0.75);
+        }
+        .block-card strong {
+            font-size: 15px;
+        }
+        .block-card span {
+            font-size: 13px;
+            color: rgba(226, 232, 240, 0.75);
+        }
+        #explorer-detail {
+            padding: 28px clamp(20px, 5vw, 48px);
+            display: grid;
+            gap: 18px;
+            background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.15), transparent 55%);
+        }
+        .detail-placeholder {
+            margin: auto;
+            text-align: center;
+            color: rgba(148, 163, 184, 0.8);
+        }
+        .detail-header {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        .detail-icon {
+            width: 48px;
+            height: 48px;
+            display: grid;
+            place-items: center;
+            border-radius: 12px;
+            background: rgba(59, 130, 246, 0.15);
+            font-size: 24px;
+        }
+        .detail-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            font-size: 12px;
+            color: rgba(148, 163, 184, 0.9);
+        }
+        .detail-section {
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid rgba(94, 114, 228, 0.2);
+            border-radius: 16px;
+            padding: 16px 18px;
+            display: grid;
+            gap: 8px;
+        }
+        .detail-section h3 {
+            margin: 0;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(148, 163, 184, 0.85);
+        }
+        .detail-section dl {
+            margin: 0;
+            display: grid;
+            gap: 6px;
+        }
+        .detail-section dt {
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .detail-section dd {
+            margin: 0;
+            font-size: 13px;
+            color: rgba(226, 232, 240, 0.85);
+        }
+        .detail-actions {
+            display: flex;
+            gap: 12px;
+        }
+        .detail-actions button {
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(94, 234, 212, 0.4);
+            background: rgba(45, 212, 191, 0.18);
+            color: rgba(226, 232, 240, 0.92);
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.15s ease, border-color 0.2s ease;
+        }
+        .detail-actions button:hover {
+            transform: translateY(-1px);
+            border-color: rgba(94, 234, 212, 0.7);
+        }
+        .empty-state {
+            font-size: 13px;
+            color: rgba(148, 163, 184, 0.8);
+        }
+        .detail-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .detail-tags span {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <h1>Block explorer</h1>
+            <p>Browse every available block and inspect its configuration before adding.</p>
+        </div>
+        <div class="explorer-controls">
+            <input type="search" id="explorer-search" placeholder="Search blocks…" aria-label="Search blocks">
+            <span id="explorer-count">${data.length} blocks</span>
+        </div>
+    </header>
+    <main>
+        <aside id="explorer-sidebar">
+            <div id="explorer-list"></div>
+        </aside>
+        <section id="explorer-detail">
+            <div class="detail-placeholder">Select a block to see its description and inputs.</div>
+        </section>
+    </main>
+    <script>
+        const modules = ${serialized};
+        const list = document.getElementById('explorer-list');
+        const search = document.getElementById('explorer-search');
+        const count = document.getElementById('explorer-count');
+        const detail = document.getElementById('explorer-detail');
+        const initialQueryValue = ${JSON.stringify(this.moduleSearchQuery || '')};
+        let selectedId = ${JSON.stringify(this.blockExplorerSelectedId || '')};
+
+        function getFiltered(query = '') {
+            const normalized = query.trim().toLowerCase();
+            if (!normalized) return modules;
+            return modules.filter(module => {
+                const haystack = [module.name, module.description, module.category, (module.tags || []).join('')].join('').toLowerCase();
+                return haystack.includes(normalized);
+            });
+        }
+
+        function renderList(query = '', preserveSelection = false) {
+            const items = getFiltered(query);
+            count.textContent = `${items.length} block${items.length === 1 ? '' : 's'}`;
+            list.innerHTML = '';
+            if (!items.length) {
+                const empty = document.createElement('div');
+                empty.className = 'empty-state';
+                empty.textContent = 'No blocks found for this search.';
+                list.appendChild(empty);
+                detail.innerHTML = '<div class="detail-placeholder">Nothing matches the current search.</div>';
+                return;
+            }
+            if (!preserveSelection || !items.some(item => item.id === selectedId)) {
+                selectedId = items[0].id;
+            }
+            items.forEach(module => {
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.className = 'block-card' + (module.id === selectedId ? ' selected' : '');
+                card.dataset.id = module.id;
+                card.innerHTML = `<small>${module.category}</small><strong>${module.name}</strong><span>${module.description}</span>`;
+                list.appendChild(card);
+            });
+            renderDetail(items.find(item => item.id === selectedId) || items[0]);
+        }
+
+        function renderDetail(module) {
+            if (!module) {
+                detail.innerHTML = '<div class="detail-placeholder">Select a block to see its description and inputs.</div>';
+                return;
+            }
+            const tagMarkup = (module.tags || []).map(tag => `<span>${tag}</span>`).join('');
+            const formMarkup = module.form.length
+                ? `<div class="detail-section"><h3>Configuration fields</h3><dl>${module.form.map(field => `<dt>${field.label || field.key}</dt><dd>${field.type || 'text'}${field.placeholder ? ` · placeholder: ${field.placeholder}` : ''}</dd>`).join('')}</dl></div>`
+                : '';
+            const ioMarkup = `<div class="detail-section"><h3>Connections</h3><dl><dt>Inputs</dt><dd>${module.inputs.length ? module.inputs.map(input => input.label || input.id).join(', ') : 'None'}</dd><dt>Outputs</dt><dd>${module.outputs.length ? module.outputs.map(output => output.label || output.id).join(', ') : 'Next'}</dd></dl></div>`;
+            const configPreview = module.defaultConfig && Object.keys(module.defaultConfig).length
+                ? (() => {
+                    const json = JSON.stringify(module.defaultConfig, null, 2);
+                    const escaped = json.replace(/[&<>]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[char] || char));
+                    return `<div class="detail-section"><h3>Default config</h3><pre style="margin:0;font-size:12px;white-space:pre-wrap;">${escaped}</pre></div>`;
+                })()
+                : '';
+            detail.innerHTML = `
+                <div class="detail-header">
+                    <div class="detail-icon" style="color:${module.accent}">⚡</div>
+                    <div>
+                        <h2 style="margin:0 0 4px 0;font-size:20px;">${module.name}</h2>
+                        <p style="margin:0;font-size:14px;color:rgba(226,232,240,0.75);">${module.description}</p>
+                    </div>
+                </div>
+                <div class="detail-meta">
+                    <span>${module.category}</span>
+                    ${tagMarkup ? `<div class="detail-tags">${tagMarkup}</div>` : ''}
+                </div>
+                ${formMarkup}
+                ${ioMarkup}
+                ${configPreview}
+                <div class="detail-actions">
+                    <button type="button" id="detail-add-button">Add to workflow</button>
+                </div>
+            `;
+            const addButton = document.getElementById('detail-add-button');
+            if (addButton) {
+                addButton.addEventListener('click', () => addBlock(module.id));
+            }
+        }
+
+        function addBlock(id) {
+            if (!id) return;
+            if (window.opener && !window.opener.closed && window.opener.QuickActionLab) {
+                const lab = window.opener.QuickActionLab;
+                if (!lab.builderState?.isOpen) {
+                    lab.openBuilder();
+                }
+                lab.setBlockExplorerSelection(id);
+                lab.addNode(id);
+            }
+        }
+
+        list.addEventListener('click', (event) => {
+            const card = event.target.closest('.block-card');
+            if (!card) return;
+            const { id } = card.dataset;
+            if (!id) return;
+            selectedId = id;
+            if (window.opener && !window.opener.closed && window.opener.QuickActionLab) {
+                try {
+                    window.opener.QuickActionLab.setBlockExplorerSelection(id);
+                } catch (error) {
+                    console.warn('Failed to sync selection', error);
+                }
+            }
+            renderList(search.value, true);
+        });
+
+        list.addEventListener('dblclick', (event) => {
+            const card = event.target.closest('.block-card');
+            if (!card) return;
+            addBlock(card.dataset.id);
+        });
+
+        search.addEventListener('input', () => {
+            renderList(search.value);
+            if (window.opener && !window.opener.closed && window.opener.QuickActionLab) {
+                try {
+                    window.opener.QuickActionLab.updateModuleSearchFromExplorer(search.value);
+                } catch (error) {
+                    console.warn('Failed to push search update', error);
+                }
+            }
+        });
+
+        window.addEventListener('message', (event) => {
+            if (!event?.data) return;
+            if (event.data.type === 'builder-search') {
+                const query = event.data.query || '';
+                if (search.value !== query) {
+                    search.value = query;
+                    renderList(query);
+                }
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            try {
+                if (window.opener && !window.opener.closed && window.opener.QuickActionLab) {
+                    window.opener.QuickActionLab.blockExplorerWindow = null;
+                }
+            } catch (error) {
+                console.warn('Failed to notify parent about explorer close', error);
+            }
+        });
+
+        search.value = initialQueryValue;
+        renderList(initialQueryValue, true);
+        if (selectedId) {
+            try {
+                if (window.opener && !window.opener.closed && window.opener.QuickActionLab) {
+                    window.opener.QuickActionLab.setBlockExplorerSelection(selectedId);
+                }
+            } catch (error) {
+                console.warn('Failed to sync initial selection', error);
+            }
+        }
+        setTimeout(() => search.focus(), 120);
+    </script>
+</body>
+</html>
+`.replace(/<\\/script>/g, '<\\\\/script>');
+
+        this.blockExplorerWindow.document.open();
+        this.blockExplorerWindow.document.write(html);
+        this.blockExplorerWindow.document.close();
     },
 
     renderCanvas() {
@@ -2311,6 +5999,10 @@ const QuickActionLab = {
         }
     }
 };
+
+if (typeof window !== 'undefined') {
+    window.QuickActionLab = QuickActionLab;
+}
 
 // =================================================================================
 // === Система Локализации (Клиентская сторона) ===

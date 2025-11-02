@@ -406,6 +406,10 @@
                     <h2 id="quick-action-builder-title">Quick action studio</h2>
                     <p id="quick-action-builder-subtitle">Connect blocks visually to craft new buttons for the search bar.</p>
                 </div>
+                <div class="builder-header-search">
+                    <input type="search" id="builder-global-search" placeholder="Search blocks…" aria-label="Search blocks">
+                    <button type="button" id="builder-open-block-explorer" class="builder-header-browse">Browse library</button>
+                </div>
                 <div class="builder-header-actions">
                     <button id="builder-export-action" class="builder-header-button" title="Export configuration">
                         <i data-feather="share-2"></i>
@@ -417,6 +421,9 @@
             </header>
             <div class="builder-body">
                 <aside class="builder-sidebar">
+                    <div class="builder-sidebar-search">
+                        <input type="search" id="builder-module-search" placeholder="Search blocks…" aria-label="Search blocks">
+                    </div>
                     <div class="builder-sidebar-section">
                         <h3>Triggers</h3>
                         <ul id="builder-trigger-list" class="builder-module-list"></ul>
