@@ -215,6 +215,176 @@ const QuickActionCatalog = [
 
 const QuickActionDefaultOrder = ['apps-library', 'files', 'commands', 'clipboard', 'settings'];
 
+const QuickActionModuleUtils = {
+    payloadToString(value) {
+        if (typeof value === 'string') return value;
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'object') {
+            try {
+                return JSON.stringify(value, null, 2);
+            } catch (error) {
+                console.warn('Failed to stringify payload object:', error);
+            }
+        }
+        if (typeof value === 'number' && Number.isFinite(value)) {
+            return Number(value).toString();
+        }
+        return String(value ?? '');
+    },
+
+    toTitleCase(value = '') {
+        return value
+            .toLowerCase()
+            .replace(/(^|\s|[-_/])([\p{L}\p{N}])/gu, (match, prefix, char) => prefix + char.toUpperCase());
+    },
+
+    slugify(value = '') {
+        return value
+            .normalize('NFKD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .replace(/-{2,}/g, '-');
+    },
+
+    removeDiacritics(value = '') {
+        return value.normalize('NFD').replace(/\p{Diacritic}/gu, '');
+    },
+
+    smartQuotes(value = '') {
+        let result = value;
+        result = result.replace(/(^|\s)'/g, '$1‘');
+        result = result.replace(/'/g, '’');
+        result = result.replace(/(^|\s)"/g, '$1“');
+        result = result.replace(/"/g, '”');
+        return result;
+    },
+
+    stripMarkdown(value = '') {
+        return value
+            .replace(/(^|\s)([#*_`>~-]+)(?=\S)/gm, '$1')
+            .replace(/`{1,3}([^`]+)`{1,3}/g, '$1')
+            .replace(/!\[[^\]]*\]\([^\)]+\)/g, '')
+            .replace(/\[[^\]]*\]\([^\)]+\)/g, '$1')
+            .replace(/\{\{[^}]+\}\}/g, '')
+            .replace(/\*\*([^*]+)\*\*/g, '$1')
+            .replace(/\*([^*]+)\*/g, '$1')
+            .replace(/_{1,3}([^_]+)_{1,3}/g, '$1');
+    },
+
+    ellipsize(value = '', maxLength = 140, ellipsis = '…') {
+        const safeMax = Math.max(0, Number(maxLength) || 0);
+        if (!safeMax || value.length <= safeMax) return value;
+        const safeEllipsis = typeof ellipsis === 'string' ? ellipsis : '…';
+        if (safeEllipsis.length >= safeMax) {
+            return value.slice(0, safeMax);
+        }
+        return value.slice(0, safeMax - safeEllipsis.length) + safeEllipsis;
+    },
+
+    encodeBase64(value = '') {
+        try {
+            return btoa(unescape(encodeURIComponent(value)));
+        } catch (error) {
+            console.warn('Base64 encoding failed:', error);
+            return value;
+        }
+    },
+
+    decodeBase64(value = '') {
+        try {
+            return decodeURIComponent(escape(atob(value)));
+        } catch (error) {
+            console.warn('Base64 decoding failed:', error);
+            return value;
+        }
+    },
+
+    async sha256(value = '') {
+        if (!window.crypto?.subtle) {
+            throw new Error('Web Crypto API is not available.');
+        }
+        const encoder = new TextEncoder();
+        const data = encoder.encode(value);
+        const digest = await window.crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(digest))
+            .map(byte => byte.toString(16).padStart(2, '0'))
+            .join('');
+    }
+};
+
+const createTriggerModule = (meta) => ({
+    id: meta.id,
+    category: 'trigger',
+    name: meta.name,
+    description: meta.description,
+    icon: meta.icon || 'zap',
+    accent: meta.accent || '#38bdf8',
+    keywords: meta.keywords || [],
+    inputs: [],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: meta.defaultConfig || {},
+    form: meta.form || [],
+    run: meta.run
+});
+
+const createUtilityModule = (meta) => ({
+    id: meta.id,
+    category: 'utility',
+    name: meta.name,
+    description: meta.description,
+    icon: meta.icon || 'tool',
+    accent: meta.accent || '#6366f1',
+    keywords: meta.keywords || [],
+    inputs: meta.inputs === false ? [] : (Array.isArray(meta.inputs) ? meta.inputs : [{ id: 'input', label: 'Input' }]),
+    outputs: meta.outputs === false ? [] : (Array.isArray(meta.outputs) ? meta.outputs : [{ id: 'next', label: 'Next' }]),
+    defaultConfig: meta.defaultConfig || {},
+    form: meta.form || [],
+    run: meta.run
+});
+
+const createActionModule = (meta) => ({
+    id: meta.id,
+    category: 'action',
+    name: meta.name,
+    description: meta.description,
+    icon: meta.icon || 'play',
+    accent: meta.accent || '#4f46e5',
+    keywords: meta.keywords || [],
+    inputs: meta.inputs === false ? [] : (Array.isArray(meta.inputs) ? meta.inputs : [{ id: 'input', label: 'Input' }]),
+    outputs: meta.outputs === false ? [] : (Array.isArray(meta.outputs) ? meta.outputs : [{ id: 'next', label: 'Next' }]),
+    defaultConfig: meta.defaultConfig || {},
+    form: meta.form || [],
+    run: meta.run
+});
+
+const createTextTransformModule = (meta) => createUtilityModule({
+    ...meta,
+    run: async (context, config = {}) => {
+        const clone = QuickActionContext.clone(context);
+        const source = QuickActionModuleUtils.payloadToString(clone.payload);
+        try {
+            const result = await meta.transform(source, config, clone);
+            const value = (result && typeof result === 'object' && Object.prototype.hasOwnProperty.call(result, 'value'))
+                ? result.value
+                : result;
+            if (value !== undefined) {
+                clone.payload = value;
+            }
+            const logMessage = result && typeof result === 'object' && result.log
+                ? result.log
+                : (meta.logMessage || `${meta.name} applied.`);
+            if (logMessage) {
+                clone.logs.push(logMessage);
+            }
+        } catch (error) {
+            clone.logs.push(`${meta.name} failed: ${error.message}`);
+        }
+        return [clone];
+    }
+});
+
 const QuickActionModuleDefinitions = [
     {
         id: 'manual-trigger',
@@ -225,6 +395,7 @@ const QuickActionModuleDefinitions = [
         descriptionKey: 'qa_module_manual_trigger_description',
         icon: 'play-circle',
         accent: '#38bdf8',
+        keywords: ['trigger', 'manual', 'start', 'workflow'],
         inputs: [],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: {},
@@ -241,6 +412,7 @@ const QuickActionModuleDefinitions = [
         descriptionKey: 'qa_module_open_panel_description',
         icon: 'layout',
         accent: '#38bdf8',
+        keywords: ['panel', 'navigation', 'interface', 'open'],
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { panel: 'clipboard' },
@@ -274,6 +446,7 @@ const QuickActionModuleDefinitions = [
         descriptionKey: 'qa_module_open_url_description',
         icon: 'globe',
         accent: '#22d3ee',
+        keywords: ['web', 'url', 'browser', 'link'],
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { url: 'https://flashsearch.app' },
@@ -301,6 +474,7 @@ const QuickActionModuleDefinitions = [
         descriptionKey: 'qa_module_copy_text_description',
         icon: 'clipboard',
         accent: '#a855f7',
+        keywords: ['clipboard', 'text', 'copy'],
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { text: 'Hello from FlashSearch!' },
@@ -325,6 +499,7 @@ const QuickActionModuleDefinitions = [
         descriptionKey: 'qa_module_run_command_description',
         icon: 'terminal',
         accent: '#f97316',
+        keywords: ['terminal', 'shell', 'command', 'automation'],
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { command: 'echo FlashSearch quick action' },
@@ -350,6 +525,7 @@ const QuickActionModuleDefinitions = [
         descriptionKey: 'qa_module_show_notification_description',
         icon: 'bell',
         accent: '#facc15',
+        keywords: ['notification', 'alert', 'desktop'],
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { title: 'FlashSearch', body: 'Workflow finished!' },
@@ -377,6 +553,7 @@ const QuickActionModuleDefinitions = [
         descriptionKey: 'qa_module_delay_description',
         icon: 'clock',
         accent: '#fbbf24',
+        keywords: ['delay', 'wait', 'pause'],
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { milliseconds: 1000 },
@@ -401,6 +578,7 @@ const QuickActionModuleDefinitions = [
         descriptionKey: 'qa_module_set_payload_description',
         icon: 'edit-3',
         accent: '#60a5fa',
+        keywords: ['payload', 'store', 'value'],
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { payload: 'Sample text' },
@@ -422,6 +600,7 @@ const QuickActionModuleDefinitions = [
         descriptionKey: 'qa_module_use_payload_as_text_description',
         icon: 'clipboard',
         accent: '#22c55e',
+        keywords: ['clipboard', 'payload', 'copy'],
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: {},
@@ -442,6 +621,7 @@ const QuickActionModuleDefinitions = [
         descriptionKey: 'qa_module_fetch_json_description',
         icon: 'download-cloud',
         accent: '#38bdf8',
+        keywords: ['fetch', 'json', 'api', 'http'],
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { url: 'https://api.example.com/data', format: 'pretty' },
@@ -488,6 +668,7 @@ const QuickActionModuleDefinitions = [
         descriptionKey: 'qa_module_transform_text_description',
         icon: 'type',
         accent: '#34d399',
+        keywords: ['text', 'transform', 'format'],
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { mode: 'uppercase' },
@@ -542,6 +723,7 @@ const QuickActionModuleDefinitions = [
         descriptionKey: 'qa_module_store_variable_description',
         icon: 'database',
         accent: '#f472b6',
+        keywords: ['variable', 'context', 'store'],
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: { key: 'name', value: 'FlashSearch' },
@@ -566,6 +748,1766 @@ const QuickActionModuleDefinitions = [
     }
 ];
 
+const AdditionalTriggerModules = [
+    createTriggerModule({
+        id: 'preset-text-trigger',
+        name: 'Preset text trigger',
+        description: 'Seed the workflow with predefined text before other blocks run.',
+        icon: 'edit',
+        accent: '#14b8a6',
+        keywords: ['trigger', 'text', 'preset'],
+        defaultConfig: { text: 'Hello from FlashSearch' },
+        form: [
+            { key: 'text', label: 'Preset text', type: 'textarea', rows: 3, placeholder: 'Enter starting payload' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const seed = typeof config?.text === 'string' ? config.text : '';
+            clone.payload = seed;
+            clone.logs.push(seed ? 'Payload seeded with preset text.' : 'Preset text trigger produced an empty payload.');
+            return [clone];
+        }
+    }),
+    createTriggerModule({
+        id: 'timestamp-trigger',
+        name: 'Timestamp trigger',
+        description: 'Start with the current date and time in a chosen format.',
+        icon: 'calendar',
+        accent: '#0ea5e9',
+        keywords: ['trigger', 'time', 'date'],
+        defaultConfig: { format: 'iso' },
+        form: [
+            {
+                key: 'format',
+                label: 'Output format',
+                type: 'select',
+                options: [
+                    { value: 'iso', label: 'ISO 8601' },
+                    { value: 'locale-date', label: 'Locale date' },
+                    { value: 'locale-datetime', label: 'Locale date & time' },
+                    { value: 'epoch', label: 'Unix epoch (ms)' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const format = config?.format || 'iso';
+            let output = now.toISOString();
+            if (format === 'locale-date') {
+                output = now.toLocaleDateString();
+            } else if (format === 'locale-datetime') {
+                output = now.toLocaleString();
+            } else if (format === 'epoch') {
+                output = String(now.getTime());
+            }
+            clone.payload = output;
+            clone.vars.timestamp = output;
+            clone.logs.push(`Generated timestamp in ${format} format.`);
+            return [clone];
+        }
+    }),
+    createTriggerModule({
+        id: 'user-input-trigger',
+        name: 'Ask for input',
+        description: 'Prompt for manual input each time the workflow starts.',
+        icon: 'message-circle',
+        accent: '#f97316',
+        keywords: ['trigger', 'prompt', 'input'],
+        defaultConfig: { question: 'Provide a value for the workflow', defaultValue: '', allowEmpty: false },
+        form: [
+            { key: 'question', label: 'Question', type: 'text', placeholder: 'What should we do?' },
+            { key: 'defaultValue', label: 'Default answer', type: 'text', placeholder: 'Default value' },
+            { key: 'allowEmpty', label: 'Allow empty answer', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const question = typeof config?.question === 'string' && config.question.trim()
+                ? config.question.trim()
+                : 'Provide a value for the workflow';
+            const defaultValue = typeof config?.defaultValue === 'string' ? config.defaultValue : '';
+            let answer = window.prompt(question, defaultValue);
+            if (answer === null) {
+                clone.logs.push('User input cancelled. Previous payload preserved.');
+                return [clone];
+            }
+            if (!answer && !config?.allowEmpty) {
+                clone.logs.push('User input trigger skipped because the answer was empty.');
+                return [clone];
+            }
+            clone.payload = answer;
+            clone.logs.push('Captured user input as payload.');
+            return [clone];
+        }
+    }),
+    createTriggerModule({
+        id: 'weekday-trigger',
+        name: 'Weekday trigger',
+        description: 'Inject the current weekday name as the payload.',
+        icon: 'sunrise',
+        accent: '#a855f7',
+        keywords: ['trigger', 'date', 'weekday'],
+        defaultConfig: { locale: 'en-US', format: 'long' },
+        form: [
+            { key: 'locale', label: 'Locale', type: 'text', placeholder: 'en-US' },
+            {
+                key: 'format',
+                label: 'Format',
+                type: 'select',
+                options: [
+                    { value: 'long', label: 'Long name (Monday)' },
+                    { value: 'short', label: 'Short name (Mon)' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const locale = typeof config?.locale === 'string' && config.locale.trim() ? config.locale.trim() : 'en-US';
+            const format = config?.format === 'short' ? 'short' : 'long';
+            try {
+                const formatted = new Intl.DateTimeFormat(locale, { weekday: format }).format(new Date());
+                clone.payload = formatted;
+                clone.logs.push(`Weekday trigger produced "${formatted}".`);
+            } catch (error) {
+                clone.logs.push(`Weekday trigger failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    }),
+    createTriggerModule({
+        id: 'countdown-trigger',
+        name: 'Countdown trigger',
+        description: 'Wait for a configured delay before the workflow proceeds.',
+        icon: 'hourglass',
+        accent: '#fbbf24',
+        keywords: ['trigger', 'delay', 'timer'],
+        defaultConfig: { milliseconds: 2000 },
+        form: [
+            { key: 'milliseconds', label: 'Delay (ms)', type: 'number', min: 0 }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const wait = Math.max(0, parseInt(config?.milliseconds, 10) || 0);
+            if (wait > 0) {
+                clone.logs.push(`Countdown trigger waiting ${wait} ms.`);
+                await new Promise(resolve => setTimeout(resolve, wait));
+            } else {
+                clone.logs.push('Countdown trigger executed without delay.');
+            }
+            return [clone];
+        }
+    }),
+    createTriggerModule({
+        id: 'random-number-trigger',
+        name: 'Random number trigger',
+        description: 'Start with a random number in a specified range.',
+        icon: 'shuffle',
+        accent: '#f43f5e',
+        keywords: ['trigger', 'random', 'number'],
+        defaultConfig: { min: 0, max: 100, asInteger: true, precision: 2 },
+        form: [
+            { key: 'min', label: 'Minimum value', type: 'number' },
+            { key: 'max', label: 'Maximum value', type: 'number' },
+            { key: 'asInteger', label: 'Return integer', type: 'checkbox' },
+            { key: 'precision', label: 'Decimal places (if not integer)', type: 'number', min: 0, max: 10 }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const min = Number(config?.min ?? 0);
+            const max = Number(config?.max ?? 100);
+            if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) {
+                clone.logs.push('Random number trigger skipped: invalid range.');
+                return [clone];
+            }
+            const raw = Math.random() * (max - min) + min;
+            let value = raw;
+            if (config?.asInteger || config?.asInteger === undefined) {
+                value = Math.round(raw);
+            } else {
+                const precision = Math.max(0, Math.min(10, parseInt(config?.precision, 10) || 2));
+                value = Number(raw.toFixed(precision));
+            }
+            clone.payload = value;
+            clone.logs.push(`Random number trigger generated ${value}.`);
+            return [clone];
+        }
+    }),
+    createTriggerModule({
+        id: 'clipboard-seed-trigger',
+        name: 'Clipboard seed trigger',
+        description: 'Use the latest clipboard text as the initial payload if available.',
+        icon: 'clipboard',
+        accent: '#8b5cf6',
+        keywords: ['trigger', 'clipboard', 'text'],
+        defaultConfig: { fallback: '' },
+        form: [
+            { key: 'fallback', label: 'Fallback text', type: 'textarea', rows: 2, placeholder: 'Optional fallback if clipboard is empty' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const fallback = typeof config?.fallback === 'string' ? config.fallback : '';
+            if (navigator.clipboard?.readText) {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    if (text) {
+                        clone.payload = text;
+                        clone.logs.push('Loaded clipboard text into payload.');
+                    } else {
+                        clone.payload = fallback;
+                        clone.logs.push('Clipboard was empty. Applied fallback text.');
+                    }
+                } catch (error) {
+                    clone.payload = fallback;
+                    clone.logs.push(`Clipboard read failed: ${error.message}`);
+                }
+            } else {
+                clone.payload = fallback;
+                clone.logs.push('Clipboard API unavailable. Fallback applied.');
+            }
+            return [clone];
+        }
+    })
+];
+
+const SimpleTextTransforms = [
+    {
+        id: 'text-uppercase',
+        name: 'Uppercase text',
+        description: 'Convert the payload to uppercase characters.',
+        icon: 'type',
+        accent: '#ef4444',
+        keywords: ['text', 'uppercase', 'format'],
+        transform: (text) => ({ value: text.toUpperCase(), log: 'Converted text to uppercase.' })
+    },
+    {
+        id: 'text-lowercase',
+        name: 'Lowercase text',
+        description: 'Convert the payload to lowercase characters.',
+        icon: 'type',
+        accent: '#10b981',
+        keywords: ['text', 'lowercase', 'format'],
+        transform: (text) => ({ value: text.toLowerCase(), log: 'Converted text to lowercase.' })
+    },
+    {
+        id: 'text-titlecase',
+        name: 'Title case text',
+        description: 'Capitalise each word in the payload.',
+        icon: 'type',
+        accent: '#6366f1',
+        keywords: ['text', 'title', 'format'],
+        transform: (text) => ({ value: QuickActionModuleUtils.toTitleCase(text), log: 'Converted text to title case.' })
+    },
+    {
+        id: 'text-trim',
+        name: 'Trim whitespace',
+        description: 'Remove leading and trailing whitespace from the payload.',
+        icon: 'scissors',
+        accent: '#14b8a6',
+        keywords: ['text', 'trim', 'cleanup'],
+        transform: (text) => ({ value: text.trim(), log: 'Trimmed whitespace.' })
+    },
+    {
+        id: 'text-slugify',
+        name: 'Slugify text',
+        description: 'Convert text into a URL-friendly slug.',
+        icon: 'link-2',
+        accent: '#f59e0b',
+        keywords: ['text', 'slug', 'url'],
+        transform: (text) => ({ value: QuickActionModuleUtils.slugify(text), log: 'Converted text to slug.' })
+    },
+    {
+        id: 'text-remove-diacritics',
+        name: 'Remove accents',
+        description: 'Strip diacritics and accents from characters.',
+        icon: 'minus-circle',
+        accent: '#d946ef',
+        keywords: ['text', 'diacritics', 'normalize'],
+        transform: (text) => ({ value: QuickActionModuleUtils.removeDiacritics(text), log: 'Removed diacritics from text.' })
+    },
+    {
+        id: 'text-smart-quotes',
+        name: 'Smart quotes',
+        description: 'Replace straight quotes with typographic quotes.',
+        icon: 'italic',
+        accent: '#0ea5e9',
+        keywords: ['text', 'quotes', 'format'],
+        transform: (text) => ({ value: QuickActionModuleUtils.smartQuotes(text), log: 'Replaced straight quotes with smart quotes.' })
+    },
+    {
+        id: 'text-word-count',
+        name: 'Word count',
+        description: 'Count words and place the result in the payload.',
+        icon: 'hash',
+        accent: '#84cc16',
+        keywords: ['text', 'count', 'analysis'],
+        transform: (text, _config, clone) => {
+            const count = text.trim() ? text.trim().split(/\s+/u).length : 0;
+            clone.vars.wordCount = count;
+            return { value: String(count), log: `Counted ${count} words.` };
+        }
+    },
+    {
+        id: 'text-character-count',
+        name: 'Character count',
+        description: 'Count characters and place the result in the payload.',
+        icon: 'align-left',
+        accent: '#fb7185',
+        keywords: ['text', 'count', 'characters'],
+        transform: (text, _config, clone) => {
+            const count = [...text].length;
+            clone.vars.characterCount = count;
+            return { value: String(count), log: `Counted ${count} characters.` };
+        }
+    },
+    {
+        id: 'text-sentence-count',
+        name: 'Sentence count',
+        description: 'Estimate the number of sentences in the payload.',
+        icon: 'list-ordered',
+        accent: '#9333ea',
+        keywords: ['text', 'count', 'sentences'],
+        transform: (text, _config, clone) => {
+            const matches = text.match(/[^.!?]+[.!?]*/g);
+            const count = matches ? matches.filter(item => item.trim().length > 0).length : 0;
+            clone.vars.sentenceCount = count;
+            return { value: String(count), log: `Estimated ${count} sentences.` };
+        }
+    }
+].map(createTextTransformModule);
+
+const ConfigurableTextModules = [
+    {
+        id: 'text-append',
+        name: 'Append text',
+        description: 'Add custom text to the end of the payload.',
+        icon: 'plus-circle',
+        accent: '#f59e0b',
+        keywords: ['text', 'append', 'suffix'],
+        defaultConfig: { suffix: '…' },
+        form: [
+            { key: 'suffix', label: 'Text to append', type: 'textarea', rows: 2, placeholder: 'Add this to the end' }
+        ],
+        transform: (text, config) => {
+            const suffix = typeof config?.suffix === 'string' ? config.suffix : '';
+            return { value: text + suffix, log: 'Appended custom text.' };
+        }
+    },
+    {
+        id: 'text-prepend',
+        name: 'Prepend text',
+        description: 'Add custom text to the beginning of the payload.',
+        icon: 'corner-left-up',
+        accent: '#f97316',
+        keywords: ['text', 'prepend', 'prefix'],
+        defaultConfig: { prefix: '' },
+        form: [
+            { key: 'prefix', label: 'Text to prepend', type: 'textarea', rows: 2, placeholder: 'Add this to the start' }
+        ],
+        transform: (text, config) => {
+            const prefix = typeof config?.prefix === 'string' ? config.prefix : '';
+            return { value: prefix + text, log: 'Prepended custom text.' };
+        }
+    },
+    {
+        id: 'text-wrap',
+        name: 'Wrap text',
+        description: 'Surround the payload with a prefix and suffix.',
+        icon: 'code',
+        accent: '#0ea5e9',
+        keywords: ['text', 'wrap', 'format'],
+        defaultConfig: { prefix: '"', suffix: '"' },
+        form: [
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Start text' },
+            { key: 'suffix', label: 'Suffix', type: 'text', placeholder: 'End text' }
+        ],
+        transform: (text, config) => {
+            const prefix = typeof config?.prefix === 'string' ? config.prefix : '';
+            const suffix = typeof config?.suffix === 'string' ? config.suffix : '';
+            return { value: `${prefix}${text}${suffix}`, log: 'Wrapped payload with prefix and suffix.' };
+        }
+    },
+    {
+        id: 'text-replace',
+        name: 'Replace text',
+        description: 'Replace all occurrences of a phrase with another.',
+        icon: 'repeat',
+        accent: '#8b5cf6',
+        keywords: ['text', 'replace', 'substitute'],
+        defaultConfig: { search: '', replacement: '', caseSensitive: false },
+        form: [
+            { key: 'search', label: 'Find', type: 'text', placeholder: 'Original text' },
+            { key: 'replacement', label: 'Replace with', type: 'text', placeholder: 'Replacement text' },
+            { key: 'caseSensitive', label: 'Case sensitive', type: 'checkbox' }
+        ],
+        transform: (text, config) => {
+            const search = typeof config?.search === 'string' ? config.search : '';
+            const replacement = typeof config?.replacement === 'string' ? config.replacement : '';
+            if (!search) {
+                return { value: text, log: 'Replace text skipped: nothing to search for.' };
+            }
+            if (config?.caseSensitive) {
+                return { value: text.split(search).join(replacement), log: 'Replaced text (case sensitive).' };
+            }
+            const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(escaped, 'gi');
+            return { value: text.replace(regex, replacement), log: 'Replaced text (case insensitive).' };
+        }
+    },
+    {
+        id: 'text-regex-extract',
+        name: 'Regex extract',
+        description: 'Capture the first matching group from a regular expression.',
+        icon: 'filter',
+        accent: '#22c55e',
+        keywords: ['text', 'regex', 'extract'],
+        defaultConfig: { pattern: '(\\w+)', flags: '', group: 0 },
+        form: [
+            { key: 'pattern', label: 'Pattern', type: 'text', placeholder: '(\\w+)' },
+            { key: 'flags', label: 'Flags', type: 'text', placeholder: 'gim' },
+            { key: 'group', label: 'Match group index', type: 'number', min: 0 }
+        ],
+        transform: (text, config, clone) => {
+            const pattern = String(config?.pattern || '');
+            if (!pattern) {
+                return { value: text, log: 'Regex extract skipped: empty pattern.' };
+            }
+            try {
+                const flags = String(config?.flags || '');
+                const groupIndex = Math.max(0, parseInt(config?.group, 10) || 0);
+                const regex = new RegExp(pattern, flags);
+                const match = regex.exec(text);
+                if (match) {
+                    const captured = match[groupIndex] ?? match[0];
+                    clone.vars.lastRegexMatch = match;
+                    return { value: captured, log: `Extracted regex group ${groupIndex}.` };
+                }
+                return { value: '', log: 'Regex extract found no matches.' };
+            } catch (error) {
+                return { value: text, log: `Regex extract failed: ${error.message}` };
+            }
+        }
+    },
+    {
+        id: 'text-regex-replace',
+        name: 'Regex replace',
+        description: 'Replace text using a regular expression.',
+        icon: 'circle',
+        accent: '#ec4899',
+        keywords: ['text', 'regex', 'replace'],
+        defaultConfig: { pattern: '(\\s+)', flags: 'g', replacement: ' ' },
+        form: [
+            { key: 'pattern', label: 'Pattern', type: 'text', placeholder: '(\\s+)' },
+            { key: 'flags', label: 'Flags', type: 'text', placeholder: 'gim' },
+            { key: 'replacement', label: 'Replacement', type: 'text', placeholder: ' ' }
+        ],
+        transform: (text, config) => {
+            const pattern = String(config?.pattern || '');
+            if (!pattern) {
+                return { value: text, log: 'Regex replace skipped: empty pattern.' };
+            }
+            try {
+                const flags = String(config?.flags || '');
+                const replacement = typeof config?.replacement === 'string' ? config.replacement : '';
+                const regex = new RegExp(pattern, flags);
+                return { value: text.replace(regex, replacement), log: 'Applied regex replacement.' };
+            } catch (error) {
+                return { value: text, log: `Regex replace failed: ${error.message}` };
+            }
+        }
+    },
+    {
+        id: 'text-split',
+        name: 'Split text',
+        description: 'Split text into multiple lines using a delimiter.',
+        icon: 'divide-circle',
+        accent: '#38bdf8',
+        keywords: ['text', 'split', 'list'],
+        defaultConfig: { delimiter: ',', trimParts: true },
+        form: [
+            { key: 'delimiter', label: 'Delimiter', type: 'text', placeholder: ',' },
+            { key: 'trimParts', label: 'Trim items', type: 'checkbox' }
+        ],
+        transform: (text, config, clone) => {
+            const delimiter = typeof config?.delimiter === 'string' ? config.delimiter : ',';
+            const parts = delimiter ? text.split(delimiter) : [text];
+            const trimmed = config?.trimParts === false ? parts : parts.map(item => item.trim());
+            clone.vars.lastList = trimmed;
+            return { value: trimmed.join('\n'), log: `Split text into ${trimmed.length} items.` };
+        }
+    },
+    {
+        id: 'text-join-lines',
+        name: 'Join lines',
+        description: 'Join newline-separated values using a custom delimiter.',
+        icon: 'merge',
+        accent: '#22c55e',
+        keywords: ['text', 'join', 'lines'],
+        defaultConfig: { delimiter: ', ' },
+        form: [
+            { key: 'delimiter', label: 'Delimiter', type: 'text', placeholder: ', ' }
+        ],
+        transform: (text, config) => {
+            const delimiter = typeof config?.delimiter === 'string' ? config.delimiter : ', ';
+            const lines = text.split(/\r?\n/);
+            return { value: lines.join(delimiter), log: `Joined ${lines.length} lines.` };
+        }
+    },
+    {
+        id: 'text-limit',
+        name: 'Limit length',
+        description: 'Shorten text to a fixed maximum length.',
+        icon: 'crop',
+        accent: '#f97316',
+        keywords: ['text', 'truncate', 'limit'],
+        defaultConfig: { maxLength: 140, ellipsis: '…' },
+        form: [
+            { key: 'maxLength', label: 'Maximum characters', type: 'number', min: 1 },
+            { key: 'ellipsis', label: 'Ellipsis', type: 'text', placeholder: '…' }
+        ],
+        transform: (text, config) => {
+            const maxLength = Math.max(1, parseInt(config?.maxLength, 10) || 140);
+            const ellipsis = typeof config?.ellipsis === 'string' ? config.ellipsis : '…';
+            return { value: QuickActionModuleUtils.ellipsize(text, maxLength, ellipsis), log: `Trimmed text to ${maxLength} characters.` };
+        }
+    },
+    {
+        id: 'text-strip-markdown',
+        name: 'Strip Markdown',
+        description: 'Remove most Markdown syntax while keeping text content.',
+        icon: 'file-text',
+        accent: '#0ea5e9',
+        keywords: ['text', 'markdown', 'clean'],
+        transform: (text) => ({ value: QuickActionModuleUtils.stripMarkdown(text), log: 'Removed Markdown formatting.' })
+    }
+].map(createTextTransformModule);
+
+const DataUtilityModules = [
+    createUtilityModule({
+        id: 'json-parse',
+        name: 'Parse JSON',
+        description: 'Convert the payload string into a JSON object.',
+        icon: 'code',
+        accent: '#38bdf8',
+        keywords: ['json', 'parse', 'object'],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const source = QuickActionModuleUtils.payloadToString(clone.payload);
+            try {
+                const parsed = JSON.parse(source || 'null');
+                clone.payload = parsed;
+                clone.vars.lastJson = parsed;
+                clone.logs.push('Parsed payload as JSON.');
+            } catch (error) {
+                clone.logs.push(`JSON parse failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    }),
+    createUtilityModule({
+        id: 'json-stringify',
+        name: 'Stringify JSON',
+        description: 'Convert the payload into a JSON string.',
+        icon: 'file',
+        accent: '#f472b6',
+        keywords: ['json', 'string', 'format'],
+        defaultConfig: { spacing: 0 },
+        form: [
+            { key: 'spacing', label: 'Indent spaces', type: 'number', min: 0, max: 10 }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const spacing = Math.max(0, Math.min(10, parseInt(config?.spacing, 10) || 0));
+            try {
+                const formatted = spacing > 0
+                    ? JSON.stringify(clone.payload, null, spacing)
+                    : JSON.stringify(clone.payload);
+                clone.payload = formatted;
+                clone.logs.push('Converted payload to JSON string.');
+            } catch (error) {
+                clone.logs.push(`JSON stringify failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    }),
+    createUtilityModule({
+        id: 'json-pretty-print',
+        name: 'Pretty JSON',
+        description: 'Pretty-print the payload as formatted JSON.',
+        icon: 'layout',
+        accent: '#60a5fa',
+        keywords: ['json', 'pretty', 'format'],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const source = QuickActionModuleUtils.payloadToString(clone.payload);
+            try {
+                const parsed = JSON.parse(source || 'null');
+                clone.payload = JSON.stringify(parsed, null, 2);
+                clone.vars.lastJson = parsed;
+                clone.logs.push('Pretty printed JSON payload.');
+            } catch (error) {
+                clone.logs.push(`Pretty JSON failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    }),
+    createUtilityModule({
+        id: 'payload-to-base64',
+        name: 'Encode base64',
+        description: 'Encode the payload as a base64 string.',
+        icon: 'shield',
+        accent: '#22c55e',
+        keywords: ['base64', 'encode', 'text'],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const source = QuickActionModuleUtils.payloadToString(clone.payload);
+            clone.payload = QuickActionModuleUtils.encodeBase64(source);
+            clone.logs.push('Encoded payload as base64 string.');
+            return [clone];
+        }
+    }),
+    createUtilityModule({
+        id: 'base64-to-payload',
+        name: 'Decode base64',
+        description: 'Decode the payload from base64 back to text.',
+        icon: 'unlock',
+        accent: '#f97316',
+        keywords: ['base64', 'decode', 'text'],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const source = QuickActionModuleUtils.payloadToString(clone.payload);
+            clone.payload = QuickActionModuleUtils.decodeBase64(source);
+            clone.logs.push('Decoded base64 payload.');
+            return [clone];
+        }
+    }),
+    createUtilityModule({
+        id: 'payload-hash',
+        name: 'SHA-256 hash',
+        description: 'Generate a SHA-256 hash of the payload.',
+        icon: 'lock',
+        accent: '#ec4899',
+        keywords: ['hash', 'security', 'sha256'],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const source = QuickActionModuleUtils.payloadToString(clone.payload);
+            try {
+                clone.payload = await QuickActionModuleUtils.sha256(source);
+                clone.logs.push('Generated SHA-256 hash of payload.');
+            } catch (error) {
+                clone.logs.push(`Hashing failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    }),
+    createUtilityModule({
+        id: 'number-format',
+        name: 'Format number',
+        description: 'Format the payload as a locale-aware number.',
+        icon: 'percent',
+        accent: '#8b5cf6',
+        keywords: ['number', 'format', 'locale'],
+        defaultConfig: { locale: 'en-US', style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 2 },
+        form: [
+            { key: 'locale', label: 'Locale', type: 'text', placeholder: 'en-US' },
+            {
+                key: 'style',
+                label: 'Style',
+                type: 'select',
+                options: [
+                    { value: 'decimal', label: 'Decimal' },
+                    { value: 'currency', label: 'Currency' },
+                    { value: 'percent', label: 'Percent' }
+                ]
+            },
+            { key: 'currency', label: 'Currency code', type: 'text', placeholder: 'USD' },
+            { key: 'minimumFractionDigits', label: 'Min fraction digits', type: 'number', min: 0, max: 6 },
+            { key: 'maximumFractionDigits', label: 'Max fraction digits', type: 'number', min: 0, max: 6 }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const source = QuickActionModuleUtils.payloadToString(clone.payload);
+            const numberValue = Number(source);
+            if (!Number.isFinite(numberValue)) {
+                clone.logs.push('Number format skipped: payload is not numeric.');
+                return [clone];
+            }
+            const locale = typeof config?.locale === 'string' && config.locale.trim() ? config.locale.trim() : 'en-US';
+            const style = ['decimal', 'currency', 'percent'].includes(config?.style) ? config.style : 'decimal';
+            const minimumFractionDigits = Math.max(0, parseInt(config?.minimumFractionDigits, 10) || 0);
+            const maximumFractionDigits = Math.max(minimumFractionDigits, parseInt(config?.maximumFractionDigits, 10) || minimumFractionDigits);
+            const options = { style, minimumFractionDigits, maximumFractionDigits };
+            if (style === 'currency') {
+                options.currency = typeof config?.currency === 'string' && config.currency.trim() ? config.currency.trim().toUpperCase() : 'USD';
+            }
+            try {
+                const formatted = new Intl.NumberFormat(locale, options).format(numberValue);
+                clone.payload = formatted;
+                clone.logs.push(`Formatted number for ${locale} (${style}).`);
+            } catch (error) {
+                clone.logs.push(`Number format failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    }),
+    createUtilityModule({
+        id: 'date-format',
+        name: 'Format date',
+        description: 'Format a date value using locale-aware patterns.',
+        icon: 'clock',
+        accent: '#0ea5e9',
+        keywords: ['date', 'format', 'time'],
+        defaultConfig: { locale: 'en-GB', style: 'datetime' },
+        form: [
+            { key: 'locale', label: 'Locale', type: 'text', placeholder: 'en-GB' },
+            {
+                key: 'style',
+                label: 'Format',
+                type: 'select',
+                options: [
+                    { value: 'iso', label: 'ISO string' },
+                    { value: 'date', label: 'Date only' },
+                    { value: 'time', label: 'Time only' },
+                    { value: 'datetime', label: 'Date & time' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const locale = typeof config?.locale === 'string' && config.locale.trim() ? config.locale.trim() : 'en-GB';
+            const style = config?.style || 'datetime';
+            const source = QuickActionModuleUtils.payloadToString(clone.payload);
+            let date = source ? new Date(source) : new Date();
+            if (Number.isNaN(date.getTime())) {
+                date = new Date();
+            }
+            try {
+                let formatted = date.toISOString();
+                if (style === 'date') {
+                    formatted = new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(date);
+                } else if (style === 'time') {
+                    formatted = new Intl.DateTimeFormat(locale, { timeStyle: 'medium' }).format(date);
+                } else if (style === 'datetime') {
+                    formatted = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+                }
+                clone.payload = formatted;
+                clone.logs.push(`Formatted date using ${locale} (${style}).`);
+            } catch (error) {
+                clone.logs.push(`Date format failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    }),
+    createUtilityModule({
+        id: 'date-add',
+        name: 'Shift date/time',
+        description: 'Add or subtract time from a date value.',
+        icon: 'fast-forward',
+        accent: '#facc15',
+        keywords: ['date', 'time', 'math'],
+        defaultConfig: { amount: 1, unit: 'day' },
+        form: [
+            { key: 'amount', label: 'Amount', type: 'number' },
+            {
+                key: 'unit',
+                label: 'Unit',
+                type: 'select',
+                options: [
+                    { value: 'minute', label: 'Minutes' },
+                    { value: 'hour', label: 'Hours' },
+                    { value: 'day', label: 'Days' },
+                    { value: 'week', label: 'Weeks' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const source = QuickActionModuleUtils.payloadToString(clone.payload);
+            let date = source ? new Date(source) : new Date();
+            if (Number.isNaN(date.getTime())) {
+                date = new Date();
+            }
+            const amount = Number(config?.amount ?? 0);
+            if (!Number.isFinite(amount)) {
+                clone.logs.push('Date shift skipped: invalid amount.');
+                return [clone];
+            }
+            const unit = config?.unit || 'day';
+            if (unit === 'minute') {
+                date.setMinutes(date.getMinutes() + amount);
+            } else if (unit === 'hour') {
+                date.setHours(date.getHours() + amount);
+            } else if (unit === 'week') {
+                date.setDate(date.getDate() + amount * 7);
+            } else {
+                date.setDate(date.getDate() + amount);
+            }
+            clone.payload = date.toISOString();
+            clone.logs.push(`Adjusted date by ${amount} ${unit}${Math.abs(amount) === 1 ? '' : 's'}.`);
+            return [clone];
+        }
+    }),
+    createUtilityModule({
+        id: 'extract-urls',
+        name: 'Extract URLs',
+        description: 'Find all URLs inside the payload text.',
+        icon: 'external-link',
+        accent: '#22d3ee',
+        keywords: ['text', 'urls', 'extract'],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const source = QuickActionModuleUtils.payloadToString(clone.payload);
+            const matches = source.match(/https?:\/\/[^\s"<>]+/gi) || [];
+            clone.vars.lastUrlList = matches;
+            clone.payload = matches.join('\n');
+            clone.logs.push(matches.length ? `Extracted ${matches.length} URL(s).` : 'No URLs found in payload.');
+            return [clone];
+        }
+    })
+];
+
+const ControlUtilityModules = [
+    createUtilityModule({
+        id: 'log-payload',
+        name: 'Log payload',
+        description: 'Write the current payload to the console and workflow log.',
+        icon: 'clipboard-list',
+        accent: '#64748b',
+        keywords: ['debug', 'log', 'payload'],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            console.log('[Quick action log]', clone.payload);
+            clone.logs.push('Payload printed to developer console.');
+            return [clone];
+        }
+    }),
+    createUtilityModule({
+        id: 'clear-payload',
+        name: 'Clear payload',
+        description: 'Reset the payload to an empty string.',
+        icon: 'trash-2',
+        accent: '#ef4444',
+        keywords: ['payload', 'reset', 'clear'],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = '';
+            clone.logs.push('Cleared the payload value.');
+            return [clone];
+        }
+    }),
+    createUtilityModule({
+        id: 'collect-variables',
+        name: 'Collect variables',
+        description: 'Dump workflow variables into the payload as JSON.',
+        icon: 'list',
+        accent: '#0ea5e9',
+        keywords: ['variables', 'context', 'debug'],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            try {
+                clone.payload = JSON.stringify(clone.vars, null, 2);
+                clone.logs.push('Collected workflow variables into payload.');
+            } catch (error) {
+                clone.logs.push(`Failed to serialise variables: ${error.message}`);
+            }
+            return [clone];
+        }
+    }),
+    createUtilityModule({
+        id: 'ensure-json-object',
+        name: 'Ensure JSON object',
+        description: 'Parse the payload as JSON, defaulting to an empty object on failure.',
+        icon: 'shield-check',
+        accent: '#10b981',
+        keywords: ['json', 'object', 'fallback'],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const source = QuickActionModuleUtils.payloadToString(clone.payload);
+            try {
+                const parsed = source ? JSON.parse(source) : {};
+                const ensured = parsed && typeof parsed === 'object' ? parsed : {};
+                clone.payload = ensured;
+                clone.vars.lastJson = ensured;
+                clone.logs.push('Ensured payload is a JSON object.');
+            } catch (error) {
+                clone.payload = {};
+                clone.logs.push('Payload was not valid JSON. Replaced with empty object.');
+            }
+            return [clone];
+        }
+    }),
+    createUtilityModule({
+        id: 'array-to-lines',
+        name: 'Array to lines',
+        description: 'Convert an array payload into newline-separated text.',
+        icon: 'list',
+        accent: '#6366f1',
+        keywords: ['array', 'text', 'convert'],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const value = clone.payload;
+            if (Array.isArray(value)) {
+                clone.payload = value.map(item => QuickActionModuleUtils.payloadToString(item)).join('\n');
+                clone.logs.push(`Converted array with ${value.length} items into text.`);
+            } else {
+                clone.logs.push('Array to lines skipped: payload is not an array.');
+            }
+            return [clone];
+        }
+    })
+];
+
+const AiIntegrationModules = [
+    createActionModule({
+        id: 'openai-chat-completion',
+        name: 'OpenAI chat completion',
+        description: 'Send the payload to OpenAI chat completions and store the reply.',
+        icon: 'cpu',
+        accent: '#6366f1',
+        keywords: ['ai', 'openai', 'chatgpt'],
+        defaultConfig: {
+            apiKey: '',
+            model: 'gpt-3.5-turbo',
+            baseUrl: 'https://api.openai.com/v1/chat/completions',
+            systemPrompt: 'You are a helpful assistant inside FlashSearch quick actions.',
+            temperature: 0.7,
+            prompt: ''
+        },
+        form: [
+            { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'sk-...' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'gpt-3.5-turbo' },
+            { key: 'systemPrompt', label: 'System prompt', type: 'textarea', rows: 3 },
+            { key: 'temperature', label: 'Temperature', type: 'number', min: 0, max: 2, step: 0.1 },
+            { key: 'prompt', label: 'Override prompt (optional)', type: 'textarea', rows: 4 },
+            { key: 'baseUrl', label: 'API endpoint', type: 'text' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const apiKey = (config?.apiKey || '').trim();
+            if (!apiKey) {
+                clone.logs.push('OpenAI chat skipped: missing API key.');
+                return [clone];
+            }
+            const prompt = (config?.prompt || QuickActionModuleUtils.payloadToString(clone.payload)).trim();
+            if (!prompt) {
+                clone.logs.push('OpenAI chat skipped: prompt is empty.');
+                return [clone];
+            }
+            const baseUrl = (config?.baseUrl || 'https://api.openai.com/v1/chat/completions').trim();
+            const model = (config?.model || 'gpt-3.5-turbo').trim();
+            const temperature = Number(config?.temperature ?? 0.7);
+            const systemPrompt = (config?.systemPrompt || 'You are a helpful assistant inside FlashSearch quick actions.').trim();
+            try {
+                const response = await fetch(baseUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model,
+                        temperature: Number.isFinite(temperature) ? temperature : 0.7,
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: prompt }
+                        ]
+                    })
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                const message = data?.choices?.[0]?.message?.content?.trim?.() || '';
+                if (message) {
+                    clone.payload = message;
+                }
+                clone.vars.lastResponse = data;
+                clone.logs.push(`Received OpenAI chat response (${model}).`);
+            } catch (error) {
+                clone.logs.push(`OpenAI chat failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    }),
+    createActionModule({
+        id: 'openai-text-completion',
+        name: 'OpenAI text completion',
+        description: 'Use legacy OpenAI completions API for text generation.',
+        icon: 'file-text',
+        accent: '#f59e0b',
+        keywords: ['ai', 'openai', 'completion'],
+        defaultConfig: {
+            apiKey: '',
+            model: 'text-davinci-003',
+            baseUrl: 'https://api.openai.com/v1/completions',
+            maxTokens: 120,
+            temperature: 0.7,
+            prompt: ''
+        },
+        form: [
+            { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'sk-...' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'text-davinci-003' },
+            { key: 'maxTokens', label: 'Max tokens', type: 'number', min: 1, max: 2048 },
+            { key: 'temperature', label: 'Temperature', type: 'number', min: 0, max: 2, step: 0.1 },
+            { key: 'prompt', label: 'Prompt override', type: 'textarea', rows: 4 },
+            { key: 'baseUrl', label: 'API endpoint', type: 'text' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const apiKey = (config?.apiKey || '').trim();
+            if (!apiKey) {
+                clone.logs.push('OpenAI completion skipped: missing API key.');
+                return [clone];
+            }
+            const prompt = (config?.prompt || QuickActionModuleUtils.payloadToString(clone.payload)).trim();
+            if (!prompt) {
+                clone.logs.push('OpenAI completion skipped: prompt is empty.');
+                return [clone];
+            }
+            const baseUrl = (config?.baseUrl || 'https://api.openai.com/v1/completions').trim();
+            const model = (config?.model || 'text-davinci-003').trim();
+            const maxTokens = Math.max(1, Math.min(2048, parseInt(config?.maxTokens, 10) || 120));
+            const temperature = Number(config?.temperature ?? 0.7);
+            try {
+                const response = await fetch(baseUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model,
+                        prompt,
+                        max_tokens: maxTokens,
+                        temperature: Number.isFinite(temperature) ? temperature : 0.7
+                    })
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                const output = data?.choices?.[0]?.text?.trim?.() || '';
+                if (output) {
+                    clone.payload = output;
+                }
+                clone.vars.lastResponse = data;
+                clone.logs.push(`Received OpenAI completion (${model}).`);
+            } catch (error) {
+                clone.logs.push(`OpenAI completion failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    }),
+    createActionModule({
+        id: 'openai-embedding',
+        name: 'OpenAI embedding',
+        description: 'Generate an embedding vector from the payload and store it as JSON.',
+        icon: 'grid',
+        accent: '#22c55e',
+        keywords: ['ai', 'openai', 'embedding'],
+        defaultConfig: {
+            apiKey: '',
+            model: 'text-embedding-3-small',
+            baseUrl: 'https://api.openai.com/v1/embeddings'
+        },
+        form: [
+            { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'sk-...' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'text-embedding-3-small' },
+            { key: 'baseUrl', label: 'API endpoint', type: 'text' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const apiKey = (config?.apiKey || '').trim();
+            if (!apiKey) {
+                clone.logs.push('OpenAI embedding skipped: missing API key.');
+                return [clone];
+            }
+            const input = QuickActionModuleUtils.payloadToString(clone.payload).trim();
+            if (!input) {
+                clone.logs.push('OpenAI embedding skipped: payload is empty.');
+                return [clone];
+            }
+            const baseUrl = (config?.baseUrl || 'https://api.openai.com/v1/embeddings').trim();
+            const model = (config?.model || 'text-embedding-3-small').trim();
+            try {
+                const response = await fetch(baseUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({ model, input })
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                const embedding = data?.data?.[0]?.embedding;
+                if (Array.isArray(embedding)) {
+                    clone.payload = JSON.stringify(embedding);
+                    clone.vars.lastEmbedding = embedding;
+                    clone.logs.push(`Generated embedding vector (${embedding.length} dimensions).`);
+                } else {
+                    clone.logs.push('Embedding response did not include vector data.');
+                }
+            } catch (error) {
+                clone.logs.push(`OpenAI embedding failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    }),
+    createActionModule({
+        id: 'anthropic-claude-chat',
+        name: 'Anthropic Claude chat',
+        description: 'Send the payload to Anthropic Claude messages API.',
+        icon: 'message-square',
+        accent: '#f97316',
+        keywords: ['ai', 'anthropic', 'claude'],
+        defaultConfig: {
+            apiKey: '',
+            model: 'claude-3-sonnet-20240229',
+            baseUrl: 'https://api.anthropic.com/v1/messages',
+            maxTokens: 400,
+            systemPrompt: 'You are a helpful assistant for FlashSearch automations.'
+        },
+        form: [
+            { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'anthropic-key' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'claude-3-sonnet-20240229' },
+            { key: 'maxTokens', label: 'Max tokens', type: 'number', min: 1, max: 4096 },
+            { key: 'systemPrompt', label: 'System prompt', type: 'textarea', rows: 3 },
+            { key: 'baseUrl', label: 'API endpoint', type: 'text' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const apiKey = (config?.apiKey || '').trim();
+            if (!apiKey) {
+                clone.logs.push('Anthropic chat skipped: missing API key.');
+                return [clone];
+            }
+            const userMessage = QuickActionModuleUtils.payloadToString(clone.payload).trim();
+            if (!userMessage) {
+                clone.logs.push('Anthropic chat skipped: payload is empty.');
+                return [clone];
+            }
+            const baseUrl = (config?.baseUrl || 'https://api.anthropic.com/v1/messages').trim();
+            const model = (config?.model || 'claude-3-sonnet-20240229').trim();
+            const maxTokens = Math.max(1, Math.min(4096, parseInt(config?.maxTokens, 10) || 400));
+            const systemPrompt = (config?.systemPrompt || 'You are a helpful assistant for FlashSearch automations.').trim();
+            try {
+                const response = await fetch(baseUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': apiKey,
+                        'anthropic-version': '2023-06-01'
+                    },
+                    body: JSON.stringify({
+                        model,
+                        max_tokens: maxTokens,
+                        system: systemPrompt,
+                        messages: [
+                            { role: 'user', content: userMessage }
+                        ]
+                    })
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                const output = data?.content?.[0]?.text || '';
+                if (output) {
+                    clone.payload = output.trim();
+                }
+                clone.vars.lastResponse = data;
+                clone.logs.push(`Received Claude response (${model}).`);
+            } catch (error) {
+                clone.logs.push(`Anthropic chat failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    }),
+    createActionModule({
+        id: 'azure-openai-chat',
+        name: 'Azure OpenAI chat',
+        description: 'Call an Azure OpenAI deployment using the payload as prompt.',
+        icon: 'cloud',
+        accent: '#2563eb',
+        keywords: ['ai', 'azure', 'openai'],
+        defaultConfig: {
+            apiKey: '',
+            endpoint: 'https://your-resource.openai.azure.com',
+            deploymentId: '',
+            apiVersion: '2024-02-15-preview',
+            systemPrompt: 'You are a helpful assistant for FlashSearch quick actions.'
+        },
+        form: [
+            { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'azure-openai-key' },
+            { key: 'endpoint', label: 'Resource endpoint', type: 'text', placeholder: 'https://your-resource.openai.azure.com' },
+            { key: 'deploymentId', label: 'Deployment ID', type: 'text', placeholder: 'chat-gpt' },
+            { key: 'apiVersion', label: 'API version', type: 'text', placeholder: '2024-02-15-preview' },
+            { key: 'systemPrompt', label: 'System prompt', type: 'textarea', rows: 3 }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const apiKey = (config?.apiKey || '').trim();
+            const endpoint = (config?.endpoint || '').trim().replace(/\/$/, '');
+            const deploymentId = (config?.deploymentId || '').trim();
+            if (!apiKey || !endpoint || !deploymentId) {
+                clone.logs.push('Azure OpenAI skipped: endpoint, deployment, or key missing.');
+                return [clone];
+            }
+            const prompt = QuickActionModuleUtils.payloadToString(clone.payload).trim();
+            if (!prompt) {
+                clone.logs.push('Azure OpenAI skipped: payload is empty.');
+                return [clone];
+            }
+            const apiVersion = (config?.apiVersion || '2024-02-15-preview').trim();
+            const systemPrompt = (config?.systemPrompt || 'You are a helpful assistant for FlashSearch quick actions.').trim();
+            const url = `${endpoint}/openai/deployments/${deploymentId}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'api-key': apiKey
+                    },
+                    body: JSON.stringify({
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: prompt }
+                        ]
+                    })
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                const message = data?.choices?.[0]?.message?.content?.trim?.() || '';
+                if (message) {
+                    clone.payload = message;
+                }
+                clone.vars.lastResponse = data;
+                clone.logs.push('Received Azure OpenAI chat response.');
+            } catch (error) {
+                clone.logs.push(`Azure OpenAI chat failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    })
+];
+
+AiIntegrationModules.push(
+    ...[
+        createActionModule({
+            id: 'huggingface-text-generation',
+            name: 'Hugging Face text generation',
+            description: 'Call the Hugging Face Inference API for text generation models.',
+            icon: 'feather',
+            accent: '#ec4899',
+            keywords: ['ai', 'huggingface', 'inference'],
+            defaultConfig: {
+                apiKey: '',
+                model: 'gpt2',
+                baseUrl: 'https://api-inference.huggingface.co/models',
+                maxNewTokens: 120,
+                temperature: 0.7
+            },
+            form: [
+                { key: 'apiKey', label: 'API token', type: 'password', placeholder: 'hf_...' },
+                { key: 'model', label: 'Model', type: 'text', placeholder: 'gpt2' },
+                { key: 'maxNewTokens', label: 'Max new tokens', type: 'number', min: 1, max: 512 },
+                { key: 'temperature', label: 'Temperature', type: 'number', min: 0, max: 2, step: 0.1 }
+            ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const apiKey = (config?.apiKey || '').trim();
+                if (!apiKey) {
+                    clone.logs.push('Hugging Face skipped: missing API token.');
+                    return [clone];
+                }
+                const prompt = QuickActionModuleUtils.payloadToString(clone.payload);
+                const model = (config?.model || 'gpt2').trim();
+                const baseUrl = (config?.baseUrl || 'https://api-inference.huggingface.co/models').trim().replace(/\/$/, '');
+                const maxNewTokens = Math.max(1, Math.min(512, parseInt(config?.maxNewTokens, 10) || 120));
+                const temperature = Number(config?.temperature ?? 0.7);
+                try {
+                    const response = await fetch(`${baseUrl}/${encodeURIComponent(model)}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            inputs: prompt,
+                            parameters: {
+                                max_new_tokens: maxNewTokens,
+                                temperature: Number.isFinite(temperature) ? temperature : 0.7
+                            }
+                        })
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    const data = await response.json();
+                    const output = Array.isArray(data) ? data[0]?.generated_text : data?.generated_text;
+                    if (typeof output === 'string') {
+                        clone.payload = output.trim();
+                    }
+                    clone.vars.lastResponse = data;
+                    clone.logs.push(`Received Hugging Face response (${model}).`);
+                } catch (error) {
+                    clone.logs.push(`Hugging Face request failed: ${error.message}`);
+                }
+                return [clone];
+            }
+        }),
+        createActionModule({
+            id: 'cohere-generate',
+            name: 'Cohere generate',
+            description: 'Use Cohere Generate API for text generation.',
+            icon: 'zap',
+            accent: '#facc15',
+            keywords: ['ai', 'cohere', 'generate'],
+            defaultConfig: {
+                apiKey: '',
+                model: 'command',
+                baseUrl: 'https://api.cohere.ai/v1/generate',
+                maxTokens: 200,
+                temperature: 0.7
+            },
+            form: [
+                { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'cohere-key' },
+                { key: 'model', label: 'Model', type: 'text', placeholder: 'command' },
+                { key: 'maxTokens', label: 'Max tokens', type: 'number', min: 1, max: 2048 },
+                { key: 'temperature', label: 'Temperature', type: 'number', min: 0, max: 2, step: 0.1 }
+            ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const apiKey = (config?.apiKey || '').trim();
+                if (!apiKey) {
+                    clone.logs.push('Cohere request skipped: missing API key.');
+                    return [clone];
+                }
+                const prompt = QuickActionModuleUtils.payloadToString(clone.payload);
+                const model = (config?.model || 'command').trim();
+                const maxTokens = Math.max(1, Math.min(2048, parseInt(config?.maxTokens, 10) || 200));
+                const temperature = Number(config?.temperature ?? 0.7);
+                try {
+                    const response = await fetch((config?.baseUrl || 'https://api.cohere.ai/v1/generate').trim(), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model,
+                            prompt,
+                            max_tokens: maxTokens,
+                            temperature: Number.isFinite(temperature) ? temperature : 0.7
+                        })
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    const data = await response.json();
+                    const output = data?.generations?.[0]?.text || '';
+                    if (output) {
+                        clone.payload = output.trim();
+                    }
+                    clone.vars.lastResponse = data;
+                    clone.logs.push(`Received Cohere response (${model}).`);
+                } catch (error) {
+                    clone.logs.push(`Cohere request failed: ${error.message}`);
+                }
+                return [clone];
+            }
+        }),
+        createActionModule({
+            id: 'mistral-chat-completion',
+            name: 'Mistral chat completion',
+            description: 'Use Mistral chat completions API for responses.',
+            icon: 'wind',
+            accent: '#0ea5e9',
+            keywords: ['ai', 'mistral', 'chat'],
+            defaultConfig: {
+                apiKey: '',
+                model: 'mistral-small-latest',
+                baseUrl: 'https://api.mistral.ai/v1/chat/completions'
+            },
+            form: [
+                { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'mistral-key' },
+                { key: 'model', label: 'Model', type: 'text', placeholder: 'mistral-small-latest' },
+                { key: 'baseUrl', label: 'API endpoint', type: 'text' }
+            ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const apiKey = (config?.apiKey || '').trim();
+                if (!apiKey) {
+                    clone.logs.push('Mistral chat skipped: missing API key.');
+                    return [clone];
+                }
+                const prompt = QuickActionModuleUtils.payloadToString(clone.payload).trim();
+                if (!prompt) {
+                    clone.logs.push('Mistral chat skipped: payload is empty.');
+                    return [clone];
+                }
+                const baseUrl = (config?.baseUrl || 'https://api.mistral.ai/v1/chat/completions').trim();
+                const model = (config?.model || 'mistral-small-latest').trim();
+                try {
+                    const response = await fetch(baseUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model,
+                            messages: [
+                                { role: 'user', content: prompt }
+                            ]
+                        })
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    const data = await response.json();
+                    const message = data?.choices?.[0]?.message?.content?.trim?.() || '';
+                    if (message) {
+                        clone.payload = message;
+                    }
+                    clone.vars.lastResponse = data;
+                    clone.logs.push(`Received Mistral response (${model}).`);
+                } catch (error) {
+                    clone.logs.push(`Mistral chat failed: ${error.message}`);
+                }
+                return [clone];
+            }
+        }),
+        createActionModule({
+            id: 'perplexity-answer',
+            name: 'Perplexity answer',
+            description: 'Ask the Perplexity API for an answer using the payload as question.',
+            icon: 'help-circle',
+            accent: '#9333ea',
+            keywords: ['ai', 'perplexity', 'search'],
+            defaultConfig: {
+                apiKey: '',
+                model: 'pplx-70b-online',
+                baseUrl: 'https://api.perplexity.ai/chat/completions'
+            },
+            form: [
+                { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'perplexity-key' },
+                { key: 'model', label: 'Model', type: 'text', placeholder: 'pplx-70b-online' },
+                { key: 'baseUrl', label: 'API endpoint', type: 'text' }
+            ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const apiKey = (config?.apiKey || '').trim();
+                if (!apiKey) {
+                    clone.logs.push('Perplexity request skipped: missing API key.');
+                    return [clone];
+                }
+                const question = QuickActionModuleUtils.payloadToString(clone.payload).trim();
+                if (!question) {
+                    clone.logs.push('Perplexity request skipped: payload is empty.');
+                    return [clone];
+                }
+                const baseUrl = (config?.baseUrl || 'https://api.perplexity.ai/chat/completions').trim();
+                const model = (config?.model || 'pplx-70b-online').trim();
+                try {
+                    const response = await fetch(baseUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model,
+                            messages: [
+                                { role: 'system', content: 'You answer user questions accurately.' },
+                                { role: 'user', content: question }
+                            ]
+                        })
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    const data = await response.json();
+                    const message = data?.choices?.[0]?.message?.content?.trim?.() || '';
+                    if (message) {
+                        clone.payload = message;
+                    }
+                    clone.vars.lastResponse = data;
+                    clone.logs.push(`Received Perplexity answer (${model}).`);
+                } catch (error) {
+                    clone.logs.push(`Perplexity request failed: ${error.message}`);
+                }
+                return [clone];
+            }
+        }),
+        createActionModule({
+            id: 'custom-ai-http',
+            name: 'Custom AI HTTP request',
+            description: 'Call any AI HTTP endpoint with templated payload support.',
+            icon: 'send',
+            accent: '#f97316',
+            keywords: ['ai', 'custom', 'http'],
+            defaultConfig: {
+                url: '',
+                method: 'POST',
+                headers: '{"Content-Type":"application/json"}',
+                bodyTemplate: '{"input":"{{payload}}"}',
+                responseMode: 'json'
+            },
+            form: [
+                { key: 'url', label: 'Endpoint URL', type: 'text', placeholder: 'https://example.com/api' },
+                {
+                    key: 'method',
+                    label: 'Method',
+                    type: 'select',
+                    options: [
+                        { value: 'POST', label: 'POST' },
+                        { value: 'GET', label: 'GET' },
+                        { value: 'PUT', label: 'PUT' }
+                    ]
+                },
+                { key: 'headers', label: 'Headers (JSON)', type: 'textarea', rows: 3 },
+                { key: 'bodyTemplate', label: 'Body template', type: 'textarea', rows: 4, placeholder: '{"input":"{{payload}}"}' },
+                {
+                    key: 'responseMode',
+                    label: 'Response handling',
+                    type: 'select',
+                    options: [
+                        { value: 'json', label: 'Parse JSON' },
+                        { value: 'text', label: 'Plain text' }
+                    ]
+                }
+            ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const url = (config?.url || '').trim();
+                if (!url) {
+                    clone.logs.push('Custom AI request skipped: URL is empty.');
+                    return [clone];
+                }
+                const method = (config?.method || 'POST').toUpperCase();
+                let headers = {};
+                if (config?.headers) {
+                    try {
+                        headers = JSON.parse(config.headers);
+                    } catch (error) {
+                        clone.logs.push('Custom AI request: failed to parse headers JSON.');
+                    }
+                }
+                const payloadText = QuickActionModuleUtils.payloadToString(clone.payload);
+                const bodyTemplate = typeof config?.bodyTemplate === 'string' ? config.bodyTemplate : '{"input":"{{payload}}"}';
+                const requestBody = bodyTemplate.replace(/{{payload}}/g, payloadText);
+                const options = {
+                    method,
+                    headers
+                };
+                if (method !== 'GET') {
+                    options.body = requestBody;
+                }
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    if (config?.responseMode === 'text') {
+                        clone.payload = await response.text();
+                        clone.logs.push('Custom AI request returned text response.');
+                    } else {
+                        const data = await response.json();
+                        clone.payload = JSON.stringify(data, null, 2);
+                        clone.vars.lastResponse = data;
+                        clone.logs.push('Custom AI request returned JSON response.');
+                    }
+                } catch (error) {
+                    clone.logs.push(`Custom AI request failed: ${error.message}`);
+                }
+                return [clone];
+            }
+        })
+    ]
+);
+
+const ActionUtilityModules = [
+    createActionModule({
+        id: 'copy-as-markdown',
+        name: 'Copy as Markdown',
+        description: 'Wrap the payload in a Markdown code block and copy to clipboard.',
+        icon: 'copy',
+        accent: '#6366f1',
+        keywords: ['markdown', 'copy', 'clipboard'],
+        defaultConfig: { language: 'text' },
+        form: [
+            { key: 'language', label: 'Language label', type: 'text', placeholder: 'text' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const language = typeof config?.language === 'string' ? config.language : 'text';
+            const text = QuickActionModuleUtils.payloadToString(clone.payload);
+            const block = `\`\`\`${language}\n${text}\n\`\`\``;
+            ipcRenderer.send('copy-to-clipboard', block);
+            clone.payload = block;
+            clone.logs.push('Copied payload as Markdown code block.');
+            return [clone];
+        }
+    }),
+    createActionModule({
+        id: 'open-web-search',
+        name: 'Open web search',
+        description: 'Open a new browser search using the payload as query.',
+        icon: 'search',
+        accent: '#0ea5e9',
+        keywords: ['search', 'web', 'browser'],
+        defaultConfig: { provider: 'https://www.google.com/search?q=' },
+        form: [
+            { key: 'provider', label: 'Search URL prefix', type: 'text', placeholder: 'https://www.google.com/search?q=' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const provider = (config?.provider || 'https://www.google.com/search?q=').trim();
+            const query = encodeURIComponent(QuickActionModuleUtils.payloadToString(clone.payload));
+            try {
+                await shell.openExternal(`${provider}${query}`);
+                clone.logs.push('Opened web search.');
+            } catch (error) {
+                clone.logs.push(`Web search failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    }),
+    createActionModule({
+        id: 'send-webhook',
+        name: 'Send webhook',
+        description: 'Send the payload as JSON to a webhook endpoint.',
+        icon: 'share-2',
+        accent: '#22c55e',
+        keywords: ['webhook', 'http', 'json'],
+        defaultConfig: { url: '', method: 'POST', includeLogs: false },
+        form: [
+            { key: 'url', label: 'Webhook URL', type: 'text', placeholder: 'https://example.com/webhook' },
+            {
+                key: 'method',
+                label: 'Method',
+                type: 'select',
+                options: [
+                    { value: 'POST', label: 'POST' },
+                    { value: 'PUT', label: 'PUT' }
+                ]
+            },
+            { key: 'includeLogs', label: 'Include workflow logs', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const url = (config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('Webhook skipped: URL is empty.');
+                return [clone];
+            }
+            const method = (config?.method || 'POST').toUpperCase();
+            const payload = {
+                payload: clone.payload,
+                ...(config?.includeLogs ? { logs: [...clone.logs] } : {})
+            };
+            try {
+                await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                clone.logs.push('Webhook request sent.');
+            } catch (error) {
+                clone.logs.push(`Webhook failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    }),
+    createActionModule({
+        id: 'slack-webhook',
+        name: 'Slack webhook',
+        description: 'Send the payload to a Slack incoming webhook.',
+        icon: 'message-square',
+        accent: '#ec4899',
+        keywords: ['slack', 'webhook', 'message'],
+        defaultConfig: { url: '', username: 'FlashSearch Bot' },
+        form: [
+            { key: 'url', label: 'Slack webhook URL', type: 'text', placeholder: 'https://hooks.slack.com/services/...' },
+            { key: 'username', label: 'Username', type: 'text', placeholder: 'FlashSearch Bot' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const url = (config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('Slack webhook skipped: URL missing.');
+                return [clone];
+            }
+            const payload = {
+                text: QuickActionModuleUtils.payloadToString(clone.payload),
+                username: config?.username || 'FlashSearch Bot'
+            };
+            try {
+                await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                clone.logs.push('Posted message to Slack webhook.');
+            } catch (error) {
+                clone.logs.push(`Slack webhook failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    }),
+    createActionModule({
+        id: 'discord-webhook',
+        name: 'Discord webhook',
+        description: 'Send the payload content to a Discord webhook.',
+        icon: 'message-circle',
+        accent: '#5865f2',
+        keywords: ['discord', 'webhook', 'message'],
+        defaultConfig: { url: '', username: 'FlashSearch' },
+        form: [
+            { key: 'url', label: 'Discord webhook URL', type: 'text', placeholder: 'https://discord.com/api/webhooks/...' },
+            { key: 'username', label: 'Username', type: 'text', placeholder: 'FlashSearch' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const url = (config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('Discord webhook skipped: URL missing.');
+                return [clone];
+            }
+            const payload = {
+                username: config?.username || 'FlashSearch',
+                content: QuickActionModuleUtils.payloadToString(clone.payload)
+            };
+            try {
+                await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                clone.logs.push('Posted message to Discord webhook.');
+            } catch (error) {
+                clone.logs.push(`Discord webhook failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    })
+];
+
+QuickActionModuleDefinitions.push(
+    ...AdditionalTriggerModules,
+    ...SimpleTextTransforms,
+    ...ConfigurableTextModules,
+    ...DataUtilityModules,
+    ...ControlUtilityModules,
+    ...AiIntegrationModules,
+    ...ActionUtilityModules
+);
+
 const QuickActionModuleMap = new Map();
 const QuickActionModulesByCategory = { triggers: [], actions: [], utilities: [] };
 
@@ -575,6 +2517,16 @@ QuickActionModuleDefinitions.forEach(definition => {
     else if (definition.category === 'utility') QuickActionModulesByCategory.utilities.push(definition);
     else QuickActionModulesByCategory.actions.push(definition);
 });
+
+const sortModulesByName = (a, b) => {
+    const nameA = (a.name || a.nameKey || a.id || '').toString().toLowerCase();
+    const nameB = (b.name || b.nameKey || b.id || '').toString().toLowerCase();
+    return nameA.localeCompare(nameB);
+};
+
+QuickActionModulesByCategory.triggers.sort(sortModulesByName);
+QuickActionModulesByCategory.actions.sort(sortModulesByName);
+QuickActionModulesByCategory.utilities.sort(sortModulesByName);
 
 const QuickActionStore = {
     ensureStructure() {
@@ -920,6 +2872,10 @@ const QuickActionLab = {
     boundOutsideClick: null,
     builderSelectWrappers: new Set(),
     boundSelectOutsideClick: null,
+    moduleSearchTerm: '',
+    moduleExplorerOpen: false,
+    moduleExplorerSearchTerm: '',
+    moduleExplorerCategory: 'all',
 
     init() {
         if (this.initialized) return;
@@ -965,7 +2921,15 @@ const QuickActionLab = {
             iconPreview: Utils.getElement('#builder-icon-preview'),
             iconPickerToggle: Utils.getElement('#builder-icon-picker-toggle'),
             iconPicker: Utils.getElement('#builder-icon-picker'),
-            inspector: document.querySelector('.builder-inspector')
+            inspector: document.querySelector('.builder-inspector'),
+            moduleSearchInput: Utils.getElement('#builder-module-search'),
+            openLibraryButton: Utils.getElement('#builder-open-library'),
+            libraryWindow: Utils.getElement('#builder-library-window'),
+            libraryBackdrop: document.querySelector('#builder-library-window .builder-library-backdrop'),
+            libraryContent: Utils.getElement('#builder-library-content'),
+            librarySearch: Utils.getElement('#builder-library-search'),
+            libraryCategory: Utils.getElement('#builder-library-category'),
+            libraryClose: Utils.getElement('#builder-library-close')
         };
 
         this.elements.dialog = document.querySelector('#quick-action-builder-modal .builder-dialog');
@@ -1057,6 +3021,36 @@ const QuickActionLab = {
         this.elements.resetView?.addEventListener('click', () => this.resetView());
         this.elements.clearWorkspace?.addEventListener('click', () => this.clearWorkspace());
 
+        if (this.elements.moduleSearchInput) {
+            const handleSearchInput = Utils.debounce(() => {
+                const value = this.elements.moduleSearchInput?.value || '';
+                this.moduleSearchTerm = value.trim().toLowerCase();
+                this.renderModuleList();
+            }, 120);
+            this.elements.moduleSearchInput.addEventListener('input', handleSearchInput);
+        }
+
+        this.elements.openLibraryButton?.addEventListener('click', () => this.openModuleLibrary());
+        this.elements.libraryClose?.addEventListener('click', () => this.closeModuleLibrary());
+        this.elements.libraryBackdrop?.addEventListener('click', () => this.closeModuleLibrary());
+
+        if (this.elements.librarySearch) {
+            const handleLibrarySearch = Utils.debounce(() => {
+                const value = this.elements.librarySearch?.value || '';
+                this.moduleExplorerSearchTerm = value.trim().toLowerCase();
+                this.renderModuleLibrary();
+            }, 150);
+            this.elements.librarySearch.addEventListener('input', handleLibrarySearch);
+        }
+
+        this.elements.libraryCategory?.addEventListener('change', (event) => {
+            const select = event.target;
+            if (select instanceof HTMLSelectElement) {
+                this.moduleExplorerCategory = select.value || 'all';
+                this.renderModuleLibrary();
+            }
+        });
+
         this.elements.modal?.addEventListener('keydown', (event) => {
             const target = event.target;
             const element = target instanceof HTMLElement ? target : null;
@@ -1066,6 +3060,12 @@ const QuickActionLab = {
                 element.isContentEditable ||
                 (typeof element.closest === 'function' && element.closest('[contenteditable="true"]'))
             );
+
+            if (event.key === 'Escape' && this.moduleExplorerOpen) {
+                event.preventDefault();
+                this.closeModuleLibrary();
+                return;
+            }
 
             if (event.key === 'Escape') {
                 if (isEditableField && typeof element?.blur === 'function') {
@@ -1098,6 +3098,9 @@ const QuickActionLab = {
         this.updateBuilderAccessState();
         this.renderActiveList();
         this.renderCatalog();
+        if (this.moduleExplorerOpen) {
+            this.renderModuleLibrary();
+        }
     },
 
     updateBuilderAccessState() {
@@ -1285,6 +3288,20 @@ const QuickActionLab = {
         this.builderState = this.createDefaultBuilderState();
         this.builderState.isOpen = true;
 
+        this.moduleSearchTerm = '';
+        this.moduleExplorerSearchTerm = '';
+        this.moduleExplorerCategory = 'all';
+        this.closeModuleLibrary(true);
+        if (this.elements.moduleSearchInput) {
+            this.elements.moduleSearchInput.value = '';
+        }
+        if (this.elements.librarySearch) {
+            this.elements.librarySearch.value = '';
+        }
+        if (this.elements.libraryCategory) {
+            this.elements.libraryCategory.value = 'all';
+        }
+
         if (actionId) {
             const existing = QuickActionStore.getDefinition(actionId);
             if (existing && existing.workflow) {
@@ -1392,6 +3409,7 @@ const QuickActionLab = {
             this.elements.modal.setAttribute('aria-hidden', 'true');
         }
         this.toggleIconPicker(false);
+        this.closeModuleLibrary(true);
         if (this.windowExpanded && typeof ViewManager?.resizeWindow === 'function') {
             this.windowExpanded = false;
             requestAnimationFrame(() => ViewManager.resizeWindow());
@@ -1454,9 +3472,32 @@ const QuickActionLab = {
         this.renderCanvas();
         this.renderInspector();
         this.updateZoomIndicator();
+        if (this.moduleExplorerOpen) {
+            this.renderModuleLibrary();
+        }
+    },
+
+    filterModules(modules = [], query = '', category = 'all') {
+        const normalizedQuery = (query || '').trim().toLowerCase();
+        return modules.filter(module => {
+            if (category && category !== 'all' && module.category !== category) return false;
+            if (!normalizedQuery) return true;
+            const searchSpace = [
+                module.id,
+                this.getModuleName(module),
+                this.getModuleDescription(module),
+                ...(Array.isArray(module.keywords) ? module.keywords : [])
+            ]
+                .join(' ')
+                .toLowerCase();
+            return searchSpace.includes(normalizedQuery);
+        });
     },
 
     renderModuleList() {
+        if (this.elements.moduleSearchInput) {
+            this.elements.moduleSearchInput.value = this.moduleSearchTerm;
+        }
         const lists = [
             { container: this.elements.triggerList, items: QuickActionModulesByCategory.triggers },
             { container: this.elements.actionList, items: QuickActionModulesByCategory.actions },
@@ -1466,7 +3507,16 @@ const QuickActionLab = {
         lists.forEach(({ container, items }) => {
             if (!container) return;
             container.innerHTML = '';
-            items.forEach(module => {
+            const filtered = this.filterModules(items, this.moduleSearchTerm);
+            if (filtered.length === 0) {
+                const empty = Utils.createElement('li', {
+                    className: 'builder-module-empty',
+                    text: 'No blocks match your search.'
+                });
+                container.appendChild(empty);
+                return;
+            }
+            filtered.forEach(module => {
                 const item = Utils.createElement('li', { className: 'builder-module-item' });
                 item.setAttribute('data-module-id', module.id);
                 const title = Utils.createElement('strong', { text: this.getModuleName(module) });
@@ -1477,6 +3527,88 @@ const QuickActionLab = {
                 container.appendChild(item);
             });
         });
+    },
+
+    openModuleLibrary() {
+        if (!this.elements.libraryWindow) return;
+        this.moduleExplorerOpen = true;
+        this.elements.libraryWindow.classList.add('active');
+        this.elements.libraryWindow.setAttribute('aria-hidden', 'false');
+        if (this.elements.librarySearch) {
+            this.elements.librarySearch.value = this.moduleExplorerSearchTerm;
+            setTimeout(() => this.elements.librarySearch?.focus(), 60);
+        }
+        if (this.elements.libraryCategory) {
+            this.elements.libraryCategory.value = this.moduleExplorerCategory;
+        }
+        this.renderModuleLibrary();
+    },
+
+    closeModuleLibrary(force = false) {
+        if (!this.moduleExplorerOpen && !force) return;
+        this.moduleExplorerOpen = false;
+        if (this.elements.libraryWindow) {
+            this.elements.libraryWindow.classList.remove('active');
+            this.elements.libraryWindow.setAttribute('aria-hidden', 'true');
+        }
+    },
+
+    renderModuleLibrary() {
+        const container = this.elements.libraryContent;
+        if (!container) return;
+        container.innerHTML = '';
+        if (!this.moduleExplorerOpen) return;
+
+        const filtered = this.filterModules(
+            QuickActionModuleDefinitions,
+            this.moduleExplorerSearchTerm,
+            this.moduleExplorerCategory
+        );
+
+        if (filtered.length === 0) {
+            const empty = Utils.createElement('div', {
+                className: 'builder-library-empty',
+                text: 'No blocks found for this filter.'
+            });
+            container.appendChild(empty);
+            return;
+        }
+
+        const grid = Utils.createElement('div', { className: 'builder-library-grid' });
+        filtered.forEach(module => {
+            const card = Utils.createElement('article', { className: 'builder-library-card' });
+            const iconWrap = Utils.createElement('div', { className: 'library-card-icon' });
+            iconWrap.style.background = module.accent || '#6366f1';
+            const iconName = module.icon || 'box';
+            if (window.feather?.icons?.[iconName]) {
+                iconWrap.innerHTML = window.feather.icons[iconName].toSvg({ width: 20, height: 20 });
+            } else {
+                iconWrap.textContent = '⚙️';
+            }
+            card.appendChild(iconWrap);
+
+            const title = Utils.createElement('h4', { text: this.getModuleName(module) });
+            card.appendChild(title);
+
+            const description = Utils.createElement('p', { text: this.getModuleDescription(module) });
+            card.appendChild(description);
+
+            const keywords = Array.isArray(module.keywords) ? module.keywords.slice(0, 5).join(', ') : '';
+            const metaText = `Category: ${module.category}` + (keywords ? ` • ${keywords}` : '');
+            const meta = Utils.createElement('div', { className: 'library-card-meta', text: metaText });
+            card.appendChild(meta);
+
+            const button = Utils.createElement('button', { text: 'Add to canvas' });
+            button.addEventListener('click', () => {
+                this.addNode(module.id);
+                this.closeModuleLibrary();
+            });
+            card.appendChild(button);
+
+            grid.appendChild(card);
+        });
+
+        container.appendChild(grid);
     },
 
     renderCanvas() {

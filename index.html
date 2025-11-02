@@ -417,6 +417,15 @@
             </header>
             <div class="builder-body">
                 <aside class="builder-sidebar">
+                    <div class="builder-sidebar-tools">
+                        <div class="builder-sidebar-search">
+                            <i data-feather="search"></i>
+                            <input type="text" id="builder-module-search" placeholder="Search blocks">
+                        </div>
+                        <button id="builder-open-library" class="builder-explorer-button" type="button">
+                            Browse all blocks
+                        </button>
+                    </div>
                     <div class="builder-sidebar-section">
                         <h3>Triggers</h3>
                         <ul id="builder-trigger-list" class="builder-module-list"></ul>
@@ -485,6 +494,37 @@
                 </div>
             </footer>
             <div class="builder-resize-handle" aria-hidden="true"></div>
+        </div>
+    </div>
+
+    <div id="builder-library-window" class="builder-library-window" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="builder-library-title">
+        <div class="builder-library-backdrop" data-action="close-library"></div>
+        <div class="builder-library-panel">
+            <header class="builder-library-header">
+                <div class="builder-library-title">
+                    <h2 id="builder-library-title">Block explorer</h2>
+                    <p>Search, preview, and insert workflow blocks.</p>
+                </div>
+                <div class="builder-library-controls">
+                    <div class="builder-library-search">
+                        <i data-feather="search"></i>
+                        <input type="text" id="builder-library-search" placeholder="Search the entire catalog">
+                    </div>
+                    <label class="builder-library-filter">
+                        <span>Category</span>
+                        <select id="builder-library-category">
+                            <option value="all">All</option>
+                            <option value="trigger">Triggers</option>
+                            <option value="action">Actions</option>
+                            <option value="utility">Utilities</option>
+                        </select>
+                    </label>
+                </div>
+                <button id="builder-library-close" class="builder-library-close" type="button" title="Close explorer">
+                    <i data-feather="x"></i>
+                </button>
+            </header>
+            <div id="builder-library-content" class="builder-library-content" role="document"></div>
         </div>
     </div>
 
