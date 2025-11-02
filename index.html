@@ -360,6 +360,10 @@
                                         <p data-i18n="quick_actions_library_description">Pick ready-to-use actions or customise them before pinning to the bar.</p>
                                     </div>
                                 </header>
+                                <div class="quick-action-catalog-toolbar">
+                                    <label for="quick-action-catalog-search" class="visually-hidden">Search quick actions</label>
+                                    <input type="search" id="quick-action-catalog-search" class="quick-action-catalog-search" placeholder="Search quick actions" autocomplete="off">
+                                </div>
                                 <div id="quick-action-catalog" class="quick-action-catalog"></div>
                             </section>
                             <section class="settings-section-card quick-actions-section">
@@ -417,6 +421,11 @@
             </header>
             <div class="builder-body">
                 <aside class="builder-sidebar">
+                    <div class="builder-sidebar-header">
+                        <label for="builder-module-search" class="visually-hidden">Search blocks</label>
+                        <input type="search" id="builder-module-search" class="builder-module-search" placeholder="Search blocks" autocomplete="off">
+                        <button id="open-block-explorer" class="builder-sidebar-button" type="button">Open block explorer</button>
+                    </div>
                     <div class="builder-sidebar-section">
                         <h3>Triggers</h3>
                         <ul id="builder-trigger-list" class="builder-module-list"></ul>
@@ -485,6 +494,31 @@
                 </div>
             </footer>
             <div class="builder-resize-handle" aria-hidden="true"></div>
+        </div>
+    </div>
+
+    <div id="block-explorer-modal" class="block-explorer-modal" aria-hidden="true">
+        <div class="block-explorer-backdrop"></div>
+        <div class="block-explorer-dialog" role="dialog" aria-modal="true" aria-labelledby="block-explorer-title">
+            <header class="block-explorer-header">
+                <div>
+                    <h2 id="block-explorer-title">Block explorer</h2>
+                    <p class="block-explorer-subtitle">Browse every block in the library and inspect their capabilities.</p>
+                </div>
+                <div class="block-explorer-header-actions">
+                    <label for="block-explorer-search" class="visually-hidden">Search blocks</label>
+                    <input type="search" id="block-explorer-search" class="block-explorer-search" placeholder="Search blocks" autocomplete="off">
+                    <button id="close-block-explorer" class="builder-header-button" type="button" title="Close">&times;</button>
+                </div>
+            </header>
+            <div class="block-explorer-body">
+                <aside class="block-explorer-list">
+                    <ul id="block-explorer-items"></ul>
+                </aside>
+                <section class="block-explorer-preview" aria-live="polite">
+                    <div id="block-explorer-preview"></div>
+                </section>
+            </div>
         </div>
     </div>
 

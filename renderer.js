@@ -213,9 +213,4643 @@ const QuickActionCatalog = [
     }
 ];
 
+const AdditionalQuickActionModules = [];
+
+const TriggerScenarios = [
+    {
+        id: 'keyboard-shortcut-trigger',
+        name: 'Trigger: Keyboard shortcut',
+        description: 'Simulate a workflow launched from a keyboard shortcut.',
+        icon: 'type',
+        accent: '#38bdf8',
+        defaultConfig: { shortcut: 'Ctrl+Shift+K', note: '' },
+        form: [
+            { key: 'shortcut', label: 'Shortcut', type: 'text', placeholder: 'Ctrl+Shift+K' },
+            { key: 'note', label: 'Notes', type: 'textarea', rows: 2, placeholder: 'Internal description' }
+        ],
+        tags: ['trigger', 'shortcut', 'hotkey'],
+        onRun: (clone, config) => {
+            const shortcut = ensureString(config?.shortcut || '').trim();
+            if (shortcut) clone.vars.triggerShortcut = shortcut;
+            if (config?.note) clone.vars.triggerNote = ensureString(config.note);
+            clone.logs.push(`Trigger invoked via shortcut ${shortcut || 'custom shortcut'}.`);
+        }
+    },
+    {
+        id: 'schedule-trigger',
+        name: 'Trigger: Schedule',
+        description: 'Represent a cron or calendar-based automation entry point.',
+        icon: 'clock',
+        accent: '#facc15',
+        defaultConfig: { cron: '0 9 * * 1', label: 'Weekly review' },
+        form: [
+            { key: 'cron', label: 'Cron expression', type: 'text', placeholder: '0 9 * * 1' },
+            { key: 'label', label: 'Schedule label', type: 'text', placeholder: 'Weekly review' }
+        ],
+        tags: ['trigger', 'schedule'],
+        onRun: (clone, config) => {
+            clone.vars.triggerCron = ensureString(config?.cron || '');
+            if (config?.label) clone.vars.triggerLabel = ensureString(config.label);
+            clone.logs.push('Trigger executed according to configured schedule.');
+        }
+    },
+    {
+        id: 'clipboard-change-trigger',
+        name: 'Trigger: Clipboard change',
+        description: 'Start a workflow when clipboard content matches a rule.',
+        icon: 'copy',
+        accent: '#a855f7',
+        defaultConfig: { keyword: '', sample: '' },
+        form: [
+            { key: 'keyword', label: 'Required keyword', type: 'text', placeholder: 'invoice' },
+            { key: 'sample', label: 'Sample payload', type: 'textarea', rows: 3, placeholder: 'Paste example clipboard content' }
+        ],
+        tags: ['trigger', 'clipboard'],
+        onRun: (clone, config) => {
+            const sample = ensureString(config?.sample || '').trim();
+            if (sample) clone.payload = sample;
+            const keyword = ensureString(config?.keyword || '').trim();
+            clone.logs.push(
+                keyword ? `Clipboard trigger configured for keyword "${keyword}".` : 'Clipboard trigger executed without keyword filter.'
+            );
+        }
+    },
+    {
+        id: 'incoming-webhook-trigger',
+        name: 'Trigger: Incoming webhook',
+        description: 'Use incoming webhook payloads as the initial context.',
+        icon: 'activity',
+        accent: '#34d399',
+        defaultConfig: { url: '', secret: '' },
+        form: [
+            { key: 'url', label: 'Webhook endpoint', type: 'url', placeholder: 'https://example.com/hooks' },
+            { key: 'secret', label: 'Shared secret', type: 'text', placeholder: 'Optional secret' }
+        ],
+        tags: ['trigger', 'webhook'],
+        onRun: (clone, config) => {
+            clone.vars.webhookUrl = ensureString(config?.url || '');
+            clone.vars.webhookSecret = ensureString(config?.secret || '');
+            clone.logs.push('Incoming webhook trigger initialized.');
+        }
+    },
+    {
+        id: 'ai-signal-trigger',
+        name: 'Trigger: AI signal',
+        description: 'Fetch a short AI insight to seed the workflow.',
+        icon: 'radio',
+        accent: '#38bdf8',
+        defaultConfig: { endpoint: '', apiKey: '', prompt: 'Provide a quick insight.' },
+        form: [
+            { key: 'endpoint', label: 'AI endpoint', type: 'url', placeholder: 'https://api.example.ai/v1/completions' },
+            { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'sk-...' },
+            { key: 'prompt', label: 'Prompt', type: 'textarea', rows: 3, placeholder: 'Describe what should be fetched' }
+        ],
+        tags: ['trigger', 'ai'],
+        onRun: async (clone, config) => {
+            const result = await performAiTextRequest(clone, config, {
+                label: 'AI signal fetch',
+                emptyPromptMessage: 'AI signal skipped: provide a prompt or payload.',
+                missingEndpointMessage: 'AI signal skipped: endpoint missing.'
+            });
+            if (result) {
+                clone.payload = result.text;
+                clone.vars.lastAiResponse = result.raw;
+                clone.logs.push('AI signal fetched successfully.');
+            }
+        }
+    },
+    {
+        id: 'file-change-trigger',
+        name: 'Trigger: File change',
+        description: 'Document a workflow that should run when files change.',
+        icon: 'file-text',
+        accent: '#60a5fa',
+        defaultConfig: { path: '~/Documents', event: 'modified' },
+        form: [
+            { key: 'path', label: 'Watched path', type: 'text', placeholder: '~/Documents' },
+            { key: 'event', label: 'Event type', type: 'select', options: [
+                { value: 'created', label: 'File created' },
+                { value: 'modified', label: 'File modified' },
+                { value: 'deleted', label: 'File deleted' }
+            ] }
+        ],
+        tags: ['trigger', 'files'],
+        onRun: (clone, config) => {
+            clone.vars.fileWatchPath = ensureString(config?.path || '');
+            clone.vars.fileWatchEvent = ensureString(config?.event || 'modified');
+            clone.logs.push('File change trigger noted for documentation.');
+        }
+    },
+    {
+        id: 'timer-interval-trigger',
+        name: 'Trigger: Interval timer',
+        description: 'Run workflows at fixed intervals measured in minutes.',
+        icon: 'refresh-cw',
+        accent: '#4ade80',
+        defaultConfig: { minutes: 15 },
+        form: [{ key: 'minutes', label: 'Interval (minutes)', type: 'number', min: 1, placeholder: '15' }],
+        tags: ['trigger', 'timer'],
+        onRun: (clone, config) => {
+            const minutes = Math.max(1, Number(config?.minutes || 0));
+            clone.vars.intervalMinutes = minutes;
+            clone.logs.push(`Interval trigger executed (every ${minutes} minute(s)).`);
+        }
+    },
+    {
+        id: 'form-response-trigger',
+        name: 'Trigger: Form response',
+        description: 'Load a sample submission from a form platform.',
+        icon: 'file-plus',
+        accent: '#f97316',
+        defaultConfig: { formName: 'Contact form', sample: '' },
+        form: [
+            { key: 'formName', label: 'Form name', type: 'text', placeholder: 'Contact form' },
+            { key: 'sample', label: 'Sample response', type: 'textarea', rows: 4, placeholder: '{"email":"user@example.com"}' }
+        ],
+        tags: ['trigger', 'forms'],
+        onRun: (clone, config) => {
+            const sample = ensureString(config?.sample || '');
+            if (sample) clone.payload = sample;
+            clone.vars.formName = ensureString(config?.formName || '');
+            clone.logs.push('Form response trigger loaded.');
+        }
+    },
+    {
+        id: 'api-poll-trigger',
+        name: 'Trigger: API poll',
+        description: 'Poll an API endpoint for new data at the start of a workflow.',
+        icon: 'cloud',
+        accent: '#0ea5e9',
+        defaultConfig: { url: '', path: '' },
+        form: [
+            { key: 'url', label: 'Endpoint URL', type: 'url', placeholder: 'https://api.example.com/status' },
+            { key: 'path', label: 'Data path (optional)', type: 'text', placeholder: 'data.items[0]' }
+        ],
+        tags: ['trigger', 'api'],
+        onRun: async (clone, config) => {
+            const url = ensureString(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('API poll skipped: URL missing.');
+                return;
+            }
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                clone.vars.apiPollRaw = data;
+                if (config?.path) {
+                    try {
+                        const path = ensureString(config.path);
+                        const value = path.split('.').reduce(
+                            (acc, key) => (acc && acc[key] !== undefined ? acc[key] : null),
+                            data
+                        );
+                        if (value !== null && value !== undefined) clone.payload = value;
+                    } catch (error) {
+                        clone.logs.push(`API poll path error: ${error.message}`);
+                    }
+                } else {
+                    clone.payload = data;
+                }
+                clone.logs.push(`API poll succeeded for ${url}.`);
+            } catch (error) {
+                clone.logs.push(`API poll failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'calendar-start-trigger',
+        name: 'Trigger: Calendar start',
+        description: 'Kick off workflows aligned with calendar events.',
+        icon: 'calendar',
+        accent: '#fb7185',
+        defaultConfig: { calendar: 'Primary', title: 'Team sync' },
+        form: [
+            { key: 'calendar', label: 'Calendar', type: 'text', placeholder: 'Primary' },
+            { key: 'title', label: 'Event title', type: 'text', placeholder: 'Team sync' }
+        ],
+        tags: ['trigger', 'calendar'],
+        onRun: (clone, config) => {
+            clone.vars.calendarName = ensureString(config?.calendar || '');
+            clone.vars.calendarEventTitle = ensureString(config?.title || '');
+            clone.logs.push('Calendar-based trigger prepared.');
+        }
+    }
+];
+
+TriggerScenarios.forEach(scenario => {
+    AdditionalQuickActionModules.push({
+        id: scenario.id,
+        category: 'trigger',
+        name: scenario.name,
+        description: scenario.description,
+        icon: scenario.icon,
+        accent: scenario.accent,
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: scenario.defaultConfig,
+        form: scenario.form,
+        tags: scenario.tags,
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            await scenario.onRun(clone, config || {});
+            return [clone];
+        }
+    });
+});
+
+const ActionScenarios = [
+    {
+        id: 'send-email',
+        name: 'Send email draft',
+        description: 'Open a prefilled email in the default mail client.',
+        icon: 'mail',
+        accent: '#f472b6',
+        defaultConfig: { to: '', subject: 'Follow up', body: 'Hello from FlashSearch!', cc: '' },
+        form: [
+            { key: 'to', label: 'To', type: 'text', placeholder: 'team@example.com' },
+            { key: 'cc', label: 'Cc', type: 'text', placeholder: 'Optional carbon copy' },
+            { key: 'subject', label: 'Subject', type: 'text', placeholder: 'Follow up' },
+            { key: 'body', label: 'Body', type: 'textarea', rows: 4, placeholder: 'Hello from FlashSearch!' }
+        ],
+        tags: ['email', 'communication'],
+        onRun: async (clone, config) => {
+            const to = encodeURIComponent(ensureString(config?.to || ''));
+            const subject = encodeURIComponent(ensureString(config?.subject || ''));
+            const cc = encodeURIComponent(ensureString(config?.cc || ''));
+            const body = encodeURIComponent(ensureString(config?.body || clone.payload || ''));
+            const params = new URLSearchParams();
+            if (subject) params.set('subject', subject);
+            if (cc) params.set('cc', cc);
+            if (body) params.set('body', body);
+            const mailto = `mailto:${to}?${params.toString()}`;
+            try {
+                await shell.openExternal(mailto);
+                clone.logs.push('Email draft opened in default client.');
+            } catch (error) {
+                clone.logs.push(`Email launch failed: ${error.message}`);
+            }
+            clone.payload = ensureString(config?.body || clone.payload || '');
+        }
+    },
+    {
+        id: 'create-calendar-event',
+        name: 'Create calendar event',
+        description: 'Generate an ICS snippet representing a calendar event.',
+        icon: 'calendar',
+        accent: '#22d3ee',
+        defaultConfig: {
+            title: 'Strategy session',
+            start: '2024-01-01T09:00:00Z',
+            end: '2024-01-01T10:00:00Z',
+            description: 'Discuss roadmap updates',
+            location: 'Conference room'
+        },
+        form: [
+            { key: 'title', label: 'Title', type: 'text', placeholder: 'Strategy session' },
+            { key: 'start', label: 'Start (ISO)', type: 'text', placeholder: '2024-01-01T09:00:00Z' },
+            { key: 'end', label: 'End (ISO)', type: 'text', placeholder: '2024-01-01T10:00:00Z' },
+            { key: 'location', label: 'Location', type: 'text', placeholder: 'Conference room' },
+            { key: 'description', label: 'Description', type: 'textarea', rows: 3, placeholder: 'Discuss roadmap updates' }
+        ],
+        tags: ['calendar', 'events'],
+        onRun: (clone, config) => {
+            const uid = `flashsearch-${Date.now()}@local`;
+            const lines = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//FlashSearch//QuickActions//EN',
+                'BEGIN:VEVENT',
+                `UID:${uid}`,
+                `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+                `DTSTART:${ensureString(config?.start || '').replace(/[-:]/g, '')}`,
+                `DTEND:${ensureString(config?.end || '').replace(/[-:]/g, '')}`,
+                `SUMMARY:${ensureString(config?.title || '')}`,
+                `DESCRIPTION:${ensureString(config?.description || '')}`,
+                `LOCATION:${ensureString(config?.location || '')}`,
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ];
+            clone.payload = lines.join('\n');
+            clone.logs.push('Calendar event generated as ICS payload.');
+        }
+    },
+    {
+        id: 'create-task-api',
+        name: 'Create task via API',
+        description: 'Send a JSON payload to a task management API.',
+        icon: 'check-square',
+        accent: '#a3e635',
+        defaultConfig: { endpoint: '', apiKey: '', title: 'New task', notes: '' },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://api.example.com/tasks' },
+            { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'sk-...' },
+            { key: 'title', label: 'Task title', type: 'text', placeholder: 'New task' },
+            { key: 'notes', label: 'Task notes', type: 'textarea', rows: 3, placeholder: 'Details or instructions' }
+        ],
+        tags: ['api', 'tasks'],
+        onRun: async (clone, config) => {
+            const url = ensureString(config?.endpoint || '').trim();
+            if (!url) {
+                clone.logs.push('Task API skipped: endpoint missing.');
+                return;
+            }
+            const body = {
+                title: ensureString(config?.title || '') || ensureString(clone.payload || ''),
+                notes: ensureString(config?.notes || '')
+            };
+            const headers = {
+                'Content-Type': 'application/json',
+                ...parseHeaderString(config?.headers || '')
+            };
+            const apiKey = ensureString(config?.apiKey || '').trim();
+            if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(body)
+                });
+                clone.payload = await response.text();
+                clone.logs.push(`Task API responded with status ${response.status}.`);
+            } catch (error) {
+                clone.logs.push(`Task API request failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'send-slack-message',
+        name: 'Send Slack message',
+        description: 'Publish a message to a Slack webhook URL.',
+        icon: 'message-circle',
+        accent: '#ec4899',
+        defaultConfig: { url: '', text: 'Hello from FlashSearch!', username: 'Flash Bot' },
+        form: [
+            { key: 'url', label: 'Webhook URL', type: 'url', placeholder: 'https://hooks.slack.com/services/...'},
+            { key: 'username', label: 'Display name', type: 'text', placeholder: 'Flash Bot' },
+            { key: 'text', label: 'Message', type: 'textarea', rows: 3, placeholder: 'Hello from FlashSearch!' }
+        ],
+        tags: ['slack', 'chat'],
+        onRun: async (clone, config) => {
+            const url = ensureString(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('Slack webhook skipped: URL missing.');
+                return;
+            }
+            const payload = {
+                text: ensureString(config?.text || clone.payload || ''),
+                username: ensureString(config?.username || 'Flash Bot')
+            };
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                clone.payload = await response.text() || 'Message delivered.';
+                clone.logs.push('Slack message sent.');
+            } catch (error) {
+                clone.logs.push(`Slack webhook failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'send-discord-webhook',
+        name: 'Send Discord webhook',
+        description: 'Push a payload to a Discord channel webhook.',
+        icon: 'share-2',
+        accent: '#6366f1',
+        defaultConfig: { url: '', username: 'Flash Assistant', content: 'Notification from FlashSearch.' },
+        form: [
+            { key: 'url', label: 'Webhook URL', type: 'url', placeholder: 'https://discord.com/api/webhooks/...'},
+            { key: 'username', label: 'Username', type: 'text', placeholder: 'Flash Assistant' },
+            { key: 'content', label: 'Content', type: 'textarea', rows: 3, placeholder: 'Notification from FlashSearch.' }
+        ],
+        tags: ['discord', 'chat'],
+        onRun: async (clone, config) => {
+            const url = ensureString(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('Discord webhook skipped: URL missing.');
+                return;
+            }
+            const payload = {
+                username: ensureString(config?.username || 'Flash Assistant'),
+                content: ensureString(config?.content || clone.payload || '')
+            };
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                clone.payload = await response.text() || 'Message delivered.';
+                clone.logs.push('Discord message sent.');
+            } catch (error) {
+                clone.logs.push(`Discord webhook failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'push-notification',
+        name: 'Send push notification',
+        description: 'Send a push notification via a generic push API.',
+        icon: 'bell',
+        accent: '#f97316',
+        defaultConfig: { url: '', apiKey: '', title: 'FlashSearch', message: 'You have a new alert.' },
+        form: [
+            { key: 'url', label: 'Push API URL', type: 'url', placeholder: 'https://api.push.example.com/send' },
+            { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'sk-...' },
+            { key: 'title', label: 'Title', type: 'text', placeholder: 'FlashSearch' },
+            { key: 'message', label: 'Message', type: 'textarea', rows: 3, placeholder: 'You have a new alert.' }
+        ],
+        tags: ['notifications', 'api'],
+        onRun: async (clone, config) => {
+            const url = ensureString(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push('Push notification skipped: URL missing.');
+                return;
+            }
+            const headers = {
+                'Content-Type': 'application/json',
+                ...parseHeaderString(config?.headers || '')
+            };
+            const apiKey = ensureString(config?.apiKey || '').trim();
+            if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+            const payload = {
+                title: ensureString(config?.title || 'FlashSearch'),
+                message: ensureString(config?.message || clone.payload || '')
+            };
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(payload)
+                });
+                clone.payload = await response.text() || JSON.stringify({ delivered: true });
+                clone.logs.push('Push notification dispatched.');
+            } catch (error) {
+                clone.logs.push(`Push notification failed: ${error.message}`);
+            }
+        }
+    }
+];
+
+ActionScenarios.forEach(scenario => {
+    AdditionalQuickActionModules.push({
+        id: scenario.id,
+        category: 'action',
+        name: scenario.name,
+        description: scenario.description,
+        icon: scenario.icon,
+        accent: scenario.accent,
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: scenario.defaultConfig,
+        form: scenario.form,
+        tags: scenario.tags,
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            await scenario.onRun(clone, config || {});
+            return [clone];
+        }
+    });
+});
+
+const HttpModuleScenarios = [
+    {
+        id: 'post-webhook',
+        method: 'POST',
+        name: 'POST webhook',
+        description: 'Send a POST request with configurable payload and headers.',
+        icon: 'send',
+        accent: '#fb923c',
+        defaultConfig: { url: '', payload: '{"ok":true}', headers: '' },
+        tags: ['webhook', 'http']
+    },
+    {
+        id: 'put-webhook',
+        method: 'PUT',
+        name: 'PUT webhook',
+        description: 'Send an HTTP PUT request to update remote resources.',
+        icon: 'upload',
+        accent: '#60a5fa',
+        defaultConfig: { url: '', payload: '{"status":"updated"}', headers: '' },
+        tags: ['webhook', 'http']
+    },
+    {
+        id: 'delete-webhook',
+        method: 'DELETE',
+        name: 'DELETE webhook',
+        description: 'Send an HTTP DELETE request to remove data remotely.',
+        icon: 'trash-2',
+        accent: '#f87171',
+        defaultConfig: { url: '', headers: '' },
+        tags: ['webhook', 'http']
+    },
+    {
+        id: 'http-get',
+        method: 'GET',
+        name: 'HTTP GET request',
+        description: 'Fetch data from any HTTP endpoint and store the response.',
+        icon: 'download-cloud',
+        accent: '#38bdf8',
+        defaultConfig: { url: '', headers: '' },
+        tags: ['http', 'fetch']
+    },
+    {
+        id: 'http-head',
+        method: 'HEAD',
+        name: 'HTTP HEAD request',
+        description: 'Retrieve only headers to check endpoint availability.',
+        icon: 'info',
+        accent: '#c084fc',
+        defaultConfig: { url: '', headers: '' },
+        tags: ['http', 'monitoring']
+    },
+    {
+        id: 'http-download',
+        method: 'GET',
+        name: 'HTTP download text',
+        description: 'Download textual content and attach it to the payload.',
+        icon: 'file-down',
+        accent: '#fbbf24',
+        defaultConfig: { url: '', headers: '' },
+        tags: ['http', 'download'],
+        asTextOnly: true
+    }
+];
+
+HttpModuleScenarios.forEach(scenario => {
+    AdditionalQuickActionModules.push({
+        id: scenario.id,
+        category: 'action',
+        name: scenario.name,
+        description: scenario.description,
+        icon: scenario.icon,
+        accent: scenario.accent,
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: scenario.defaultConfig,
+        form: [
+            { key: 'url', label: 'URL', type: 'url', placeholder: 'https://example.com/api' },
+            scenario.method !== 'GET' && scenario.method !== 'HEAD'
+                ? { key: 'payload', label: 'Payload', type: 'textarea', rows: 4, placeholder: '{"ok":true}' }
+                : null,
+            { key: 'headers', label: 'Headers', type: 'textarea', rows: 3, placeholder: 'Authorization: Bearer token' }
+        ].filter(Boolean),
+        tags: scenario.tags,
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const url = ensureString(config?.url || '').trim();
+            if (!url) {
+                clone.logs.push(`${scenario.method} request skipped: URL missing.`);
+                return [clone];
+            }
+            const headers = parseHeaderString(config?.headers || '');
+            if (scenario.method !== 'GET' && scenario.method !== 'HEAD') {
+                headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+            }
+            try {
+                const options = { method: scenario.method, headers };
+                if (scenario.method !== 'GET' && scenario.method !== 'HEAD') {
+                    options.body = ensureString(config?.payload || clone.payload || '{}');
+                }
+                const response = await fetch(url, options);
+                if (scenario.method === 'HEAD') {
+                    clone.payload = Array.from(response.headers.entries())
+                        .map(([key, value]) => `${key}: ${value}`)
+                        .join('\n');
+                } else {
+                    const text = await response.text();
+                    clone.payload = scenario.asTextOnly ? text : text;
+                }
+                clone.logs.push(`${scenario.method} ${url} returned status ${response.status}.`);
+            } catch (error) {
+                clone.logs.push(`${scenario.method} request failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    });
+});
+
+const TextUtilityScenarios = [
+    {
+        id: 'string-slugify',
+        name: 'Text: Slugify',
+        description: 'Turn text into a URL-friendly slug.',
+        icon: 'link',
+        accent: '#f97316',
+        defaultConfig: { delimiter: '-' },
+        form: [{ key: 'delimiter', label: 'Delimiter', type: 'text', placeholder: '-' }],
+        tags: ['text', 'formatting'],
+        transform: (value, config) => {
+            const delimiter = ensureString(config?.delimiter || '-');
+            return ensureString(value)
+                .toLowerCase()
+                .replace(/[^\p{L}\p{N}]+/gu, delimiter)
+                .replace(new RegExp(`${delimiter}+`, 'g'), delimiter)
+                .replace(new RegExp(`^${delimiter}|${delimiter}$`, 'g'), '');
+        }
+    },
+    {
+        id: 'string-replace',
+        name: 'Text: Replace',
+        description: 'Replace occurrences of text using simple find and replace.',
+        icon: 'edit-2',
+        accent: '#60a5fa',
+        defaultConfig: { search: '', replace: '' },
+        form: [
+            { key: 'search', label: 'Find', type: 'text', placeholder: 'old value' },
+            { key: 'replace', label: 'Replace with', type: 'text', placeholder: 'new value' }
+        ],
+        tags: ['text', 'replace'],
+        transform: (value, config, clone) => {
+            const search = ensureString(config?.search || '');
+            if (!search) {
+                clone.logs.push('Replace skipped: nothing to search for.');
+                return value;
+            }
+            const replace = ensureString(config?.replace || '');
+            return ensureString(value).split(search).join(replace);
+        }
+    },
+    {
+        id: 'string-regex-extract',
+        name: 'Text: Regex extract',
+        description: 'Extract the first regular-expression match from text.',
+        icon: 'filter',
+        accent: '#34d399',
+        defaultConfig: { pattern: '(\\d+)', flags: '' },
+        form: [
+            { key: 'pattern', label: 'Pattern', type: 'text', placeholder: '(\\d+)' },
+            { key: 'flags', label: 'Flags', type: 'text', placeholder: 'gim' }
+        ],
+        tags: ['text', 'regex'],
+        transform: (value, config, clone) => {
+            const pattern = ensureString(config?.pattern || '');
+            if (!pattern) {
+                clone.logs.push('Regex extract skipped: pattern missing.');
+                return value;
+            }
+            try {
+                const regex = new RegExp(pattern, ensureString(config?.flags || ''));
+                const match = ensureString(value).match(regex);
+                return match ? match[0] : '';
+            } catch (error) {
+                clone.logs.push(`Regex extract failed: ${error.message}`);
+                return value;
+            }
+        }
+    },
+    {
+        id: 'string-split',
+        name: 'Text: Split',
+        description: 'Split text into an array using a delimiter.',
+        icon: 'scissors',
+        accent: '#a855f7',
+        defaultConfig: { delimiter: '\n' },
+        form: [{ key: 'delimiter', label: 'Delimiter', type: 'text', placeholder: '\n' }],
+        tags: ['text', 'split'],
+        transform: (value, config) => ensureString(value).split(ensureString(config?.delimiter || '\n')).filter(Boolean)
+    },
+    {
+        id: 'string-join',
+        name: 'Text: Join list',
+        description: 'Join a list or newline-separated payload into a single string.',
+        icon: 'list',
+        accent: '#38bdf8',
+        defaultConfig: { delimiter: ', ' },
+        form: [{ key: 'delimiter', label: 'Delimiter', type: 'text', placeholder: ', ' }],
+        tags: ['text', 'join'],
+        transform: (value, config) => {
+            const delimiter = ensureString(config?.delimiter || ', ');
+            const list = Array.isArray(value) ? value : ensureArray(value);
+            return list.join(delimiter);
+        }
+    },
+    {
+        id: 'string-truncate',
+        name: 'Text: Truncate',
+        description: 'Limit text to a maximum length and append ellipsis.',
+        icon: 'minus',
+        accent: '#f59e0b',
+        defaultConfig: { length: 140, suffix: '…' },
+        form: [
+            { key: 'length', label: 'Max length', type: 'number', placeholder: '140' },
+            { key: 'suffix', label: 'Suffix', type: 'text', placeholder: '…' }
+        ],
+        tags: ['text', 'truncate'],
+        transform: (value, config) => {
+            const length = Math.max(1, Number(config?.length || 140));
+            const suffix = ensureString(config?.suffix || '…');
+            const text = ensureString(value || '');
+            return text.length > length ? text.slice(0, length) + suffix : text;
+        }
+    },
+    {
+        id: 'string-remove-duplicates',
+        name: 'Text: Remove duplicate lines',
+        description: 'Remove duplicate lines from a multi-line string.',
+        icon: 'align-left',
+        accent: '#34d399',
+        defaultConfig: {},
+        tags: ['text', 'cleanup'],
+        transform: (value) => Array.from(new Set(ensureString(value).split(/\r?\n/).filter(Boolean))).join('\n')
+    }
+];
+
+TextUtilityScenarios.forEach(scenario => {
+    AdditionalQuickActionModules.push({
+        id: scenario.id,
+        category: 'utility',
+        name: scenario.name,
+        description: scenario.description,
+        icon: scenario.icon,
+        accent: scenario.accent,
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: scenario.defaultConfig,
+        form: scenario.form,
+        tags: scenario.tags,
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = scenario.transform(clone.payload, config || {}, clone);
+            clone.logs.push(`${scenario.name} applied.`);
+            return [clone];
+        }
+    });
+});
+
+const ListUtilityScenarios = [
+    {
+        id: 'list-unique',
+        name: 'List: Unique values',
+        description: 'Remove duplicate entries from a list payload.',
+        icon: 'shuffle',
+        accent: '#14b8a6',
+        transform: (value) => Array.from(new Set((Array.isArray(value) ? value : ensureArray(value)).map(item => ensureString(item)))),
+        tags: ['list', 'cleanup']
+    },
+    {
+        id: 'list-sort',
+        name: 'List: Sort',
+        description: 'Sort list items alphabetically or numerically.',
+        icon: 'list',
+        accent: '#0ea5e9',
+        defaultConfig: { direction: 'asc', numeric: false },
+        form: [
+            { key: 'direction', label: 'Direction', type: 'select', options: [
+                { value: 'asc', label: 'Ascending' },
+                { value: 'desc', label: 'Descending' }
+            ] },
+            { key: 'numeric', label: 'Numeric sort', type: 'checkbox' }
+        ],
+        transform: (value, config) => {
+            const list = Array.isArray(value) ? value.slice() : ensureArray(value);
+            const numeric = Boolean(config?.numeric);
+            list.sort((a, b) => {
+                if (numeric) return Number(a) - Number(b);
+                return ensureString(a).localeCompare(ensureString(b));
+            });
+            if (config?.direction === 'desc') list.reverse();
+            return list;
+        },
+        tags: ['list', 'sort']
+    },
+    {
+        id: 'list-shuffle',
+        name: 'List: Shuffle',
+        description: 'Randomly shuffle the items in a list payload.',
+        icon: 'repeat',
+        accent: '#f472b6',
+        transform: (value) => {
+            const list = Array.isArray(value) ? value.slice() : ensureArray(value);
+            for (let i = list.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [list[i], list[j]] = [list[j], list[i]];
+            }
+            return list;
+        },
+        tags: ['list', 'random']
+    },
+    {
+        id: 'list-limit',
+        name: 'List: Limit items',
+        description: 'Keep only the first N items of a list.',
+        icon: 'filter',
+        accent: '#c084fc',
+        defaultConfig: { limit: 5 },
+        form: [{ key: 'limit', label: 'Limit', type: 'number', placeholder: '5' }],
+        transform: (value, config) => {
+            const limit = Math.max(0, Number(config?.limit || 0));
+            const list = Array.isArray(value) ? value : ensureArray(value);
+            return list.slice(0, limit || list.length);
+        },
+        tags: ['list', 'limit']
+    }
+];
+
+ListUtilityScenarios.forEach(scenario => {
+    AdditionalQuickActionModules.push({
+        id: scenario.id,
+        category: 'utility',
+        name: scenario.name,
+        description: scenario.description,
+        icon: scenario.icon,
+        accent: scenario.accent,
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: scenario.defaultConfig || {},
+        form: scenario.form,
+        tags: scenario.tags,
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = scenario.transform(clone.payload, config || {}, clone);
+            clone.logs.push(`${scenario.name} applied.`);
+            return [clone];
+        }
+    });
+});
+
+const PayloadUtilityModules = [
+    {
+        id: 'payload-append',
+        name: 'Payload: Append text',
+        description: 'Append text to the existing payload string.',
+        icon: 'plus',
+        accent: '#fb7185',
+        defaultConfig: { text: '' },
+        form: [{ key: 'text', label: 'Append text', type: 'textarea', rows: 3, placeholder: 'Additional notes' }],
+        tags: ['payload', 'text'],
+        apply: (clone, config) => {
+            const base = ensureString(clone.payload || '');
+            const extra = ensureString(config?.text || '');
+            clone.payload = base + extra;
+            clone.logs.push('Text appended to payload.');
+        }
+    },
+    {
+        id: 'payload-prepend',
+        name: 'Payload: Prepend text',
+        description: 'Add text to the beginning of the payload.',
+        icon: 'arrow-up',
+        accent: '#22d3ee',
+        defaultConfig: { text: '' },
+        form: [{ key: 'text', label: 'Prepend text', type: 'textarea', rows: 3, placeholder: 'Prefix' }],
+        tags: ['payload', 'text'],
+        apply: (clone, config) => {
+            const base = ensureString(clone.payload || '');
+            const extra = ensureString(config?.text || '');
+            clone.payload = extra + base;
+            clone.logs.push('Text prepended to payload.');
+        }
+    },
+    {
+        id: 'payload-merge-vars',
+        name: 'Payload: Merge variables',
+        description: 'Merge the payload into workflow variables for later use.',
+        icon: 'database',
+        accent: '#f472b6',
+        defaultConfig: { variable: 'payloadSnapshot' },
+        form: [{ key: 'variable', label: 'Variable name', type: 'text', placeholder: 'payloadSnapshot' }],
+        tags: ['payload', 'variables'],
+        apply: (clone, config) => {
+            const key = ensureString(config?.variable || 'payloadSnapshot');
+            clone.vars[key] = clone.payload;
+            clone.logs.push(`Stored payload in variable "${key}".`);
+        }
+    },
+    {
+        id: 'payload-set-default',
+        name: 'Payload: Set default',
+        description: 'Provide a default payload value when it is empty.',
+        icon: 'edit',
+        accent: '#f59e0b',
+        defaultConfig: { value: 'Default value' },
+        form: [{ key: 'value', label: 'Default value', type: 'textarea', rows: 3, placeholder: 'Default value' }],
+        tags: ['payload'],
+        apply: (clone, config) => {
+            if (clone.payload === null || clone.payload === undefined || clone.payload === '') {
+                clone.payload = config?.value ?? 'Default value';
+                clone.logs.push('Default payload applied.');
+            }
+        }
+    },
+    {
+        id: 'payload-to-json',
+        name: 'Payload: Parse JSON',
+        description: 'Parse the payload string as JSON and store the object.',
+        icon: 'code',
+        accent: '#38bdf8',
+        defaultConfig: { variable: 'jsonPayload' },
+        form: [{ key: 'variable', label: 'Variable name', type: 'text', placeholder: 'jsonPayload' }],
+        tags: ['payload', 'json'],
+        apply: (clone, config) => {
+            try {
+                const parsed = JSON.parse(ensureString(clone.payload || '{}'));
+                clone.vars[ensureString(config?.variable || 'jsonPayload')] = parsed;
+                clone.payload = parsed;
+                clone.logs.push('Payload parsed as JSON.');
+            } catch (error) {
+                clone.logs.push(`JSON parse failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'payload-from-json',
+        name: 'Payload: Stringify JSON',
+        description: 'Stringify an object payload into formatted JSON.',
+        icon: 'codesandbox',
+        accent: '#818cf8',
+        defaultConfig: { spacing: 2 },
+        form: [{ key: 'spacing', label: 'Indentation', type: 'number', min: 0, max: 8, placeholder: '2' }],
+        tags: ['payload', 'json'],
+        apply: (clone, config) => {
+            try {
+                const spacing = Math.min(8, Math.max(0, Number(config?.spacing || 2)));
+                clone.payload = JSON.stringify(clone.payload, null, spacing);
+                clone.logs.push('Payload stringified to JSON.');
+            } catch (error) {
+                clone.logs.push(`JSON stringify failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'payload-to-base64',
+        name: 'Payload: Encode Base64',
+        description: 'Encode the payload string using Base64 encoding.',
+        icon: 'lock',
+        accent: '#f97316',
+        defaultConfig: {},
+        tags: ['payload', 'encoding'],
+        apply: (clone) => {
+            try {
+                clone.payload = Buffer.from(ensureString(clone.payload || ''), 'utf8').toString('base64');
+                clone.logs.push('Payload encoded as Base64.');
+            } catch (error) {
+                clone.logs.push(`Base64 encode failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'payload-from-base64',
+        name: 'Payload: Decode Base64',
+        description: 'Decode Base64 payload back to text.',
+        icon: 'unlock',
+        accent: '#34d399',
+        defaultConfig: {},
+        tags: ['payload', 'encoding'],
+        apply: (clone) => {
+            try {
+                clone.payload = Buffer.from(ensureString(clone.payload || ''), 'base64').toString('utf8');
+                clone.logs.push('Payload decoded from Base64.');
+            } catch (error) {
+                clone.logs.push(`Base64 decode failed: ${error.message}`);
+            }
+        }
+    }
+];
+
+PayloadUtilityModules.forEach(module => {
+    AdditionalQuickActionModules.push({
+        id: module.id,
+        category: 'utility',
+        name: module.name,
+        description: module.description,
+        icon: module.icon,
+        accent: module.accent,
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: module.defaultConfig,
+        form: module.form,
+        tags: module.tags,
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            module.apply(clone, config || {});
+            return [clone];
+        }
+    });
+});
+
+const AiModuleScenarios = [
+    {
+        id: 'ai-generate-text',
+        name: 'AI: Generate text',
+        description: 'Send a creative writing prompt to an AI endpoint.',
+        icon: 'pen-tool',
+        accent: '#f472b6',
+        defaultPrompt: 'Write a concise response based on the payload: {{payload}}',
+        label: 'AI generation',
+        tags: ['ai', 'text']
+    },
+    {
+        id: 'ai-summarize-text',
+        name: 'AI: Summarize',
+        description: 'Ask the AI service to summarize the provided payload.',
+        icon: 'book-open',
+        accent: '#38bdf8',
+        defaultPrompt: 'Summarize the following content in three bullet points: {{payload}}',
+        label: 'AI summarization',
+        tags: ['ai', 'summary']
+    },
+    {
+        id: 'ai-translate-text',
+        name: 'AI: Translate',
+        description: 'Translate the payload into a chosen language using AI.',
+        icon: 'globe',
+        accent: '#22c55e',
+        defaultPrompt: 'Translate the following text into the target language. Text: {{payload}}',
+        label: 'AI translation',
+        tags: ['ai', 'translation']
+    },
+    {
+        id: 'ai-generate-image',
+        name: 'AI: Generate image',
+        description: 'Request an image generation endpoint and return the JSON response.',
+        icon: 'image',
+        accent: '#facc15',
+        defaultPrompt: 'Create an illustration that represents the following idea: {{payload}}',
+        label: 'AI image generation',
+        overrides: { fallbackField: 'data', defaultModel: 'image-alpha' },
+        tags: ['ai', 'image']
+    },
+    {
+        id: 'ai-embed-text',
+        name: 'AI: Generate embeddings',
+        description: 'Produce vector embeddings for semantic search.',
+        icon: 'layers',
+        accent: '#8b5cf6',
+        defaultPrompt: '{{payload}}',
+        label: 'AI embeddings',
+        overrides: { fallbackField: 'data', defaultModel: 'text-embedding-3-large' },
+        tags: ['ai', 'embeddings']
+    },
+    {
+        id: 'ai-chat-completion',
+        name: 'AI: Chat completion',
+        description: 'Send the payload to a chat completion endpoint using system instructions.',
+        icon: 'message-square',
+        accent: '#0ea5e9',
+        defaultPrompt: '{{payload}}',
+        label: 'AI chat',
+        overrides: { useMessages: true, systemPrompt: 'You are a helpful assistant responding concisely.' },
+        tags: ['ai', 'chat']
+    },
+    {
+        id: 'ai-code-review',
+        name: 'AI: Code review',
+        description: 'Ask the AI to review code for potential improvements.',
+        icon: 'code',
+        accent: '#f97316',
+        defaultPrompt: 'Review the following code snippet and list potential improvements: {{payload}}',
+        label: 'AI code review',
+        overrides: { useMessages: true, systemPrompt: 'You are a meticulous senior engineer providing actionable feedback.' },
+        tags: ['ai', 'code']
+    },
+    {
+        id: 'ai-generate-tasks',
+        name: 'AI: Generate tasks',
+        description: 'Convert payload text into actionable checklist items.',
+        icon: 'check-square',
+        accent: '#a3e635',
+        defaultPrompt: 'Turn the following notes into a bullet list of tasks with verbs: {{payload}}',
+        label: 'AI task planner',
+        tags: ['ai', 'tasks']
+    },
+    {
+        id: 'ai-content-policy',
+        name: 'AI: Content policy check',
+        description: 'Send payload to moderation endpoints to flag potential issues.',
+        icon: 'shield',
+        accent: '#f87171',
+        defaultPrompt: '{{payload}}',
+        label: 'AI moderation',
+        overrides: { fallbackField: 'results' },
+        tags: ['ai', 'moderation']
+    },
+    {
+        id: 'ai-title-suggestion',
+        name: 'AI: Generate title',
+        description: 'Ask AI for a punchy title for the payload content.',
+        icon: 'type',
+        accent: '#fb7185',
+        defaultPrompt: 'Write a short, catchy title for the following content: {{payload}}',
+        label: 'AI title',
+        tags: ['ai', 'copywriting']
+    },
+    {
+        id: 'ai-tag-suggestion',
+        name: 'AI: Suggest tags',
+        description: 'Generate descriptive tags for the payload using AI.',
+        icon: 'tag',
+        accent: '#22d3ee',
+        defaultPrompt: 'Suggest five comma-separated tags describing this content: {{payload}}',
+        label: 'AI tagging',
+        tags: ['ai', 'metadata']
+    },
+    {
+        id: 'ai-tone-rewrite',
+        name: 'AI: Rewrite tone',
+        description: 'Rewrite the payload with the desired tone of voice.',
+        icon: 'italic',
+        accent: '#fbbf24',
+        defaultPrompt: 'Rewrite the following text in a friendly and encouraging tone: {{payload}}',
+        label: 'AI rewrite',
+        tags: ['ai', 'editing']
+    },
+    {
+        id: 'ai-extract-key-points',
+        name: 'AI: Extract key points',
+        description: 'Summarize payload into highlights and action items.',
+        icon: 'list',
+        accent: '#34d399',
+        defaultPrompt: 'Extract the key points and action items from: {{payload}}',
+        label: 'AI key points',
+        tags: ['ai', 'analysis']
+    },
+    {
+        id: 'ai-language-detect',
+        name: 'AI: Detect language',
+        description: 'Detect the language of the payload using AI.',
+        icon: 'flag',
+        accent: '#6366f1',
+        defaultPrompt: 'Identify the language of this text and respond with the language name: {{payload}}',
+        label: 'AI language detect',
+        tags: ['ai', 'analysis']
+    }
+];
+
+AiModuleScenarios.forEach(scenario => {
+    AdditionalQuickActionModules.push({
+        id: scenario.id,
+        category: 'action',
+        name: scenario.name,
+        description: scenario.description,
+        icon: scenario.icon,
+        accent: scenario.accent,
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { endpoint: '', apiKey: '', model: 'gpt-3.5-turbo', prompt: scenario.defaultPrompt, temperature: 0.7, maxTokens: 256 },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://api.openai.com/v1/chat/completions' },
+            { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'sk-...' },
+            { key: 'model', label: 'Model', type: 'text', placeholder: 'gpt-3.5-turbo' },
+            { key: 'prompt', label: 'Prompt template', type: 'textarea', rows: 4, placeholder: scenario.defaultPrompt },
+            { key: 'temperature', label: 'Temperature', type: 'number', step: '0.1', placeholder: '0.7' },
+            { key: 'maxTokens', label: 'Max tokens', type: 'number', placeholder: '256' }
+        ],
+        tags: scenario.tags,
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const result = await performAiTextRequest(clone, config, {
+                label: scenario.label,
+                defaultPrompt: scenario.defaultPrompt,
+                ...scenario.overrides
+            });
+            if (result) {
+                clone.payload = result.text;
+                clone.vars.lastAiResponse = result.raw;
+                clone.logs.push(`${scenario.label} completed.`);
+            }
+            return [clone];
+        }
+    });
+});
+
+const AiProviderScenarios = [
+    {
+        id: 'ai-openai-gpt4o',
+        name: 'AI: OpenAI GPT-4o',
+        description: 'Use the GPT-4o chat endpoint for creative, multi-step replies.',
+        icon: 'cpu',
+        accent: '#8b5cf6',
+        defaultEndpoint: 'https://api.openai.com/v1/chat/completions',
+        defaultModel: 'gpt-4o',
+        defaultPrompt: 'Provide a structured answer to the following request: {{payload}}',
+        defaultTemperature: 0.6,
+        defaultMaxTokens: 800,
+        label: 'OpenAI GPT-4o',
+        tags: ['ai', 'openai', 'chat']
+    },
+    {
+        id: 'ai-openai-o1',
+        name: 'AI: OpenAI o1 reasoning',
+        description: 'Send complex reasoning prompts to the OpenAI o1-mini endpoint.',
+        icon: 'git-branch',
+        accent: '#f97316',
+        defaultEndpoint: 'https://api.openai.com/v1/chat/completions',
+        defaultModel: 'o1-mini',
+        defaultPrompt: 'Reason carefully through the following request and explain the result: {{payload}}',
+        defaultTemperature: 0.2,
+        defaultMaxTokens: 1024,
+        label: 'OpenAI reasoning',
+        overrides: { useMessages: true, systemPrompt: 'You are a thoughtful reasoning assistant.' },
+        tags: ['ai', 'openai', 'reasoning']
+    },
+    {
+        id: 'ai-anthropic-claude',
+        name: 'AI: Anthropic Claude',
+        description: 'Call the Claude 3 Messages API with system guidance.',
+        icon: 'sun',
+        accent: '#facc15',
+        defaultEndpoint: 'https://api.anthropic.com/v1/messages',
+        defaultModel: 'claude-3-opus-20240229',
+        defaultPrompt: 'Respond as Claude to the user request: {{payload}}',
+        defaultTemperature: 0.5,
+        defaultMaxTokens: 900,
+        label: 'Anthropic Claude',
+        overrides: {
+            useMessages: true,
+            authHeader: 'x-api-key',
+            authPrefix: '',
+            headers: { 'anthropic-version': '2023-06-01' }
+        },
+        extraDefaults: { headers: 'anthropic-version: 2023-06-01' },
+        includeHeadersField: true,
+        tags: ['ai', 'anthropic', 'chat']
+    },
+    {
+        id: 'ai-mistral-large',
+        name: 'AI: Mistral Large',
+        description: 'Query the Mistral chat API for succinct answers.',
+        icon: 'feather',
+        accent: '#22d3ee',
+        defaultEndpoint: 'https://api.mistral.ai/v1/chat/completions',
+        defaultModel: 'mistral-large-latest',
+        defaultPrompt: 'Answer the following with helpful context: {{payload}}',
+        defaultTemperature: 0.4,
+        defaultMaxTokens: 700,
+        label: 'Mistral Large',
+        overrides: { useMessages: true },
+        tags: ['ai', 'mistral', 'chat']
+    },
+    {
+        id: 'ai-cohere-command',
+        name: 'AI: Cohere Command R+',
+        description: 'Send prompts to Cohere\'s Command R+ endpoint.',
+        icon: 'command',
+        accent: '#a855f7',
+        defaultEndpoint: 'https://api.cohere.com/v1/chat',
+        defaultModel: 'command-r-plus',
+        defaultPrompt: 'Provide an insightful response for: {{payload}}',
+        defaultTemperature: 0.6,
+        defaultMaxTokens: 800,
+        label: 'Cohere Command R+',
+        overrides: { useMessages: true },
+        tags: ['ai', 'cohere', 'chat']
+    },
+    {
+        id: 'ai-groq-llama3',
+        name: 'AI: Groq LLaMA 3',
+        description: 'Use Groq\'s low-latency LLaMA 3 API for fast completions.',
+        icon: 'zap',
+        accent: '#34d399',
+        defaultEndpoint: 'https://api.groq.com/openai/v1/chat/completions',
+        defaultModel: 'llama3-70b-8192',
+        defaultPrompt: 'Respond quickly and accurately to: {{payload}}',
+        defaultTemperature: 0.3,
+        defaultMaxTokens: 768,
+        label: 'Groq LLaMA 3',
+        overrides: { useMessages: true },
+        tags: ['ai', 'groq', 'chat']
+    },
+    {
+        id: 'ai-fireworks-mixtral',
+        name: 'AI: Fireworks Mixtral',
+        description: 'Route prompts to Fireworks AI\'s Mixtral hosted model.',
+        icon: 'fire',
+        accent: '#ef4444',
+        defaultEndpoint: 'https://api.fireworks.ai/inference/v1/chat/completions',
+        defaultModel: 'accounts/fireworks/models/mixtral-8x7b-instruct',
+        defaultPrompt: 'Reply with an expert yet concise answer: {{payload}}',
+        defaultTemperature: 0.5,
+        defaultMaxTokens: 700,
+        label: 'Fireworks Mixtral',
+        overrides: { useMessages: true },
+        tags: ['ai', 'fireworks', 'chat']
+    },
+    {
+        id: 'ai-openrouter-mixtral',
+        name: 'AI: OpenRouter Mixtral',
+        description: 'Leverage the OpenRouter aggregation endpoint with Mixtral.',
+        icon: 'share-2',
+        accent: '#38bdf8',
+        defaultEndpoint: 'https://openrouter.ai/api/v1/chat/completions',
+        defaultModel: 'mistralai/mixtral-8x7b-instruct',
+        defaultPrompt: 'Answer the user with references when relevant: {{payload}}',
+        defaultTemperature: 0.6,
+        defaultMaxTokens: 750,
+        label: 'OpenRouter Mixtral',
+        overrides: { useMessages: true },
+        includeHeadersField: true,
+        extraDefaults: { headers: 'HTTP-Referer: https://flashsearch.app' },
+        tags: ['ai', 'openrouter', 'chat']
+    },
+    {
+        id: 'ai-huggingface-inference',
+        name: 'AI: Hugging Face Inference',
+        description: 'Call a Hugging Face text-inference endpoint with custom headers.',
+        icon: 'package',
+        accent: '#f59e0b',
+        defaultEndpoint: 'https://api-inference.huggingface.co/models/bigcode/starcoder',
+        defaultModel: 'bigcode/starcoder',
+        defaultPrompt: '{{payload}}',
+        defaultTemperature: 0.2,
+        defaultMaxTokens: 256,
+        label: 'Hugging Face Inference',
+        overrides: {
+            omitModel: true,
+            promptField: 'inputs',
+            maxTokensField: 'max_new_tokens',
+            temperatureField: 'temperature'
+        },
+        includeHeadersField: true,
+        tags: ['ai', 'huggingface', 'code']
+    },
+    {
+        id: 'ai-azure-openai',
+        name: 'AI: Azure OpenAI',
+        description: 'Send prompts to an Azure OpenAI deployment with API key header.',
+        icon: 'cloud',
+        accent: '#0ea5e9',
+        defaultEndpoint: 'https://your-resource.openai.azure.com/openai/deployments/deployment-id/chat/completions?api-version=2024-02-15-preview',
+        defaultModel: 'gpt-4o',
+        defaultPrompt: 'Respond with Azure OpenAI using deployment defaults: {{payload}}',
+        defaultTemperature: 0.6,
+        defaultMaxTokens: 700,
+        label: 'Azure OpenAI',
+        overrides: { useMessages: true, authHeader: 'api-key', authPrefix: '' },
+        includeHeadersField: true,
+        tags: ['ai', 'azure', 'openai']
+    },
+    {
+        id: 'ai-perplexity-answer',
+        name: 'AI: Perplexity Answer',
+        description: 'Use the Perplexity AI chat endpoint for cited answers.',
+        icon: 'search',
+        accent: '#6366f1',
+        defaultEndpoint: 'https://api.perplexity.ai/chat/completions',
+        defaultModel: 'sonar-small-online',
+        defaultPrompt: 'Answer with sources and short bullet points: {{payload}}',
+        defaultTemperature: 0.4,
+        defaultMaxTokens: 900,
+        label: 'Perplexity Answer',
+        overrides: { useMessages: true },
+        tags: ['ai', 'perplexity', 'search']
+    },
+    {
+        id: 'ai-ollama-local',
+        name: 'AI: Local Ollama',
+        description: 'Call a locally hosted Ollama server using the OpenAI-compatible API.',
+        icon: 'hard-drive',
+        accent: '#64748b',
+        defaultEndpoint: 'http://localhost:11434/v1/chat/completions',
+        defaultModel: 'llama3',
+        defaultPrompt: 'Answer using the local Ollama model: {{payload}}',
+        defaultTemperature: 0.7,
+        defaultMaxTokens: 512,
+        label: 'Local Ollama',
+        overrides: { useMessages: true, skipAuthorizationHeader: true },
+        tags: ['ai', 'local', 'chat']
+    }
+];
+
+AiProviderScenarios.forEach(scenario => {
+    const form = [
+        { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: scenario.defaultEndpoint },
+        { key: 'apiKey', label: 'API key', type: 'password', placeholder: scenario.apiKeyPlaceholder || 'sk-...' },
+        { key: 'model', label: 'Model', type: 'text', placeholder: scenario.defaultModel || 'model name' },
+        { key: 'prompt', label: 'Prompt template', type: 'textarea', rows: 4, placeholder: scenario.defaultPrompt },
+        { key: 'temperature', label: 'Temperature', type: 'number', step: '0.1', placeholder: String(scenario.defaultTemperature ?? 0.7) },
+        { key: 'maxTokens', label: 'Max tokens', type: 'number', placeholder: String(scenario.defaultMaxTokens ?? 512) }
+    ];
+    if (scenario.includeHeadersField) {
+        form.push({ key: 'headers', label: 'Extra headers', type: 'textarea', rows: 2, placeholder: 'Header: value' });
+    }
+    if (Array.isArray(scenario.formExtras)) {
+        form.push(...scenario.formExtras);
+    }
+
+    AdditionalQuickActionModules.push({
+        id: scenario.id,
+        category: 'action',
+        name: scenario.name,
+        description: scenario.description,
+        icon: scenario.icon,
+        accent: scenario.accent,
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            endpoint: scenario.defaultEndpoint,
+            apiKey: '',
+            model: scenario.defaultModel || 'gpt-3.5-turbo',
+            prompt: scenario.defaultPrompt,
+            temperature: scenario.defaultTemperature ?? 0.7,
+            maxTokens: scenario.defaultMaxTokens ?? 512,
+            headers: scenario.extraDefaults?.headers || ''
+        },
+        form,
+        tags: scenario.tags,
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const result = await performAiTextRequest(clone, config, {
+                label: scenario.label,
+                defaultPrompt: scenario.defaultPrompt,
+                defaultEndpoint: scenario.defaultEndpoint,
+                defaultModel: scenario.defaultModel,
+                defaultTemperature: scenario.defaultTemperature,
+                defaultMaxTokens: scenario.defaultMaxTokens,
+                ...(scenario.overrides || {})
+            });
+            if (result) {
+                clone.payload = result.text;
+                clone.vars.lastAiResponse = result.raw;
+                clone.logs.push(`${scenario.label} completed.`);
+            }
+            return [clone];
+        }
+    });
+});
+
+const ApiIntegrationScenarios = [
+    {
+        id: 'integration-notion-create-page',
+        name: 'Integration: Notion create page',
+        description: 'Create a Notion database page with optional summary content.',
+        icon: 'book',
+        accent: '#6366f1',
+        defaultEndpoint: 'https://api.notion.com/v1/pages',
+        defaultConfig: {
+            endpoint: 'https://api.notion.com/v1/pages',
+            apiKey: '',
+            databaseId: '',
+            title: 'New page',
+            summary: '',
+            headers: 'Notion-Version: 2022-06-28'
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://api.notion.com/v1/pages' },
+            { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'secret_' },
+            { key: 'databaseId', label: 'Database ID', type: 'text', placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxx' },
+            { key: 'title', label: 'Page title', type: 'text', placeholder: 'New page' },
+            { key: 'summary', label: 'Summary', type: 'textarea', rows: 4, placeholder: 'Optional summary or use payload' },
+            { key: 'headers', label: 'Extra headers', type: 'textarea', rows: 2, placeholder: 'Notion-Version: 2022-06-28' }
+        ],
+        defaultHeaders: { 'Notion-Version': '2022-06-28' },
+        authHeader: 'Authorization',
+        authPrefix: 'Bearer ',
+        buildBody: (config, clone) => {
+            const title = ensureString(config.title || clone.payload || 'Untitled page');
+            const summary = ensureString(config.summary || clone.payload || '');
+            const databaseId = ensureString(config.databaseId || '');
+            const body = {
+                properties: {
+                    Title: {
+                        title: [
+                            {
+                                text: { content: title }
+                            }
+                        ]
+                    }
+                }
+            };
+            if (databaseId) {
+                body.parent = { database_id: databaseId };
+            }
+            if (summary) {
+                body.children = [
+                    {
+                        object: 'block',
+                        type: 'paragraph',
+                        paragraph: {
+                            rich_text: [
+                                {
+                                    type: 'text',
+                                    text: { content: summary.slice(0, 2000) }
+                                }
+                            ]
+                        }
+                    }
+                ];
+            }
+            return body;
+        },
+        label: 'Notion page creator',
+        successLog: 'Notion create page request prepared.',
+        storeRawKey: 'notionLastResponse',
+        tags: ['integration', 'notion', 'api']
+    },
+    {
+        id: 'integration-airtable-create-record',
+        name: 'Integration: Airtable create record',
+        description: 'Insert a record into an Airtable base with optional JSON fields.',
+        icon: 'database',
+        accent: '#0ea5e9',
+        defaultEndpoint: 'https://api.airtable.com/v0/appId/Table%201',
+        defaultConfig: {
+            endpoint: 'https://api.airtable.com/v0/appId/Table%201',
+            apiKey: '',
+            recordName: 'New record',
+            notes: '',
+            extraFields: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://api.airtable.com/v0/appId/Table%201' },
+            { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'pat...' },
+            { key: 'recordName', label: 'Record name', type: 'text', placeholder: 'New record' },
+            { key: 'notes', label: 'Notes', type: 'textarea', rows: 3, placeholder: 'Optional notes or use payload' },
+            { key: 'extraFields', label: 'Extra fields (JSON)', type: 'textarea', rows: 3, placeholder: '{"Status":"Backlog"}' }
+        ],
+        authHeader: 'Authorization',
+        authPrefix: 'Bearer ',
+        buildBody: (config, clone) => {
+            const fields = {
+                Name: ensureString(config.recordName || clone.payload || 'New record')
+            };
+            const notes = ensureString(config.notes || '') || ensureString(clone.payload || '');
+            if (notes) {
+                fields.Notes = notes;
+            }
+            if (config.extraFields) {
+                try {
+                    Object.assign(fields, JSON.parse(config.extraFields));
+                } catch (error) {
+                    clone.logs.push(`Airtable extra fields parse failed: ${error.message}`);
+                }
+            }
+            return { records: [{ fields }] };
+        },
+        label: 'Airtable record creator',
+        successLog: 'Airtable record payload created.',
+        storeRawKey: 'airtableLastResponse',
+        tags: ['integration', 'airtable', 'api']
+    },
+    {
+        id: 'integration-clickup-create-task',
+        name: 'Integration: ClickUp create task',
+        description: 'Create a ClickUp task for a chosen list.',
+        icon: 'check-circle',
+        accent: '#a3e635',
+        defaultEndpoint: 'https://api.clickup.com/api/v2/list/123/task',
+        defaultConfig: {
+            endpoint: 'https://api.clickup.com/api/v2/list/123/task',
+            apiKey: '',
+            listId: '',
+            title: 'Follow up',
+            description: '',
+            status: 'to do',
+            dueDate: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://api.clickup.com/api/v2/list/123/task' },
+            { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'pk_' },
+            { key: 'listId', label: 'List ID override', type: 'text', placeholder: '123' },
+            { key: 'title', label: 'Task title', type: 'text', placeholder: 'Follow up' },
+            { key: 'description', label: 'Description', type: 'textarea', rows: 3, placeholder: 'Optional description' },
+            { key: 'status', label: 'Status', type: 'text', placeholder: 'to do' },
+            { key: 'dueDate', label: 'Due date (ISO)', type: 'text', placeholder: '2024-12-31T17:00:00Z' }
+        ],
+        authHeader: 'Authorization',
+        authPrefix: 'Bearer ',
+        buildEndpoint: (config) => {
+            const base = ensureString(config.endpoint || '').trim();
+            const listId = ensureString(config.listId || '').trim();
+            if (listId && base.includes('/list/')) {
+                return base.replace(/\/list\/[\w-]+/, `/list/${listId}`);
+            }
+            return base;
+        },
+        buildBody: (config, clone) => {
+            const body = {
+                name: ensureString(config.title || clone.payload || 'New task'),
+                description: ensureString(config.description || clone.payload || ''),
+                status: ensureString(config.status || '')
+            };
+            const dueDate = ensureString(config.dueDate || '');
+            if (dueDate) {
+                const timestamp = Date.parse(dueDate);
+                if (!Number.isNaN(timestamp)) {
+                    body.due_date = timestamp;
+                }
+            }
+            return body;
+        },
+        label: 'ClickUp task creator',
+        successLog: 'ClickUp task request assembled.',
+        storeRawKey: 'clickupLastResponse',
+        tags: ['integration', 'clickup', 'tasks']
+    },
+    {
+        id: 'integration-asana-create-task',
+        name: 'Integration: Asana create task',
+        description: 'Add a task to an Asana project with optional due date.',
+        icon: 'clipboard',
+        accent: '#f59e0b',
+        defaultEndpoint: 'https://app.asana.com/api/1.0/tasks',
+        defaultConfig: {
+            endpoint: 'https://app.asana.com/api/1.0/tasks',
+            apiKey: '',
+            projectId: '',
+            name: 'New task',
+            notes: '',
+            dueOn: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://app.asana.com/api/1.0/tasks' },
+            { key: 'apiKey', label: 'Personal access token', type: 'password', placeholder: '1/123456' },
+            { key: 'projectId', label: 'Project ID', type: 'text', placeholder: '1201234567890' },
+            { key: 'name', label: 'Task name', type: 'text', placeholder: 'New task' },
+            { key: 'notes', label: 'Notes', type: 'textarea', rows: 3, placeholder: 'Optional notes or use payload' },
+            { key: 'dueOn', label: 'Due on (YYYY-MM-DD)', type: 'text', placeholder: '2024-12-31' }
+        ],
+        authHeader: 'Authorization',
+        authPrefix: 'Bearer ',
+        buildBody: (config, clone) => {
+            const data = {
+                name: ensureString(config.name || clone.payload || 'New task'),
+                notes: ensureString(config.notes || clone.payload || '')
+            };
+            const projectId = ensureString(config.projectId || '');
+            if (projectId) {
+                data.projects = [projectId];
+            }
+            const dueOn = ensureString(config.dueOn || '');
+            if (dueOn) {
+                data.due_on = dueOn;
+            }
+            return { data };
+        },
+        label: 'Asana task creator',
+        successLog: 'Asana task payload prepared.',
+        storeRawKey: 'asanaLastResponse',
+        tags: ['integration', 'asana', 'tasks']
+    },
+    {
+        id: 'integration-trello-create-card',
+        name: 'Integration: Trello create card',
+        description: 'Create a Trello card using key and token query parameters.',
+        icon: 'columns',
+        accent: '#0ea5e9',
+        defaultEndpoint: 'https://api.trello.com/1/cards',
+        defaultConfig: {
+            endpoint: 'https://api.trello.com/1/cards',
+            apiKey: '',
+            token: '',
+            listId: '',
+            name: 'New card',
+            description: '',
+            due: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://api.trello.com/1/cards' },
+            { key: 'apiKey', label: 'API key', type: 'text', placeholder: 'yourKey' },
+            { key: 'token', label: 'API token', type: 'password', placeholder: 'yourToken' },
+            { key: 'listId', label: 'List ID', type: 'text', placeholder: 'abcdef1234567890' },
+            { key: 'name', label: 'Card title', type: 'text', placeholder: 'New card' },
+            { key: 'description', label: 'Card description', type: 'textarea', rows: 3, placeholder: 'Optional description' },
+            { key: 'due', label: 'Due date', type: 'text', placeholder: '2024-12-31T10:00:00Z' }
+        ],
+        queryAuthParam: 'key',
+        skipAuthHeader: true,
+        queryParamsBuilder: (config) => ({ token: ensureString(config.token || '') }),
+        buildBody: (config, clone) => {
+            return {
+                name: ensureString(config.name || clone.payload || 'New card'),
+                desc: ensureString(config.description || clone.payload || ''),
+                idList: ensureString(config.listId || ''),
+                due: ensureString(config.due || '') || undefined
+            };
+        },
+        label: 'Trello card creator',
+        successLog: 'Trello card request prepared.',
+        storeRawKey: 'trelloLastResponse',
+        tags: ['integration', 'trello', 'boards']
+    },
+    {
+        id: 'integration-github-create-issue',
+        name: 'Integration: GitHub create issue',
+        description: 'Open a GitHub issue with optional labels.',
+        icon: 'github',
+        accent: '#111827',
+        defaultEndpoint: 'https://api.github.com/repos/owner/repo/issues',
+        defaultConfig: {
+            endpoint: 'https://api.github.com/repos/owner/repo/issues',
+            apiKey: '',
+            title: 'Bug report',
+            body: '',
+            labels: 'bug'
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://api.github.com/repos/owner/repo/issues' },
+            { key: 'apiKey', label: 'Personal access token', type: 'password', placeholder: 'ghp_' },
+            { key: 'title', label: 'Issue title', type: 'text', placeholder: 'Bug report' },
+            { key: 'body', label: 'Issue body', type: 'textarea', rows: 4, placeholder: 'Optional body or use payload' },
+            { key: 'labels', label: 'Labels (comma separated)', type: 'text', placeholder: 'bug, needs-triage' }
+        ],
+        defaultHeaders: { Accept: 'application/vnd.github+json' },
+        authHeader: 'Authorization',
+        authPrefix: 'Bearer ',
+        buildBody: (config, clone) => {
+            const labels = ensureString(config.labels || '')
+                .split(',')
+                .map(label => label.trim())
+                .filter(Boolean);
+            return {
+                title: ensureString(config.title || clone.payload || 'New issue'),
+                body: ensureString(config.body || clone.payload || ''),
+                labels
+            };
+        },
+        label: 'GitHub issue creator',
+        successLog: 'GitHub issue payload sent.',
+        storeRawKey: 'githubLastResponse',
+        tags: ['integration', 'github', 'issues']
+    },
+    {
+        id: 'integration-gitlab-create-issue',
+        name: 'Integration: GitLab create issue',
+        description: 'Open an issue in a GitLab project with labels.',
+        icon: 'gitlab',
+        accent: '#f97316',
+        defaultEndpoint: 'https://gitlab.com/api/v4/projects/123/issues',
+        defaultConfig: {
+            endpoint: 'https://gitlab.com/api/v4/projects/123/issues',
+            apiKey: '',
+            title: 'Bug report',
+            description: '',
+            labels: 'bug'
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://gitlab.com/api/v4/projects/123/issues' },
+            { key: 'apiKey', label: 'Personal access token', type: 'password', placeholder: 'glpat-' },
+            { key: 'title', label: 'Issue title', type: 'text', placeholder: 'Bug report' },
+            { key: 'description', label: 'Issue description', type: 'textarea', rows: 4, placeholder: 'Optional description or use payload' },
+            { key: 'labels', label: 'Labels (comma separated)', type: 'text', placeholder: 'bug, triage' }
+        ],
+        authHeader: 'PRIVATE-TOKEN',
+        authPrefix: '',
+        buildBody: (config, clone) => ({
+            title: ensureString(config.title || clone.payload || 'New issue'),
+            description: ensureString(config.description || clone.payload || ''),
+            labels: ensureString(config.labels || '')
+        }),
+        label: 'GitLab issue creator',
+        successLog: 'GitLab issue payload sent.',
+        storeRawKey: 'gitlabLastResponse',
+        tags: ['integration', 'gitlab', 'issues']
+    },
+    {
+        id: 'integration-hubspot-create-contact',
+        name: 'Integration: HubSpot create contact',
+        description: 'Add or update a HubSpot contact record.',
+        icon: 'user-plus',
+        accent: '#f97316',
+        defaultEndpoint: 'https://api.hubspot.com/crm/v3/objects/contacts',
+        defaultConfig: {
+            endpoint: 'https://api.hubspot.com/crm/v3/objects/contacts',
+            apiKey: '',
+            email: '',
+            firstName: '',
+            lastName: '',
+            notes: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://api.hubspot.com/crm/v3/objects/contacts' },
+            { key: 'apiKey', label: 'Private app token', type: 'password', placeholder: 'pat-' },
+            { key: 'email', label: 'Email', type: 'email', placeholder: 'user@example.com' },
+            { key: 'firstName', label: 'First name', type: 'text', placeholder: 'Ada' },
+            { key: 'lastName', label: 'Last name', type: 'text', placeholder: 'Lovelace' },
+            { key: 'notes', label: 'Notes', type: 'textarea', rows: 3, placeholder: 'Optional notes or use payload' }
+        ],
+        authHeader: 'Authorization',
+        authPrefix: 'Bearer ',
+        buildBody: (config, clone) => ({
+            properties: {
+                email: ensureString(config.email || ''),
+                firstname: ensureString(config.firstName || ''),
+                lastname: ensureString(config.lastName || ''),
+                notes: ensureString(config.notes || clone.payload || '')
+            }
+        }),
+        label: 'HubSpot contact sync',
+        successLog: 'HubSpot contact payload sent.',
+        storeRawKey: 'hubspotLastResponse',
+        tags: ['integration', 'hubspot', 'crm']
+    },
+    {
+        id: 'integration-intercom-send-message',
+        name: 'Integration: Intercom send message',
+        description: 'Send an in-app Intercom message to a specific user.',
+        icon: 'message-circle',
+        accent: '#38bdf8',
+        defaultEndpoint: 'https://api.intercom.io/messages',
+        defaultConfig: {
+            endpoint: 'https://api.intercom.io/messages',
+            apiKey: '',
+            userId: '',
+            subject: 'Automated message',
+            body: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://api.intercom.io/messages' },
+            { key: 'apiKey', label: 'Access token', type: 'password', placeholder: 'icpat_' },
+            { key: 'userId', label: 'User ID', type: 'text', placeholder: '64f1d2...' },
+            { key: 'subject', label: 'Subject', type: 'text', placeholder: 'Automated message' },
+            { key: 'body', label: 'Message body', type: 'textarea', rows: 4, placeholder: 'Optional body or use payload' }
+        ],
+        defaultHeaders: { Accept: 'application/json' },
+        authHeader: 'Authorization',
+        authPrefix: 'Bearer ',
+        buildBody: (config, clone) => ({
+            message_type: 'inapp',
+            subject: ensureString(config.subject || ''),
+            body: ensureString(config.body || clone.payload || ''),
+            from: {
+                type: 'user',
+                id: ensureString(config.userId || '')
+            }
+        }),
+        label: 'Intercom messenger',
+        successLog: 'Intercom message payload sent.',
+        storeRawKey: 'intercomLastResponse',
+        tags: ['integration', 'intercom', 'messaging']
+    },
+    {
+        id: 'integration-telegram-send-message',
+        name: 'Integration: Telegram send message',
+        description: 'Send a Telegram bot message using the Bot API.',
+        icon: 'send',
+        accent: '#3b82f6',
+        defaultEndpoint: 'https://api.telegram.org',
+        defaultConfig: {
+            endpoint: 'https://api.telegram.org',
+            apiKey: '',
+            chatId: '',
+            text: '',
+            parseMode: 'Markdown'
+        },
+        form: [
+            { key: 'endpoint', label: 'Base endpoint', type: 'url', placeholder: 'https://api.telegram.org' },
+            { key: 'apiKey', label: 'Bot token', type: 'password', placeholder: '123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11' },
+            { key: 'chatId', label: 'Chat ID', type: 'text', placeholder: '@channel_or_id' },
+            { key: 'text', label: 'Message text', type: 'textarea', rows: 3, placeholder: 'Optional text or use payload' },
+            { key: 'parseMode', label: 'Parse mode', type: 'text', placeholder: 'Markdown' }
+        ],
+        skipAuthHeader: true,
+        buildEndpoint: (config) => {
+            const base = ensureString(config.endpoint || 'https://api.telegram.org').replace(/\/$/, '');
+            const token = ensureString(config.apiKey || '');
+            if (!token) return `${base}/bot/sendMessage`;
+            return `${base}/bot${token}/sendMessage`;
+        },
+        buildBody: (config, clone) => ({
+            chat_id: ensureString(config.chatId || ''),
+            text: ensureString(config.text || clone.payload || ''),
+            parse_mode: ensureString(config.parseMode || '') || undefined
+        }),
+        label: 'Telegram bot sender',
+        successLog: 'Telegram bot message sent.',
+        storeRawKey: 'telegramLastResponse',
+        tags: ['integration', 'telegram', 'messaging']
+    },
+    {
+        id: 'integration-supabase-insert-row',
+        name: 'Integration: Supabase insert row',
+        description: 'Insert a row into a Supabase table using the REST interface.',
+        icon: 'table',
+        accent: '#10b981',
+        defaultEndpoint: 'https://project.supabase.co/rest/v1/table_name',
+        defaultConfig: {
+            endpoint: 'https://project.supabase.co/rest/v1/table_name',
+            apiKey: '',
+            schema: '',
+            payloadJson: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://project.supabase.co/rest/v1/table_name' },
+            { key: 'apiKey', label: 'Service role key', type: 'password', placeholder: 'supabase-service-role-key' },
+            { key: 'schema', label: 'Schema', type: 'text', placeholder: 'public' },
+            { key: 'payloadJson', label: 'Payload (JSON)', type: 'textarea', rows: 4, placeholder: '{"title":"Example"}' }
+        ],
+        authHeader: 'apikey',
+        authPrefix: '',
+        defaultHeaders: { Prefer: 'return=representation' },
+        buildBody: (config, clone) => {
+            const text = ensureString(config.payloadJson || '') || ensureString(clone.payload || '');
+            if (text) {
+                try {
+                    return JSON.parse(text);
+                } catch (error) {
+                    clone.logs.push(`Supabase payload parse failed: ${error.message}`);
+                }
+            }
+            return { payload: ensureString(clone.payload || '') };
+        },
+        successLog: 'Supabase row insertion attempted.',
+        label: 'Supabase row insert',
+        storeRawKey: 'supabaseLastResponse',
+        tags: ['integration', 'supabase', 'database']
+    },
+    {
+        id: 'integration-n8n-start-workflow',
+        name: 'Integration: n8n start workflow',
+        description: 'Trigger an n8n webhook with optional JSON payload.',
+        icon: 'activity',
+        accent: '#f87171',
+        defaultEndpoint: 'https://n8n.example.com/webhook/trigger-id',
+        defaultConfig: {
+            endpoint: 'https://n8n.example.com/webhook/trigger-id',
+            apiKey: '',
+            method: 'POST',
+            payloadJson: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'Webhook URL', type: 'url', placeholder: 'https://n8n.example.com/webhook/trigger-id' },
+            { key: 'method', label: 'HTTP method', type: 'text', placeholder: 'POST' },
+            { key: 'payloadJson', label: 'Payload (JSON)', type: 'textarea', rows: 4, placeholder: '{"event":"start"}' },
+            { key: 'apiKey', label: 'Auth token (optional)', type: 'password', placeholder: 'Optional bearer token' }
+        ],
+        authHeader: 'Authorization',
+        authPrefix: 'Bearer ',
+        buildBody: (config, clone) => {
+            const text = ensureString(config.payloadJson || '') || ensureString(clone.payload || '');
+            if (text) {
+                try {
+                    return JSON.parse(text);
+                } catch (error) {
+                    clone.logs.push(`n8n payload parse failed: ${error.message}`);
+                }
+            }
+            return { payload: ensureString(clone.payload || '') };
+        },
+        label: 'n8n workflow trigger',
+        successLog: 'n8n webhook triggered.',
+        storeRawKey: 'n8nLastResponse',
+        tags: ['integration', 'n8n', 'automation']
+    },
+    {
+        id: 'integration-monday-create-item',
+        name: 'Integration: monday.com create item',
+        description: 'Run a GraphQL mutation to create an item in monday.com.',
+        icon: 'grid',
+        accent: '#ec4899',
+        defaultEndpoint: 'https://api.monday.com/v2',
+        defaultConfig: {
+            endpoint: 'https://api.monday.com/v2',
+            apiKey: '',
+            boardId: '',
+            groupId: '',
+            itemName: 'New item',
+            columnValues: '{"status":{"label":"Working on it"}}'
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://api.monday.com/v2' },
+            { key: 'apiKey', label: 'API token', type: 'password', placeholder: 'your-token' },
+            { key: 'boardId', label: 'Board ID', type: 'text', placeholder: '123456789' },
+            { key: 'groupId', label: 'Group ID', type: 'text', placeholder: 'topics' },
+            { key: 'itemName', label: 'Item name', type: 'text', placeholder: 'New item' },
+            { key: 'columnValues', label: 'Column values (JSON)', type: 'textarea', rows: 3, placeholder: '{"status":{"label":"Done"}}' }
+        ],
+        authHeader: 'Authorization',
+        authPrefix: 'Bearer ',
+        buildBody: (config, clone) => {
+            let columnValues = {};
+            if (config.columnValues) {
+                try {
+                    columnValues = JSON.parse(config.columnValues);
+                } catch (error) {
+                    clone.logs.push(`monday.com column values parse failed: ${error.message}`);
+                }
+            }
+            const query = `mutation ($board: ID!, $group: String, $item: String!, $columns: JSON!) {\n  create_item (board_id: $board, group_id: $group, item_name: $item, column_values: $columns) { id }\n}`;
+            return {
+                query,
+                variables: {
+                    board: ensureString(config.boardId || ''),
+                    group: ensureString(config.groupId || '') || null,
+                    item: ensureString(config.itemName || clone.payload || 'New item'),
+                    columns: columnValues
+                }
+            };
+        },
+        label: 'monday.com item creator',
+        successLog: 'monday.com GraphQL mutation sent.',
+        storeRawKey: 'mondayLastResponse',
+        tags: ['integration', 'monday', 'graphql']
+    },
+    {
+        id: 'integration-linear-create-issue',
+        name: 'Integration: Linear create issue',
+        description: 'Create an issue in Linear using the GraphQL API.',
+        icon: 'layers',
+        accent: '#8b5cf6',
+        defaultEndpoint: 'https://api.linear.app/graphql',
+        defaultConfig: {
+            endpoint: 'https://api.linear.app/graphql',
+            apiKey: '',
+            teamId: '',
+            title: 'New issue',
+            description: '',
+            priority: 0
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://api.linear.app/graphql' },
+            { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'lin_' },
+            { key: 'teamId', label: 'Team ID', type: 'text', placeholder: 'team_123' },
+            { key: 'title', label: 'Issue title', type: 'text', placeholder: 'New issue' },
+            { key: 'description', label: 'Issue description', type: 'textarea', rows: 4, placeholder: 'Optional description or use payload' },
+            { key: 'priority', label: 'Priority (0-3)', type: 'number', placeholder: '1' }
+        ],
+        authHeader: 'Authorization',
+        authPrefix: 'Bearer ',
+        buildBody: (config, clone) => {
+            const query = `mutation ($input: IssueCreateInput!) {\n  issueCreate(input: $input) {\n    success\n    issue { id identifier url }\n  }\n}`;
+            return {
+                query,
+                variables: {
+                    input: {
+                        teamId: ensureString(config.teamId || ''),
+                        title: ensureString(config.title || clone.payload || 'New issue'),
+                        description: ensureString(config.description || clone.payload || ''),
+                        priority: Number(config.priority ?? 0)
+                    }
+                }
+            };
+        },
+        label: 'Linear issue creator',
+        successLog: 'Linear issue mutation submitted.',
+        storeRawKey: 'linearLastResponse',
+        tags: ['integration', 'linear', 'graphql']
+    }
+];
+
+ApiIntegrationScenarios.forEach(scenario => {
+    AdditionalQuickActionModules.push({
+        id: scenario.id,
+        category: 'action',
+        name: scenario.name,
+        description: scenario.description,
+        icon: scenario.icon,
+        accent: scenario.accent,
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            ...(scenario.defaultConfig || {}),
+            endpoint: scenario.defaultConfig?.endpoint || scenario.defaultEndpoint || '',
+            apiKey: '',
+            headers: scenario.defaultConfig?.headers || ''
+        },
+        form: scenario.form,
+        tags: scenario.tags,
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const result = await performHttpAction(clone, config, scenario);
+            if (result) {
+                const payloadValue = result.payload ?? result.data;
+                if (payloadValue !== undefined) {
+                    clone.payload = typeof payloadValue === 'string'
+                        ? payloadValue
+                        : JSON.stringify(payloadValue, null, 2);
+                }
+                clone.vars.lastApiResponse = result.data;
+            }
+            return [clone];
+        }
+    });
+});
+
+const PayloadAugmentationScenarios = [
+    {
+        id: 'payload-trim-whitespace',
+        name: 'Payload: Trim whitespace',
+        description: 'Remove leading and trailing whitespace characters from the payload.',
+        icon: 'crop',
+        accent: '#f59e0b',
+        tags: ['payload', 'cleanup'],
+        transform: (value) => ensureString(value).trim()
+    },
+    {
+        id: 'payload-normalize-whitespace',
+        name: 'Payload: Normalize whitespace',
+        description: 'Collapse repeated whitespace into single spaces and trim the result.',
+        icon: 'align-justify',
+        accent: '#6366f1',
+        tags: ['payload', 'cleanup'],
+        transform: (value) => ensureString(value).replace(/\s+/g, ' ').trim()
+    },
+    {
+        id: 'payload-extract-numbers',
+        name: 'Payload: Extract numbers',
+        description: 'Extract all numeric sequences from the payload and join them with commas.',
+        icon: 'hash',
+        accent: '#22d3ee',
+        tags: ['payload', 'analysis'],
+        transform: (value) => ensureString(value).match(/[-+]?\d+(?:\.\d+)?/g)?.join(', ') || ''
+    },
+    {
+        id: 'payload-extract-emails',
+        name: 'Payload: Extract emails',
+        description: 'Find email addresses in the payload and output one per line.',
+        icon: 'at-sign',
+        accent: '#f97316',
+        tags: ['payload', 'analysis'],
+        transform: (value) => (ensureString(value).match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi) || []).join('\n')
+    },
+    {
+        id: 'payload-extract-urls',
+        name: 'Payload: Extract URLs',
+        description: 'Collect URLs found in the payload using a permissive pattern.',
+        icon: 'link',
+        accent: '#10b981',
+        tags: ['payload', 'analysis'],
+        transform: (value) => {
+            const matches = ensureString(value).match(/https?:\/\/[^\s)]+/gi) || [];
+            return matches.join('\n');
+        }
+    },
+    {
+        id: 'payload-extract-hashtags',
+        name: 'Payload: Extract hashtags',
+        description: 'List all hashtags contained in the payload.',
+        icon: 'tag',
+        accent: '#a855f7',
+        tags: ['payload', 'social'],
+        transform: (value) => (ensureString(value).match(/#[\p{L}\p{N}_-]+/gu) || []).join(' ')
+    },
+    {
+        id: 'payload-to-yaml',
+        name: 'Payload: To YAML',
+        description: 'Convert JSON content to a basic YAML representation.',
+        icon: 'file-text',
+        accent: '#facc15',
+        tags: ['payload', 'formatting'],
+        transform: (value, config, clone) => {
+            const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+            try {
+                const data = typeof value === 'object' && value !== null ? value : JSON.parse(text);
+                const lines = [];
+                const indent = (level) => '  '.repeat(level);
+                const dump = (node, level = 0, parentKey = null) => {
+                    if (Array.isArray(node)) {
+                        if (node.length === 0) {
+                            lines.push(`${indent(level)}${parentKey ?? '-'}: []`);
+                            return;
+                        }
+                        node.forEach(item => {
+                            if (typeof item === 'object' && item !== null) {
+                                lines.push(`${indent(level)}-`);
+                                dump(item, level + 1);
+                            } else {
+                                lines.push(`${indent(level)}- ${item}`);
+                            }
+                        });
+                    } else if (node && typeof node === 'object') {
+                        Object.entries(node).forEach(([key, val]) => {
+                            if (typeof val === 'object' && val !== null) {
+                                lines.push(`${indent(level)}${key}:`);
+                                dump(val, level + 1);
+                            } else {
+                                lines.push(`${indent(level)}${key}: ${val}`);
+                            }
+                        });
+                    } else if (parentKey) {
+                        lines.push(`${indent(level)}${parentKey}: ${node}`);
+                    }
+                };
+                dump(data, 0);
+                return lines.join('\n');
+            } catch (error) {
+                clone.logs.push(`YAML conversion fallback used: ${error.message}`);
+                return text;
+            }
+        }
+    },
+    {
+        id: 'payload-to-csv',
+        name: 'Payload: To CSV',
+        description: 'Convert a JSON array or newline list into CSV output.',
+        icon: 'file',
+        accent: '#60a5fa',
+        tags: ['payload', 'formatting'],
+        transform: (value, config, clone) => {
+            let rows = [];
+            if (Array.isArray(value)) {
+                rows = value;
+            } else {
+                const text = ensureString(value || '');
+                if (!text) return '';
+                try {
+                    const parsed = JSON.parse(text);
+                    if (Array.isArray(parsed)) rows = parsed;
+                } catch (error) {
+                    rows = text.split(/\r?\n/).map(line => ({ value: line.trim() })).filter(item => item.value);
+                }
+            }
+            if (!Array.isArray(rows) || rows.length === 0) return '';
+            if (typeof rows[0] !== 'object') {
+                return rows.map(item => `"${ensureString(item).replace(/"/g, '""')}"`).join('\n');
+            }
+            const headers = Array.from(new Set(rows.flatMap(row => Object.keys(row))));
+            const csvRows = [headers.join(',')];
+            rows.forEach(row => {
+                const line = headers.map(key => {
+                    const cell = row[key];
+                    if (cell === null || cell === undefined) return '';
+                    const cellText = ensureString(cell).replace(/"/g, '""');
+                    return cellText.includes(',') || /\s/.test(cellText) ? `"${cellText}"` : cellText;
+                }).join(',');
+                csvRows.push(line);
+            });
+            return csvRows.join('\n');
+        }
+    },
+    {
+        id: 'payload-to-markdown-list',
+        name: 'Payload: To markdown list',
+        description: 'Render array or newline-separated text as a markdown bullet list.',
+        icon: 'list',
+        accent: '#34d399',
+        tags: ['payload', 'formatting'],
+        transform: (value) => {
+            const items = Array.isArray(value)
+                ? value.map(item => ensureString(item))
+                : ensureString(value || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+            return items.map(item => `- ${item}`).join('\n');
+        }
+    },
+    {
+        id: 'payload-to-table',
+        name: 'Payload: To markdown table',
+        description: 'Convert an array of objects into a markdown table for quick reviews.',
+        icon: 'grid',
+        accent: '#a855f7',
+        tags: ['payload', 'formatting'],
+        transform: (value, config, clone) => {
+            let rows = [];
+            if (Array.isArray(value)) {
+                rows = value;
+            } else {
+                try {
+                    rows = JSON.parse(ensureString(value || ''));
+                } catch (error) {
+                    clone.logs.push(`Table conversion skipped: ${error.message}`);
+                    return ensureString(value || '');
+                }
+            }
+            if (!Array.isArray(rows) || rows.length === 0 || typeof rows[0] !== 'object') {
+                return Array.isArray(rows) ? rows.join('\n') : ensureString(value || '');
+            }
+            const headers = Array.from(new Set(rows.flatMap(row => Object.keys(row))));
+            const headerLine = `| ${headers.join(' | ')} |`;
+            const separator = `| ${headers.map(() => '---').join(' | ')} |`;
+            const body = rows.map(row => `| ${headers.map(key => ensureString(row[key] ?? '')).join(' | ')} |`).join('\n');
+            return [headerLine, separator, body].join('\n');
+        }
+    },
+    {
+        id: 'payload-add-timestamp',
+        name: 'Payload: Add timestamp',
+        description: 'Append or prepend an ISO timestamp to the payload.',
+        icon: 'clock',
+        accent: '#fb7185',
+        defaultConfig: { position: 'prefix', label: 'Timestamp' },
+        form: [
+            { key: 'position', label: 'Position', type: 'select', options: [
+                { value: 'prefix', label: 'Prefix' },
+                { value: 'suffix', label: 'Suffix' }
+            ] },
+            { key: 'label', label: 'Label', type: 'text', placeholder: 'Timestamp' }
+        ],
+        tags: ['payload', 'metadata'],
+        transform: (value, config) => {
+            const stamp = `${ensureString(config.label || 'Timestamp')}: ${new Date().toISOString()}`;
+            const text = ensureString(value || '');
+            return config.position === 'suffix'
+                ? `${text}${text ? '\n' : ''}${stamp}`
+                : `${stamp}${text ? '\n' : ''}${text}`;
+        }
+    },
+    {
+        id: 'payload-ensure-prefix',
+        name: 'Payload: Ensure prefix',
+        description: 'Guarantee the payload begins with the specified prefix.',
+        icon: 'corner-left-up',
+        accent: '#22c55e',
+        defaultConfig: { prefix: 'https://' },
+        form: [{ key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'https://' }],
+        tags: ['payload', 'formatting'],
+        transform: (value, config) => {
+            const prefix = ensureString(config.prefix || '');
+            const text = ensureString(value || '');
+            if (!prefix) return text;
+            return text.startsWith(prefix) ? text : prefix + text;
+        }
+    },
+    {
+        id: 'payload-ensure-suffix',
+        name: 'Payload: Ensure suffix',
+        description: 'Ensure the payload ends with a configured suffix.',
+        icon: 'corner-right-down',
+        accent: '#818cf8',
+        defaultConfig: { suffix: '/' },
+        form: [{ key: 'suffix', label: 'Suffix', type: 'text', placeholder: '/' }],
+        tags: ['payload', 'formatting'],
+        transform: (value, config) => {
+            const suffix = ensureString(config.suffix || '');
+            const text = ensureString(value || '');
+            if (!suffix) return text;
+            return text.endsWith(suffix) ? text : `${text}${suffix}`;
+        }
+    },
+    {
+        id: 'payload-random-sample',
+        name: 'Payload: Random sample',
+        description: 'Return a random subset of lines from the payload.',
+        icon: 'shuffle',
+        accent: '#f472b6',
+        defaultConfig: { size: 3 },
+        form: [{ key: 'size', label: 'Sample size', type: 'number', placeholder: '3' }],
+        tags: ['payload', 'random'],
+        transform: (value, config) => {
+            const lines = ensureString(value || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+            const count = Math.max(1, Number(config.size || 1));
+            const sample = [];
+            const copy = [...lines];
+            while (copy.length && sample.length < count) {
+                const index = Math.floor(Math.random() * copy.length);
+                sample.push(copy.splice(index, 1)[0]);
+            }
+            return sample.join('\n');
+        }
+    },
+    {
+        id: 'payload-first-line',
+        name: 'Payload: First line',
+        description: 'Extract only the first line from the payload.',
+        icon: 'arrow-up',
+        accent: '#22d3ee',
+        tags: ['payload', 'filter'],
+        transform: (value) => ensureString(value || '').split(/\r?\n/)[0] || ''
+    },
+    {
+        id: 'payload-last-line',
+        name: 'Payload: Last line',
+        description: 'Extract only the last non-empty line from the payload.',
+        icon: 'arrow-down',
+        accent: '#0ea5e9',
+        tags: ['payload', 'filter'],
+        transform: (value) => {
+            const lines = ensureString(value || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+            return lines.length ? lines[lines.length - 1] : '';
+        }
+    },
+    {
+        id: 'payload-filter-lines',
+        name: 'Payload: Filter lines',
+        description: 'Keep only lines that contain a chosen keyword.',
+        icon: 'filter',
+        accent: '#ec4899',
+        defaultConfig: { keyword: '' },
+        form: [{ key: 'keyword', label: 'Keyword', type: 'text', placeholder: 'error' }],
+        tags: ['payload', 'filter'],
+        transform: (value, config) => {
+            const keyword = ensureString(config.keyword || '').toLowerCase();
+            if (!keyword) return ensureString(value || '');
+            return ensureString(value || '')
+                .split(/\r?\n/)
+                .filter(line => line.toLowerCase().includes(keyword))
+                .join('\n');
+        }
+    },
+    {
+        id: 'payload-remove-empty-lines',
+        name: 'Payload: Remove empty lines',
+        description: 'Strip blank lines and collapse multiple blank lines into one.',
+        icon: 'minus',
+        accent: '#fbbf24',
+        tags: ['payload', 'cleanup'],
+        transform: (value) => ensureString(value || '')
+            .split(/\r?\n/)
+            .map(line => line.trim())
+            .filter(Boolean)
+            .join('\n')
+    },
+    {
+        id: 'payload-truncate-words',
+        name: 'Payload: Truncate words',
+        description: 'Keep only the first N words of the payload.',
+        icon: 'type',
+        accent: '#2dd4bf',
+        defaultConfig: { words: 50, suffix: '…' },
+        form: [
+            { key: 'words', label: 'Max words', type: 'number', placeholder: '50' },
+            { key: 'suffix', label: 'Suffix', type: 'text', placeholder: '…' }
+        ],
+        tags: ['payload', 'truncate'],
+        transform: (value, config) => {
+            const words = ensureString(value || '').split(/\s+/).filter(Boolean);
+            const limit = Math.max(1, Number(config.words || 1));
+            const suffix = ensureString(config.suffix || '…');
+            return words.length > limit
+                ? `${words.slice(0, limit).join(' ')}${suffix}`
+                : words.join(' ');
+        }
+    },
+    {
+        id: 'payload-to-object-field',
+        name: 'Payload: Wrap in JSON field',
+        description: 'Wrap the payload inside a JSON object under a named field.',
+        icon: 'code',
+        accent: '#ef4444',
+        defaultConfig: { field: 'value' },
+        form: [{ key: 'field', label: 'Field name', type: 'text', placeholder: 'value' }],
+        tags: ['payload', 'formatting'],
+        transform: (value, config) => {
+            const field = ensureString(config.field || 'value');
+            return JSON.stringify({ [field]: value }, null, 2);
+        }
+    }
+];
+
+PayloadAugmentationScenarios.forEach(scenario => {
+    AdditionalQuickActionModules.push({
+        id: scenario.id,
+        category: 'utility',
+        name: scenario.name,
+        description: scenario.description,
+        icon: scenario.icon,
+        accent: scenario.accent,
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: scenario.defaultConfig || {},
+        form: scenario.form,
+        tags: scenario.tags,
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = scenario.transform(clone.payload, config || {}, clone);
+            clone.logs.push(`${scenario.name} applied.`);
+            return [clone];
+        }
+    });
+});
+
+const ContextUtilityModules = [
+    {
+        id: 'context-store-payload',
+        name: 'Context: Store payload',
+        description: 'Save the current payload into a named workflow variable.',
+        icon: 'save',
+        accent: '#38bdf8',
+        defaultConfig: { variable: 'result' },
+        form: [{ key: 'variable', label: 'Variable name', type: 'text', placeholder: 'result' }],
+        tags: ['context', 'state'],
+        apply: (clone, config) => {
+            const variable = ensureString(config.variable || '');
+            if (!variable) {
+                clone.logs.push('Store payload skipped: variable missing.');
+                return;
+            }
+            clone.vars[variable] = clone.payload;
+            clone.logs.push(`Stored payload in ${variable}.`);
+        }
+    },
+    {
+        id: 'context-load-variable',
+        name: 'Context: Load variable',
+        description: 'Load a stored variable back into the payload with optional fallback.',
+        icon: 'upload',
+        accent: '#a855f7',
+        defaultConfig: { variable: 'result', fallback: '' },
+        form: [
+            { key: 'variable', label: 'Variable name', type: 'text', placeholder: 'result' },
+            { key: 'fallback', label: 'Fallback value', type: 'text', placeholder: 'No data' }
+        ],
+        tags: ['context', 'state'],
+        apply: (clone, config) => {
+            const variable = ensureString(config.variable || '');
+            if (!variable) {
+                clone.logs.push('Load variable skipped: name missing.');
+                return;
+            }
+            if (Object.prototype.hasOwnProperty.call(clone.vars, variable)) {
+                clone.payload = clone.vars[variable];
+            } else {
+                clone.payload = config.fallback ?? clone.payload;
+            }
+            clone.logs.push(`Loaded variable ${variable}.`);
+        }
+    },
+    {
+        id: 'context-append-variable',
+        name: 'Context: Append to variable',
+        description: 'Append the payload to a stored string variable with a delimiter.',
+        icon: 'plus-square',
+        accent: '#f97316',
+        defaultConfig: { variable: 'log', delimiter: '\n' },
+        form: [
+            { key: 'variable', label: 'Variable name', type: 'text', placeholder: 'log' },
+            { key: 'delimiter', label: 'Delimiter', type: 'text', placeholder: '\n' }
+        ],
+        tags: ['context', 'state'],
+        apply: (clone, config) => {
+            const variable = ensureString(config.variable || '');
+            if (!variable) {
+                clone.logs.push('Append variable skipped: name missing.');
+                return;
+            }
+            const delimiter = ensureString(config.delimiter || '\n');
+            const current = ensureString(clone.vars[variable] || '');
+            const payloadText = ensureString(clone.payload || '');
+            clone.vars[variable] = current ? `${current}${delimiter}${payloadText}` : payloadText;
+            clone.logs.push(`Appended payload to ${variable}.`);
+        }
+    },
+    {
+        id: 'context-increment-counter',
+        name: 'Context: Increment counter',
+        description: 'Increase a numeric context variable by a configurable step.',
+        icon: 'plus',
+        accent: '#22d3ee',
+        defaultConfig: { variable: 'count', step: 1 },
+        form: [
+            { key: 'variable', label: 'Variable name', type: 'text', placeholder: 'count' },
+            { key: 'step', label: 'Step', type: 'number', placeholder: '1' }
+        ],
+        tags: ['context', 'state'],
+        apply: (clone, config) => {
+            const variable = ensureString(config.variable || '');
+            if (!variable) {
+                clone.logs.push('Increment counter skipped: name missing.');
+                return;
+            }
+            const step = Number(config.step || 1);
+            const current = Number(clone.vars[variable] || 0);
+            clone.vars[variable] = current + step;
+            clone.logs.push(`Counter ${variable} incremented to ${clone.vars[variable]}.`);
+        }
+    },
+    {
+        id: 'context-push-log',
+        name: 'Context: Push log entry',
+        description: 'Add a custom log entry that can reference the payload.',
+        icon: 'clipboard',
+        accent: '#fbbf24',
+        defaultConfig: { message: 'Processed payload at {{timestamp}}' },
+        form: [{ key: 'message', label: 'Message template', type: 'textarea', rows: 3, placeholder: 'Message with {{payload}}' }],
+        tags: ['context', 'logging'],
+        apply: (clone, config) => {
+            const template = ensureString(config.message || '');
+            const timestamp = new Date().toISOString();
+            const payloadText = ensureString(clone.payload || '');
+            const entry = template
+                .replace(/\{\{payload\}\}/g, payloadText)
+                .replace(/\{\{timestamp\}\}/g, timestamp);
+            clone.logs.push(entry);
+        }
+    },
+    {
+        id: 'context-push-to-collection',
+        name: 'Context: Push to collection',
+        description: 'Push the payload into an array variable while limiting its size.',
+        icon: 'package',
+        accent: '#14b8a6',
+        defaultConfig: { variable: 'items', maxItems: 10 },
+        form: [
+            { key: 'variable', label: 'Variable name', type: 'text', placeholder: 'items' },
+            { key: 'maxItems', label: 'Max items', type: 'number', placeholder: '10' }
+        ],
+        tags: ['context', 'state'],
+        apply: (clone, config) => {
+            const variable = ensureString(config.variable || '');
+            if (!variable) {
+                clone.logs.push('Collection push skipped: name missing.');
+                return;
+            }
+            const limit = Math.max(1, Number(config.maxItems || 10));
+            const list = Array.isArray(clone.vars[variable]) ? clone.vars[variable] : [];
+            list.push(clone.payload);
+            while (list.length > limit) {
+                list.shift();
+            }
+            clone.vars[variable] = list;
+            clone.logs.push(`Pushed payload into ${variable} (${list.length}/${limit}).`);
+        }
+    },
+    {
+        id: 'context-clear-variable',
+        name: 'Context: Clear variable',
+        description: 'Remove a variable from the workflow context.',
+        icon: 'trash-2',
+        accent: '#ef4444',
+        defaultConfig: { variable: 'result' },
+        form: [{ key: 'variable', label: 'Variable name', type: 'text', placeholder: 'result' }],
+        tags: ['context', 'state'],
+        apply: (clone, config) => {
+            const variable = ensureString(config.variable || '');
+            if (!variable) {
+                clone.logs.push('Clear variable skipped: name missing.');
+                return;
+            }
+            delete clone.vars[variable];
+            clone.logs.push(`Cleared variable ${variable}.`);
+        }
+    },
+    {
+        id: 'context-store-timestamp',
+        name: 'Context: Store timestamp',
+        description: 'Store the current timestamp in a variable for later reference.',
+        icon: 'calendar',
+        accent: '#4ade80',
+        defaultConfig: { variable: 'lastRun' },
+        form: [{ key: 'variable', label: 'Variable name', type: 'text', placeholder: 'lastRun' }],
+        tags: ['context', 'state'],
+        apply: (clone, config) => {
+            const variable = ensureString(config.variable || '');
+            if (!variable) {
+                clone.logs.push('Store timestamp skipped: name missing.');
+                return;
+            }
+            clone.vars[variable] = new Date().toISOString();
+            clone.logs.push(`Stored timestamp in ${variable}.`);
+        }
+    },
+    {
+        id: 'context-tag-payload',
+        name: 'Context: Tag payload',
+        description: 'Add a tag to the shared context to mark the payload status.',
+        icon: 'bookmark',
+        accent: '#fbbf24',
+        defaultConfig: { tag: 'processed' },
+        form: [{ key: 'tag', label: 'Tag', type: 'text', placeholder: 'processed' }],
+        tags: ['context', 'metadata'],
+        apply: (clone, config) => {
+            const tag = ensureString(config.tag || '');
+            if (!tag) {
+                clone.logs.push('Tag payload skipped: tag missing.');
+                return;
+            }
+            if (!Array.isArray(clone.vars.tags)) {
+                clone.vars.tags = [];
+            }
+            if (!clone.vars.tags.includes(tag)) {
+                clone.vars.tags.push(tag);
+            }
+            clone.logs.push(`Tag "${tag}" added to payload context.`);
+        }
+    },
+    {
+        id: 'context-merge-json',
+        name: 'Context: Merge JSON payload',
+        description: 'Merge JSON payload fields into a named context object.',
+        icon: 'code',
+        accent: '#6366f1',
+        defaultConfig: { variable: 'data', prefix: '' },
+        form: [
+            { key: 'variable', label: 'Variable name', type: 'text', placeholder: 'data' },
+            { key: 'prefix', label: 'Key prefix', type: 'text', placeholder: '' }
+        ],
+        tags: ['context', 'state'],
+        apply: (clone, config) => {
+            const variable = ensureString(config.variable || '');
+            if (!variable) {
+                clone.logs.push('Merge JSON skipped: variable missing.');
+                return;
+            }
+            const text = typeof clone.payload === 'string' ? clone.payload : JSON.stringify(clone.payload);
+            try {
+                const parsed = JSON.parse(text || '{}');
+                if (!clone.vars[variable] || typeof clone.vars[variable] !== 'object') {
+                    clone.vars[variable] = {};
+                }
+                const target = clone.vars[variable];
+                const prefix = ensureString(config.prefix || '');
+                Object.entries(parsed).forEach(([key, val]) => {
+                    const finalKey = prefix ? `${prefix}${key}` : key;
+                    target[finalKey] = val;
+                });
+                clone.logs.push(`Merged JSON payload into ${variable}.`);
+            } catch (error) {
+                clone.logs.push(`Merge JSON failed: ${error.message}`);
+            }
+        }
+    }
+];
+
+ContextUtilityModules.forEach(module => {
+    AdditionalQuickActionModules.push({
+        id: module.id,
+        category: 'utility',
+        name: module.name,
+        description: module.description,
+        icon: module.icon,
+        accent: module.accent,
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: module.defaultConfig || {},
+        form: module.form,
+        tags: module.tags,
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            module.apply(clone, config || {});
+            return [clone];
+        }
+    });
+});
+
+const AdvancedAiWorkflowScenarios = [
+    {
+        id: 'ai-brief-to-email',
+        name: 'AI: Draft customer email',
+        description: 'Turn meeting notes into a polished follow-up email.',
+        icon: 'mail',
+        accent: '#6366f1',
+        defaultPrompt: 'Using the notes below, craft a polite follow-up email with clear next steps: {{payload}}',
+        label: 'AI customer email',
+        tags: ['ai', 'communication', 'email'],
+        temperature: 0.6,
+        maxTokens: 400,
+        overrides: {
+            useMessages: true,
+            systemPrompt: 'You are a friendly customer success specialist providing concise, actionable communication.'
+        },
+        successLog: 'Drafted customer email via AI.'
+    },
+    {
+        id: 'ai-brief-to-agenda',
+        name: 'AI: Build meeting agenda',
+        description: 'Convert raw notes into a structured meeting agenda with timings.',
+        icon: 'calendar',
+        accent: '#22d3ee',
+        defaultPrompt: 'Turn the following talking points into a time-boxed meeting agenda: {{payload}}',
+        label: 'AI meeting agenda',
+        tags: ['ai', 'operations', 'meetings'],
+        temperature: 0.5,
+        maxTokens: 380,
+        successLog: 'Prepared agenda outline via AI.'
+    },
+    {
+        id: 'ai-strategy-outline',
+        name: 'AI: Strategy outline',
+        description: 'Ask AI to produce a strategic outline from brainstorming notes.',
+        icon: 'target',
+        accent: '#f97316',
+        defaultPrompt: 'Summarize the following notes into a strategic outline with objectives, tactics, and KPIs: {{payload}}',
+        label: 'AI strategy outline',
+        tags: ['ai', 'planning', 'strategy'],
+        temperature: 0.55,
+        maxTokens: 420,
+        successLog: 'Generated strategy outline.'
+    },
+    {
+        id: 'ai-product-requirements',
+        name: 'AI: Product requirements draft',
+        description: 'Convert feature ideas into a structured PRD summary.',
+        icon: 'file-text',
+        accent: '#34d399',
+        defaultPrompt: 'Transform the following product notes into a structured PRD with problem, solution, user stories, and acceptance criteria: {{payload}}',
+        label: 'AI product requirements',
+        tags: ['ai', 'product', 'documentation'],
+        temperature: 0.45,
+        maxTokens: 500,
+        successLog: 'Created product requirements summary.'
+    },
+    {
+        id: 'ai-release-notes-writer',
+        name: 'AI: Release notes',
+        description: 'Produce release notes from change logs or commits.',
+        icon: 'clipboard',
+        accent: '#facc15',
+        defaultPrompt: 'Draft release notes for end users based on the following updates. Highlight improvements and fixes: {{payload}}',
+        label: 'AI release notes',
+        tags: ['ai', 'product', 'documentation'],
+        temperature: 0.4,
+        maxTokens: 360,
+        successLog: 'Drafted release notes.'
+    },
+    {
+        id: 'ai-support-reply',
+        name: 'AI: Support reply',
+        description: 'Transform troubleshooting notes into a friendly support response.',
+        icon: 'message-circle',
+        accent: '#ef4444',
+        defaultPrompt: 'Write a friendly support reply that acknowledges the issue, explains the solution, and offers next steps: {{payload}}',
+        label: 'AI support reply',
+        tags: ['ai', 'support', 'communication'],
+        temperature: 0.5,
+        maxTokens: 320,
+        overrides: {
+            useMessages: true,
+            systemPrompt: 'You are a thoughtful technical support engineer with an empathetic tone.'
+        },
+        successLog: 'Generated support response.'
+    },
+    {
+        id: 'ai-social-campaign-plan',
+        name: 'AI: Social campaign plan',
+        description: 'Generate multi-platform social campaign ideas with hooks and CTAs.',
+        icon: 'share-2',
+        accent: '#ec4899',
+        defaultPrompt: 'Create a social media campaign plan with platform-specific hooks, copy, and CTAs based on: {{payload}}',
+        label: 'AI social campaign',
+        tags: ['ai', 'marketing', 'social'],
+        temperature: 0.7,
+        maxTokens: 460,
+        successLog: 'Produced social campaign plan.'
+    },
+    {
+        id: 'ai-keyword-research',
+        name: 'AI: Keyword research',
+        description: 'Ask AI to suggest SEO keywords grouped by intent.',
+        icon: 'search',
+        accent: '#f59e0b',
+        defaultPrompt: 'Suggest SEO keyword clusters with intent and difficulty scores using these seed terms: {{payload}}',
+        label: 'AI keyword research',
+        tags: ['ai', 'marketing', 'seo'],
+        temperature: 0.5,
+        maxTokens: 380,
+        successLog: 'Generated keyword research clusters.'
+    },
+    {
+        id: 'ai-sql-query-builder',
+        name: 'AI: SQL query builder',
+        description: 'Convert analytics questions into sample SQL queries.',
+        icon: 'database',
+        accent: '#8b5cf6',
+        defaultPrompt: 'Write a SQL query that satisfies the following analytics request. Include comments explaining each clause: {{payload}}',
+        label: 'AI SQL builder',
+        tags: ['ai', 'data', 'sql'],
+        temperature: 0.35,
+        maxTokens: 320,
+        overrides: {
+            useMessages: true,
+            systemPrompt: 'You are a senior analytics engineer writing safe, well-commented SQL.'
+        },
+        successLog: 'Generated SQL query example.'
+    },
+    {
+        id: 'ai-json-schema-designer',
+        name: 'AI: JSON schema designer',
+        description: 'Produce a JSON schema from sample payload descriptions.',
+        icon: 'layers',
+        accent: '#0ea5e9',
+        defaultPrompt: 'Design a JSON schema draft describing the structure of this payload. Include field types and descriptions: {{payload}}',
+        label: 'AI schema designer',
+        tags: ['ai', 'data', 'json'],
+        temperature: 0.4,
+        maxTokens: 420,
+        successLog: 'Drafted JSON schema definition.'
+    },
+    {
+        id: 'ai-api-contract',
+        name: 'AI: API contract draft',
+        description: 'Turn request details into an API contract outline.',
+        icon: 'code',
+        accent: '#22c55e',
+        defaultPrompt: 'Prepare an API contract summary with endpoints, methods, request/response fields, and error handling using: {{payload}}',
+        label: 'AI API contract',
+        tags: ['ai', 'api', 'documentation'],
+        temperature: 0.45,
+        maxTokens: 480,
+        successLog: 'Prepared API contract outline.'
+    },
+    {
+        id: 'ai-test-plan-drafter',
+        name: 'AI: Test plan drafter',
+        description: 'Generate manual and automated test ideas from requirements.',
+        icon: 'check-circle',
+        accent: '#14b8a6',
+        defaultPrompt: 'Generate a concise QA plan listing manual checks and automation candidates based on: {{payload}}',
+        label: 'AI test plan',
+        tags: ['ai', 'quality', 'testing'],
+        temperature: 0.45,
+        maxTokens: 360,
+        successLog: 'Produced QA test plan.'
+    },
+    {
+        id: 'ai-meeting-recap',
+        name: 'AI: Meeting recap',
+        description: 'Summarize transcripts into recap emails with owners and deadlines.',
+        icon: 'book-open',
+        accent: '#fb7185',
+        defaultPrompt: 'Summarize the meeting transcript into key decisions, action items with owners, and next steps: {{payload}}',
+        label: 'AI meeting recap',
+        tags: ['ai', 'meetings', 'summary'],
+        temperature: 0.4,
+        maxTokens: 380,
+        successLog: 'Prepared meeting recap.'
+    },
+    {
+        id: 'ai-competitive-insights',
+        name: 'AI: Competitive insights',
+        description: 'Compare competitor notes and highlight differentiators.',
+        icon: 'activity',
+        accent: '#f87171',
+        defaultPrompt: 'Analyze the competitive research below and highlight differentiators, risks, and opportunities: {{payload}}',
+        label: 'AI competitive analysis',
+        tags: ['ai', 'analysis', 'strategy'],
+        temperature: 0.5,
+        maxTokens: 420,
+        successLog: 'Generated competitive insights.'
+    },
+    {
+        id: 'ai-bug-triage-brief',
+        name: 'AI: Bug triage brief',
+        description: 'Summarize bug reports with severity and suggested owners.',
+        icon: 'alert-circle',
+        accent: '#facc15',
+        defaultPrompt: 'Summarize these bug reports into a triage brief listing severity, impact, and suggested owners: {{payload}}',
+        label: 'AI bug triage',
+        tags: ['ai', 'engineering', 'support'],
+        temperature: 0.4,
+        maxTokens: 360,
+        successLog: 'Prepared bug triage summary.'
+    },
+    {
+        id: 'ai-roadmap-outline',
+        name: 'AI: Roadmap outline',
+        description: 'Arrange initiatives into phased roadmap themes.',
+        icon: 'map',
+        accent: '#38bdf8',
+        defaultPrompt: 'Organize these initiatives into a quarterly roadmap with themes, goals, and dependencies: {{payload}}',
+        label: 'AI roadmap outline',
+        tags: ['ai', 'product', 'planning'],
+        temperature: 0.45,
+        maxTokens: 420,
+        successLog: 'Outlined roadmap themes.'
+    },
+    {
+        id: 'ai-ux-copy-review',
+        name: 'AI: UX copy review',
+        description: 'Review UI strings and suggest UX copy improvements.',
+        icon: 'type',
+        accent: '#a855f7',
+        defaultPrompt: 'Review the following UI copy, suggest clearer alternatives, and note tone or accessibility issues: {{payload}}',
+        label: 'AI UX copy review',
+        tags: ['ai', 'ux', 'copywriting'],
+        temperature: 0.35,
+        maxTokens: 320,
+        successLog: 'Evaluated UX copy.'
+    },
+    {
+        id: 'ai-video-script-writer',
+        name: 'AI: Video script writer',
+        description: 'Generate a short-form video script with scenes and narration.',
+        icon: 'video',
+        accent: '#f472b6',
+        defaultPrompt: 'Create a short-form video script with scene breakdowns and narration based on: {{payload}}',
+        label: 'AI video script',
+        tags: ['ai', 'marketing', 'content'],
+        temperature: 0.75,
+        maxTokens: 460,
+        successLog: 'Created video script outline.'
+    },
+    {
+        id: 'ai-learning-plan',
+        name: 'AI: Learning plan',
+        description: 'Build a personalized learning roadmap from goals and skills.',
+        icon: 'book',
+        accent: '#22d3ee',
+        defaultPrompt: 'Create a phased learning plan with milestones and resources using these goals: {{payload}}',
+        label: 'AI learning plan',
+        tags: ['ai', 'education', 'planning'],
+        temperature: 0.55,
+        maxTokens: 420,
+        successLog: 'Generated learning plan.'
+    },
+    {
+        id: 'ai-job-description-writer',
+        name: 'AI: Job description writer',
+        description: 'Turn role requirements into a compelling job description.',
+        icon: 'user',
+        accent: '#0ea5e9',
+        defaultPrompt: 'Draft a job description with responsibilities, requirements, and benefits for this role: {{payload}}',
+        label: 'AI job description',
+        tags: ['ai', 'hr', 'recruiting'],
+        temperature: 0.5,
+        maxTokens: 420,
+        successLog: 'Drafted job description.'
+    },
+    {
+        id: 'ai-onboarding-checklist',
+        name: 'AI: Onboarding checklist',
+        description: 'Create onboarding steps for new hires from internal notes.',
+        icon: 'check-square',
+        accent: '#10b981',
+        defaultPrompt: 'Create a week-by-week onboarding checklist with owners and goals based on: {{payload}}',
+        label: 'AI onboarding checklist',
+        tags: ['ai', 'hr', 'operations'],
+        temperature: 0.45,
+        maxTokens: 380,
+        successLog: 'Produced onboarding checklist.'
+    },
+    {
+        id: 'ai-customer-journey-map',
+        name: 'AI: Customer journey map',
+        description: 'Generate journey stages, emotions, and opportunities.',
+        icon: 'compass',
+        accent: '#f97316',
+        defaultPrompt: 'Map the customer journey stages, emotions, and opportunities using this research: {{payload}}',
+        label: 'AI journey map',
+        tags: ['ai', 'customer', 'strategy'],
+        temperature: 0.55,
+        maxTokens: 420,
+        successLog: 'Outlined customer journey map.'
+    },
+    {
+        id: 'ai-risk-register',
+        name: 'AI: Risk register',
+        description: 'Summarize project risks with probability and mitigation.',
+        icon: 'shield',
+        accent: '#f87171',
+        defaultPrompt: 'Create a risk register with probability, impact, and mitigation actions based on: {{payload}}',
+        label: 'AI risk register',
+        tags: ['ai', 'project', 'risk'],
+        temperature: 0.4,
+        maxTokens: 360,
+        successLog: 'Generated risk register.'
+    },
+    {
+        id: 'ai-sprint-goal-setter',
+        name: 'AI: Sprint goal setter',
+        description: 'Summarize backlog highlights into focused sprint goals.',
+        icon: 'flag',
+        accent: '#38bdf8',
+        defaultPrompt: 'Summarize these backlog items into 2-3 sprint goals with metrics for success: {{payload}}',
+        label: 'AI sprint goals',
+        tags: ['ai', 'agile', 'planning'],
+        temperature: 0.4,
+        maxTokens: 320,
+        successLog: 'Outlined sprint goals.'
+    },
+    {
+        id: 'ai-vision-statement',
+        name: 'AI: Vision statement',
+        description: 'Condense company direction into an inspiring vision statement.',
+        icon: 'star',
+        accent: '#fbbf24',
+        defaultPrompt: 'Write an inspiring vision statement capturing the essence of these notes: {{payload}}',
+        label: 'AI vision statement',
+        tags: ['ai', 'leadership', 'branding'],
+        temperature: 0.6,
+        maxTokens: 260,
+        successLog: 'Created vision statement.'
+    }
+];
+
+AdvancedAiWorkflowScenarios.forEach(scenario => {
+    const defaultModel = scenario.defaultModel || 'gpt-4o-mini';
+    const defaultTemperature = scenario.temperature ?? 0.7;
+    const defaultMaxTokens = scenario.maxTokens ?? 512;
+    const baseForm = [
+        { key: 'endpoint', label: 'AI endpoint', type: 'url', placeholder: 'https://api.openai.com/v1/chat/completions' },
+        { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'sk-...' },
+        { key: 'model', label: 'Model', type: 'text', placeholder: defaultModel },
+        { key: 'prompt', label: 'Prompt template', type: 'textarea', rows: 4, placeholder: scenario.defaultPrompt },
+        { key: 'temperature', label: 'Temperature', type: 'number', step: '0.1', placeholder: String(defaultTemperature) },
+        { key: 'maxTokens', label: 'Max tokens', type: 'number', placeholder: String(defaultMaxTokens) }
+    ];
+
+    AdditionalQuickActionModules.push({
+        id: scenario.id,
+        category: 'action',
+        name: scenario.name,
+        description: scenario.description,
+        icon: scenario.icon,
+        accent: scenario.accent,
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+            endpoint: '',
+            apiKey: '',
+            model: defaultModel,
+            prompt: scenario.defaultPrompt,
+            temperature: defaultTemperature,
+            maxTokens: defaultMaxTokens
+        },
+        form: scenario.extraForm ? baseForm.concat(scenario.extraForm) : baseForm,
+        tags: scenario.tags,
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const result = await performAiTextRequest(clone, config, {
+                label: scenario.label,
+                defaultPrompt: scenario.defaultPrompt,
+                ...scenario.overrides
+            });
+            if (result) {
+                clone.payload = result.text;
+                clone.vars.lastAiResponse = result.raw;
+                clone.logs.push(scenario.successLog || `${scenario.name} completed.`);
+            }
+            return [clone];
+        }
+    });
+});
+
+const NotificationIntegrationScenarios = [
+    {
+        id: 'notify-slack-channel',
+        name: 'Notification: Slack channel message',
+        description: 'Post a message to a Slack channel using chat.postMessage.',
+        icon: 'message-square',
+        accent: '#36c5f0',
+        defaultEndpoint: 'https://slack.com/api/chat.postMessage',
+        defaultConfig: {
+            endpoint: 'https://slack.com/api/chat.postMessage',
+            apiKey: '',
+            channel: '#general',
+            text: '',
+            threadTs: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://slack.com/api/chat.postMessage' },
+            { key: 'apiKey', label: 'Bot token', type: 'password', placeholder: 'xoxb-...' },
+            { key: 'channel', label: 'Channel or user', type: 'text', placeholder: '#general' },
+            { key: 'text', label: 'Message text', type: 'textarea', rows: 3, placeholder: 'Optional text or use payload' },
+            { key: 'threadTs', label: 'Thread timestamp', type: 'text', placeholder: 'Optional thread_ts' }
+        ],
+        authHeader: 'Authorization',
+        authPrefix: 'Bearer ',
+        buildBody: (config, clone) => ({
+            channel: ensureString(config.channel || ''),
+            text: ensureString(config.text || clone.payload || ''),
+            thread_ts: ensureString(config.threadTs || '') || undefined
+        }),
+        label: 'Slack notification',
+        successLog: 'Slack message request sent.',
+        storeRawKey: 'slackNotificationResponse',
+        tags: ['integration', 'notification', 'slack']
+    },
+    {
+        id: 'notify-slack-workflow',
+        name: 'Notification: Slack workflow trigger',
+        description: 'Invoke a Slack workflow trigger with structured inputs.',
+        icon: 'zap',
+        accent: '#4ade80',
+        defaultEndpoint: 'https://slack.com/api/workflows.triggers.invoke',
+        defaultConfig: {
+            endpoint: 'https://slack.com/api/workflows.triggers.invoke',
+            apiKey: '',
+            triggerId: '',
+            inputsJson: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://slack.com/api/workflows.triggers.invoke' },
+            { key: 'apiKey', label: 'Bot token', type: 'password', placeholder: 'xoxb-...' },
+            { key: 'triggerId', label: 'Trigger ID', type: 'text', placeholder: 'T123.ABCD' },
+            { key: 'inputsJson', label: 'Inputs (JSON)', type: 'textarea', rows: 4, placeholder: '{"input_1":{"value":"..."}}' }
+        ],
+        authHeader: 'Authorization',
+        authPrefix: 'Bearer ',
+        buildBody: (config, clone) => {
+            const triggerId = ensureString(config.triggerId || '');
+            const raw = ensureString(config.inputsJson || clone.payload || '');
+            let inputs = {};
+            if (raw) {
+                try {
+                    inputs = JSON.parse(raw);
+                } catch (error) {
+                    clone.logs.push(`Slack workflow inputs parse failed: ${error.message}`);
+                }
+            }
+            return {
+                trigger_id: triggerId,
+                inputs
+            };
+        },
+        label: 'Slack workflow invoke',
+        successLog: 'Slack workflow trigger invoked.',
+        storeRawKey: 'slackWorkflowResponse',
+        tags: ['integration', 'notification', 'slack']
+    },
+    {
+        id: 'notify-discord-webhook',
+        name: 'Notification: Discord webhook',
+        description: 'Send a message to a Discord channel via webhook.',
+        icon: 'send',
+        accent: '#5865f2',
+        defaultEndpoint: '',
+        defaultConfig: {
+            endpoint: 'https://discord.com/api/webhooks/...',
+            username: '',
+            avatarUrl: '',
+            content: '',
+            embedsJson: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'Webhook URL', type: 'url', placeholder: 'https://discord.com/api/webhooks/...' },
+            { key: 'username', label: 'Username', type: 'text', placeholder: 'Optional username override' },
+            { key: 'avatarUrl', label: 'Avatar URL', type: 'url', placeholder: 'Optional avatar URL' },
+            { key: 'content', label: 'Content', type: 'textarea', rows: 3, placeholder: 'Optional content or use payload' },
+            { key: 'embedsJson', label: 'Embeds (JSON)', type: 'textarea', rows: 4, placeholder: '[{"title":"Update"}]' }
+        ],
+        skipAuthHeader: true,
+        buildBody: (config, clone) => {
+            const text = ensureString(config.content || clone.payload || '');
+            const embedsRaw = ensureString(config.embedsJson || '');
+            let embeds;
+            if (embedsRaw) {
+                try {
+                    const parsed = JSON.parse(embedsRaw);
+                    if (Array.isArray(parsed)) embeds = parsed;
+                } catch (error) {
+                    clone.logs.push(`Discord embeds parse failed: ${error.message}`);
+                }
+            }
+            return {
+                username: ensureString(config.username || '') || undefined,
+                avatar_url: ensureString(config.avatarUrl || '') || undefined,
+                content: text || undefined,
+                embeds
+            };
+        },
+        label: 'Discord webhook',
+        successLog: 'Discord webhook delivered.',
+        storeRawKey: 'discordWebhookResponse',
+        tags: ['integration', 'notification', 'discord']
+    },
+    {
+        id: 'notify-teams-webhook',
+        name: 'Notification: Microsoft Teams',
+        description: 'Send an adaptive card message to a Teams incoming webhook.',
+        icon: 'layout',
+        accent: '#2563eb',
+        defaultEndpoint: '',
+        defaultConfig: {
+            endpoint: 'https://outlook.office.com/webhook/...',
+            summary: '',
+            title: '',
+            text: '',
+            potentialActionsJson: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'Webhook URL', type: 'url', placeholder: 'https://outlook.office.com/webhook/...' },
+            { key: 'summary', label: 'Summary', type: 'text', placeholder: 'Card summary' },
+            { key: 'title', label: 'Title', type: 'text', placeholder: 'Card title' },
+            { key: 'text', label: 'Message text', type: 'textarea', rows: 4, placeholder: 'Optional text or use payload' },
+            { key: 'potentialActionsJson', label: 'Actions (JSON)', type: 'textarea', rows: 4, placeholder: '[{"@type":"OpenUri"}]' }
+        ],
+        skipAuthHeader: true,
+        buildBody: (config, clone) => {
+            const rawActions = ensureString(config.potentialActionsJson || '');
+            let actions;
+            if (rawActions) {
+                try {
+                    const parsed = JSON.parse(rawActions);
+                    if (Array.isArray(parsed)) actions = parsed;
+                } catch (error) {
+                    clone.logs.push(`Teams actions parse failed: ${error.message}`);
+                }
+            }
+            return {
+                '@type': 'MessageCard',
+                '@context': 'http://schema.org/extensions',
+                summary: ensureString(config.summary || ''),
+                title: ensureString(config.title || ''),
+                text: ensureString(config.text || clone.payload || ''),
+                potentialAction: actions
+            };
+        },
+        label: 'Teams webhook',
+        successLog: 'Teams webhook delivered.',
+        storeRawKey: 'teamsWebhookResponse',
+        tags: ['integration', 'notification', 'teams']
+    },
+    {
+        id: 'notify-mattermost-webhook',
+        name: 'Notification: Mattermost webhook',
+        description: 'Send a formatted message to a Mattermost incoming webhook.',
+        icon: 'message-circle',
+        accent: '#dc2626',
+        defaultEndpoint: '',
+        defaultConfig: {
+            endpoint: 'https://mattermost.example.com/hooks/...',
+            username: '',
+            channel: '',
+            iconUrl: '',
+            text: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'Webhook URL', type: 'url', placeholder: 'https://mattermost.example.com/hooks/...' },
+            { key: 'username', label: 'Username', type: 'text', placeholder: 'Optional username' },
+            { key: 'channel', label: 'Channel', type: 'text', placeholder: 'Optional channel override' },
+            { key: 'iconUrl', label: 'Icon URL', type: 'url', placeholder: 'Optional icon URL' },
+            { key: 'text', label: 'Message text', type: 'textarea', rows: 3, placeholder: 'Optional text or use payload' }
+        ],
+        skipAuthHeader: true,
+        buildBody: (config, clone) => ({
+            username: ensureString(config.username || '') || undefined,
+            channel: ensureString(config.channel || '') || undefined,
+            icon_url: ensureString(config.iconUrl || '') || undefined,
+            text: ensureString(config.text || clone.payload || '')
+        }),
+        label: 'Mattermost webhook',
+        successLog: 'Mattermost webhook sent.',
+        storeRawKey: 'mattermostWebhookResponse',
+        tags: ['integration', 'notification', 'mattermost']
+    },
+    {
+        id: 'notify-rocketchat-webhook',
+        name: 'Notification: Rocket.Chat webhook',
+        description: 'Send messages to Rocket.Chat via incoming webhook.',
+        icon: 'send',
+        accent: '#fb7185',
+        defaultEndpoint: '',
+        defaultConfig: {
+            endpoint: 'https://chat.example.com/hooks/...',
+            username: '',
+            channel: '',
+            emoji: '',
+            text: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'Webhook URL', type: 'url', placeholder: 'https://chat.example.com/hooks/...' },
+            { key: 'username', label: 'Username', type: 'text', placeholder: 'Optional username' },
+            { key: 'channel', label: 'Channel', type: 'text', placeholder: '#general' },
+            { key: 'emoji', label: 'Avatar emoji', type: 'text', placeholder: ':rocket:' },
+            { key: 'text', label: 'Message text', type: 'textarea', rows: 3, placeholder: 'Optional text or use payload' }
+        ],
+        skipAuthHeader: true,
+        buildBody: (config, clone) => ({
+            username: ensureString(config.username || '') || undefined,
+            channel: ensureString(config.channel || '') || undefined,
+            emoji: ensureString(config.emoji || '') || undefined,
+            text: ensureString(config.text || clone.payload || '')
+        }),
+        label: 'Rocket.Chat webhook',
+        successLog: 'Rocket.Chat webhook sent.',
+        storeRawKey: 'rocketWebhookResponse',
+        tags: ['integration', 'notification', 'rocket-chat']
+    },
+    {
+        id: 'notify-google-chat',
+        name: 'Notification: Google Chat',
+        description: 'Send a message card to Google Chat via webhook.',
+        icon: 'message-square',
+        accent: '#34a853',
+        defaultEndpoint: '',
+        defaultConfig: {
+            endpoint: 'https://chat.googleapis.com/v1/spaces/.../messages',
+            text: '',
+            cardsJson: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'Webhook URL', type: 'url', placeholder: 'https://chat.googleapis.com/v1/spaces/.../messages' },
+            { key: 'text', label: 'Message text', type: 'textarea', rows: 3, placeholder: 'Optional text or use payload' },
+            { key: 'cardsJson', label: 'Cards (JSON)', type: 'textarea', rows: 4, placeholder: '[{"header":{"title":"Update"}}]' }
+        ],
+        skipAuthHeader: true,
+        buildBody: (config, clone) => {
+            const cardsRaw = ensureString(config.cardsJson || '');
+            let cards;
+            if (cardsRaw) {
+                try {
+                    const parsed = JSON.parse(cardsRaw);
+                    if (Array.isArray(parsed)) cards = parsed;
+                } catch (error) {
+                    clone.logs.push(`Google Chat cards parse failed: ${error.message}`);
+                }
+            }
+            return {
+                text: ensureString(config.text || clone.payload || ''),
+                cards
+            };
+        },
+        label: 'Google Chat webhook',
+        successLog: 'Google Chat webhook sent.',
+        storeRawKey: 'googleChatWebhookResponse',
+        tags: ['integration', 'notification', 'google-chat']
+    },
+    {
+        id: 'notify-sendgrid-email',
+        name: 'Notification: SendGrid email',
+        description: 'Send transactional email using the SendGrid API.',
+        icon: 'mail',
+        accent: '#2563eb',
+        defaultEndpoint: 'https://api.sendgrid.com/v3/mail/send',
+        defaultConfig: {
+            endpoint: 'https://api.sendgrid.com/v3/mail/send',
+            apiKey: '',
+            to: '',
+            fromEmail: '',
+            fromName: '',
+            subject: '',
+            text: '',
+            html: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://api.sendgrid.com/v3/mail/send' },
+            { key: 'apiKey', label: 'API key', type: 'password', placeholder: 'SG.xxxxx' },
+            { key: 'to', label: 'Recipient', type: 'text', placeholder: 'user@example.com' },
+            { key: 'fromEmail', label: 'From email', type: 'text', placeholder: 'noreply@example.com' },
+            { key: 'fromName', label: 'From name', type: 'text', placeholder: 'Automation Bot' },
+            { key: 'subject', label: 'Subject', type: 'text', placeholder: 'Status update' },
+            { key: 'text', label: 'Plain text', type: 'textarea', rows: 3, placeholder: 'Optional or use payload' },
+            { key: 'html', label: 'HTML content', type: 'textarea', rows: 4, placeholder: '<p>Hello</p>' }
+        ],
+        authHeader: 'Authorization',
+        authPrefix: 'Bearer ',
+        buildBody: (config, clone) => {
+            const text = ensureString(config.text || clone.payload || '');
+            const html = ensureString(config.html || '');
+            return {
+                personalizations: [
+                    {
+                        to: [{ email: ensureString(config.to || '') }]
+                    }
+                ],
+                from: {
+                    email: ensureString(config.fromEmail || ''),
+                    name: ensureString(config.fromName || '') || undefined
+                },
+                subject: ensureString(config.subject || ''),
+                content: [
+                    { type: 'text/plain', value: text },
+                    ...(html ? [{ type: 'text/html', value: html }] : [])
+                ]
+            };
+        },
+        label: 'SendGrid email',
+        successLog: 'SendGrid email API invoked.',
+        storeRawKey: 'sendgridLastResponse',
+        tags: ['integration', 'notification', 'email']
+    },
+    {
+        id: 'notify-resend-email',
+        name: 'Notification: Resend email',
+        description: 'Deliver transactional email via Resend.',
+        icon: 'mail',
+        accent: '#ef4444',
+        defaultEndpoint: 'https://api.resend.com/emails',
+        defaultConfig: {
+            endpoint: 'https://api.resend.com/emails',
+            apiKey: '',
+            from: '',
+            to: '',
+            subject: '',
+            html: '',
+            text: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://api.resend.com/emails' },
+            { key: 'apiKey', label: 'API key', type: 'password', placeholder: 're_xxxxxxxxx' },
+            { key: 'from', label: 'From', type: 'text', placeholder: 'Automation <bot@example.com>' },
+            { key: 'to', label: 'To', type: 'text', placeholder: 'user@example.com' },
+            { key: 'subject', label: 'Subject', type: 'text', placeholder: 'Status update' },
+            { key: 'html', label: 'HTML content', type: 'textarea', rows: 4, placeholder: '<p>Hello</p>' },
+            { key: 'text', label: 'Plain text', type: 'textarea', rows: 3, placeholder: 'Optional or use payload' }
+        ],
+        authHeader: 'Authorization',
+        authPrefix: 'Bearer ',
+        buildBody: (config, clone) => ({
+            from: ensureString(config.from || ''),
+            to: ensureString(config.to || ''),
+            subject: ensureString(config.subject || ''),
+            html: ensureString(config.html || '') || undefined,
+            text: ensureString(config.text || clone.payload || '') || undefined
+        }),
+        label: 'Resend email',
+        successLog: 'Resend email API invoked.',
+        storeRawKey: 'resendLastResponse',
+        tags: ['integration', 'notification', 'email']
+    },
+    {
+        id: 'notify-postmark-email',
+        name: 'Notification: Postmark email',
+        description: 'Send email using the Postmark API.',
+        icon: 'mail',
+        accent: '#f97316',
+        defaultEndpoint: 'https://api.postmarkapp.com/email',
+        defaultConfig: {
+            endpoint: 'https://api.postmarkapp.com/email',
+            apiKey: '',
+            from: '',
+            to: '',
+            subject: '',
+            text: '',
+            html: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://api.postmarkapp.com/email' },
+            { key: 'apiKey', label: 'Server token', type: 'password', placeholder: 'POSTMARK_API_TEST' },
+            { key: 'from', label: 'From', type: 'text', placeholder: 'bot@example.com' },
+            { key: 'to', label: 'To', type: 'text', placeholder: 'user@example.com' },
+            { key: 'subject', label: 'Subject', type: 'text', placeholder: 'Status update' },
+            { key: 'text', label: 'Plain text', type: 'textarea', rows: 3, placeholder: 'Optional or use payload' },
+            { key: 'html', label: 'HTML content', type: 'textarea', rows: 4, placeholder: '<p>Hello</p>' }
+        ],
+        authHeader: 'X-Postmark-Server-Token',
+        buildBody: (config, clone) => ({
+            From: ensureString(config.from || ''),
+            To: ensureString(config.to || ''),
+            Subject: ensureString(config.subject || ''),
+            TextBody: ensureString(config.text || clone.payload || '') || undefined,
+            HtmlBody: ensureString(config.html || '') || undefined
+        }),
+        label: 'Postmark email',
+        successLog: 'Postmark email API invoked.',
+        storeRawKey: 'postmarkLastResponse',
+        tags: ['integration', 'notification', 'email']
+    },
+    {
+        id: 'notify-pagerduty-event',
+        name: 'Notification: PagerDuty incident',
+        description: 'Trigger a PagerDuty incident using the Events API v2.',
+        icon: 'alert-triangle',
+        accent: '#f97316',
+        defaultEndpoint: 'https://events.pagerduty.com/v2/enqueue',
+        defaultConfig: {
+            endpoint: 'https://events.pagerduty.com/v2/enqueue',
+            routingKey: '',
+            summary: '',
+            source: 'automation-runner',
+            severity: 'info',
+            component: '',
+            group: '',
+            customDetailsJson: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'Events endpoint', type: 'url', placeholder: 'https://events.pagerduty.com/v2/enqueue' },
+            { key: 'routingKey', label: 'Routing key', type: 'password', placeholder: 'integration key' },
+            { key: 'summary', label: 'Incident summary', type: 'text', placeholder: 'API outage detected' },
+            { key: 'source', label: 'Source', type: 'text', placeholder: 'automation-runner' },
+            { key: 'severity', label: 'Severity', type: 'text', placeholder: 'info' },
+            { key: 'component', label: 'Component', type: 'text', placeholder: 'web' },
+            { key: 'group', label: 'Group', type: 'text', placeholder: 'sre' },
+            { key: 'customDetailsJson', label: 'Custom details (JSON)', type: 'textarea', rows: 4, placeholder: '{"status":"degraded"}' }
+        ],
+        skipAuthHeader: true,
+        buildBody: (config, clone) => {
+            const detailsRaw = ensureString(config.customDetailsJson || clone.payload || '');
+            let customDetails;
+            if (detailsRaw) {
+                try {
+                    customDetails = JSON.parse(detailsRaw);
+                } catch (error) {
+                    clone.logs.push(`PagerDuty custom details parse failed: ${error.message}`);
+                }
+            }
+            return {
+                routing_key: ensureString(config.routingKey || ''),
+                event_action: 'trigger',
+                payload: {
+                    summary: ensureString(config.summary || ''),
+                    source: ensureString(config.source || 'automation-runner'),
+                    severity: ensureString(config.severity || 'info'),
+                    component: ensureString(config.component || '') || undefined,
+                    group: ensureString(config.group || '') || undefined,
+                    custom_details: customDetails
+                }
+            };
+        },
+        label: 'PagerDuty event',
+        successLog: 'PagerDuty incident triggered.',
+        storeRawKey: 'pagerdutyEventResponse',
+        tags: ['integration', 'notification', 'pagerduty']
+    },
+    {
+        id: 'notify-opsgenie-alert',
+        name: 'Notification: Opsgenie alert',
+        description: 'Create an Opsgenie alert with optional responders.',
+        icon: 'bell',
+        accent: '#f97316',
+        defaultEndpoint: 'https://api.opsgenie.com/v2/alerts',
+        defaultConfig: {
+            endpoint: 'https://api.opsgenie.com/v2/alerts',
+            apiKey: '',
+            message: '',
+            alias: '',
+            description: '',
+            priority: 'P3',
+            respondersJson: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://api.opsgenie.com/v2/alerts' },
+            { key: 'apiKey', label: 'Genie key', type: 'password', placeholder: 'Opsgenie GenieKey' },
+            { key: 'message', label: 'Message', type: 'text', placeholder: 'Service offline' },
+            { key: 'alias', label: 'Alias', type: 'text', placeholder: 'incident-123' },
+            { key: 'description', label: 'Description', type: 'textarea', rows: 3, placeholder: 'Optional description or use payload' },
+            { key: 'priority', label: 'Priority', type: 'text', placeholder: 'P3' },
+            { key: 'respondersJson', label: 'Responders (JSON)', type: 'textarea', rows: 4, placeholder: '[{"type":"team","id":"..."}]' }
+        ],
+        authHeader: 'Authorization',
+        authPrefix: 'GenieKey ',
+        buildBody: (config, clone) => {
+            const respondersRaw = ensureString(config.respondersJson || '');
+            let responders;
+            if (respondersRaw) {
+                try {
+                    const parsed = JSON.parse(respondersRaw);
+                    if (Array.isArray(parsed)) responders = parsed;
+                } catch (error) {
+                    clone.logs.push(`Opsgenie responders parse failed: ${error.message}`);
+                }
+            }
+            return {
+                message: ensureString(config.message || ''),
+                alias: ensureString(config.alias || '') || undefined,
+                description: ensureString(config.description || clone.payload || ''),
+                priority: ensureString(config.priority || 'P3'),
+                responders
+            };
+        },
+        label: 'Opsgenie alert',
+        successLog: 'Opsgenie alert created.',
+        storeRawKey: 'opsgenieAlertResponse',
+        tags: ['integration', 'notification', 'opsgenie']
+    },
+    {
+        id: 'notify-onesignal-push',
+        name: 'Notification: OneSignal push',
+        description: 'Send a push notification via OneSignal.',
+        icon: 'smartphone',
+        accent: '#ef4444',
+        defaultEndpoint: 'https://onesignal.com/api/v1/notifications',
+        defaultConfig: {
+            endpoint: 'https://onesignal.com/api/v1/notifications',
+            apiKey: '',
+            appId: '',
+            headings: '',
+            contents: '',
+            playerIdsCsv: '',
+            url: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://onesignal.com/api/v1/notifications' },
+            { key: 'apiKey', label: 'REST API key', type: 'password', placeholder: 'onesignal-rest-key' },
+            { key: 'appId', label: 'App ID', type: 'text', placeholder: 'OneSignal app ID' },
+            { key: 'headings', label: 'Title', type: 'text', placeholder: 'Notification title' },
+            { key: 'contents', label: 'Body', type: 'textarea', rows: 3, placeholder: 'Optional body or use payload' },
+            { key: 'playerIdsCsv', label: 'Player IDs', type: 'text', placeholder: 'id1,id2' },
+            { key: 'url', label: 'URL', type: 'url', placeholder: 'https://example.com' }
+        ],
+        authHeader: 'Authorization',
+        authPrefix: 'Basic ',
+        buildBody: (config, clone) => {
+            const playerIds = ensureString(config.playerIdsCsv || '')
+                .split(',')
+                .map(id => id.trim())
+                .filter(Boolean);
+            return {
+                app_id: ensureString(config.appId || ''),
+                headings: { en: ensureString(config.headings || '') },
+                contents: { en: ensureString(config.contents || clone.payload || '') },
+                include_player_ids: playerIds.length > 0 ? playerIds : undefined,
+                url: ensureString(config.url || '') || undefined
+            };
+        },
+        label: 'OneSignal push',
+        successLog: 'OneSignal notification created.',
+        storeRawKey: 'oneSignalResponse',
+        tags: ['integration', 'notification', 'push']
+    },
+    {
+        id: 'notify-expo-push',
+        name: 'Notification: Expo push',
+        description: 'Send push notifications to Expo tokens.',
+        icon: 'bell',
+        accent: '#38bdf8',
+        defaultEndpoint: 'https://exp.host/--/api/v2/push/send',
+        defaultConfig: {
+            endpoint: 'https://exp.host/--/api/v2/push/send',
+            apiKey: '',
+            to: '',
+            title: '',
+            body: '',
+            dataJson: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://exp.host/--/api/v2/push/send' },
+            { key: 'apiKey', label: 'Access token', type: 'password', placeholder: 'Expo access token (optional)' },
+            { key: 'to', label: 'To', type: 'text', placeholder: 'ExponentPushToken[xxxx]' },
+            { key: 'title', label: 'Title', type: 'text', placeholder: 'Notification title' },
+            { key: 'body', label: 'Body', type: 'textarea', rows: 3, placeholder: 'Optional body or use payload' },
+            { key: 'dataJson', label: 'Data (JSON)', type: 'textarea', rows: 4, placeholder: '{"screen":"Home"}' }
+        ],
+        authHeader: 'Authorization',
+        authPrefix: 'Bearer ',
+        buildBody: (config, clone) => {
+            const dataRaw = ensureString(config.dataJson || '');
+            let data;
+            if (dataRaw) {
+                try {
+                    data = JSON.parse(dataRaw);
+                } catch (error) {
+                    clone.logs.push(`Expo push data parse failed: ${error.message}`);
+                }
+            }
+            return {
+                to: ensureString(config.to || ''),
+                title: ensureString(config.title || ''),
+                body: ensureString(config.body || clone.payload || ''),
+                data
+            };
+        },
+        label: 'Expo push',
+        successLog: 'Expo push notification sent.',
+        storeRawKey: 'expoPushResponse',
+        tags: ['integration', 'notification', 'push']
+    },
+    {
+        id: 'notify-fcm-message',
+        name: 'Notification: Firebase Cloud Messaging',
+        description: 'Send a message using the FCM legacy HTTP API.',
+        icon: 'send',
+        accent: '#0ea5e9',
+        defaultEndpoint: 'https://fcm.googleapis.com/fcm/send',
+        defaultConfig: {
+            endpoint: 'https://fcm.googleapis.com/fcm/send',
+            apiKey: '',
+            to: '',
+            title: '',
+            body: '',
+            dataJson: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://fcm.googleapis.com/fcm/send' },
+            { key: 'apiKey', label: 'Server key', type: 'password', placeholder: 'AAAA...' },
+            { key: 'to', label: 'Device token/topic', type: 'text', placeholder: '/topics/all' },
+            { key: 'title', label: 'Title', type: 'text', placeholder: 'Notification title' },
+            { key: 'body', label: 'Body', type: 'textarea', rows: 3, placeholder: 'Optional body or use payload' },
+            { key: 'dataJson', label: 'Data (JSON)', type: 'textarea', rows: 4, placeholder: '{"key":"value"}' }
+        ],
+        authHeader: 'Authorization',
+        authPrefix: 'key=',
+        buildBody: (config, clone) => {
+            const dataRaw = ensureString(config.dataJson || '');
+            let data;
+            if (dataRaw) {
+                try {
+                    data = JSON.parse(dataRaw);
+                } catch (error) {
+                    clone.logs.push(`FCM data parse failed: ${error.message}`);
+                }
+            }
+            return {
+                to: ensureString(config.to || ''),
+                notification: {
+                    title: ensureString(config.title || ''),
+                    body: ensureString(config.body || clone.payload || '')
+                },
+                data
+            };
+        },
+        label: 'FCM message',
+        successLog: 'FCM message dispatched.',
+        storeRawKey: 'fcmMessageResponse',
+        tags: ['integration', 'notification', 'push']
+    },
+    {
+        id: 'notify-webex-message',
+        name: 'Notification: Webex room message',
+        description: 'Post a markdown message to a Webex room.',
+        icon: 'message-circle',
+        accent: '#1f9fff',
+        defaultEndpoint: 'https://webexapis.com/v1/messages',
+        defaultConfig: {
+            endpoint: 'https://webexapis.com/v1/messages',
+            apiKey: '',
+            roomId: '',
+            markdown: '',
+            fileUrl: ''
+        },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'url', placeholder: 'https://webexapis.com/v1/messages' },
+            { key: 'apiKey', label: 'Access token', type: 'password', placeholder: 'Bearer token' },
+            { key: 'roomId', label: 'Room ID', type: 'text', placeholder: 'Y2lzY29zcGFyazovL3VzL1JPT00v...' },
+            { key: 'markdown', label: 'Markdown', type: 'textarea', rows: 3, placeholder: 'Optional markdown or use payload' },
+            { key: 'fileUrl', label: 'File URL', type: 'url', placeholder: 'Optional attachment URL' }
+        ],
+        authHeader: 'Authorization',
+        authPrefix: 'Bearer ',
+        buildBody: (config, clone) => ({
+            roomId: ensureString(config.roomId || ''),
+            markdown: ensureString(config.markdown || clone.payload || ''),
+            files: ensureString(config.fileUrl || '') ? [ensureString(config.fileUrl)] : undefined
+        }),
+        label: 'Webex message',
+        successLog: 'Webex message sent.',
+        storeRawKey: 'webexMessageResponse',
+        tags: ['integration', 'notification', 'webex']
+    }
+];
+
+NotificationIntegrationScenarios.forEach(scenario => {
+    AdditionalQuickActionModules.push({
+        id: scenario.id,
+        category: 'action',
+        name: scenario.name,
+        description: scenario.description,
+        icon: scenario.icon,
+        accent: scenario.accent,
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: scenario.defaultConfig,
+        form: scenario.form,
+        tags: scenario.tags,
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const result = await performHttpAction(clone, config || {}, scenario);
+            if (result) {
+                if (typeof scenario.afterSuccess === 'function') {
+                    try {
+                        scenario.afterSuccess(clone, result, config || {});
+                    } catch (error) {
+                        clone.logs.push(`Post-success handler failed: ${error.message}`);
+                    }
+                } else if (scenario.updatePayloadWithResponse) {
+                    const payload = result.payload !== undefined ? result.payload : result.data;
+                    if (payload !== undefined) {
+                        clone.payload = typeof payload === 'string'
+                            ? payload
+                            : JSON.stringify(payload, null, 2);
+                    }
+                }
+            }
+            return [clone];
+        }
+    });
+});
+
+const DataTransformationScenarios = [
+    {
+        id: 'payload-sort-lines',
+        name: 'Payload: Sort lines',
+        description: 'Sort newline-separated lines alphabetically.',
+        icon: 'list',
+        accent: '#38bdf8',
+        tags: ['payload', 'sorting'],
+        transform: (value) => {
+            return ensureString(value || '')
+                .split(/?
+/)
+                .map(line => line.trim())
+                .filter(Boolean)
+                .sort((a, b) => a.localeCompare(b))
+                .join('
+');
+        }
+    },
+    {
+        id: 'payload-unique-lines',
+        name: 'Payload: Unique lines',
+        description: 'Remove duplicate lines while preserving original order.',
+        icon: 'divide-square',
+        accent: '#0ea5e9',
+        tags: ['payload', 'dedupe'],
+        transform: (value) => {
+            const seen = new Set();
+            return ensureString(value || '')
+                .split(/?
+/)
+                .map(line => line.trim())
+                .filter(line => {
+                    if (!line) return false;
+                    if (seen.has(line)) return false;
+                    seen.add(line);
+                    return true;
+                })
+                .join('
+');
+        }
+    },
+    {
+        id: 'payload-shuffle-lines',
+        name: 'Payload: Shuffle lines',
+        description: 'Randomize the order of newline-separated lines.',
+        icon: 'shuffle',
+        accent: '#f97316',
+        tags: ['payload', 'randomize'],
+        transform: (value) => {
+            const lines = ensureString(value || '')
+                .split(/?
+/)
+                .map(line => line.trim())
+                .filter(Boolean);
+            for (let i = lines.length - 1; i > 0; i -= 1) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [lines[i], lines[j]] = [lines[j], lines[i]];
+            }
+            return lines.join('
+');
+        }
+    },
+    {
+        id: 'payload-number-lines',
+        name: 'Payload: Number lines',
+        description: 'Add incremental numbers to each non-empty line.',
+        icon: 'hash',
+        accent: '#a855f7',
+        tags: ['payload', 'formatting'],
+        defaultConfig: { start: 1, pad: 2, separator: '. ' },
+        form: [
+            { key: 'start', label: 'Starting number', type: 'number', placeholder: '1' },
+            { key: 'pad', label: 'Zero padding', type: 'number', placeholder: '2' },
+            { key: 'separator', label: 'Separator', type: 'text', placeholder: '. ' }
+        ],
+        transform: (value, config) => {
+            const start = Number.isFinite(Number(config?.start)) ? Number(config.start) : 1;
+            const pad = Number.isFinite(Number(config?.pad)) ? Number(config.pad) : 2;
+            const separator = ensureString(config?.separator || '. ');
+            return ensureString(value || '')
+                .split(/?
+/)
+                .map(line => line.trim())
+                .filter(Boolean)
+                .map((line, index) => `${String(start + index).padStart(pad, '0')}${separator}${line}`)
+                .join('
+');
+        }
+    },
+    {
+        id: 'payload-trim-line-whitespace',
+        name: 'Payload: Trim line whitespace',
+        description: 'Trim leading and trailing whitespace for every line.',
+        icon: 'scissors',
+        accent: '#10b981',
+        tags: ['payload', 'cleanup'],
+        transform: (value) => ensureString(value || '')
+            .split(/?
+/)
+            .map(line => line.trim())
+            .join('
+')
+    },
+    {
+        id: 'payload-line-prefix',
+        name: 'Payload: Add line prefix',
+        description: 'Prefix each non-empty line with custom text.',
+        icon: 'corner-down-right',
+        accent: '#f59e0b',
+        tags: ['payload', 'formatting'],
+        defaultConfig: { prefix: '- ' },
+        form: [
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: '- ' }
+        ],
+        transform: (value, config) => {
+            const prefix = ensureString(config?.prefix || '- ');
+            return ensureString(value || '')
+                .split(/?
+/)
+                .map(line => line.trim())
+                .filter(Boolean)
+                .map(line => `${prefix}${line}`)
+                .join('
+');
+        }
+    },
+    {
+        id: 'payload-line-suffix',
+        name: 'Payload: Add line suffix',
+        description: 'Append a suffix to each non-empty line.',
+        icon: 'corner-down-left',
+        accent: '#ef4444',
+        tags: ['payload', 'formatting'],
+        defaultConfig: { suffix: ';' },
+        form: [
+            { key: 'suffix', label: 'Suffix', type: 'text', placeholder: ';' }
+        ],
+        transform: (value, config) => {
+            const suffix = ensureString(config?.suffix || ';');
+            return ensureString(value || '')
+                .split(/?
+/)
+                .map(line => line.trim())
+                .filter(Boolean)
+                .map(line => `${line}${suffix}`)
+                .join('
+');
+        }
+    },
+    {
+        id: 'payload-wrap-columns',
+        name: 'Payload: Wrap columns',
+        description: 'Wrap text to a fixed column width for readability.',
+        icon: 'align-left',
+        accent: '#6366f1',
+        tags: ['payload', 'formatting'],
+        defaultConfig: { width: 80 },
+        form: [
+            { key: 'width', label: 'Column width', type: 'number', placeholder: '80' }
+        ],
+        transform: (value, config) => {
+            const width = Math.max(10, Number(config?.width) || 80);
+            const wrapLine = (line) => {
+                const words = line.split(/\s+/).filter(Boolean);
+                if (words.length === 0) return [''];
+                const rows = [];
+                let current = words.shift();
+                words.forEach(word => {
+                    if ((current + ' ' + word).length <= width) {
+                        current = `${current} ${word}`;
+                    } else {
+                        rows.push(current);
+                        current = word;
+                    }
+                });
+                rows.push(current);
+                return rows;
+            };
+            return ensureString(value || '')
+                .split(/?
+/)
+                .flatMap(wrapLine)
+                .join('
+');
+        }
+    },
+    {
+        id: 'payload-to-checklist',
+        name: 'Payload: To checklist',
+        description: 'Convert lines into a markdown checklist.',
+        icon: 'check-square',
+        accent: '#34d399',
+        tags: ['payload', 'formatting'],
+        transform: (value) => ensureString(value || '')
+            .split(/?
+/)
+            .map(line => line.trim())
+            .filter(Boolean)
+            .map(line => `- [ ] ${line}`)
+            .join('
+')
+    },
+    {
+        id: 'payload-lines-to-json-array',
+        name: 'Payload: Lines to JSON array',
+        description: 'Represent each non-empty line as a JSON array element.',
+        icon: 'code',
+        accent: '#f97316',
+        tags: ['payload', 'formatting'],
+        transform: (value) => {
+            const items = ensureString(value || '')
+                .split(/?
+/)
+                .map(line => line.trim())
+                .filter(Boolean);
+            return JSON.stringify(items, null, 2);
+        }
+    },
+    {
+        id: 'payload-lines-to-jsonl',
+        name: 'Payload: Lines to JSONL',
+        description: 'Convert lines into JSONL with a configurable field name.',
+        icon: 'file-text',
+        accent: '#facc15',
+        tags: ['payload', 'formatting'],
+        defaultConfig: { field: 'value' },
+        form: [
+            { key: 'field', label: 'Field name', type: 'text', placeholder: 'value' }
+        ],
+        transform: (value, config) => {
+            const field = ensureString(config?.field || 'value');
+            return ensureString(value || '')
+                .split(/?
+/)
+                .map(line => line.trim())
+                .filter(Boolean)
+                .map(line => JSON.stringify({ [field]: line }))
+                .join('
+');
+        }
+    },
+    {
+        id: 'payload-extract-markdown-headings',
+        name: 'Payload: Extract markdown headings',
+        description: 'List markdown headings with their levels.',
+        icon: 'type',
+        accent: '#22d3ee',
+        tags: ['payload', 'analysis'],
+        transform: (value) => {
+            const text = ensureString(value || '');
+            const headings = [];
+            const regex = /^(#{1,6})\s+(.*)$/gm;
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                const level = match[1].length;
+                const title = match[2].trim();
+                headings.push(`${'#'.repeat(level)} ${title}`);
+            }
+            return headings.join('
+');
+        }
+    },
+    {
+        id: 'payload-extract-markdown-links',
+        name: 'Payload: Extract markdown links',
+        description: 'Extract link text and URLs from markdown content.',
+        icon: 'link',
+        accent: '#0ea5e9',
+        tags: ['payload', 'analysis'],
+        transform: (value) => {
+            const text = ensureString(value || '');
+            const matches = [];
+            const regex = /\[([^\]]+)\]\(([^)]+)\)/g;
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                matches.push(`${match[1]} -> ${match[2]}`);
+            }
+            return matches.join('
+');
+        }
+    },
+    {
+        id: 'payload-extract-code-blocks',
+        name: 'Payload: Extract code blocks',
+        description: 'Return code fences detected in markdown text.',
+        icon: 'code',
+        accent: '#8b5cf6',
+        tags: ['payload', 'analysis'],
+        transform: (value) => {
+            const text = ensureString(value || '');
+            const blocks = [];
+            const regex = /```(\w+)?
+([\s\S]*?)```/g;
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                const language = match[1] ? match[1].trim() : '';
+                const body = match[2].replace(/
+$/, '');
+                blocks.push(language ? `\`\`\`${language}
+${body}
+\`\`\`` : `\`\`\`
+${body}
+\`\`\``);
+            }
+            return blocks.join('
+
+');
+        }
+    },
+    {
+        id: 'payload-summary-stats',
+        name: 'Payload: Summary stats',
+        description: 'Calculate counts for lines, words, and characters.',
+        icon: 'bar-chart-2',
+        accent: '#fb7185',
+        tags: ['payload', 'analysis'],
+        transform: (value) => {
+            const text = ensureString(value || '');
+            const lines = text ? text.split(/?
+/).filter(Boolean).length : 0;
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            const characters = text.length;
+            return `Lines: ${lines}
+Words: ${words}
+Characters: ${characters}`;
+        }
+    },
+    {
+        id: 'payload-detect-duplicate-lines',
+        name: 'Payload: Detect duplicate lines',
+        description: 'Identify duplicate lines and show their counts.',
+        icon: 'alert-circle',
+        accent: '#f87171',
+        tags: ['payload', 'analysis'],
+        transform: (value) => {
+            const counts = new Map();
+            ensureString(value || '')
+                .split(/?
+/)
+                .map(line => line.trim())
+                .filter(Boolean)
+                .forEach(line => counts.set(line, (counts.get(line) || 0) + 1));
+            const duplicates = Array.from(counts.entries())
+                .filter(([, count]) => count > 1)
+                .map(([line, count]) => `${line} ×${count}`);
+            return duplicates.length > 0 ? duplicates.join('
+') : 'No duplicates detected.';
+        }
+    },
+    {
+        id: 'payload-split-into-chunks',
+        name: 'Payload: Split into chunks',
+        description: 'Split the payload into fixed-size chunks joined by a delimiter.',
+        icon: 'columns',
+        accent: '#34d399',
+        tags: ['payload', 'formatting'],
+        defaultConfig: { chunkSize: 280, delimiter: '
+---
+' },
+        form: [
+            { key: 'chunkSize', label: 'Chunk size', type: 'number', placeholder: '280' },
+            { key: 'delimiter', label: 'Delimiter', type: 'text', placeholder: '\n---\n' }
+        ],
+        transform: (value, config) => {
+            const text = ensureString(value || '');
+            const chunkSize = Math.max(1, Number(config?.chunkSize) || 280);
+            const delimiter = ensureString(config?.delimiter || '
+---
+');
+            const chunks = [];
+            for (let i = 0; i < text.length; i += chunkSize) {
+                chunks.push(text.slice(i, i + chunkSize));
+            }
+            return chunks.join(delimiter);
+        }
+    },
+    {
+        id: 'payload-wrap-in-quotes',
+        name: 'Payload: Wrap lines in quotes',
+        description: 'Wrap each line in double quotes escaping existing quotes.',
+        icon: 'quote',
+        accent: '#facc15',
+        tags: ['payload', 'formatting'],
+        transform: (value) => ensureString(value || '')
+            .split(/?
+/)
+            .map(line => line.trim())
+            .filter(Boolean)
+            .map(line => `"${line.replace(/"/g, '\"')}"`)
+            .join('
+')
+    },
+    {
+        id: 'payload-keep-first-lines',
+        name: 'Payload: Keep first lines',
+        description: 'Keep only the first N non-empty lines.',
+        icon: 'filter',
+        accent: '#22c55e',
+        tags: ['payload', 'filter'],
+        defaultConfig: { count: 5 },
+        form: [
+            { key: 'count', label: 'Number of lines', type: 'number', placeholder: '5' }
+        ],
+        transform: (value, config) => {
+            const count = Math.max(1, Number(config?.count) || 5);
+            return ensureString(value || '')
+                .split(/?
+/)
+                .map(line => line.trim())
+                .filter(Boolean)
+                .slice(0, count)
+                .join('
+');
+        }
+    },
+    {
+        id: 'payload-keep-last-lines',
+        name: 'Payload: Keep last lines',
+        description: 'Keep only the last N non-empty lines.',
+        icon: 'filter',
+        accent: '#3b82f6',
+        tags: ['payload', 'filter'],
+        defaultConfig: { count: 5 },
+        form: [
+            { key: 'count', label: 'Number of lines', type: 'number', placeholder: '5' }
+        ],
+        transform: (value, config) => {
+            const count = Math.max(1, Number(config?.count) || 5);
+            const lines = ensureString(value || '')
+                .split(/?
+/)
+                .map(line => line.trim())
+                .filter(Boolean);
+            return lines.slice(-count).join('
+');
+        }
+    }
+];
+
+DataTransformationScenarios.forEach(scenario => {
+    AdditionalQuickActionModules.push({
+        id: scenario.id,
+        category: 'utility',
+        name: scenario.name,
+        description: scenario.description,
+        icon: scenario.icon,
+        accent: scenario.accent,
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: scenario.defaultConfig || {},
+        form: scenario.form,
+        tags: scenario.tags,
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = scenario.transform(clone.payload, config || {}, clone);
+            clone.logs.push(scenario.successLog || `${scenario.name} applied.`);
+            return [clone];
+        }
+    });
+});
+
 const QuickActionDefaultOrder = ['apps-library', 'files', 'commands', 'clipboard', 'settings'];
 
-const QuickActionModuleDefinitions = [
+function ensureString(value) {
+    if (typeof value === 'string') return value;
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'object') {
+        try {
+            return JSON.stringify(value);
+        } catch (error) {
+            return String(value);
+        }
+    }
+    return String(value);
+}
+
+function ensureArray(value) {
+    if (Array.isArray(value)) return value.slice();
+    if (value === null || value === undefined) return [];
+    if (typeof value === 'string') {
+        return value
+            .split(/\r?\n/)
+            .map(entry => entry.trim())
+            .filter(entry => entry.length > 0);
+    }
+    return [value];
+}
+
+function parseHeaderString(input = '') {
+    const headers = {};
+    ensureString(input)
+        .split(/\r?\n/)
+        .forEach(line => {
+            const trimmed = line.trim();
+            if (!trimmed) return;
+            const [key, ...rest] = trimmed.split(':');
+            if (!key) return;
+            headers[key.trim()] = rest.join(':').trim();
+        });
+    return headers;
+}
+
+async function performAiTextRequest(clone, config = {}, overrides = {}) {
+    const endpoint = ensureString(config.endpoint || overrides.defaultEndpoint || '').trim();
+    if (!endpoint) {
+        clone.logs.push(overrides.missingEndpointMessage || 'AI request skipped: endpoint is not configured.');
+        return null;
+    }
+
+    const apiKey = ensureString(config.apiKey || '').trim();
+    const payloadText = ensureString(clone.payload ?? '');
+    const templatePrompt = ensureString(config.prompt || overrides.defaultPrompt || '');
+    const finalPrompt = templatePrompt
+        ? templatePrompt.replace(/\{\{payload\}\}/g, payloadText)
+        : payloadText;
+
+    if (!finalPrompt) {
+        clone.logs.push(overrides.emptyPromptMessage || 'AI request skipped: no prompt or payload available.');
+        return null;
+    }
+
+    const headers = {
+        'Content-Type': 'application/json',
+        ...parseHeaderString(config.headers || ''),
+        ...(overrides.headers || {})
+    };
+
+    if (apiKey) {
+        if (overrides.authHeader) {
+            headers[overrides.authHeader] = overrides.authPrefix
+                ? `${overrides.authPrefix}${apiKey}`
+                : apiKey;
+        } else if (!overrides.skipAuthorizationHeader) {
+            headers.Authorization = `Bearer ${apiKey}`;
+        }
+    }
+
+    const body = {
+        model: ensureString(config.model || overrides.defaultModel || 'gpt-3.5-turbo'),
+        max_tokens: Number(config.maxTokens || overrides.defaultMaxTokens || 256) || 256,
+        temperature: Number(config.temperature ?? overrides.defaultTemperature ?? 0.7)
+    };
+
+    if (overrides.useMessages) {
+        body.messages = [
+            { role: 'system', content: overrides.systemPrompt || 'You are a helpful assistant.' },
+            { role: 'user', content: finalPrompt }
+        ];
+    } else {
+        body.prompt = finalPrompt;
+    }
+
+    if (overrides.promptField && body.prompt !== undefined) {
+        body[overrides.promptField] = body.prompt;
+        if (overrides.promptField !== 'prompt') {
+            delete body.prompt;
+        }
+    }
+
+    if (overrides.maxTokensField && body.max_tokens !== undefined) {
+        body[overrides.maxTokensField] = body.max_tokens;
+        if (overrides.maxTokensField !== 'max_tokens') {
+            delete body.max_tokens;
+        }
+    }
+
+    if (overrides.temperatureField && body.temperature !== undefined) {
+        body[overrides.temperatureField] = body.temperature;
+        if (overrides.temperatureField !== 'temperature') {
+            delete body.temperature;
+        }
+    }
+
+    if (overrides.omitModel) {
+        delete body.model;
+    }
+
+    if (overrides.bodyExtras && typeof overrides.bodyExtras === 'object') {
+        Object.assign(body, overrides.bodyExtras);
+    }
+
+    try {
+        const response = await fetch(endpoint, {
+            method: overrides.method || 'POST',
+            headers,
+            body: JSON.stringify(body)
+        });
+
+        const contentType = response.headers.get('content-type') || '';
+        let data;
+        if (contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            data = await response.text();
+        }
+
+        if (!response.ok) {
+            const message = typeof data === 'string' ? data : JSON.stringify(data);
+            throw new Error(message || `Request failed with status ${response.status}`);
+        }
+
+        let textOutput = '';
+        if (typeof data === 'string') {
+            textOutput = data;
+        } else if (Array.isArray(data?.choices)) {
+            const choice = data.choices[0];
+            textOutput = ensureString(choice?.message?.content ?? choice?.text ?? '');
+        } else if (overrides.fallbackField && data && typeof data === 'object') {
+            textOutput = ensureString(data[overrides.fallbackField]);
+        }
+
+        if (!textOutput) {
+            textOutput = ensureString(data);
+        }
+
+        return { text: textOutput, raw: data };
+    } catch (error) {
+        clone.logs.push(`${overrides.label || 'AI request'} failed: ${error.message}`);
+        return null;
+    }
+}
+
+async function performHttpAction(clone, config = {}, scenario = {}) {
+    const endpoint = scenario.buildEndpoint
+        ? ensureString(scenario.buildEndpoint(config, clone) || '').trim()
+        : ensureString(config.endpoint || scenario.defaultEndpoint || '').trim();
+
+    if (!endpoint) {
+        clone.logs.push(scenario.missingEndpointMessage || 'API request skipped: endpoint missing.');
+        return null;
+    }
+
+    const method = ensureString(config.method || scenario.defaultMethod || 'POST').toUpperCase();
+    const headers = {
+        ...(scenario.expectJson === false ? {} : { 'Content-Type': 'application/json' }),
+        ...(scenario.defaultHeaders || {}),
+        ...parseHeaderString(config.headers || '')
+    };
+
+    const apiKey = ensureString(config.apiKey || '').trim();
+    if (apiKey) {
+        if (scenario.skipAuthHeader) {
+            // handled elsewhere
+        } else if (scenario.queryAuthParam) {
+            // handled later when constructing the URL
+        } else if (scenario.authHeader) {
+            headers[scenario.authHeader] = scenario.authPrefix
+                ? `${scenario.authPrefix}${apiKey}`
+                : apiKey;
+        } else {
+            headers.Authorization = scenario.authPrefix ? `${scenario.authPrefix}${apiKey}` : `Bearer ${apiKey}`;
+        }
+    }
+
+    let bodyPayload = null;
+    if (typeof scenario.buildBody === 'function') {
+        bodyPayload = scenario.buildBody(config, clone);
+    } else if (config.payload !== undefined) {
+        bodyPayload = config.payload;
+    } else if (clone.payload !== undefined) {
+        bodyPayload = clone.payload;
+    }
+
+    const requestInit = { method, headers };
+    let finalEndpoint = endpoint;
+    const endpointIsAbsolute = /^https?:\/\//i.test(finalEndpoint);
+
+    if (scenario.queryParamsBuilder) {
+        const params = scenario.queryParamsBuilder(config, clone);
+        if (params && typeof params === 'object') {
+            const url = endpointIsAbsolute
+                ? new URL(finalEndpoint)
+                : new URL(finalEndpoint, 'https://placeholder.local');
+            const search = new URLSearchParams(url.search);
+            Object.entries(params).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== '') {
+                    search.set(key, String(value));
+                }
+            });
+            url.search = search.toString();
+            finalEndpoint = endpointIsAbsolute
+                ? url.toString()
+                : url.pathname + (url.search || '');
+        }
+    }
+
+    if (apiKey && scenario.queryAuthParam) {
+        const url = endpointIsAbsolute
+            ? new URL(finalEndpoint)
+            : new URL(finalEndpoint, 'https://placeholder.local');
+        const search = new URLSearchParams(url.search);
+        search.set(scenario.queryAuthParam, apiKey);
+        url.search = search.toString();
+        finalEndpoint = endpointIsAbsolute
+            ? url.toString()
+            : url.pathname + (url.search || '');
+    }
+
+    if (method !== 'GET') {
+        if (scenario.expectJson === false) {
+            requestInit.body = typeof bodyPayload === 'string'
+                ? bodyPayload
+                : JSON.stringify(bodyPayload ?? {});
+        } else {
+            let payloadData = bodyPayload;
+            if (payloadData === undefined || payloadData === null) {
+                payloadData = {};
+            }
+            if (typeof payloadData === 'string') {
+                try {
+                    JSON.parse(payloadData);
+                    requestInit.body = payloadData;
+                } catch (error) {
+                    payloadData = { payload: payloadData };
+                    requestInit.body = JSON.stringify(payloadData);
+                }
+            } else {
+                requestInit.body = JSON.stringify(payloadData);
+            }
+        }
+    } else if (bodyPayload && typeof bodyPayload === 'object') {
+        const url = endpointIsAbsolute
+            ? new URL(finalEndpoint)
+            : new URL(finalEndpoint, 'https://placeholder.local');
+        const search = new URLSearchParams(url.search);
+        Object.entries(bodyPayload).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '') {
+                search.set(key, String(value));
+            }
+        });
+        url.search = search.toString();
+        finalEndpoint = endpointIsAbsolute
+            ? url.toString()
+            : url.pathname + (url.search || '');
+    }
+
+    try {
+        const response = await fetch(finalEndpoint, requestInit);
+        const contentType = response.headers.get('content-type') || '';
+        let data;
+        if (scenario.responseType === 'text') {
+            data = await response.text();
+        } else if (scenario.responseType === 'json' || contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            data = await response.text();
+        }
+
+        if (!response.ok) {
+            const message = typeof data === 'string' ? data : JSON.stringify(data);
+            throw new Error(message || `Request failed with status ${response.status}`);
+        }
+
+        let payload = data;
+        if (scenario.responsePath && data && typeof data === 'object') {
+            payload = scenario.responsePath.split('.').reduce((acc, key) => {
+                if (acc && typeof acc === 'object' && key in acc) {
+                    return acc[key];
+                }
+                return null;
+            }, data);
+        }
+
+        if (typeof scenario.transformResponse === 'function') {
+            payload = scenario.transformResponse(payload, data);
+        }
+
+        if (scenario.storeRawKey) {
+            clone.vars[scenario.storeRawKey] = data;
+        }
+
+        clone.logs.push(scenario.successLog || `${scenario.label || 'API action'} completed.`);
+        return { data, payload };
+    } catch (error) {
+        clone.logs.push(`${scenario.label || 'API action'} failed: ${error.message}`);
+        return null;
+    }
+}
+
+const BaseQuickActionModuleDefinitions = [
     {
         id: 'manual-trigger',
         category: 'trigger',
@@ -564,6 +5198,11 @@ const QuickActionModuleDefinitions = [
             return [clone];
         }
     }
+];
+
+const QuickActionModuleDefinitions = [
+    ...BaseQuickActionModuleDefinitions,
+    ...AdditionalQuickActionModules
 ];
 
 const QuickActionModuleMap = new Map();
@@ -920,6 +5559,12 @@ const QuickActionLab = {
     boundOutsideClick: null,
     builderSelectWrappers: new Set(),
     boundSelectOutsideClick: null,
+    moduleSearchTermRaw: '',
+    moduleSearchTerm: '',
+    catalogSearchTermRaw: '',
+    catalogSearchTerm: '',
+    activeExplorerModule: null,
+    boundExplorerKeyDown: null,
 
     init() {
         if (this.initialized) return;
@@ -932,9 +5577,15 @@ const QuickActionLab = {
         this.iconPickerOpen = false;
         this.windowExpanded = false;
         this.builderSelectWrappers = new Set();
+        this.moduleSearchTermRaw = '';
+        this.moduleSearchTerm = '';
+        this.catalogSearchTermRaw = '';
+        this.catalogSearchTerm = '';
+        this.activeExplorerModule = null;
         this.elements = {
             activeList: Utils.getElement('#quick-action-active-list'),
             catalog: Utils.getElement('#quick-action-catalog'),
+            catalogSearch: Utils.getElement('#quick-action-catalog-search'),
             openBuilder: Utils.getElement('#open-quick-action-builder'),
             importToggle: Utils.getElement('#import-quick-action'),
             importArea: Utils.getElement('#quick-action-import-area'),
@@ -965,7 +5616,15 @@ const QuickActionLab = {
             iconPreview: Utils.getElement('#builder-icon-preview'),
             iconPickerToggle: Utils.getElement('#builder-icon-picker-toggle'),
             iconPicker: Utils.getElement('#builder-icon-picker'),
-            inspector: document.querySelector('.builder-inspector')
+            inspector: document.querySelector('.builder-inspector'),
+            moduleSearchInput: Utils.getElement('#builder-module-search'),
+            openBlockExplorer: Utils.getElement('#open-block-explorer'),
+            blockExplorerModal: Utils.getElement('#block-explorer-modal'),
+            blockExplorerList: Utils.getElement('#block-explorer-items'),
+            blockExplorerPreview: Utils.getElement('#block-explorer-preview'),
+            blockExplorerSearch: Utils.getElement('#block-explorer-search'),
+            blockExplorerClose: Utils.getElement('#close-block-explorer'),
+            blockExplorerBackdrop: Utils.getElement('#block-explorer-modal .block-explorer-backdrop')
         };
 
         this.elements.dialog = document.querySelector('#quick-action-builder-modal .builder-dialog');
@@ -989,6 +5648,8 @@ const QuickActionLab = {
 
         QuickActionStore.ensureStructure();
         this.attachEvents();
+        this.setModuleSearchTerm('', null);
+        this.setCatalogSearchTerm('', null);
         this.initialized = true;
         this.buildIconPicker();
         this.renderAll();
@@ -1008,6 +5669,18 @@ const QuickActionLab = {
         this.elements.importToggle?.addEventListener('click', () => this.toggleImportArea(true));
         this.elements.importCancel?.addEventListener('click', () => this.toggleImportArea(false));
         this.elements.importConfirm?.addEventListener('click', () => this.handleImport());
+
+        this.elements.catalogSearch?.addEventListener('input', Utils.debounce((event) => {
+            this.setCatalogSearchTerm(event.target.value, 'input');
+        }, 120));
+
+        this.elements.catalogSearch?.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                this.setCatalogSearchTerm('', 'input');
+                event.target.blur();
+            }
+        });
 
         this.elements.actionLabelInput?.addEventListener('input', (event) => {
             if (!this.builderState) return;
@@ -1046,6 +5719,24 @@ const QuickActionLab = {
             if (!this.builderState) return;
             this.builderState.metadata.accent = event.target.value || '#5865f2';
         });
+
+        this.elements.moduleSearchInput?.addEventListener('input', (event) => {
+            this.setModuleSearchTerm(event.target.value, 'builder');
+        });
+
+        this.elements.openBlockExplorer?.addEventListener('click', () => this.openBlockExplorer());
+        this.elements.blockExplorerClose?.addEventListener('click', () => this.closeBlockExplorer());
+        this.elements.blockExplorerBackdrop?.addEventListener('click', () => this.closeBlockExplorer());
+        this.elements.blockExplorerSearch?.addEventListener('input', (event) => this.setModuleSearchTerm(event.target.value, 'explorer'));
+
+        if (!this.boundExplorerKeyDown) {
+            this.boundExplorerKeyDown = (event) => {
+                if (event.key === 'Escape') {
+                    this.closeBlockExplorer();
+                }
+            };
+            document.addEventListener('keydown', this.boundExplorerKeyDown);
+        }
 
         this.elements.closeModal?.addEventListener('click', () => this.closeBuilder());
         this.elements.exportAction?.addEventListener('click', () => this.exportCurrentAction());
@@ -1098,6 +5789,7 @@ const QuickActionLab = {
         this.updateBuilderAccessState();
         this.renderActiveList();
         this.renderCatalog();
+        this.renderBlockExplorer();
     },
 
     updateBuilderAccessState() {
@@ -1219,7 +5911,20 @@ const QuickActionLab = {
         container.innerHTML = '';
         const activeSet = new Set(QuickActionStore.getActiveIds());
 
-        QuickActionCatalog.forEach(item => {
+        const items = QuickActionCatalog.filter(item => this.actionMatchesCatalogSearch(item, this.catalogSearchTerm));
+
+        if (!items.length) {
+            const empty = Utils.createElement('div', {
+                className: 'quick-action-catalog-empty',
+                text: this.catalogSearchTerm
+                    ? 'No quick actions match this search yet.'
+                    : 'No quick actions available at the moment.'
+            });
+            container.appendChild(empty);
+            return;
+        }
+
+        items.forEach(item => {
             const card = Utils.createElement('div', { className: 'quick-action-template' });
             const iconWrap = Utils.createElement('div', { className: 'template-icon' });
             if (window.feather?.icons?.[item.icon || 'zap']) {
@@ -1466,7 +6171,11 @@ const QuickActionLab = {
         lists.forEach(({ container, items }) => {
             if (!container) return;
             container.innerHTML = '';
+            const query = this.moduleSearchTerm;
+            let matchCount = 0;
             items.forEach(module => {
+                if (query && !this.moduleMatchesSearch(module, query)) return;
+                matchCount += 1;
                 const item = Utils.createElement('li', { className: 'builder-module-item' });
                 item.setAttribute('data-module-id', module.id);
                 const title = Utils.createElement('strong', { text: this.getModuleName(module) });
@@ -1476,7 +6185,197 @@ const QuickActionLab = {
                 item.addEventListener('click', () => this.addNode(module.id));
                 container.appendChild(item);
             });
+            if (matchCount === 0) {
+                const empty = Utils.createElement('li', { className: 'builder-module-item empty' });
+                empty.textContent = this.moduleSearchTerm
+                    ? 'No blocks match your search yet.'
+                    : 'No blocks available.';
+                container.appendChild(empty);
+            }
         });
+    },
+
+    setModuleSearchTerm(value = '', source = null) {
+        const raw = ensureString(value);
+        this.moduleSearchTermRaw = raw;
+        this.moduleSearchTerm = raw.trim().toLowerCase();
+        if (source !== 'builder' && this.elements.moduleSearchInput) {
+            this.elements.moduleSearchInput.value = raw;
+        }
+        if (source !== 'explorer' && this.elements.blockExplorerSearch) {
+            this.elements.blockExplorerSearch.value = raw;
+        }
+        this.renderModuleList();
+        this.renderBlockExplorer();
+    },
+
+    setCatalogSearchTerm(value = '', source = null) {
+        const raw = ensureString(value);
+        this.catalogSearchTermRaw = raw;
+        this.catalogSearchTerm = raw.trim().toLowerCase();
+        if (source !== 'input' && this.elements.catalogSearch) {
+            this.elements.catalogSearch.value = raw;
+        }
+        this.renderCatalog();
+    },
+
+    moduleMatchesSearch(module, query = '') {
+        if (!query) return true;
+        const lower = query.toLowerCase();
+        const name = this.getModuleName(module).toLowerCase();
+        const description = this.getModuleDescription(module).toLowerCase();
+        const id = ensureString(module?.id || '').toLowerCase();
+        const tags = (module?.tags || []).join(' ').toLowerCase();
+        const category = ensureString(module?.category || '').toLowerCase();
+        const keywords = this.getModuleKeywords(module).toLowerCase();
+        return [name, description, id, tags, category, keywords].some(text => text.includes(lower));
+    },
+
+    actionMatchesCatalogSearch(item, query = '') {
+        if (!query) return true;
+        const lower = query.toLowerCase();
+        const parts = [
+            this.getActionTitle(item).toLowerCase(),
+            this.getActionDescription(item).toLowerCase(),
+            ensureString(item?.id || '').toLowerCase(),
+            (item?.tags || []).join(' ').toLowerCase()
+        ];
+        return parts.some(text => text.includes(lower));
+    },
+
+    getModuleKeywords(module) {
+        const parts = [];
+        if (Array.isArray(module?.tags)) parts.push(...module.tags.map(tag => ensureString(tag)));
+        if (module?.icon) parts.push(ensureString(module.icon));
+        if (module?.defaultConfig && typeof module.defaultConfig === 'object') {
+            parts.push(...Object.keys(module.defaultConfig).map(key => ensureString(key)));
+        }
+        return parts.join(' ');
+    },
+
+    openBlockExplorer() {
+        if (!this.elements.blockExplorerModal) return;
+        this.elements.blockExplorerModal.classList.add('active');
+        this.elements.blockExplorerModal.setAttribute('aria-hidden', 'false');
+        this.selectExplorerModule(this.activeExplorerModule || QuickActionModuleDefinitions[0]?.id || null);
+        this.renderBlockExplorer();
+        if (this.elements.blockExplorerSearch) {
+            this.elements.blockExplorerSearch.focus();
+        }
+    },
+
+    closeBlockExplorer() {
+        if (!this.elements.blockExplorerModal) return;
+        this.elements.blockExplorerModal.classList.remove('active');
+        this.elements.blockExplorerModal.setAttribute('aria-hidden', 'true');
+    },
+
+    selectExplorerModule(moduleId) {
+        if (moduleId) {
+            this.activeExplorerModule = moduleId;
+        }
+        this.renderBlockExplorer();
+    },
+
+    renderBlockExplorer() {
+        const listEl = this.elements.blockExplorerList;
+        const previewEl = this.elements.blockExplorerPreview;
+        if (!listEl || !previewEl) return;
+
+        const query = this.moduleSearchTerm;
+        listEl.innerHTML = '';
+
+        const modules = QuickActionModuleDefinitions.filter(module => this.moduleMatchesSearch(module, query));
+
+        if (!modules.length) {
+            const empty = Utils.createElement('li', { className: 'block-explorer-item empty' });
+            empty.textContent = this.moduleSearchTerm
+                ? 'No blocks found for this search.'
+                : 'Block explorer is loading new modules.';
+            listEl.appendChild(empty);
+        } else {
+            modules.forEach(module => {
+                const li = Utils.createElement('li', { className: 'block-explorer-item' });
+                const button = document.createElement('button');
+                button.setAttribute('type', 'button');
+                button.setAttribute('data-module-id', module.id);
+                if (module.id === this.activeExplorerModule) {
+                    button.setAttribute('aria-current', 'true');
+                }
+                button.appendChild(Utils.createElement('strong', { text: this.getModuleName(module) }));
+                button.appendChild(Utils.createElement('span', { text: this.getModuleDescription(module) }));
+                button.addEventListener('click', () => this.selectExplorerModule(module.id));
+                li.appendChild(button);
+                listEl.appendChild(li);
+            });
+        }
+
+        if (!this.activeExplorerModule || !modules.some(module => module.id === this.activeExplorerModule)) {
+            this.activeExplorerModule = modules[0]?.id || null;
+        }
+
+        previewEl.innerHTML = '';
+
+        if (!this.activeExplorerModule) {
+            previewEl.appendChild(Utils.createElement('p', { text: 'Select a block to see its details.' }));
+            return;
+        }
+
+        const module = QuickActionModuleMap.get(this.activeExplorerModule) || QuickActionModuleDefinitions.find(item => item.id === this.activeExplorerModule);
+        if (!module) {
+            previewEl.appendChild(Utils.createElement('p', { text: 'Block definition missing or unavailable.' }));
+            return;
+        }
+
+        const title = Utils.createElement('h3', { text: this.getModuleName(module) });
+        previewEl.appendChild(title);
+        previewEl.appendChild(Utils.createElement('p', { text: this.getModuleDescription(module) }));
+
+        const meta = Utils.createElement('div', { className: 'block-explorer-meta' });
+        if (module.category) meta.appendChild(Utils.createElement('span', { text: `Category: ${module.category}` }));
+        if (module.icon) meta.appendChild(Utils.createElement('span', { text: `Icon: ${module.icon}` }));
+        meta.appendChild(Utils.createElement('span', { text: `Inputs: ${(module.inputs || []).length}` }));
+        meta.appendChild(Utils.createElement('span', { text: `Outputs: ${(module.outputs || []).length}` }));
+        previewEl.appendChild(meta);
+
+        if (Array.isArray(module.tags) && module.tags.length) {
+            const tagWrap = Utils.createElement('div', { className: 'block-explorer-tags' });
+            module.tags.forEach(tag => tagWrap.appendChild(Utils.createElement('span', { text: tag })));
+            previewEl.appendChild(tagWrap);
+        }
+
+        if (module.defaultConfig && typeof module.defaultConfig === 'object') {
+            const table = document.createElement('table');
+            const tbody = document.createElement('tbody');
+            Object.entries(module.defaultConfig).forEach(([key, value]) => {
+                const row = document.createElement('tr');
+                const keyCell = document.createElement('th');
+                keyCell.textContent = key;
+                const valueCell = document.createElement('td');
+                valueCell.textContent = typeof value === 'object' ? JSON.stringify(value) : String(value);
+                row.appendChild(keyCell);
+                row.appendChild(valueCell);
+                tbody.appendChild(row);
+            });
+            table.appendChild(tbody);
+            previewEl.appendChild(table);
+        }
+
+        const actions = Utils.createElement('div', { className: 'block-explorer-preview-actions' });
+        const addButton = Utils.createElement('button', { text: 'Add block to canvas' });
+        addButton.addEventListener('click', () => {
+            this.addNode(module.id);
+            this.closeBlockExplorer();
+        });
+        const selectButton = Utils.createElement('button', { text: 'Focus in library' });
+        selectButton.addEventListener('click', () => {
+            const item = this.elements.moduleSearchInput;
+            if (item) item.focus();
+            this.closeBlockExplorer();
+        });
+        actions.appendChild(addButton);
+        actions.appendChild(selectButton);
+        previewEl.appendChild(actions);
     },
 
     renderCanvas() {
