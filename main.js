@@ -2956,6 +2956,55 @@ const SubscriptionPortal = {
     }
 };
 
+const BlockLibraryWindow = {
+    window: null,
+    modules: [],
+    open(modules = []) {
+        this.modules = Array.isArray(modules) ? modules : [];
+        if (this.window && !this.window.isDestroyed()) {
+            this.window.focus();
+            this.sendData();
+            return;
+        }
+
+        this.window = new BrowserWindow({
+            width: 980,
+            height: 720,
+            minWidth: 760,
+            minHeight: 600,
+            show: false,
+            title: 'Block library',
+            backgroundColor: '#0f172a',
+            autoHideMenuBar: true,
+            webPreferences: {
+                nodeIntegration: true,
+                contextIsolation: false
+            }
+        });
+
+        this.window.loadFile(path.join(__dirname, 'block-library.html')).catch(error => {
+            Logger.error(`Failed to load block library: ${error.message}`);
+        });
+
+        this.window.once('ready-to-show', () => {
+            if (this.window && !this.window.isDestroyed()) {
+                this.window.show();
+                this.sendData();
+            }
+        });
+
+        this.window.on('closed', () => {
+            this.window = null;
+            this.modules = [];
+        });
+    },
+    sendData() {
+        if (this.window && !this.window.isDestroyed()) {
+            this.window.webContents.send('block-library-data', this.modules);
+        }
+    }
+};
+
 ipcMain.on('update-setting', (event, key, value) => {
     settingsManager.updateSetting(key, value);
     // УДАЛЕНО: больше не меняем размер окна здесь, чтобы настройки не "прыгали"
@@ -2965,6 +3014,10 @@ ipcMain.on('update-setting', (event, key, value) => {
 });
 ipcMain.on('open-subscription-portal', () => {
     SubscriptionPortal.open();
+});
+ipcMain.handle('open-block-library-window', (_event, modules) => {
+    BlockLibraryWindow.open(modules);
+    return true;
 });
 ipcMain.on('open-auxiliary-window', (event, type) => {
     // This is now handled by the renderer process.
@@ -3026,6 +3079,14 @@ ipcMain.on('open-item', (event, itemPath) => {
 });
 ipcMain.on('copy-to-clipboard', (event, text) => clipboard.writeText(text));
 ipcMain.on('rebuild-index', () => FileIndexer.startIndexing(true));
+ipcMain.on('block-library-select', (_event, moduleId) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('block-library-select', moduleId);
+    }
+    if (BlockLibraryWindow.window && !BlockLibraryWindow.window.isDestroyed()) {
+        BlockLibraryWindow.window.close();
+    }
+});
 ipcMain.handle('quick-action-run-command', async (event, command) => {
     if (typeof command !== 'string' || !command.trim()) {
         return { success: false, error: 'Invalid command' };

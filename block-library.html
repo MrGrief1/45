@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block Library</title>
+    <link rel="stylesheet" href="aux-window-template.css">
+    <link rel="stylesheet" href="block-library.css">
+</head>
+<body>
+    <div class="library-shell">
+        <header class="library-header">
+            <div class="library-header-text">
+                <h1>Block library</h1>
+                <p>Browse reusable triggers, actions and utilities for your quick actions.</p>
+            </div>
+            <div class="library-search-group">
+                <input type="search" id="library-search" placeholder="Search blocks">
+                <select id="library-category-filter" aria-label="Filter by category">
+                    <option value="all">All categories</option>
+                </select>
+            </div>
+        </header>
+        <main class="library-content">
+            <aside class="library-module-list" aria-label="Available blocks">
+                <ul id="library-module-list"></ul>
+            </aside>
+            <section class="library-detail" aria-live="polite">
+                <div id="library-detail-placeholder" class="library-detail-placeholder">
+                    <h2>Select a block</h2>
+                    <p>Choose a block on the left to view its details and add it to the builder.</p>
+                </div>
+                <div id="library-detail-content" class="library-detail-content" hidden>
+                    <header class="library-detail-header">
+                        <div class="library-detail-icon" id="library-detail-icon"></div>
+                        <div>
+                            <h2 id="library-detail-title"></h2>
+                            <p id="library-detail-subtitle"></p>
+                        </div>
+                    </header>
+                    <div id="library-detail-tags" class="library-detail-tags"></div>
+                    <section>
+                        <h3>Configuration fields</h3>
+                        <ul id="library-detail-fields" class="library-fields"></ul>
+                    </section>
+                    <div class="library-actions">
+                        <button type="button" id="library-add-block">Add to builder</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script>
+        require('./block-library.js');
+    </script>
+</body>
+</html>
