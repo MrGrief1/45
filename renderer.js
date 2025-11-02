@@ -521,6 +521,19 @@ const QuickActionApi = {
     }
 };
 
+function normalizeModuleKey(id = '') {
+    return String(id).replace(/[^a-z0-9]+/gi, '_').toLowerCase();
+}
+
+function ensureModuleLocalization(modules = []) {
+    modules.forEach(module => {
+        if (!module || !module.id) return;
+        const safeKey = normalizeModuleKey(module.id);
+        module.nameKey = module.nameKey || `qa_module_${safeKey}_name`;
+        module.descriptionKey = module.descriptionKey || `qa_module_${safeKey}_description`;
+    });
+}
+
 function createAiChatModule({ id, name, description, icon, accent, tags = [], systemPrompt, userPrompt, extraConfig = [] }) {
     const extraDefaults = {};
     const extraFormFields = extraConfig.map(field => {
@@ -540,11 +553,15 @@ function createAiChatModule({ id, name, description, icon, accent, tags = [], sy
         };
     });
 
+    const localizationKey = normalizeModuleKey(id);
+
     return {
         id,
         category: 'action',
         name,
+        nameKey: `qa_module_${localizationKey}_name`,
         description,
+        descriptionKey: `qa_module_${localizationKey}_description`,
         icon,
         accent,
         tags,
@@ -621,11 +638,15 @@ function createAiChatModule({ id, name, description, icon, accent, tags = [], sy
 }
 
 function createHttpModule({ id, name, description, method, icon, accent, tags = [], includeBody = false, bodyPlaceholder = '{"key":"value"}' }) {
+    const localizationKey = normalizeModuleKey(id);
+
     return {
         id,
         category: 'action',
         name,
+        nameKey: `qa_module_${localizationKey}_name`,
         description,
+        descriptionKey: `qa_module_${localizationKey}_description`,
         icon,
         accent,
         tags,
@@ -3328,6 +3349,7 @@ const QuickActionAdditionalModules = [
 ];
 
 QuickActionModuleDefinitions.push(...QuickActionAdditionalModules);
+ensureModuleLocalization(QuickActionModuleDefinitions);
 
 const QuickActionModuleMap = new Map();
 const QuickActionModulesByCategory = { triggers: [], actions: [], utilities: [] };
