@@ -417,6 +417,16 @@
             </header>
             <div class="builder-body">
                 <aside class="builder-sidebar">
+                    <div class="builder-sidebar-search">
+                        <div class="builder-sidebar-search-input">
+                            <i data-feather="search" class="icon"></i>
+                            <input type="search" id="builder-module-search" placeholder="Search blocks" aria-label="Search blocks">
+                        </div>
+                        <div class="builder-sidebar-search-actions">
+                            <button id="builder-module-search-clear" class="builder-toolbar-button" type="button">Clear</button>
+                            <button id="builder-open-library-window" class="builder-toolbar-button" type="button">Open library</button>
+                        </div>
+                    </div>
                     <div class="builder-sidebar-section">
                         <h3>Triggers</h3>
                         <ul id="builder-trigger-list" class="builder-module-list"></ul>
@@ -484,6 +494,25 @@
                     <button id="builder-save-action" class="settings-button" data-i18n="quick_actions_builder_save">Add to quick action bar</button>
                 </div>
             </footer>
+            <div id="builder-module-preview" class="builder-module-preview" aria-hidden="true">
+                <div class="builder-module-preview-dialog" role="dialog" aria-modal="true">
+                    <header class="builder-module-preview-header">
+                        <div class="builder-module-preview-title">
+                            <h3 id="builder-module-preview-name"></h3>
+                            <p id="builder-module-preview-description"></p>
+                        </div>
+                        <div class="builder-module-preview-actions">
+                            <button id="builder-module-preview-add" class="settings-button" type="button">Add to canvas</button>
+                            <button id="builder-module-preview-open-window" class="settings-button secondary" type="button">Open in window</button>
+                            <button id="builder-module-preview-close" class="builder-header-button" type="button" title="Close preview">×</button>
+                        </div>
+                    </header>
+                    <div class="builder-module-preview-body">
+                        <dl id="builder-module-preview-details" class="builder-module-preview-details"></dl>
+                        <div id="builder-module-preview-form" class="builder-module-preview-form"></div>
+                    </div>
+                </div>
+            </div>
             <div class="builder-resize-handle" aria-hidden="true"></div>
         </div>
     </div>

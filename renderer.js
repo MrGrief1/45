@@ -1,5 +1,7 @@
 // renderer.js
 const { ipcRenderer, shell } = require('electron');
+const { randomUUID, randomBytes } = require('crypto');
+const math = require('mathjs');
 
 // =================================================================================
 // === Глобальное Состояние и Утилиты ===
@@ -66,6 +68,64 @@ const Utils = {
         const b = parseInt(clean.slice(4, 6), 16);
         if ([r, g, b].some(Number.isNaN)) return null;
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+};
+
+const BuilderRuntimeUtils = {
+    toText(value) {
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'string') return value;
+        if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+        try {
+            return JSON.stringify(value, null, 2);
+        } catch (error) {
+            return String(value);
+        }
+    },
+
+    parseJson(value) {
+        if (value === null || value === undefined) return null;
+        if (typeof value === 'object') return value;
+        try {
+            return JSON.parse(value);
+        } catch (error) {
+            return null;
+        }
+    },
+
+    splitToList(value, delimiter = '\n', { trim = true } = {}) {
+        const text = BuilderRuntimeUtils.toText(value);
+        if (!text) return [];
+        const raw = text.split(delimiter);
+        if (!trim) return raw;
+        return raw.map(item => item.trim()).filter(Boolean);
+    },
+
+    slugify(value) {
+        const text = BuilderRuntimeUtils.toText(value).toLowerCase();
+        return text.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').slice(0, 120);
+    },
+
+    randomString(length = 12, alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') {
+        if (length <= 0 || !alphabet) return '';
+        const buffer = randomBytes(length);
+        const chars = [];
+        for (let i = 0; i < length; i += 1) {
+            chars.push(alphabet[buffer[i] % alphabet.length]);
+        }
+        return chars.join('');
+    },
+
+    toNumber(value) {
+        const num = Number(value);
+        return Number.isFinite(num) ? num : null;
+    },
+
+    toBoolean(value) {
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'number') return value !== 0;
+        const text = BuilderRuntimeUtils.toText(value).toLowerCase();
+        return ['true', '1', 'yes', 'on'].includes(text);
     }
 };
 
@@ -215,7 +275,44 @@ const QuickActionCatalog = [
 
 const QuickActionDefaultOrder = ['apps-library', 'files', 'commands', 'clipboard', 'settings'];
 
-const QuickActionModuleDefinitions = [
+function createModuleDefinition(definition) {
+    const {
+        runner,
+        inputs,
+        outputs,
+        defaultConfig,
+        form,
+        tags,
+        ...rest
+    } = definition;
+    const moduleDefinition = {
+        inputs: inputs || [{ id: 'input', label: 'Input' }],
+        outputs: outputs || [{ id: 'next', label: 'Next' }],
+        defaultConfig: defaultConfig || {},
+        form: form || [],
+        tags: tags || [],
+        ...rest
+    };
+    moduleDefinition.run = async (context, config, node) => {
+        const clone = QuickActionContext.clone(context);
+        if (typeof runner === 'function') {
+            const result = await runner(clone, config || {}, node || {});
+            if (Array.isArray(result)) {
+                if (result.length === 0) {
+                    return [clone];
+                }
+                return result.map(item => QuickActionContext.clone(item));
+            }
+            if (result && typeof result === 'object' && result.__passThrough) {
+                return [];
+            }
+        }
+        return [clone];
+    };
+    return moduleDefinition;
+}
+
+const LegacyModuleBlueprints = [
     {
         id: 'manual-trigger',
         category: 'trigger',
@@ -228,9 +325,7 @@ const QuickActionModuleDefinitions = [
         inputs: [],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: {},
-        run: async (context) => {
-            return [QuickActionContext.clone(context)];
-        }
+        runner: async () => {}
     },
     {
         id: 'open-panel',
@@ -257,12 +352,11 @@ const QuickActionModuleDefinitions = [
                 ]
             }
         ],
-        run: async (context, config) => {
-            const clone = QuickActionContext.clone(context);
+        runner: async (context, config) => {
             if (config?.panel) {
                 AuxPanelManager.openPanel(config.panel);
+                context.logs.push(`Opened panel ${config.panel}.`);
             }
-            return [clone];
         }
     },
     {
@@ -280,16 +374,19 @@ const QuickActionModuleDefinitions = [
         form: [
             { key: 'url', label: 'Website URL', type: 'text', placeholder: 'https://example.com' }
         ],
-        run: async (context, config) => {
-            const clone = QuickActionContext.clone(context);
-            if (config?.url) {
-                try {
-                    await shell.openExternal(config.url);
-                } catch (error) {
-                    console.warn('Failed to open URL', error);
-                }
+        runner: async (context, config) => {
+            const targetUrl = String(config?.url || '').trim();
+            if (!targetUrl) {
+                context.logs.push('Open URL skipped: missing address.');
+                return;
             }
-            return [clone];
+            try {
+                await shell.openExternal(targetUrl);
+                context.logs.push(`Opened URL ${targetUrl}.`);
+            } catch (error) {
+                console.warn('Failed to open URL', error);
+                context.logs.push(`Open URL failed: ${error.message}`);
+            }
         }
     },
     {
@@ -307,13 +404,14 @@ const QuickActionModuleDefinitions = [
         form: [
             { key: 'text', label: 'Text', type: 'textarea', rows: 4, placeholder: 'Enter text to copy' }
         ],
-        run: async (context, config) => {
-            const clone = QuickActionContext.clone(context);
+        runner: async (context, config) => {
             if (config?.text) {
                 ipcRenderer.send('copy-to-clipboard', config.text);
-                clone.payload = config.text;
+                context.payload = config.text;
+                context.logs.push('Copied configured text to clipboard.');
+            } else {
+                context.logs.push('Copy text skipped: nothing to copy.');
             }
-            return [clone];
         }
     },
     {
@@ -331,14 +429,17 @@ const QuickActionModuleDefinitions = [
         form: [
             { key: 'command', label: 'Command', type: 'textarea', rows: 3, placeholder: 'echo FlashSearch quick action' }
         ],
-        run: async (context, config) => {
-            const clone = QuickActionContext.clone(context);
-            if (config?.command) {
-                ipcRenderer.invoke('quick-action-run-command', config.command).catch(error => {
-                    console.error('Command execution failed', error);
-                });
+        runner: async (context, config) => {
+            const command = String(config?.command || '').trim();
+            if (!command) {
+                context.logs.push('Run command skipped: command is empty.');
+                return;
             }
-            return [clone];
+            ipcRenderer.invoke('quick-action-run-command', command).catch(error => {
+                console.error('Command execution failed', error);
+                context.logs.push(`Command execution failed: ${error.message}`);
+            });
+            context.logs.push(`Command "${command}" sent to executor.`);
         }
     },
     {
@@ -357,15 +458,14 @@ const QuickActionModuleDefinitions = [
             { key: 'title', label: 'Title', type: 'text', placeholder: 'FlashSearch' },
             { key: 'body', label: 'Message', type: 'textarea', rows: 3, placeholder: 'Workflow finished!' }
         ],
-        run: async (context, config) => {
-            const clone = QuickActionContext.clone(context);
+        runner: async (context, config) => {
             if (Notification.permission === 'default') {
                 Notification.requestPermission().catch(() => {});
             }
             if (Notification.permission === 'granted') {
                 new Notification(config?.title || 'FlashSearch', { body: config?.body || '' });
+                context.logs.push('Desktop notification displayed.');
             }
-            return [clone];
         }
     },
     {
@@ -383,13 +483,12 @@ const QuickActionModuleDefinitions = [
         form: [
             { key: 'milliseconds', label: 'Delay (ms)', type: 'number', min: 0 }
         ],
-        run: async (context, config) => {
-            const clone = QuickActionContext.clone(context);
+        runner: async (context, config) => {
             const timeout = Math.max(0, parseInt(config?.milliseconds, 10) || 0);
             if (timeout > 0) {
                 await new Promise(resolve => setTimeout(resolve, timeout));
+                context.logs.push(`Paused for ${timeout}ms.`);
             }
-            return [clone];
         }
     },
     {
@@ -407,10 +506,11 @@ const QuickActionModuleDefinitions = [
         form: [
             { key: 'payload', label: 'Payload value', type: 'textarea', rows: 3, placeholder: 'Value to store for later blocks' }
         ],
-        run: async (context, config) => {
-            const clone = QuickActionContext.clone(context);
-            clone.payload = config?.payload ?? clone.payload;
-            return [clone];
+        runner: async (context, config) => {
+            if (config?.payload !== undefined) {
+                context.payload = config.payload;
+                context.logs.push('Payload replaced with configured value.');
+            }
         }
     },
     {
@@ -425,12 +525,13 @@ const QuickActionModuleDefinitions = [
         inputs: [{ id: 'input', label: 'Input' }],
         outputs: [{ id: 'next', label: 'Next' }],
         defaultConfig: {},
-        run: async (context) => {
-            const clone = QuickActionContext.clone(context);
-            if (clone?.payload) {
-                ipcRenderer.send('copy-to-clipboard', clone.payload);
+        runner: async (context) => {
+            if (context?.payload) {
+                ipcRenderer.send('copy-to-clipboard', context.payload);
+                context.logs.push('Payload copied to clipboard.');
+            } else {
+                context.logs.push('Payload copy skipped: payload is empty.');
             }
-            return [clone];
         }
     },
     {
@@ -457,12 +558,11 @@ const QuickActionModuleDefinitions = [
                 ]
             }
         ],
-        run: async (context, config) => {
-            const clone = QuickActionContext.clone(context);
+        runner: async (context, config) => {
             const url = String(config?.url || '').trim();
             if (!url) {
-                clone.logs.push('Fetch JSON skipped: URL is empty.');
-                return [clone];
+                context.logs.push('Fetch JSON skipped: URL is empty.');
+                return;
             }
             try {
                 const response = await fetch(url);
@@ -470,13 +570,12 @@ const QuickActionModuleDefinitions = [
                 const formatted = config?.format === 'raw'
                     ? JSON.stringify(data)
                     : JSON.stringify(data, null, 2);
-                clone.payload = formatted;
-                clone.vars.lastResponse = data;
-                clone.logs.push(`Fetched data from ${url}`);
+                context.payload = formatted;
+                context.vars.lastResponse = data;
+                context.logs.push(`Fetched data from ${url}`);
             } catch (error) {
-                clone.logs.push(`Fetch JSON failed: ${error.message}`);
+                context.logs.push(`Fetch JSON failed: ${error.message}`);
             }
-            return [clone];
         }
     },
     {
@@ -504,12 +603,11 @@ const QuickActionModuleDefinitions = [
                 ]
             }
         ],
-        run: async (context, config) => {
-            const clone = QuickActionContext.clone(context);
+        runner: async (context, config) => {
             const mode = config?.mode || 'uppercase';
-            const source = typeof clone.payload === 'string'
-                ? clone.payload
-                : String(clone.payload ?? '');
+            const source = typeof context.payload === 'string'
+                ? context.payload
+                : String(context.payload ?? '');
             let result = source;
             switch (mode) {
                 case 'lowercase':
@@ -528,9 +626,8 @@ const QuickActionModuleDefinitions = [
                     result = source.toUpperCase();
                     break;
             }
-            clone.payload = result;
-            clone.logs.push(`Transformed payload using ${mode}`);
-            return [clone];
+            context.payload = result;
+            context.logs.push(`Transformed payload using ${mode}`);
         }
     },
     {
@@ -549,22 +646,2162 @@ const QuickActionModuleDefinitions = [
             { key: 'key', label: 'Variable name', type: 'text', placeholder: 'project' },
             { key: 'value', label: 'Value', type: 'textarea', rows: 2, placeholder: 'Value to store' }
         ],
-        run: async (context, config) => {
-            const clone = QuickActionContext.clone(context);
+        runner: async (context, config) => {
             const key = String(config?.key || '').trim();
             if (!key) {
-                clone.logs.push('Store variable skipped: missing name.');
-                return [clone];
+                context.logs.push('Store variable skipped: missing name.');
+                return;
             }
-            clone.vars[key] = config?.value ?? '';
-            if (!clone.payload) {
-                clone.payload = config?.value ?? '';
+            context.vars[key] = config?.value ?? '';
+            if (!context.payload) {
+                context.payload = config?.value ?? '';
             }
-            clone.logs.push(`Stored variable "${key}"`);
-            return [clone];
+            context.logs.push(`Stored variable "${key}"`);
         }
     }
 ];
+
+const LegacyModuleDefinitions = LegacyModuleBlueprints.map(createModuleDefinition);
+
+const TriggerBlueprints = [
+    {
+        id: 'schedule-trigger',
+        category: 'trigger',
+        name: 'Scheduled trigger',
+        description: 'Start a workflow according to a natural language schedule.',
+        icon: 'calendar',
+        accent: '#f97316',
+        tags: ['automation', 'time', 'trigger'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { schedule: 'Every weekday at 09:00', timezone: 'Europe/Moscow' },
+        form: [
+            { key: 'schedule', label: 'Schedule', type: 'text', placeholder: 'Every weekday at 09:00' },
+            { key: 'timezone', label: 'Time zone', type: 'text', placeholder: 'Europe/Moscow' }
+        ],
+        runner: async (context, config) => {
+            const schedule = config.schedule || 'unspecified schedule';
+            context.logs.push(`Scheduled trigger executed for ${schedule}.`);
+        }
+    },
+    {
+        id: 'clipboard-change-trigger',
+        category: 'trigger',
+        name: 'Clipboard change',
+        description: 'Begin when clipboard content matches given filters.',
+        icon: 'clipboard',
+        accent: '#fb7185',
+        tags: ['clipboard', 'automation'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { keywords: 'password,token', sampleText: '' },
+        form: [
+            { key: 'keywords', label: 'Match keywords', type: 'text', placeholder: 'password, token' },
+            { key: 'sampleText', label: 'Sample payload', type: 'textarea', rows: 3, placeholder: 'Paste example text' }
+        ],
+        runner: async (context, config) => {
+            const keywords = (config.keywords || '').split(',').map(item => item.trim()).filter(Boolean);
+            context.logs.push(keywords.length ? `Clipboard trigger matched keywords: ${keywords.join(', ')}` : 'Clipboard trigger fired with no keyword filters.');
+            if (config.sampleText) {
+                context.payload = config.sampleText;
+            }
+        }
+    },
+    {
+        id: 'file-created-trigger',
+        category: 'trigger',
+        name: 'File created',
+        description: 'Start when a file is created inside a directory.',
+        icon: 'file-plus',
+        accent: '#38bdf8',
+        tags: ['files', 'watcher'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { directory: 'C:/Downloads', pattern: '*.pdf' },
+        form: [
+            { key: 'directory', label: 'Directory', type: 'text', placeholder: 'C:/Downloads' },
+            { key: 'pattern', label: 'Pattern', type: 'text', placeholder: '*.pdf' }
+        ],
+        runner: async (context, config) => {
+            context.logs.push(`Watching ${config.directory || 'directory'} for new files matching ${config.pattern || '*.*'}.`);
+        }
+    },
+    {
+        id: 'http-webhook-trigger',
+        category: 'trigger',
+        name: 'Incoming webhook',
+        description: 'Receive JSON payloads from external services to start workflows.',
+        icon: 'wifi',
+        accent: '#4ade80',
+        tags: ['api', 'webhook'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { secret: 'change-me', sample: '{"event":"ping"}' },
+        form: [
+            { key: 'secret', label: 'Shared secret', type: 'text', placeholder: 'secret token' },
+            { key: 'sample', label: 'Sample payload', type: 'textarea', rows: 3, placeholder: '{"event":"ping"}' }
+        ],
+        runner: async (context, config) => {
+            context.logs.push('Webhook trigger executed. Validate signature before processing.');
+            if (config.sample) {
+                context.payload = config.sample;
+            }
+        }
+    },
+    {
+        id: 'timer-interval-trigger',
+        category: 'trigger',
+        name: 'Interval timer',
+        description: 'Loop workflow execution on a repeating interval.',
+        icon: 'repeat',
+        accent: '#facc15',
+        tags: ['automation', 'interval'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { minutes: 15 },
+        form: [
+            { key: 'minutes', label: 'Interval (minutes)', type: 'number', min: 1, placeholder: '15' }
+        ],
+        runner: async (context, config) => {
+            const minutes = Number(config.minutes) || 15;
+            context.logs.push(`Interval trigger executed after ${minutes} minutes.`);
+        }
+    },
+    {
+        id: 'system-start-trigger',
+        category: 'trigger',
+        name: 'System start',
+        description: 'Run once when the computer or FlashSearch launches.',
+        icon: 'power',
+        accent: '#64748b',
+        tags: ['system', 'automation'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { delaySeconds: 5 },
+        form: [
+            { key: 'delaySeconds', label: 'Delay after launch (s)', type: 'number', min: 0, placeholder: '5' }
+        ],
+        runner: async (context, config) => {
+            const delaySeconds = Math.max(0, Number(config.delaySeconds) || 0);
+            if (delaySeconds > 0) {
+                await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
+            }
+            context.logs.push('System start trigger finished delay and executed.');
+        }
+    },
+    {
+        id: 'keyword-detected-trigger',
+        category: 'trigger',
+        name: 'Search keyword detected',
+        description: 'Start when a search query contains chosen keywords.',
+        icon: 'search',
+        accent: '#a855f7',
+        tags: ['search', 'automation'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { keywords: 'report,status' },
+        form: [
+            { key: 'keywords', label: 'Keywords', type: 'text', placeholder: 'report, status' }
+        ],
+        runner: async (context, config) => {
+            context.logs.push(`Keyword trigger fired for search including: ${config.keywords || 'any term'}.`);
+        }
+    },
+    {
+        id: 'calendar-reminder-trigger',
+        category: 'trigger',
+        name: 'Calendar reminder',
+        description: 'Kick off a workflow around upcoming calendar events.',
+        icon: 'clock',
+        accent: '#60a5fa',
+        tags: ['calendar', 'automation'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { lookAheadMinutes: 30, calendar: 'Primary' },
+        form: [
+            { key: 'calendar', label: 'Calendar name', type: 'text', placeholder: 'Primary' },
+            { key: 'lookAheadMinutes', label: 'Notify before (minutes)', type: 'number', min: 5, placeholder: '30' }
+        ],
+        runner: async (context, config) => {
+            context.logs.push(`Calendar trigger executed for ${config.calendar || 'calendar'} with ${config.lookAheadMinutes || 30} minute notice.`);
+        }
+    },
+    {
+        id: 'slack-mention-trigger',
+        category: 'trigger',
+        name: 'Slack mention',
+        description: 'Trigger when your bot user is mentioned in Slack.',
+        icon: 'at-sign',
+        accent: '#9333ea',
+        tags: ['slack', 'communication'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { channel: '#flashsearch', sample: 'User mentioned FlashSearch bot.' },
+        form: [
+            { key: 'channel', label: 'Channel', type: 'text', placeholder: '#flashsearch' },
+            { key: 'sample', label: 'Sample payload', type: 'textarea', rows: 3, placeholder: 'User mentioned FlashSearch bot.' }
+        ],
+        runner: async (context, config) => {
+            context.logs.push(`Slack mention trigger executed for ${config.channel || 'channel'}.`);
+            if (config.sample) context.payload = config.sample;
+        }
+    },
+    {
+        id: 'email-received-trigger',
+        category: 'trigger',
+        name: 'Email received',
+        description: 'Start when an email arrives matching filters.',
+        icon: 'mail',
+        accent: '#ef4444',
+        tags: ['email', 'automation'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { from: 'vip@flashsearch.app', subjectContains: 'Report' },
+        form: [
+            { key: 'from', label: 'Sender contains', type: 'text', placeholder: 'vip@flashsearch.app' },
+            { key: 'subjectContains', label: 'Subject contains', type: 'text', placeholder: 'Report' }
+        ],
+        runner: async (context, config) => {
+            context.logs.push(`Email trigger matched from ${config.from || 'any sender'} containing ${config.subjectContains || 'any subject'}.`);
+        }
+    },
+    {
+        id: 'rss-update-trigger',
+        category: 'trigger',
+        name: 'RSS feed update',
+        description: 'React when a monitored RSS feed publishes new content.',
+        icon: 'rss',
+        accent: '#f97316',
+        tags: ['rss', 'news'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { feedUrl: 'https://flashsearch.app/blog/rss.xml' },
+        form: [
+            { key: 'feedUrl', label: 'Feed URL', type: 'text', placeholder: 'https://...' }
+        ],
+        runner: async (context, config) => {
+            context.logs.push(`RSS trigger executed for ${config.feedUrl || 'feed URL'}.`);
+        }
+    },
+    {
+        id: 'service-health-trigger',
+        category: 'trigger',
+        name: 'Service health change',
+        description: 'Execute when a monitored service reports downtime.',
+        icon: 'activity',
+        accent: '#f87171',
+        tags: ['status', 'monitoring'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { service: 'api.flashsearch.app', status: 'down' },
+        form: [
+            { key: 'service', label: 'Service name', type: 'text', placeholder: 'api.flashsearch.app' },
+            { key: 'status', label: 'Trigger status', type: 'text', placeholder: 'down' }
+        ],
+        runner: async (context, config) => {
+            context.logs.push(`Service health trigger fired for ${config.service || 'service'} status ${config.status || 'down'}.`);
+        }
+    },
+    {
+        id: 'database-row-trigger',
+        category: 'trigger',
+        name: 'Database row added',
+        description: 'Start when a new database row matches filters.',
+        icon: 'table',
+        accent: '#0ea5e9',
+        tags: ['database', 'data'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { table: 'leads', filter: 'status = "new"' },
+        form: [
+            { key: 'table', label: 'Table', type: 'text', placeholder: 'leads' },
+            { key: 'filter', label: 'Filter expression', type: 'text', placeholder: 'status = "new"' }
+        ],
+        runner: async (context, config) => {
+            context.logs.push(`Database trigger queued for ${config.table || 'table'} (${config.filter || 'no filter'}).`);
+        }
+    }
+];
+
+function createLogRunner(messageBuilder) {
+    return async (context, config) => {
+        const message = typeof messageBuilder === 'function' ? messageBuilder(context, config) : messageBuilder;
+        if (message) {
+            context.logs.push(message);
+        }
+    };
+}
+
+function createAiRunner({ requiredFields = [], buildBody, handleResponse, missingFieldMessage, successMessage, failureMessage }) {
+    return async (context, config) => {
+        const endpoint = String(config.endpoint || '').trim();
+        const missing = requiredFields.filter(field => !config[field] && config[field] !== 0);
+        if (!endpoint || missing.length > 0) {
+            context.logs.push(missingFieldMessage || `AI request skipped: missing ${endpoint ? missing.join(', ') : 'endpoint'}.`);
+            return;
+        }
+        try {
+            const body = buildBody ? buildBody(context, config) : {};
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {})
+                },
+                body: JSON.stringify(body)
+            });
+            const data = await response.json();
+            if (typeof handleResponse === 'function') {
+                handleResponse(context, data, config);
+            }
+            if (successMessage) {
+                context.logs.push(successMessage);
+            }
+        } catch (error) {
+            context.logs.push((failureMessage || 'AI request failed') + `: ${error.message}`);
+        }
+    };
+}
+
+function createHttpRunner({ method = 'POST', requireEndpoint = true, successMessage, failureMessage, buildRequest, handleResponse }) {
+    return async (context, config) => {
+        const endpoint = String(config.endpoint || '').trim();
+        if (requireEndpoint && !endpoint) {
+            context.logs.push('HTTP request skipped: missing endpoint.');
+            return;
+        }
+        try {
+            const request = buildRequest ? buildRequest(context, config) : {};
+            const response = await fetch(endpoint || config.url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(config.headers || {})
+                },
+                body: method === 'GET' ? undefined : JSON.stringify(request.body || {})
+            });
+            const data = await response.json().catch(() => null);
+            if (typeof handleResponse === 'function') {
+                handleResponse(context, data, response, config);
+            }
+            if (successMessage) {
+                context.logs.push(successMessage);
+            }
+        } catch (error) {
+            context.logs.push((failureMessage || 'HTTP request failed') + `: ${error.message}`);
+        }
+    };
+}
+
+const AiActionSpecs = [
+    {
+        id: 'ai-generate-text',
+        category: 'action',
+        name: 'AI: Generate text',
+        description: 'Send a prompt to an AI text generation API and store the reply.',
+        icon: 'type',
+        accent: '#8b5cf6',
+        tags: ['ai', 'text', 'api'],
+        defaultConfig: { endpoint: 'https://api.example.com/v1/text', apiKey: '', prompt: 'Summarise this payload' },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'text', placeholder: 'https://...' },
+            { key: 'apiKey', label: 'API key', type: 'text', placeholder: 'sk-...' },
+            { key: 'prompt', label: 'Prompt', type: 'textarea', rows: 3, placeholder: 'Summarise the payload' }
+        ],
+        requiredFields: ['prompt'],
+        buildBody: (context, config) => ({ prompt: config.prompt, payload: context.payload }),
+        responseHandler: (context, data) => { context.payload = data.result || data.choices?.[0]?.text || JSON.stringify(data); },
+        missingFieldMessage: 'AI text generation skipped: missing endpoint or prompt.',
+        successMessage: 'AI text generated successfully.',
+        failureMessage: 'AI text generation failed'
+    },
+    {
+        id: 'ai-generate-image',
+        category: 'action',
+        name: 'AI: Generate image',
+        description: 'Create an image via an AI image generation API and return the URL.',
+        icon: 'image',
+        accent: '#f97316',
+        tags: ['ai', 'image', 'api'],
+        defaultConfig: { endpoint: 'https://api.example.com/v1/image', apiKey: '', prompt: 'Draw a futuristic workspace' },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'text', placeholder: 'https://...' },
+            { key: 'apiKey', label: 'API key', type: 'text', placeholder: 'sk-...' },
+            { key: 'prompt', label: 'Prompt', type: 'textarea', rows: 3, placeholder: 'Describe the image you need' }
+        ],
+        requiredFields: ['prompt'],
+        buildBody: (context, config) => ({ prompt: config.prompt }),
+        responseHandler: (context, data) => { const url = data.url || data.data?.[0]?.url || null; if (url) context.payload = url; },
+        missingFieldMessage: 'AI image generation skipped: missing endpoint or prompt.',
+        successMessage: 'AI image request sent.',
+        failureMessage: 'AI image generation failed'
+    },
+    {
+        id: 'ai-summarize-text',
+        category: 'action',
+        name: 'AI: Summarise text',
+        description: 'Send payload text to an AI summarisation endpoint.',
+        icon: 'book-open',
+        accent: '#0ea5e9',
+        tags: ['ai', 'summary', 'api'],
+        defaultConfig: { endpoint: 'https://api.example.com/v1/summarise', apiKey: '', maxWords: 120 },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'text', placeholder: 'https://...' },
+            { key: 'apiKey', label: 'API key', type: 'text', placeholder: 'sk-...' },
+            { key: 'maxWords', label: 'Maximum words', type: 'number', min: 10, placeholder: '120' }
+        ],
+        requiredFields: [],
+        buildBody: (context, config) => ({ text: context.payload, max_words: Number(config.maxWords) || 120 }),
+        responseHandler: (context, data) => { context.payload = data.summary || data.result || JSON.stringify(data); },
+        missingFieldMessage: 'AI summarisation skipped: missing endpoint.',
+        successMessage: 'AI summarisation completed.',
+        failureMessage: 'AI summarisation failed'
+    },
+    {
+        id: 'ai-translate-text',
+        category: 'action',
+        name: 'AI: Translate text',
+        description: 'Translate text into a target language using an AI service.',
+        icon: 'globe',
+        accent: '#34d399',
+        tags: ['ai', 'translate', 'api'],
+        defaultConfig: { endpoint: 'https://api.example.com/v1/translate', apiKey: '', target: 'en' },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'text', placeholder: 'https://...' },
+            { key: 'apiKey', label: 'API key', type: 'text', placeholder: 'sk-...' },
+            { key: 'target', label: 'Target language', type: 'text', placeholder: 'en' }
+        ],
+        requiredFields: ['target'],
+        buildBody: (context, config) => ({ text: context.payload, target: config.target }),
+        responseHandler: (context, data) => { context.payload = data.translation || data.result || JSON.stringify(data); },
+        missingFieldMessage: 'AI translation skipped: missing endpoint or target.',
+        successMessage: 'AI translation completed.',
+        failureMessage: 'AI translation failed'
+    },
+    {
+        id: 'ai-classify-intent',
+        category: 'action',
+        name: 'AI: Classify intent',
+        description: 'Classify incoming text into categories using AI.',
+        icon: 'tag',
+        accent: '#f59e0b',
+        tags: ['ai', 'classification', 'api'],
+        defaultConfig: { endpoint: 'https://api.example.com/v1/classify', apiKey: '', labels: 'support,sales,spam' },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'text', placeholder: 'https://...' },
+            { key: 'apiKey', label: 'API key', type: 'text', placeholder: 'sk-...' },
+            { key: 'labels', label: 'Possible labels', type: 'text', placeholder: 'support, sales, spam' }
+        ],
+        requiredFields: [],
+        buildBody: (context, config) => ({ text: context.payload, labels: (config.labels || '').split(',').map(label => label.trim()).filter(Boolean) }),
+        responseHandler: (context, data) => { context.vars.lastClassification = data.label || data.result || null; },
+        missingFieldMessage: 'AI classification skipped: missing endpoint.',
+        successMessage: 'AI classification completed.',
+        failureMessage: 'AI classification failed'
+    },
+    {
+        id: 'ai-extract-entities',
+        category: 'action',
+        name: 'AI: Extract entities',
+        description: 'Use AI to extract structured entities from text.',
+        icon: 'list',
+        accent: '#0ea5e9',
+        tags: ['ai', 'nlp', 'api'],
+        defaultConfig: { endpoint: 'https://api.example.com/v1/entities', apiKey: '', schema: 'name,company,email' },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'text', placeholder: 'https://...' },
+            { key: 'apiKey', label: 'API key', type: 'text', placeholder: 'sk-...' },
+            { key: 'schema', label: 'Expected fields', type: 'text', placeholder: 'name, company, email' }
+        ],
+        requiredFields: [],
+        buildBody: (context, config) => ({ text: context.payload, schema: config.schema }),
+        responseHandler: (context, data) => { context.payload = JSON.stringify(data.entities || data, null, 2); },
+        missingFieldMessage: 'AI entity extraction skipped: missing endpoint.',
+        successMessage: 'AI entity extraction completed.',
+        failureMessage: 'AI entity extraction failed'
+    },
+    {
+        id: 'ai-chat-complete',
+        category: 'action',
+        name: 'AI: Chat completion',
+        description: 'Send conversation history to an AI chat completion endpoint.',
+        icon: 'message-circle',
+        accent: '#38bdf8',
+        tags: ['ai', 'chat', 'api'],
+        defaultConfig: { endpoint: 'https://api.example.com/v1/chat', apiKey: '', systemPrompt: 'You are FlashSearch assistant.' },
+        form: [
+            { key: 'endpoint', label: 'API endpoint', type: 'text', placeholder: 'https://...' },
+            { key: 'apiKey', label: 'API key', type: 'text', placeholder: 'sk-...' },
+            { key: 'systemPrompt', label: 'System prompt', type: 'textarea', rows: 2, placeholder: 'You are FlashSearch assistant.' }
+        ],
+        requiredFields: [],
+        buildBody: (context, config) => {
+            const messages = Array.isArray(context.vars.chatHistory) ? [...context.vars.chatHistory] : [];
+            if (config.systemPrompt) messages.unshift({ role: 'system', content: config.systemPrompt });
+            messages.push({ role: 'user', content: String(context.payload ?? '') });
+            context.vars.chatHistory = messages;
+            return { messages };
+        },
+        responseHandler: (context, data) => { context.payload = data.reply || data.choices?.[0]?.message?.content || JSON.stringify(data); },
+        missingFieldMessage: 'AI chat skipped: missing endpoint.',
+        successMessage: 'AI chat reply stored in payload.',
+        failureMessage: 'AI chat failed'
+    }
+];
+
+const AiActionBlueprints = AiActionSpecs.map(spec => {
+    const { requiredFields, buildBody, responseHandler, missingFieldMessage, successMessage, failureMessage, ...rest } = spec;
+    return {
+        ...rest,
+        runner: createAiRunner({
+            requiredFields,
+            buildBody,
+            handleResponse: responseHandler,
+            missingFieldMessage,
+            successMessage,
+            failureMessage
+        })
+    };
+});
+
+const LogActionSpecs = [
+    {
+        id: 'send-email',
+        category: 'action',
+        name: 'Send email',
+        description: 'Send an email via SMTP or a transactional API.',
+        icon: 'mail',
+        accent: '#ef4444',
+        tags: ['email', 'communication'],
+        defaultConfig: { to: 'user@example.com', subject: 'FlashSearch update', provider: 'smtp' },
+        form: [
+            { key: 'provider', label: 'Provider', type: 'select', options: [
+                { value: 'smtp', label: 'SMTP server' },
+                { value: 'sendgrid', label: 'SendGrid API' },
+                { value: 'mailgun', label: 'Mailgun API' }
+            ] },
+            { key: 'to', label: 'Recipient', type: 'text', placeholder: 'user@example.com' },
+            { key: 'subject', label: 'Subject', type: 'text', placeholder: 'FlashSearch update' },
+            { key: 'body', label: 'Body', type: 'textarea', rows: 4, placeholder: 'Email body. Payload will be appended.' }
+        ],
+        messageBuilder: (context, config) => 'Email prepared to ' + (config.to || 'recipient') + ' via ' + (config.provider || 'smtp') + '.'
+    },
+    {
+        id: 'send-sms',
+        category: 'action',
+        name: 'Send SMS',
+        description: 'Send an SMS using providers like Twilio.',
+        icon: 'smartphone',
+        accent: '#22d3ee',
+        tags: ['sms', 'communication'],
+        defaultConfig: { to: '+1234567890', provider: 'twilio', message: 'FlashSearch notification' },
+        form: [
+            { key: 'provider', label: 'Provider', type: 'select', options: [
+                { value: 'twilio', label: 'Twilio' },
+                { value: 'infobip', label: 'Infobip' },
+                { value: 'other', label: 'Other API' }
+            ] },
+            { key: 'to', label: 'Phone number', type: 'text', placeholder: '+1234567890' },
+            { key: 'message', label: 'Message', type: 'textarea', rows: 3, placeholder: 'FlashSearch notification' }
+        ],
+        messageBuilder: (context, config) => 'SMS prepared for ' + (config.to || 'recipient') + ' using ' + (config.provider || 'provider') + '.'
+    },
+    {
+        id: 'post-to-slack',
+        category: 'action',
+        name: 'Post to Slack',
+        description: 'Send a message to a Slack channel or user.',
+        icon: 'hash',
+        accent: '#9333ea',
+        tags: ['slack', 'communication'],
+        defaultConfig: { channel: '#flashsearch', message: 'Workflow finished!' },
+        form: [
+            { key: 'channel', label: 'Channel or user', type: 'text', placeholder: '#general' },
+            { key: 'message', label: 'Message', type: 'textarea', rows: 3, placeholder: 'Workflow finished!' }
+        ],
+        messageBuilder: (context, config) => 'Slack message queued for ' + (config.channel || '#general') + '.'
+    },
+    {
+        id: 'post-to-teams',
+        category: 'action',
+        name: 'Post to Microsoft Teams',
+        description: 'Send a message card to a Teams channel webhook.',
+        icon: 'users',
+        accent: '#2563eb',
+        tags: ['teams', 'communication'],
+        defaultConfig: { webhook: 'https://example.com/webhook', title: 'FlashSearch update', message: 'Automation completed.' },
+        form: [
+            { key: 'webhook', label: 'Webhook URL', type: 'text', placeholder: 'https://...' },
+            { key: 'title', label: 'Card title', type: 'text', placeholder: 'FlashSearch update' },
+            { key: 'message', label: 'Message', type: 'textarea', rows: 3, placeholder: 'Automation completed.' }
+        ],
+        messageBuilder: (context, config) => 'Teams card prepared for webhook ' + (config.webhook || 'not set') + '.'
+    },
+    {
+        id: 'send-discord-message',
+        category: 'action',
+        name: 'Send Discord message',
+        description: 'Send a message to a Discord channel webhook.',
+        icon: 'message-square',
+        accent: '#6366f1',
+        tags: ['discord', 'communication'],
+        defaultConfig: { webhook: 'https://discord.com/api/webhooks/...', message: 'FlashSearch automation finished.' },
+        form: [
+            { key: 'webhook', label: 'Webhook URL', type: 'text', placeholder: 'https://...' },
+            { key: 'message', label: 'Message', type: 'textarea', rows: 3, placeholder: 'Automation finished.' }
+        ],
+        messageBuilder: (context, config) => 'Discord message prepared for webhook ' + (config.webhook || 'not set') + '.'
+    },
+    {
+        id: 'send-whatsapp-message',
+        category: 'action',
+        name: 'Send WhatsApp message',
+        description: 'Prepare a WhatsApp message for the business API.',
+        icon: 'smartphone',
+        accent: '#22c55e',
+        tags: ['whatsapp', 'communication'],
+        defaultConfig: { to: '+441234567890', template: 'flashsearch_update', language: 'en' },
+        form: [
+            { key: 'to', label: 'Recipient number', type: 'text', placeholder: '+441234567890' },
+            { key: 'template', label: 'Template name', type: 'text', placeholder: 'flashsearch_update' },
+            { key: 'language', label: 'Language', type: 'text', placeholder: 'en' }
+        ],
+        messageBuilder: (context, config) => 'WhatsApp template ' + (config.template || 'template') + ' prepared for ' + (config.to || 'recipient') + '.'
+    },
+    {
+        id: 'send-telegram-message',
+        category: 'action',
+        name: 'Send Telegram message',
+        description: 'Send a message via a Telegram bot token.',
+        icon: 'send',
+        accent: '#38bdf8',
+        tags: ['telegram', 'communication'],
+        defaultConfig: { chatId: '@flashsearch', message: 'Automation complete.' },
+        form: [
+            { key: 'chatId', label: 'Chat ID or username', type: 'text', placeholder: '@channel' },
+            { key: 'message', label: 'Message', type: 'textarea', rows: 3, placeholder: 'Automation complete.' }
+        ],
+        messageBuilder: (context, config) => 'Telegram message queued for ' + (config.chatId || 'chat') + '.'
+    },
+    {
+        id: 'post-twitter-update',
+        category: 'action',
+        name: 'Post Twitter update',
+        description: 'Draft a tweet with the latest payload content.',
+        icon: 'twitter',
+        accent: '#0ea5e9',
+        tags: ['twitter', 'social'],
+        defaultConfig: { message: 'FlashSearch automation finished.' },
+        form: [
+            { key: 'message', label: 'Tweet text', type: 'textarea', rows: 3, placeholder: 'FlashSearch automation finished.' }
+        ],
+        messageBuilder: (context, config) => 'Twitter update drafted: ' + (config.message || context.payload || 'No message').slice(0, 100) + '...'
+    },
+    {
+        id: 'create-github-issue',
+        category: 'action',
+        name: 'Create GitHub issue',
+        description: 'Prepare a GitHub issue payload for repository automation.',
+        icon: 'github',
+        accent: '#111827',
+        tags: ['github', 'developer'],
+        defaultConfig: { repository: 'flashsearch/app', title: 'New automation idea', body: 'Describe the workflow here.' },
+        form: [
+            { key: 'repository', label: 'Repository', type: 'text', placeholder: 'owner/repo' },
+            { key: 'title', label: 'Issue title', type: 'text', placeholder: 'Bug report' },
+            { key: 'body', label: 'Issue body', type: 'textarea', rows: 4, placeholder: 'Describe the issue...' }
+        ],
+        messageBuilder: (context, config) => 'GitHub issue prepared for ' + (config.repository || 'repository') + '.'
+    },
+    {
+        id: 'update-github-issue',
+        category: 'action',
+        name: 'Update GitHub issue',
+        description: 'Append a comment or status to an existing GitHub issue.',
+        icon: 'git-commit',
+        accent: '#6366f1',
+        tags: ['github', 'developer'],
+        defaultConfig: { repository: 'flashsearch/app', issue: 42, comment: 'Automation completed successfully.' },
+        form: [
+            { key: 'repository', label: 'Repository', type: 'text', placeholder: 'owner/repo' },
+            { key: 'issue', label: 'Issue number', type: 'number', placeholder: '42' },
+            { key: 'comment', label: 'Comment', type: 'textarea', rows: 3, placeholder: 'Automation completed successfully.' }
+        ],
+        messageBuilder: (context, config) => 'GitHub issue #' + (config.issue || 'N/A') + ' update prepared for ' + (config.repository || 'repository') + '.'
+    },
+    {
+        id: 'create-calendar-event',
+        category: 'action',
+        name: 'Create calendar event',
+        description: 'Prepare a calendar event payload ready to send to an API.',
+        icon: 'calendar',
+        accent: '#f97316',
+        tags: ['calendar', 'productivity'],
+        defaultConfig: { title: 'FlashSearch standup', location: 'Online', start: '2024-06-01T09:00:00', durationMinutes: 30 },
+        form: [
+            { key: 'title', label: 'Event title', type: 'text', placeholder: 'Meeting name' },
+            { key: 'location', label: 'Location', type: 'text', placeholder: 'Conference room' },
+            { key: 'start', label: 'Start time', type: 'datetime-local' },
+            { key: 'durationMinutes', label: 'Duration (minutes)', type: 'number', min: 5, placeholder: '30' }
+        ],
+        messageBuilder: (context, config) => 'Calendar event "' + (config.title || 'Untitled event') + '" prepared for ' + (config.start || 'unscheduled time') + '.'
+    },
+    {
+        id: 'update-calendar-event',
+        category: 'action',
+        name: 'Update calendar event',
+        description: 'Update metadata for an existing calendar event.',
+        icon: 'calendar',
+        accent: '#10b981',
+        tags: ['calendar', 'productivity'],
+        defaultConfig: { eventId: 'evt_123', title: 'Updated agenda', addGuests: 'team@flashsearch.app' },
+        form: [
+            { key: 'eventId', label: 'Event identifier', type: 'text', placeholder: 'evt_123' },
+            { key: 'title', label: 'New title', type: 'text', placeholder: 'Updated agenda' },
+            { key: 'addGuests', label: 'Guests to add', type: 'text', placeholder: 'person@example.com' }
+        ],
+        messageBuilder: (context, config) => 'Calendar event ' + (config.eventId || 'unknown') + ' queued for update.'
+    },
+    {
+        id: 'append-google-sheet',
+        category: 'action',
+        name: 'Append Google Sheet row',
+        description: 'Prepare data to append to a Google Sheet.',
+        icon: 'grid',
+        accent: '#22c55e',
+        tags: ['sheets', 'data'],
+        defaultConfig: { spreadsheetId: 'sheet123', range: 'Leads!A:C', values: 'Name,Email,Note' },
+        form: [
+            { key: 'spreadsheetId', label: 'Spreadsheet ID', type: 'text', placeholder: 'sheet123' },
+            { key: 'range', label: 'Target range', type: 'text', placeholder: 'Sheet1!A:C' },
+            { key: 'values', label: 'Values (CSV)', type: 'text', placeholder: 'Name,Email,Note' }
+        ],
+        messageBuilder: (context, config) => 'Prepared row for spreadsheet ' + (config.spreadsheetId || 'sheet') + ' at ' + (config.range || 'range') + '.'
+    },
+    {
+        id: 'create-notion-page',
+        category: 'action',
+        name: 'Create Notion page',
+        description: 'Prepare a Notion page payload with title and content.',
+        icon: 'file-text',
+        accent: '#111827',
+        tags: ['notion', 'notes'],
+        defaultConfig: { databaseId: 'db123', title: 'Automation summary', body: 'Summary of the latest run.' },
+        form: [
+            { key: 'databaseId', label: 'Database ID', type: 'text', placeholder: 'db123' },
+            { key: 'title', label: 'Page title', type: 'text', placeholder: 'Automation summary' },
+            { key: 'body', label: 'Content', type: 'textarea', rows: 4, placeholder: 'Summary...' }
+        ],
+        messageBuilder: (context, config) => 'Notion page ready for database ' + (config.databaseId || 'database') + '.'
+    },
+    {
+        id: 'append-notes',
+        category: 'action',
+        name: 'Append to notes app',
+        description: 'Append text to a note-taking application via its API.',
+        icon: 'edit-3',
+        accent: '#fbbf24',
+        tags: ['notes', 'productivity'],
+        defaultConfig: { notebook: 'Automation log', note: 'Daily summary', text: 'Automation completed.' },
+        form: [
+            { key: 'notebook', label: 'Notebook', type: 'text', placeholder: 'Automation log' },
+            { key: 'note', label: 'Note title', type: 'text', placeholder: 'Daily summary' },
+            { key: 'text', label: 'Text to append', type: 'textarea', rows: 3, placeholder: 'Automation completed.' }
+        ],
+        messageBuilder: (context, config) => 'Prepared note append for ' + (config.notebook || 'notebook') + ' / ' + (config.note || 'note') + '.'
+    },
+    {
+        id: 'create-todo-item',
+        category: 'action',
+        name: 'Create to-do item',
+        description: 'Create a task in your favourite to-do manager.',
+        icon: 'check-square',
+        accent: '#ec4899',
+        tags: ['tasks', 'productivity'],
+        defaultConfig: { list: 'Inbox', title: 'Follow up with customer', dueDate: '2024-06-01' },
+        form: [
+            { key: 'list', label: 'List', type: 'text', placeholder: 'Inbox' },
+            { key: 'title', label: 'Task title', type: 'text', placeholder: 'Follow up with customer' },
+            { key: 'dueDate', label: 'Due date', type: 'date' }
+        ],
+        messageBuilder: (context, config) => 'Task "' + (config.title || 'Untitled task') + '" added to ' + (config.list || 'list') + '.'
+    },
+    {
+        id: 'update-todo-status',
+        category: 'action',
+        name: 'Update to-do status',
+        description: 'Update a task status in your to-do manager.',
+        icon: 'check',
+        accent: '#0ea5e9',
+        tags: ['tasks', 'productivity'],
+        defaultConfig: { taskId: 'task_123', status: 'completed' },
+        form: [
+            { key: 'taskId', label: 'Task identifier', type: 'text', placeholder: 'task_123' },
+            { key: 'status', label: 'Status', type: 'text', placeholder: 'completed' }
+        ],
+        messageBuilder: (context, config) => 'Task ' + (config.taskId || 'task') + ' marked as ' + (config.status || 'updated') + '.'
+    },
+    {
+        id: 'log-to-database',
+        category: 'action',
+        name: 'Log to database',
+        description: 'Log structured data to an analytics database.',
+        icon: 'database',
+        accent: '#6366f1',
+        tags: ['database', 'analytics'],
+        defaultConfig: { table: 'automation_log', level: 'info', message: 'Workflow completed' },
+        form: [
+            { key: 'table', label: 'Table name', type: 'text', placeholder: 'automation_log' },
+            { key: 'level', label: 'Severity', type: 'text', placeholder: 'info' },
+            { key: 'message', label: 'Log message', type: 'textarea', rows: 3, placeholder: 'Workflow completed' }
+        ],
+        messageBuilder: (context, config) => 'Database log queued for table ' + (config.table || 'table') + ' with level ' + (config.level || 'info') + '.'
+    },
+    {
+        id: 'push-notification',
+        category: 'action',
+        name: 'Send push notification',
+        description: 'Prepare a push notification for desktop or mobile.',
+        icon: 'bell',
+        accent: '#facc15',
+        tags: ['notification', 'communication'],
+        defaultConfig: { title: 'FlashSearch', body: 'Workflow finished!', target: 'desktop' },
+        form: [
+            { key: 'title', label: 'Title', type: 'text', placeholder: 'FlashSearch' },
+            { key: 'body', label: 'Message', type: 'textarea', rows: 3, placeholder: 'Workflow finished!' },
+            { key: 'target', label: 'Target platform', type: 'text', placeholder: 'desktop' }
+        ],
+        messageBuilder: (context, config) => 'Push notification prepared for ' + (config.target || 'desktop') + '.'
+    },
+    {
+        id: 'start-obs-recording',
+        category: 'action',
+        name: 'Start OBS recording',
+        description: 'Trigger OBS Studio to start recording via its WebSocket API.',
+        icon: 'video',
+        accent: '#ef4444',
+        tags: ['obs', 'video'],
+        defaultConfig: { profile: 'FlashSearch', scene: 'Desktop' },
+        form: [
+            { key: 'profile', label: 'OBS profile', type: 'text', placeholder: 'FlashSearch' },
+            { key: 'scene', label: 'Scene name', type: 'text', placeholder: 'Desktop' }
+        ],
+        messageBuilder: (context, config) => 'OBS recording start command prepared for scene ' + (config.scene || 'scene') + '.'
+    },
+    {
+        id: 'stop-obs-recording',
+        category: 'action',
+        name: 'Stop OBS recording',
+        description: 'Trigger OBS Studio to stop recording.',
+        icon: 'stop-circle',
+        accent: '#f87171',
+        tags: ['obs', 'video'],
+        defaultConfig: { saveHighlight: true },
+        form: [
+            { key: 'saveHighlight', label: 'Save highlight clip', type: 'checkbox' }
+        ],
+        messageBuilder: (context, config) => 'OBS recording stop command queued' + (config.saveHighlight ? ' with highlight.' : '.');
+    },
+    {
+        id: 'control-zoom-meeting',
+        category: 'action',
+        name: 'Control Zoom meeting',
+        description: 'Send a command to control Zoom meetings via REST API.',
+        icon: 'video-off',
+        accent: '#2563eb',
+        tags: ['zoom', 'video'],
+        defaultConfig: { action: 'muteAll', meetingId: '123-456-789' },
+        form: [
+            { key: 'meetingId', label: 'Meeting ID', type: 'text', placeholder: '123-456-789' },
+            { key: 'action', label: 'Action', type: 'text', placeholder: 'muteAll' }
+        ],
+        messageBuilder: (context, config) => 'Zoom action ' + (config.action || 'action') + ' prepared for meeting ' + (config.meetingId || 'meeting') + '.'
+    },
+    {
+        id: 'toggle-smart-light',
+        category: 'action',
+        name: 'Toggle smart light',
+        description: 'Toggle a smart light or set brightness via a hub API.',
+        icon: 'sun',
+        accent: '#fbbf24',
+        tags: ['iot', 'home'],
+        defaultConfig: { device: 'office-lamp', brightness: 80 },
+        form: [
+            { key: 'device', label: 'Device ID', type: 'text', placeholder: 'office-lamp' },
+            { key: 'brightness', label: 'Brightness %', type: 'number', min: 0, max: 100, placeholder: '80' }
+        ],
+        messageBuilder: (context, config) => 'Smart light ' + (config.device || 'device') + ' set to ' + (config.brightness ?? 'auto') + '%.'
+    },
+    {
+        id: 'set-smart-thermostat',
+        category: 'action',
+        name: 'Set smart thermostat',
+        description: 'Adjust thermostat temperature via smart home API.',
+        icon: 'thermometer',
+        accent: '#fb7185',
+        tags: ['iot', 'home'],
+        defaultConfig: { device: 'office-thermostat', temperature: 22 },
+        form: [
+            { key: 'device', label: 'Device ID', type: 'text', placeholder: 'office-thermostat' },
+            { key: 'temperature', label: 'Temperature °C', type: 'number', placeholder: '22' }
+        ],
+        messageBuilder: (context, config) => 'Thermostat ' + (config.device || 'device') + ' set to ' + (config.temperature ?? 'auto') + '°C.'
+    },
+    {
+        id: 'play-spotify-track',
+        category: 'action',
+        name: 'Play Spotify track',
+        description: 'Start playback of a Spotify track or playlist.',
+        icon: 'music',
+        accent: '#22c55e',
+        tags: ['spotify', 'media'],
+        defaultConfig: { uri: 'spotify:playlist:flashsearch', device: 'Office speaker' },
+        form: [
+            { key: 'uri', label: 'Track or playlist URI', type: 'text', placeholder: 'spotify:track:...' },
+            { key: 'device', label: 'Target device', type: 'text', placeholder: 'Office speaker' }
+        ],
+        messageBuilder: (context, config) => 'Spotify playback prepared for ' + (config.device || 'device') + '.'
+    },
+    {
+        id: 'launch-virtual-machine',
+        category: 'action',
+        name: 'Launch virtual machine',
+        description: 'Queue a cloud VM start operation for development or testing.',
+        icon: 'server',
+        accent: '#6366f1',
+        tags: ['cloud', 'infrastructure'],
+        defaultConfig: { provider: 'aws', instance: 'i-123456', region: 'eu-central-1' },
+        form: [
+            { key: 'provider', label: 'Provider', type: 'text', placeholder: 'aws' },
+            { key: 'instance', label: 'Instance ID', type: 'text', placeholder: 'i-123456' },
+            { key: 'region', label: 'Region', type: 'text', placeholder: 'eu-central-1' }
+        ],
+        messageBuilder: (context, config) => 'VM launch prepared for ' + (config.provider || 'cloud') + ' instance ' + (config.instance || 'instance') + '.'
+    },
+    {
+        id: 'open-figma-file',
+        category: 'action',
+        name: 'Open Figma file',
+        description: 'Open a Figma design link in the browser or desktop app.',
+        icon: 'figma',
+        accent: '#ef4444',
+        tags: ['design', 'collaboration'],
+        defaultConfig: { url: 'https://www.figma.com/file/...', mode: 'browser' },
+        form: [
+            { key: 'url', label: 'Figma URL', type: 'text', placeholder: 'https://...' },
+            { key: 'mode', label: 'Open mode', type: 'select', options: [
+                { value: 'browser', label: 'Browser' },
+                { value: 'desktop', label: 'Desktop app' }
+            ] }
+        ],
+        messageBuilder: (context, config) => 'Figma file queued to open in ' + (config.mode || 'browser') + '.'
+    },
+    {
+        id: 'upload-ftp',
+        category: 'action',
+        name: 'Upload via FTP',
+        description: 'Prepare a file upload payload for an FTP server.',
+        icon: 'upload',
+        accent: '#f97316',
+        tags: ['ftp', 'files'],
+        defaultConfig: { host: 'ftp.example.com', path: '/reports/', filename: 'report.txt' },
+        form: [
+            { key: 'host', label: 'Host', type: 'text', placeholder: 'ftp.example.com' },
+            { key: 'path', label: 'Remote path', type: 'text', placeholder: '/reports/' },
+            { key: 'filename', label: 'Filename', type: 'text', placeholder: 'report.txt' }
+        ],
+        messageBuilder: (context, config) => 'FTP upload prepared for ' + (config.host || 'host') + config.path + (config.filename || 'file') + '.'
+    },
+    {
+        id: 'upload-s3',
+        category: 'action',
+        name: 'Upload to S3',
+        description: 'Prepare an object upload to Amazon S3.',
+        icon: 'cloud',
+        accent: '#0ea5e9',
+        tags: ['aws', 'files'],
+        defaultConfig: { bucket: 'flashsearch-backups', key: 'reports/report.json' },
+        form: [
+            { key: 'bucket', label: 'Bucket name', type: 'text', placeholder: 'flashsearch-backups' },
+            { key: 'key', label: 'Object key', type: 'text', placeholder: 'path/to/file' }
+        ],
+        messageBuilder: (context, config) => 'S3 upload prepared for ' + (config.bucket || 'bucket') + '/' + (config.key || 'object') + '.'
+    },
+    {
+        id: 'update-crm-contact',
+        category: 'action',
+        name: 'Update CRM contact',
+        description: 'Prepare a CRM contact update payload.',
+        icon: 'user-check',
+        accent: '#10b981',
+        tags: ['crm', 'sales'],
+        defaultConfig: { contactId: 'contact_001', stage: 'Qualified', note: 'Spoke during automation review.' },
+        form: [
+            { key: 'contactId', label: 'Contact ID', type: 'text', placeholder: 'contact_001' },
+            { key: 'stage', label: 'Stage', type: 'text', placeholder: 'Qualified' },
+            { key: 'note', label: 'Internal note', type: 'textarea', rows: 3, placeholder: 'Discussion summary' }
+        ],
+        messageBuilder: (context, config) => 'CRM contact ' + (config.contactId || 'contact') + ' update prepared.'
+    },
+    {
+        id: 'generate-report-pdf',
+        category: 'action',
+        name: 'Generate PDF report',
+        description: 'Queue a PDF generation request for reporting tools.',
+        icon: 'file',
+        accent: '#facc15',
+        tags: ['reports', 'documents'],
+        defaultConfig: { template: 'automation-summary', filename: 'flashsearch-report.pdf' },
+        form: [
+            { key: 'template', label: 'Template ID', type: 'text', placeholder: 'automation-summary' },
+            { key: 'filename', label: 'Output filename', type: 'text', placeholder: 'flashsearch-report.pdf' }
+        ],
+        messageBuilder: (context, config) => 'PDF report generation queued for template ' + (config.template || 'template') + '.'
+    },
+    {
+        id: 'archive-to-notebook',
+        category: 'action',
+        name: 'Archive to notebook',
+        description: 'Archive payload text into a digital notebook.',
+        icon: 'archive',
+        accent: '#4b5563',
+        tags: ['notes', 'archive'],
+        defaultConfig: { notebook: 'Archive', tag: 'automation' },
+        form: [
+            { key: 'notebook', label: 'Notebook', type: 'text', placeholder: 'Archive' },
+            { key: 'tag', label: 'Tag', type: 'text', placeholder: 'automation' }
+        ],
+        messageBuilder: (context, config) => 'Notebook archive entry prepared in ' + (config.notebook || 'notebook') + '.'
+    },
+    {
+        id: 'share-dashboard-link',
+        category: 'action',
+        name: 'Share dashboard link',
+        description: 'Share an analytics dashboard link with your team.',
+        icon: 'share-2',
+        accent: '#0ea5e9',
+        tags: ['analytics', 'communication'],
+        defaultConfig: { url: 'https://analytics.flashsearch.app/dashboard', recipients: 'team@flashsearch.app' },
+        form: [
+            { key: 'url', label: 'Dashboard URL', type: 'text', placeholder: 'https://...' },
+            { key: 'recipients', label: 'Recipients', type: 'text', placeholder: 'team@flashsearch.app' }
+        ],
+        messageBuilder: (context, config) => 'Dashboard link ready to share with ' + (config.recipients || 'team') + '.'
+    },
+    {
+        id: 'notify-linear-issue',
+        category: 'action',
+        name: 'Notify Linear issue',
+        description: 'Notify a Linear issue channel about workflow results.',
+        icon: 'alert-triangle',
+        accent: '#f97316',
+        tags: ['linear', 'developer'],
+        defaultConfig: { issueId: 'LIN-24', note: 'Automation run completed.' },
+        form: [
+            { key: 'issueId', label: 'Issue ID', type: 'text', placeholder: 'LIN-24' },
+            { key: 'note', label: 'Note', type: 'textarea', rows: 3, placeholder: 'Automation run completed.' }
+        ],
+        messageBuilder: (context, config) => 'Linear issue ' + (config.issueId || 'issue') + ' notified with note.'
+    },
+    {
+        id: 'call-phone-bridge',
+        category: 'action',
+        name: 'Call phone bridge',
+        description: 'Initiate a phone bridge call to a list of participants.',
+        icon: 'phone-call',
+        accent: '#10b981',
+        tags: ['telephony', 'communication'],
+        defaultConfig: { bridge: 'flashsearch-bridge', participants: '+1234567890,+441234567890' },
+        form: [
+            { key: 'bridge', label: 'Bridge ID', type: 'text', placeholder: 'flashsearch-bridge' },
+            { key: 'participants', label: 'Participants', type: 'text', placeholder: '+1234567890,+441234567890' }
+        ],
+        messageBuilder: (context, config) => 'Phone bridge ' + (config.bridge || 'bridge') + ' dial-out prepared.'
+    }
+];
+
+const LogActionBlueprints = LogActionSpecs.map(spec => {
+    const { messageBuilder, customRunner, ...rest } = spec;
+    if (typeof customRunner === 'function') {
+        return { ...rest, runner: customRunner };
+    }
+    return { ...rest, runner: createLogRunner(messageBuilder) };
+});
+
+const HttpActionSpecs = [
+    {
+        id: 'send-http-request',
+        category: 'action',
+        name: 'Send HTTP request',
+        description: 'Make a configurable HTTP request and log the status.',
+        icon: 'share',
+        accent: '#fbbf24',
+        tags: ['http', 'api'],
+        defaultConfig: { endpoint: 'https://api.example.com/trigger', method: 'POST', body: '{"hello":"world"}' },
+        form: [
+            { key: 'endpoint', label: 'Endpoint URL', type: 'text', placeholder: 'https://...' },
+            { key: 'method', label: 'Method', type: 'text', placeholder: 'POST' },
+            { key: 'body', label: 'JSON body', type: 'textarea', rows: 3, placeholder: '{"hello":"world"}' }
+        ],
+        customRunner: async (context, config) => {
+            const endpoint = String(config.endpoint || '').trim();
+            if (!endpoint) {
+                context.logs.push('HTTP request skipped: missing endpoint.');
+                return;
+            }
+            const method = String(config.method || 'POST').toUpperCase();
+            try {
+                const response = await fetch(endpoint, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: method === 'GET' ? undefined : config.body || '{}'
+                });
+                context.logs.push('HTTP request responded with status ' + response.status + '.');
+                const text = await response.text();
+                if (text) {
+                    context.payload = text.slice(0, 2000);
+                }
+            } catch (error) {
+                context.logs.push('HTTP request failed: ' + error.message);
+            }
+        }
+    },
+    {
+        id: 'deploy-via-webhook',
+        category: 'action',
+        name: 'Deploy via webhook',
+        description: 'Trigger a deployment service using a webhook.',
+        icon: 'cloud-lightning',
+        accent: '#f97316',
+        tags: ['deployment', 'api'],
+        defaultConfig: { endpoint: 'https://deploy.flashsearch.app/hooks/build', token: 'secret-token', payload: '{"env":"prod"}' },
+        form: [
+            { key: 'endpoint', label: 'Webhook URL', type: 'text', placeholder: 'https://...' },
+            { key: 'token', label: 'Auth token', type: 'text', placeholder: 'secret-token' },
+            { key: 'payload', label: 'JSON payload', type: 'textarea', rows: 3, placeholder: '{"env":"prod"}' }
+        ],
+        runner: createHttpRunner({
+            method: 'POST',
+            successMessage: 'Deployment webhook invoked.',
+            failureMessage: 'Deployment webhook failed',
+            buildRequest: (context, config) => ({
+                body: JSON.parse(config.payload || '{}'),
+                headers: config.token ? { Authorization: 'Bearer ' + config.token } : {}
+            }),
+            handleResponse: (context, data, response) => {
+                context.vars.lastDeploymentStatus = response.status;
+                if (data) context.payload = JSON.stringify(data, null, 2);
+            }
+        })
+    },
+    {
+        id: 'download-file',
+        category: 'action',
+        name: 'Download file',
+        description: 'Download a file from a URL and store its preview in the payload.',
+        icon: 'download-cloud',
+        accent: '#22d3ee',
+        tags: ['files', 'http'],
+        defaultConfig: { endpoint: 'https://api.example.com/report.txt' },
+        form: [
+            { key: 'endpoint', label: 'File URL', type: 'text', placeholder: 'https://...' }
+        ],
+        runner: createHttpRunner({
+            method: 'GET',
+            successMessage: 'File downloaded preview stored.',
+            failureMessage: 'File download failed',
+            buildRequest: () => ({}),
+            handleResponse: async (context, data, response) => {
+                const text = await response.text();
+                context.payload = text.slice(0, 4000);
+            }
+        })
+    },
+    {
+        id: 'update-rest-resource',
+        category: 'action',
+        name: 'Update REST resource',
+        description: 'Send a PATCH request to update a REST resource.',
+        icon: 'tool',
+        accent: '#f97316',
+        tags: ['api', 'http'],
+        defaultConfig: { endpoint: 'https://api.example.com/resource/1', body: '{"status":"processed"}' },
+        form: [
+            { key: 'endpoint', label: 'Resource URL', type: 'text', placeholder: 'https://...' },
+            { key: 'body', label: 'JSON body', type: 'textarea', rows: 3, placeholder: '{"status":"processed"}' }
+        ],
+        runner: createHttpRunner({
+            method: 'PATCH',
+            successMessage: 'REST resource update sent.',
+            failureMessage: 'REST resource update failed',
+            buildRequest: (context, config) => ({ body: JSON.parse(config.body || '{}') }),
+            handleResponse: (context, data) => { if (data) context.payload = JSON.stringify(data, null, 2); }
+        })
+    }
+];
+
+const HttpActionBlueprints = HttpActionSpecs.map(spec => {
+    const { method, requireEndpoint, successMessage, failureMessage, buildRequest, handleResponse, customRunner, ...rest } = spec;
+    if (typeof customRunner === 'function') {
+        return { ...rest, runner: customRunner };
+    }
+    return {
+        ...rest,
+        runner: createHttpRunner({ method, requireEndpoint, successMessage, failureMessage, buildRequest, handleResponse })
+    };
+});
+
+const ActionBlueprints = [
+    ...AiActionBlueprints,
+    ...LogActionBlueprints,
+    ...HttpActionBlueprints
+];
+
+
+const UtilitySpecs = [
+    {
+        id: 'payload-append-text',
+        category: 'utility',
+        name: 'Append text to payload',
+        description: 'Append configured text to the payload with an optional separator.',
+        icon: 'plus-circle',
+        accent: '#0ea5e9',
+        tags: ['text', 'payload'],
+        defaultConfig: { text: 'New line', separator: '\n' },
+        form: [
+            { key: 'text', label: 'Text to append', type: 'textarea', rows: 3, placeholder: 'New line' },
+            { key: 'separator', label: 'Separator', type: 'text', placeholder: '\n' }
+        ],
+        runner: async (context, config) => {
+            const base = BuilderRuntimeUtils.toText(context.payload);
+            const separator = config.separator ?? '';
+            const addition = config.text ?? '';
+            context.payload = base ? base + separator + addition : addition;
+            context.logs.push('Text appended to payload.');
+        }
+    },
+    {
+        id: 'payload-prepend-text',
+        category: 'utility',
+        name: 'Prepend text to payload',
+        description: 'Prepend configured text to the payload.',
+        icon: 'corner-up-left',
+        accent: '#38bdf8',
+        tags: ['text', 'payload'],
+        defaultConfig: { text: 'Prefix: ', separator: '' },
+        form: [
+            { key: 'text', label: 'Text to prepend', type: 'textarea', rows: 2, placeholder: 'Prefix: ' },
+            { key: 'separator', label: 'Separator', type: 'text', placeholder: ' ' }
+        ],
+        runner: async (context, config) => {
+            const separator = config.separator ?? '';
+            const addition = config.text ?? '';
+            const base = BuilderRuntimeUtils.toText(context.payload);
+            context.payload = addition + separator + base;
+            context.logs.push('Text prepended to payload.');
+        }
+    },
+    {
+        id: 'payload-clear',
+        category: 'utility',
+        name: 'Clear payload',
+        description: 'Remove payload contents and reset to empty.',
+        icon: 'eraser',
+        accent: '#f87171',
+        tags: ['payload'],
+        defaultConfig: {},
+        form: [],
+        runner: async (context) => {
+            context.payload = '';
+            context.logs.push('Payload cleared.');
+        }
+    },
+    {
+        id: 'payload-template',
+        category: 'utility',
+        name: 'Fill template',
+        description: 'Render a simple template using payload and variables.',
+        icon: 'file-text',
+        accent: '#fbbf24',
+        tags: ['template', 'text'],
+        defaultConfig: { template: 'Hello {{name}}, payload: {{payload}}' },
+        form: [
+            { key: 'template', label: 'Template', type: 'textarea', rows: 4, placeholder: 'Hello {{name}}' }
+        ],
+        runner: async (context, config) => {
+            const template = String(config.template || '');
+            const replacements = { ...context.vars, payload: BuilderRuntimeUtils.toText(context.payload) };
+            const result = template.replace(/{{\s*([^}]+)\s*}}/g, (match, key) => {
+                const normalized = String(key || '').trim();
+                return replacements[normalized] !== undefined ? replacements[normalized] : '';
+            });
+            context.payload = result;
+            context.logs.push('Template rendered into payload.');
+        }
+    },
+    {
+        id: 'payload-ensure-json',
+        category: 'utility',
+        name: 'Ensure JSON payload',
+        description: 'Validate payload as JSON and store a pretty formatted version.',
+        icon: 'code',
+        accent: '#10b981',
+        tags: ['json', 'payload'],
+        defaultConfig: { fallback: '{}' },
+        form: [
+            { key: 'fallback', label: 'Fallback JSON', type: 'textarea', rows: 3, placeholder: '{}' }
+        ],
+        runner: async (context, config) => {
+            const parsed = BuilderRuntimeUtils.parseJson(context.payload);
+            if (parsed) {
+                context.payload = JSON.stringify(parsed, null, 2);
+                context.logs.push('Payload validated as JSON.');
+            } else {
+                const fallback = BuilderRuntimeUtils.parseJson(config.fallback) || {};
+                context.payload = JSON.stringify(fallback, null, 2);
+                context.logs.push('Payload was invalid JSON. Applied fallback.');
+            }
+        }
+    },
+    {
+        id: 'payload-to-variable',
+        category: 'utility',
+        name: 'Payload to variable',
+        description: 'Store the current payload into a named variable.',
+        icon: 'save',
+        accent: '#6366f1',
+        tags: ['payload', 'variables'],
+        defaultConfig: { key: 'payloadCopy' },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'payloadCopy' }
+        ],
+        runner: async (context, config) => {
+            const key = String(config.key || '').trim();
+            if (!key) {
+                context.logs.push('Payload not stored: missing variable name.');
+                return;
+            }
+            context.vars[key] = context.payload;
+            context.logs.push(`Payload stored in variable ${key}.`);
+        }
+    },
+    {
+        id: 'variable-to-payload',
+        category: 'utility',
+        name: 'Variable to payload',
+        description: 'Load a variable value into the payload.',
+        icon: 'upload-cloud',
+        accent: '#34d399',
+        tags: ['payload', 'variables'],
+        defaultConfig: { key: 'payloadCopy', fallback: '' },
+        form: [
+            { key: 'key', label: 'Variable name', type: 'text', placeholder: 'payloadCopy' },
+            { key: 'fallback', label: 'Fallback value', type: 'textarea', rows: 2, placeholder: '' }
+        ],
+        runner: async (context, config) => {
+            const key = String(config.key || '').trim();
+            context.payload = key ? (context.vars[key] ?? config.fallback ?? '') : (config.fallback ?? '');
+            context.logs.push(`Payload loaded from variable ${key || 'fallback'}.`);
+        }
+    },
+    {
+        id: 'json-select-path',
+        category: 'utility',
+        name: 'Select JSON path',
+        description: 'Extract a value from JSON payload using dotted path.',
+        icon: 'target',
+        accent: '#f472b6',
+        tags: ['json'],
+        defaultConfig: { path: 'data.items[0].name' },
+        form: [
+            { key: 'path', label: 'JSON path', type: 'text', placeholder: 'data.items[0].name' }
+        ],
+        runner: async (context, config) => {
+            const parsed = BuilderRuntimeUtils.parseJson(context.payload);
+            if (!parsed) {
+                context.logs.push('JSON path selection skipped: payload not JSON.');
+                return;
+            }
+            const segments = String(config.path || '').split('.').map(part => part.trim()).filter(Boolean);
+            let current = parsed;
+            for (const segment of segments) {
+                const arrayMatch = segment.match(/([^\[]+)(\[(\d+)\])?/);
+                if (!arrayMatch) {
+                    current = current?.[segment];
+                } else {
+                    const [, key, , index] = arrayMatch;
+                    current = current?.[key];
+                    if (index !== undefined) {
+                        const idx = Number(index);
+                        current = Array.isArray(current) ? current[idx] : undefined;
+                    }
+                }
+            }
+            context.payload = current !== undefined ? BuilderRuntimeUtils.toText(current) : '';
+            context.logs.push('JSON path extracted into payload.');
+        }
+    },
+    {
+        id: 'json-merge-object',
+        category: 'utility',
+        name: 'Merge JSON object',
+        description: 'Merge configured JSON into payload JSON object.',
+        icon: 'layers',
+        accent: '#1d4ed8',
+        tags: ['json'],
+        defaultConfig: { json: '{"status":"processed"}' },
+        form: [
+            { key: 'json', label: 'JSON to merge', type: 'textarea', rows: 4, placeholder: '{"status":"processed"}' }
+        ],
+        runner: async (context, config) => {
+            const base = BuilderRuntimeUtils.parseJson(context.payload) || {};
+            const patch = BuilderRuntimeUtils.parseJson(config.json) || {};
+            const merged = { ...base, ...patch };
+            context.payload = JSON.stringify(merged, null, 2);
+            context.logs.push('JSON payload merged with configured object.');
+        }
+    },
+    {
+        id: 'json-pretty-print',
+        category: 'utility',
+        name: 'Pretty print JSON',
+        description: 'Format JSON payload for readability.',
+        icon: 'align-left',
+        accent: '#0f172a',
+        tags: ['json'],
+        defaultConfig: {},
+        form: [],
+        runner: async (context) => {
+            const parsed = BuilderRuntimeUtils.parseJson(context.payload);
+            if (!parsed) {
+                context.logs.push('Pretty print skipped: payload not JSON.');
+                return;
+            }
+            context.payload = JSON.stringify(parsed, null, 2);
+            context.logs.push('Payload pretty-printed as JSON.');
+        }
+    },
+    {
+        id: 'json-array-length',
+        category: 'utility',
+        name: 'JSON array length',
+        description: 'Store the length of a JSON array payload.',
+        icon: 'list-ordered',
+        accent: '#64748b',
+        tags: ['json', 'metrics'],
+        defaultConfig: { variable: 'arrayLength' },
+        form: [
+            { key: 'variable', label: 'Variable to store length', type: 'text', placeholder: 'arrayLength' }
+        ],
+        runner: async (context, config) => {
+            const parsed = BuilderRuntimeUtils.parseJson(context.payload);
+            const length = Array.isArray(parsed) ? parsed.length : 0;
+            context.payload = String(length);
+            const key = String(config.variable || '').trim();
+            if (key) context.vars[key] = length;
+            context.logs.push(`Array length calculated: ${length}.`);
+        }
+    },
+    {
+        id: 'list-split-lines',
+        category: 'utility',
+        name: 'Split lines',
+        description: 'Split payload text into a list of lines.',
+        icon: 'divide-square',
+        accent: '#db2777',
+        tags: ['text', 'list'],
+        defaultConfig: { delimiter: '\n', storeVariable: 'lines' },
+        form: [
+            { key: 'delimiter', label: 'Delimiter', type: 'text', placeholder: '\n' },
+            { key: 'storeVariable', label: 'Variable name', type: 'text', placeholder: 'lines' }
+        ],
+        runner: async (context, config) => {
+            const delimiter = config.delimiter ?? '\n';
+            const list = BuilderRuntimeUtils.splitToList(context.payload, delimiter, { trim: true });
+            context.payload = JSON.stringify(list, null, 2);
+            if (config.storeVariable) context.vars[config.storeVariable] = list;
+            context.logs.push(`Payload split into ${list.length} items.`);
+        }
+    },
+    {
+        id: 'list-join-lines',
+        category: 'utility',
+        name: 'Join list',
+        description: 'Join an array or newline-separated payload into single text.',
+        icon: 'link-2',
+        accent: '#f97316',
+        tags: ['text', 'list'],
+        defaultConfig: { separator: '\n', fromVariable: '' },
+        form: [
+            { key: 'separator', label: 'Separator', type: 'text', placeholder: '\n' },
+            { key: 'fromVariable', label: 'Source variable (optional)', type: 'text', placeholder: 'lines' }
+        ],
+        runner: async (context, config) => {
+            let source = context.payload;
+            if (config.fromVariable) {
+                source = context.vars[config.fromVariable];
+            }
+            const array = Array.isArray(source)
+                ? source
+                : BuilderRuntimeUtils.splitToList(source, '\n', { trim: false });
+            context.payload = array.join(config.separator ?? '\n');
+            context.logs.push('List joined into payload text.');
+        }
+    },
+    {
+        id: 'list-sort-values',
+        category: 'utility',
+        name: 'Sort list values',
+        description: 'Sort newline separated payload or stored list.',
+        icon: 'arrow-up-down',
+        accent: '#22c55e',
+        tags: ['list'],
+        defaultConfig: { order: 'asc', fromVariable: '' },
+        form: [
+            { key: 'order', label: 'Order', type: 'select', options: [
+                { value: 'asc', label: 'Ascending' },
+                { value: 'desc', label: 'Descending' }
+            ] },
+            { key: 'fromVariable', label: 'Source variable (optional)', type: 'text', placeholder: 'lines' }
+        ],
+        runner: async (context, config) => {
+            let list = config.fromVariable ? context.vars[config.fromVariable] : null;
+            if (!Array.isArray(list)) {
+                list = BuilderRuntimeUtils.splitToList(context.payload, '\n', { trim: true });
+            }
+            list.sort((a, b) => config.order === 'desc' ? b.localeCompare(a) : a.localeCompare(b));
+            context.payload = list.join('\n');
+            if (config.fromVariable) context.vars[config.fromVariable] = list;
+            context.logs.push('List sorted.');
+        }
+    },
+    {
+        id: 'list-unique-values',
+        category: 'utility',
+        name: 'Unique list values',
+        description: 'Remove duplicate entries from a list.',
+        icon: 'filter',
+        accent: '#a855f7',
+        tags: ['list'],
+        defaultConfig: { fromVariable: '' },
+        form: [
+            { key: 'fromVariable', label: 'Source variable (optional)', type: 'text', placeholder: 'lines' }
+        ],
+        runner: async (context, config) => {
+            let list = config.fromVariable ? context.vars[config.fromVariable] : null;
+            if (!Array.isArray(list)) {
+                list = BuilderRuntimeUtils.splitToList(context.payload, '\n', { trim: true });
+            }
+            const unique = Array.from(new Set(list));
+            context.payload = unique.join('\n');
+            if (config.fromVariable) context.vars[config.fromVariable] = unique;
+            context.logs.push('Duplicates removed from list.');
+        }
+    },
+    {
+        id: 'list-filter-contains',
+        category: 'utility',
+        name: 'Filter list',
+        description: 'Filter list entries that contain a keyword.',
+        icon: 'search',
+        accent: '#2563eb',
+        tags: ['list'],
+        defaultConfig: { keyword: 'FlashSearch', fromVariable: '' },
+        form: [
+            { key: 'keyword', label: 'Keyword', type: 'text', placeholder: 'FlashSearch' },
+            { key: 'fromVariable', label: 'Source variable (optional)', type: 'text', placeholder: 'lines' }
+        ],
+        runner: async (context, config) => {
+            const keyword = String(config.keyword || '').toLowerCase();
+            let list = config.fromVariable ? context.vars[config.fromVariable] : null;
+            if (!Array.isArray(list)) {
+                list = BuilderRuntimeUtils.splitToList(context.payload, '\n', { trim: true });
+            }
+            const filtered = keyword
+                ? list.filter(item => item.toLowerCase().includes(keyword))
+                : list;
+            context.payload = filtered.join('\n');
+            if (config.fromVariable) context.vars[config.fromVariable] = filtered;
+            context.logs.push(`List filtered to ${filtered.length} entries.`);
+        }
+    },
+    {
+        id: 'list-chunk',
+        category: 'utility',
+        name: 'Chunk list',
+        description: 'Split a list into equally sized chunks.',
+        icon: 'grid',
+        accent: '#14b8a6',
+        tags: ['list'],
+        defaultConfig: { size: 5, fromVariable: '', storeVariable: 'chunks' },
+        form: [
+            { key: 'size', label: 'Chunk size', type: 'number', min: 1, placeholder: '5' },
+            { key: 'fromVariable', label: 'Source variable (optional)', type: 'text', placeholder: 'lines' },
+            { key: 'storeVariable', label: 'Target variable', type: 'text', placeholder: 'chunks' }
+        ],
+        runner: async (context, config) => {
+            let list = config.fromVariable ? context.vars[config.fromVariable] : null;
+            if (!Array.isArray(list)) {
+                list = BuilderRuntimeUtils.splitToList(context.payload, '\n', { trim: true });
+            }
+            const size = Math.max(1, Number(config.size) || 1);
+            const chunks = [];
+            for (let i = 0; i < list.length; i += size) {
+                chunks.push(list.slice(i, i + size));
+            }
+            context.payload = JSON.stringify(chunks, null, 2);
+            if (config.storeVariable) context.vars[config.storeVariable] = chunks;
+            context.logs.push(`List chunked into ${chunks.length} groups.`);
+        }
+    },
+    {
+        id: 'string-length',
+        category: 'utility',
+        name: 'Measure length',
+        description: 'Measure payload text length and store it.',
+        icon: 'ruler',
+        accent: '#ef4444',
+        tags: ['text'],
+        defaultConfig: { variable: 'payloadLength' },
+        form: [
+            { key: 'variable', label: 'Variable to store length', type: 'text', placeholder: 'payloadLength' }
+        ],
+        runner: async (context, config) => {
+            const length = BuilderRuntimeUtils.toText(context.payload).length;
+            context.payload = String(length);
+            const key = String(config.variable || '').trim();
+            if (key) context.vars[key] = length;
+            context.logs.push(`Payload length measured: ${length}.`);
+        }
+    },
+    {
+        id: 'string-regex-extract',
+        category: 'utility',
+        name: 'Extract with regex',
+        description: 'Extract first match of a regular expression.',
+        icon: 'regex',
+        accent: '#8b5cf6',
+        tags: ['text', 'regex'],
+        defaultConfig: { pattern: '(\\d+)', flags: 'g' },
+        form: [
+            { key: 'pattern', label: 'Regex pattern', type: 'text', placeholder: '(\\d+)' },
+            { key: 'flags', label: 'Flags', type: 'text', placeholder: 'g' }
+        ],
+        runner: async (context, config) => {
+            try {
+                const regex = new RegExp(config.pattern || '', config.flags || '');
+                const text = BuilderRuntimeUtils.toText(context.payload);
+                const match = text.match(regex);
+                context.payload = match ? match[0] : '';
+                context.logs.push('Regex extraction completed.');
+            } catch (error) {
+                context.logs.push(`Regex extraction failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'string-regex-match-all',
+        category: 'utility',
+        name: 'Match all regex',
+        description: 'Capture all regex matches as JSON array.',
+        icon: 'braces',
+        accent: '#f59e0b',
+        tags: ['text', 'regex'],
+        defaultConfig: { pattern: '(\\w+)', flags: 'g', storeVariable: 'matches' },
+        form: [
+            { key: 'pattern', label: 'Regex pattern', type: 'text', placeholder: '(\\w+)' },
+            { key: 'flags', label: 'Flags', type: 'text', placeholder: 'g' },
+            { key: 'storeVariable', label: 'Variable name', type: 'text', placeholder: 'matches' }
+        ],
+        runner: async (context, config) => {
+            try {
+                const regex = new RegExp(config.pattern || '', config.flags || 'g');
+                const text = BuilderRuntimeUtils.toText(context.payload);
+                const matches = Array.from(text.matchAll(regex)).map(m => m[0]);
+                context.payload = JSON.stringify(matches, null, 2);
+                if (config.storeVariable) context.vars[config.storeVariable] = matches;
+                context.logs.push(`Collected ${matches.length} regex matches.`);
+            } catch (error) {
+                context.logs.push(`Regex match failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'string-replace',
+        category: 'utility',
+        name: 'Replace text',
+        description: 'Replace all occurrences of a phrase in the payload.',
+        icon: 'repeat-2',
+        accent: '#4ade80',
+        tags: ['text'],
+        defaultConfig: { search: 'old', replace: 'new' },
+        form: [
+            { key: 'search', label: 'Search for', type: 'text', placeholder: 'old' },
+            { key: 'replace', label: 'Replace with', type: 'text', placeholder: 'new' }
+        ],
+        runner: async (context, config) => {
+            const source = BuilderRuntimeUtils.toText(context.payload);
+            const search = String(config.search || '');
+            const replace = config.replace ?? '';
+            context.payload = search ? source.split(search).join(replace) : source;
+            context.logs.push('Text replacement applied.');
+        }
+    },
+    {
+        id: 'string-base64-encode',
+        category: 'utility',
+        name: 'Base64 encode',
+        description: 'Encode payload text as Base64.',
+        icon: 'lock',
+        accent: '#0891b2',
+        tags: ['encoding'],
+        defaultConfig: {},
+        form: [],
+        runner: async (context) => {
+            const text = BuilderRuntimeUtils.toText(context.payload);
+            context.payload = Buffer.from(text, 'utf8').toString('base64');
+            context.logs.push('Payload encoded as Base64.');
+        }
+    },
+    {
+        id: 'string-base64-decode',
+        category: 'utility',
+        name: 'Base64 decode',
+        description: 'Decode Base64 payload into UTF-8 text.',
+        icon: 'unlock',
+        accent: '#6366f1',
+        tags: ['encoding'],
+        defaultConfig: {},
+        form: [],
+        runner: async (context) => {
+            try {
+                const decoded = Buffer.from(BuilderRuntimeUtils.toText(context.payload), 'base64').toString('utf8');
+                context.payload = decoded;
+                context.logs.push('Payload decoded from Base64.');
+            } catch (error) {
+                context.logs.push('Base64 decode failed: invalid input.');
+            }
+        }
+    },
+    {
+        id: 'string-slugify',
+        category: 'utility',
+        name: 'Slugify text',
+        description: 'Convert payload text to a URL-friendly slug.',
+        icon: 'link',
+        accent: '#f472b6',
+        tags: ['text'],
+        defaultConfig: {},
+        form: [],
+        runner: async (context) => {
+            context.payload = BuilderRuntimeUtils.slugify(context.payload);
+            context.logs.push('Payload slug generated.');
+        }
+    },
+    {
+        id: 'string-truncate',
+        category: 'utility',
+        name: 'Truncate text',
+        description: 'Limit payload text to a maximum length.',
+        icon: 'scissors',
+        accent: '#d946ef',
+        tags: ['text'],
+        defaultConfig: { length: 200, suffix: '…' },
+        form: [
+            { key: 'length', label: 'Max length', type: 'number', min: 1, placeholder: '200' },
+            { key: 'suffix', label: 'Suffix', type: 'text', placeholder: '…' }
+        ],
+        runner: async (context, config) => {
+            const text = BuilderRuntimeUtils.toText(context.payload);
+            const length = Math.max(1, Number(config.length) || 1);
+            const suffix = config.suffix ?? '';
+            context.payload = text.length > length ? text.slice(0, length) + suffix : text;
+            context.logs.push('Payload truncated if necessary.');
+        }
+    },
+    {
+        id: 'math-calculate-expression',
+        category: 'utility',
+        name: 'Calculate expression',
+        description: 'Evaluate a math expression with optional payload variable.',
+        icon: 'calculator',
+        accent: '#22c55e',
+        tags: ['math'],
+        defaultConfig: { expression: '2 + 2', variableName: 'x' },
+        form: [
+            { key: 'expression', label: 'Expression', type: 'text', placeholder: '2 + 2' },
+            { key: 'variableName', label: 'Payload variable name', type: 'text', placeholder: 'x' }
+        ],
+        runner: async (context, config) => {
+            const scope = { ...context.vars };
+            const variableName = String(config.variableName || '').trim();
+            if (variableName) {
+                scope[variableName] = Number(context.payload) || BuilderRuntimeUtils.toNumber(context.payload);
+            }
+            try {
+                const result = math.evaluate(config.expression || '0', scope);
+                context.payload = String(result);
+                context.logs.push('Math expression evaluated.');
+            } catch (error) {
+                context.payload = '';
+                context.logs.push(`Math evaluation failed: ${error.message}`);
+            }
+        }
+    },
+    {
+        id: 'math-random-number',
+        category: 'utility',
+        name: 'Random number',
+        description: 'Generate a random number within a range.',
+        icon: 'dice-3',
+        accent: '#0ea5e9',
+        tags: ['math'],
+        defaultConfig: { min: 0, max: 100, variable: 'randomNumber' },
+        form: [
+            { key: 'min', label: 'Minimum', type: 'number', placeholder: '0' },
+            { key: 'max', label: 'Maximum', type: 'number', placeholder: '100' },
+            { key: 'variable', label: 'Variable name', type: 'text', placeholder: 'randomNumber' }
+        ],
+        runner: async (context, config) => {
+            const min = Number(config.min) || 0;
+            const max = Number(config.max) || 100;
+            const value = Math.random() * (max - min) + min;
+            context.payload = String(value);
+            if (config.variable) context.vars[config.variable] = value;
+            context.logs.push('Random number generated.');
+        }
+    },
+    {
+        id: 'math-round-number',
+        category: 'utility',
+        name: 'Round number',
+        description: 'Round payload number to chosen precision.',
+        icon: 'circle-dot',
+        accent: '#facc15',
+        tags: ['math'],
+        defaultConfig: { precision: 2 },
+        form: [
+            { key: 'precision', label: 'Decimal places', type: 'number', min: 0, placeholder: '2' }
+        ],
+        runner: async (context, config) => {
+            const value = Number(context.payload);
+            const precision = Math.max(0, Number(config.precision) || 0);
+            if (Number.isFinite(value)) {
+                context.payload = value.toFixed(precision);
+                context.logs.push('Payload rounded to precision.');
+            } else {
+                context.logs.push('Round skipped: payload is not a number.');
+            }
+        }
+    },
+    {
+        id: 'math-percentage-of',
+        category: 'utility',
+        name: 'Calculate percentage',
+        description: 'Calculate a percentage of a number.',
+        icon: 'percent',
+        accent: '#f97316',
+        tags: ['math'],
+        defaultConfig: { value: '100', percent: 20 },
+        form: [
+            { key: 'value', label: 'Value', type: 'text', placeholder: '100' },
+            { key: 'percent', label: 'Percent', type: 'number', placeholder: '20' }
+        ],
+        runner: async (context, config) => {
+            const base = Number(config.value ?? context.payload);
+            const percent = Number(config.percent) || 0;
+            if (Number.isFinite(base)) {
+                const result = (base * percent) / 100;
+                context.payload = String(result);
+                context.logs.push('Percentage calculated.');
+            } else {
+                context.logs.push('Percentage calculation skipped: invalid value.');
+            }
+        }
+    },
+    {
+        id: 'math-sum-list',
+        category: 'utility',
+        name: 'Sum list values',
+        description: 'Sum numeric values from a list or payload.',
+        icon: 'sum',
+        accent: '#22d3ee',
+        tags: ['math', 'list'],
+        defaultConfig: { delimiter: '\n' },
+        form: [
+            { key: 'delimiter', label: 'Delimiter', type: 'text', placeholder: '\n' }
+        ],
+        runner: async (context, config) => {
+            const items = BuilderRuntimeUtils.splitToList(context.payload, config.delimiter || '\n', { trim: true });
+            const sum = items.reduce((total, item) => {
+                const value = Number(item);
+                return Number.isFinite(value) ? total + value : total;
+            }, 0);
+            context.payload = String(sum);
+            context.logs.push('List values summed.');
+        }
+    },
+    {
+        id: 'date-format',
+        category: 'utility',
+        name: 'Format date',
+        description: 'Format payload or current date using locale options.',
+        icon: 'calendar',
+        accent: '#4c1d95',
+        tags: ['date'],
+        defaultConfig: { locale: 'en-US', dateStyle: 'medium', timeStyle: 'short' },
+        form: [
+            { key: 'locale', label: 'Locale', type: 'text', placeholder: 'en-US' },
+            { key: 'dateStyle', label: 'Date style', type: 'select', options: [
+                { value: 'full', label: 'Full' },
+                { value: 'long', label: 'Long' },
+                { value: 'medium', label: 'Medium' },
+                { value: 'short', label: 'Short' },
+                { value: 'none', label: 'None' }
+            ] },
+            { key: 'timeStyle', label: 'Time style', type: 'select', options: [
+                { value: 'full', label: 'Full' },
+                { value: 'long', label: 'Long' },
+                { value: 'medium', label: 'Medium' },
+                { value: 'short', label: 'Short' },
+                { value: 'none', label: 'None' }
+            ] }
+        ],
+        runner: async (context, config) => {
+            const sourceDate = context.payload ? new Date(context.payload) : new Date();
+            if (Number.isNaN(sourceDate.getTime())) {
+                context.logs.push('Date formatting skipped: invalid date.');
+                return;
+            }
+            const options = {};
+            if (config.dateStyle && config.dateStyle !== 'none') options.dateStyle = config.dateStyle;
+            if (config.timeStyle && config.timeStyle !== 'none') options.timeStyle = config.timeStyle;
+            context.payload = sourceDate.toLocaleString(config.locale || undefined, options);
+            context.logs.push('Date formatted.');
+        }
+    },
+    {
+        id: 'date-add-duration',
+        category: 'utility',
+        name: 'Add duration',
+        description: 'Add duration to the payload date.',
+        icon: 'clock',
+        accent: '#fb7185',
+        tags: ['date'],
+        defaultConfig: { unit: 'minutes', amount: 15 },
+        form: [
+            { key: 'unit', label: 'Unit', type: 'select', options: [
+                { value: 'minutes', label: 'Minutes' },
+                { value: 'hours', label: 'Hours' },
+                { value: 'days', label: 'Days' },
+                { value: 'weeks', label: 'Weeks' }
+            ] },
+            { key: 'amount', label: 'Amount', type: 'number', placeholder: '15' }
+        ],
+        runner: async (context, config) => {
+            const base = context.payload ? new Date(context.payload) : new Date();
+            if (Number.isNaN(base.getTime())) {
+                context.logs.push('Add duration skipped: invalid date.');
+                return;
+            }
+            const amount = Number(config.amount) || 0;
+            const updated = new Date(base.getTime());
+            switch (config.unit) {
+                case 'weeks':
+                    updated.setDate(updated.getDate() + amount * 7);
+                    break;
+                case 'days':
+                    updated.setDate(updated.getDate() + amount);
+                    break;
+                case 'hours':
+                    updated.setHours(updated.getHours() + amount);
+                    break;
+                case 'minutes':
+                default:
+                    updated.setMinutes(updated.getMinutes() + amount);
+                    break;
+            }
+            context.payload = updated.toISOString();
+            context.logs.push('Duration added to date.');
+        }
+    },
+    {
+        id: 'date-difference',
+        category: 'utility',
+        name: 'Date difference',
+        description: 'Calculate difference between payload date and another date.',
+        icon: 'timer',
+        accent: '#10b981',
+        tags: ['date'],
+        defaultConfig: { compareTo: '', unit: 'minutes' },
+        form: [
+            { key: 'compareTo', label: 'Compare to (ISO date)', type: 'text', placeholder: '2024-01-01T00:00:00Z' },
+            { key: 'unit', label: 'Unit', type: 'select', options: [
+                { value: 'minutes', label: 'Minutes' },
+                { value: 'hours', label: 'Hours' },
+                { value: 'days', label: 'Days' }
+            ] }
+        ],
+        runner: async (context, config) => {
+            const first = context.payload ? new Date(context.payload) : new Date();
+            const second = config.compareTo ? new Date(config.compareTo) : new Date();
+            if (Number.isNaN(first.getTime()) || Number.isNaN(second.getTime())) {
+                context.logs.push('Date difference skipped: invalid date.');
+                return;
+            }
+            const diffMs = first.getTime() - second.getTime();
+            let value = diffMs / 60000;
+            if (config.unit === 'hours') value = diffMs / 3600000;
+            else if (config.unit === 'days') value = diffMs / 86400000;
+            context.payload = String(value);
+            context.logs.push('Date difference calculated.');
+        }
+    },
+    {
+        id: 'generate-uuid',
+        category: 'utility',
+        name: 'Generate UUID',
+        description: 'Generate a new UUID and store it in the payload.',
+        icon: 'fingerprint',
+        accent: '#6366f1',
+        tags: ['id'],
+        defaultConfig: { variable: 'uuid' },
+        form: [
+            { key: 'variable', label: 'Variable name', type: 'text', placeholder: 'uuid' }
+        ],
+        runner: async (context, config) => {
+            const id = randomUUID();
+            context.payload = id;
+            if (config.variable) context.vars[config.variable] = id;
+            context.logs.push('UUID generated.');
+        }
+    },
+    {
+        id: 'generate-password',
+        category: 'utility',
+        name: 'Generate password',
+        description: 'Generate a secure random password.',
+        icon: 'shield',
+        accent: '#f87171',
+        tags: ['security'],
+        defaultConfig: { length: 16, includeSymbols: true },
+        form: [
+            { key: 'length', label: 'Length', type: 'number', min: 4, placeholder: '16' },
+            { key: 'includeSymbols', label: 'Include symbols', type: 'checkbox' }
+        ],
+        runner: async (context, config) => {
+            const length = Math.max(4, Number(config.length) || 16);
+            const alphabet = config.includeSymbols
+                ? 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=' :
+                'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            context.payload = BuilderRuntimeUtils.randomString(length, alphabet);
+            context.logs.push('Password generated.');
+        }
+    },
+    {
+        id: 'validate-email',
+        category: 'utility',
+        name: 'Validate email',
+        description: 'Validate payload text as an email address.',
+        icon: 'mail-check',
+        accent: '#2563eb',
+        tags: ['validation'],
+        defaultConfig: { variable: 'isEmailValid' },
+        form: [
+            { key: 'variable', label: 'Variable name', type: 'text', placeholder: 'isEmailValid' }
+        ],
+        runner: async (context, config) => {
+            const email = BuilderRuntimeUtils.toText(context.payload).trim();
+            const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+            context.payload = String(isValid);
+            if (config.variable) context.vars[config.variable] = isValid;
+            context.logs.push(`Email validation result: ${isValid}.`);
+        }
+    },
+    {
+        id: 'validate-url',
+        category: 'utility',
+        name: 'Validate URL',
+        description: 'Validate payload text as an absolute URL.',
+        icon: 'globe',
+        accent: '#0ea5e9',
+        tags: ['validation'],
+        defaultConfig: { variable: 'isUrlValid' },
+        form: [
+            { key: 'variable', label: 'Variable name', type: 'text', placeholder: 'isUrlValid' }
+        ],
+        runner: async (context, config) => {
+            let isValid = false;
+            try {
+                const value = BuilderRuntimeUtils.toText(context.payload).trim();
+                const url = new URL(value);
+                isValid = Boolean(url.protocol && url.host);
+            } catch (error) {
+                isValid = false;
+            }
+            context.payload = String(isValid);
+            if (config.variable) context.vars[config.variable] = isValid;
+            context.logs.push(`URL validation result: ${isValid}.`);
+        }
+    },
+    {
+        id: 'http-build-query',
+        category: 'utility',
+        name: 'Build query string',
+        description: 'Convert JSON payload into a URL query string.',
+        icon: 'list',
+        accent: '#facc15',
+        tags: ['http'],
+        defaultConfig: { prefix: '?', storeVariable: 'queryString' },
+        form: [
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: '?' },
+            { key: 'storeVariable', label: 'Variable name', type: 'text', placeholder: 'queryString' }
+        ],
+        runner: async (context, config) => {
+            const payload = BuilderRuntimeUtils.parseJson(context.payload) || {};
+            const query = new URLSearchParams(payload).toString();
+            const value = (config.prefix ?? '') + query;
+            context.payload = value;
+            if (config.storeVariable) context.vars[config.storeVariable] = value;
+            context.logs.push('Query string built from payload.');
+        }
+    },
+    {
+        id: 'context-reset',
+        category: 'utility',
+        name: 'Reset context',
+        description: 'Clear payload, variables, or logs selectively.',
+        icon: 'refresh-ccw',
+        accent: '#111827',
+        tags: ['context'],
+        defaultConfig: { clearPayload: true, clearVariables: false, clearLogs: false },
+        form: [
+            { key: 'clearPayload', label: 'Clear payload', type: 'checkbox' },
+            { key: 'clearVariables', label: 'Clear variables', type: 'checkbox' },
+            { key: 'clearLogs', label: 'Clear logs', type: 'checkbox' }
+        ],
+        runner: async (context, config) => {
+            if (BuilderRuntimeUtils.toBoolean(config.clearPayload)) context.payload = '';
+            if (BuilderRuntimeUtils.toBoolean(config.clearVariables)) context.vars = {};
+            if (BuilderRuntimeUtils.toBoolean(config.clearLogs)) context.logs.length = 0;
+            context.logs.push('Context reset executed.');
+        }
+    }
+];
+
+const UtilityBlueprints = UtilitySpecs.map(spec => ({ ...spec }));
+
+const AdditionalModuleBlueprints = [
+    ...TriggerBlueprints,
+    ...ActionBlueprints,
+    ...UtilityBlueprints
+];
+
+const QuickActionModuleDefinitions = [
+    ...LegacyModuleDefinitions,
+    ...AdditionalModuleBlueprints.map(createModuleDefinition)
+];
+
 
 const QuickActionModuleMap = new Map();
 const QuickActionModulesByCategory = { triggers: [], actions: [], utilities: [] };
@@ -920,6 +3157,11 @@ const QuickActionLab = {
     boundOutsideClick: null,
     builderSelectWrappers: new Set(),
     boundSelectOutsideClick: null,
+    moduleSearchQuery: '',
+    modulePreviewModuleId: null,
+    libraryWindow: null,
+    libraryWindowMonitor: null,
+    boundLibraryMessageHandler: null,
 
     init() {
         if (this.initialized) return;
@@ -932,6 +3174,16 @@ const QuickActionLab = {
         this.iconPickerOpen = false;
         this.windowExpanded = false;
         this.builderSelectWrappers = new Set();
+        this.moduleSearchQuery = '';
+        this.modulePreviewModuleId = null;
+        if (this.libraryWindow && !this.libraryWindow.closed) {
+            this.libraryWindow.close();
+        }
+        this.libraryWindow = null;
+        if (this.libraryWindowMonitor) {
+            clearInterval(this.libraryWindowMonitor);
+        }
+        this.libraryWindowMonitor = null;
         this.elements = {
             activeList: Utils.getElement('#quick-action-active-list'),
             catalog: Utils.getElement('#quick-action-catalog'),
@@ -954,6 +3206,9 @@ const QuickActionLab = {
             triggerList: Utils.getElement('#builder-trigger-list'),
             actionList: Utils.getElement('#builder-action-list'),
             utilityList: Utils.getElement('#builder-utility-list'),
+            moduleSearchInput: Utils.getElement('#builder-module-search'),
+            moduleSearchClear: Utils.getElement('#builder-module-search-clear'),
+            openLibraryWindow: Utils.getElement('#builder-open-library-window'),
             canvas: Utils.getElement('#quick-action-canvas'),
             nodeLayer: Utils.getElement('#builder-node-layer'),
             connectionLayer: Utils.getElement('#builder-connection-layer'),
@@ -965,7 +3220,15 @@ const QuickActionLab = {
             iconPreview: Utils.getElement('#builder-icon-preview'),
             iconPickerToggle: Utils.getElement('#builder-icon-picker-toggle'),
             iconPicker: Utils.getElement('#builder-icon-picker'),
-            inspector: document.querySelector('.builder-inspector')
+            inspector: document.querySelector('.builder-inspector'),
+            modulePreview: Utils.getElement('#builder-module-preview'),
+            modulePreviewName: Utils.getElement('#builder-module-preview-name'),
+            modulePreviewDescription: Utils.getElement('#builder-module-preview-description'),
+            modulePreviewDetails: Utils.getElement('#builder-module-preview-details'),
+            modulePreviewForm: Utils.getElement('#builder-module-preview-form'),
+            modulePreviewAdd: Utils.getElement('#builder-module-preview-add'),
+            modulePreviewOpenWindow: Utils.getElement('#builder-module-preview-open-window'),
+            modulePreviewClose: Utils.getElement('#builder-module-preview-close')
         };
 
         this.elements.dialog = document.querySelector('#quick-action-builder-modal .builder-dialog');
@@ -982,6 +3245,11 @@ const QuickActionLab = {
             this.boundSelectOutsideClick = (event) => this.handleBuilderSelectOutsideClick(event);
             document.addEventListener('click', this.boundSelectOutsideClick);
         }
+
+        if (!this.boundLibraryMessageHandler) {
+            this.boundLibraryMessageHandler = (event) => this.handleLibraryWindowMessage(event);
+        }
+        window.addEventListener('message', this.boundLibraryMessageHandler);
 
         if (!this.elements.activeList) {
             return;
@@ -1013,6 +3281,20 @@ const QuickActionLab = {
             if (!this.builderState) return;
             this.builderState.metadata.label = event.target.value;
         });
+
+        this.elements.moduleSearchInput?.addEventListener('input', (event) => {
+            this.setModuleSearchQuery(event.target.value || '');
+        });
+
+        this.elements.moduleSearchClear?.addEventListener('click', () => {
+            if (this.elements.moduleSearchInput) {
+                this.elements.moduleSearchInput.value = '';
+            }
+            this.setModuleSearchQuery('');
+            this.elements.moduleSearchInput?.focus();
+        });
+
+        this.elements.openLibraryWindow?.addEventListener('click', () => this.openModuleLibraryWindow());
 
         this.elements.resizeHandle?.addEventListener('pointerdown', (event) => this.startResize(event));
 
@@ -1051,6 +3333,19 @@ const QuickActionLab = {
         this.elements.exportAction?.addEventListener('click', () => this.exportCurrentAction());
         this.elements.saveAction?.addEventListener('click', () => this.saveAction());
         this.elements.previewAction?.addEventListener('click', () => this.previewAction());
+        this.elements.modulePreviewClose?.addEventListener('click', () => this.closeModulePreview());
+        this.elements.modulePreviewAdd?.addEventListener('click', () => {
+            if (this.modulePreviewModuleId) {
+                this.addNode(this.modulePreviewModuleId);
+                this.closeModulePreview();
+            }
+        });
+        this.elements.modulePreviewOpenWindow?.addEventListener('click', () => this.openModulePreviewWindow());
+        this.elements.modulePreview?.addEventListener('click', (event) => {
+            if (event.target === this.elements.modulePreview) {
+                this.closeModulePreview();
+            }
+        });
 
         this.elements.zoomIn?.addEventListener('click', () => this.adjustZoom(0.1));
         this.elements.zoomOut?.addEventListener('click', () => this.adjustZoom(-0.1));
@@ -1392,6 +3687,12 @@ const QuickActionLab = {
             this.elements.modal.setAttribute('aria-hidden', 'true');
         }
         this.toggleIconPicker(false);
+        this.closeModulePreview();
+        this.closeLibraryWindow();
+        this.moduleSearchQuery = '';
+        if (this.elements.moduleSearchInput) {
+            this.elements.moduleSearchInput.value = '';
+        }
         if (this.windowExpanded && typeof ViewManager?.resizeWindow === 'function') {
             this.windowExpanded = false;
             requestAnimationFrame(() => ViewManager.resizeWindow());
@@ -1466,17 +3767,486 @@ const QuickActionLab = {
         lists.forEach(({ container, items }) => {
             if (!container) return;
             container.innerHTML = '';
-            items.forEach(module => {
+            const filtered = this.filterModules(items);
+            if (filtered.length === 0) {
+                const empty = Utils.createElement('li', {
+                    className: 'builder-module-empty',
+                    text: this.moduleSearchQuery
+                        ? (LocalizationRenderer.t('quick_actions_builder_no_results') || 'No blocks match your search.')
+                        : (LocalizationRenderer.t('quick_actions_builder_no_blocks') || 'No blocks available in this category yet.')
+                });
+                container.appendChild(empty);
+                return;
+            }
+
+            filtered.forEach(({ module, highlight }) => {
                 const item = Utils.createElement('li', { className: 'builder-module-item' });
                 item.setAttribute('data-module-id', module.id);
+                if (highlight) {
+                    item.setAttribute('data-highlight', 'true');
+                } else {
+                    item.removeAttribute('data-highlight');
+                }
+
+                const header = Utils.createElement('div', { className: 'builder-module-item-header' });
                 const title = Utils.createElement('strong', { text: this.getModuleName(module) });
-                const description = Utils.createElement('span', { text: this.getModuleDescription(module) });
-                item.appendChild(title);
-                item.appendChild(description);
+                header.appendChild(title);
+                item.appendChild(header);
+
+                if (module.description || module.descriptionKey) {
+                    item.appendChild(Utils.createElement('span', { text: this.getModuleDescription(module) }));
+                }
+
+                if (Array.isArray(module.tags) && module.tags.length > 0) {
+                    const tags = Utils.createElement('div', { className: 'builder-module-item-tags' });
+                    module.tags.slice(0, 6).forEach(tag => {
+                        tags.appendChild(Utils.createElement('span', { text: tag }));
+                    });
+                    item.appendChild(tags);
+                }
+
+                const actions = Utils.createElement('div', { className: 'builder-module-item-actions' });
+                const addButton = Utils.createElement('button', { text: LocalizationRenderer.t('quick_actions_builder_add') || 'Add' });
+                addButton.type = 'button';
+                addButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    this.addNode(module.id);
+                });
+                const previewButton = Utils.createElement('button', { text: LocalizationRenderer.t('quick_actions_builder_preview') || 'Preview' });
+                previewButton.type = 'button';
+                previewButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    this.openModulePreview(module.id);
+                });
+                actions.appendChild(addButton);
+                actions.appendChild(previewButton);
+                item.appendChild(actions);
+
                 item.addEventListener('click', () => this.addNode(module.id));
                 container.appendChild(item);
             });
         });
+        this.renderModulePreview();
+    },
+
+    filterModules(items = []) {
+        return items
+            .map(module => ({ module, info: this.getModuleSearchInfo(module) }))
+            .filter(({ info }) => info.matches)
+            .map(({ module, info }) => ({ module, highlight: info.highlight }));
+    },
+
+    getModuleSearchInfo(module) {
+        if (!module) return { matches: false, highlight: false };
+        if (!this.moduleSearchQuery) {
+            return { matches: true, highlight: false };
+        }
+        const query = this.moduleSearchQuery.split(/\s+/).filter(Boolean);
+        if (query.length === 0) {
+            return { matches: true, highlight: false };
+        }
+        const name = (this.getModuleName(module) || '').toLowerCase();
+        const description = (this.getModuleDescription(module) || '').toLowerCase();
+        const tags = Array.isArray(module.tags) ? module.tags.join(' ') : '';
+        const keywords = Array.isArray(module.keywords) ? module.keywords.join(' ') : '';
+        const haystack = [
+            module.id || '',
+            module.category || '',
+            module.icon || '',
+            name,
+            description,
+            tags,
+            keywords
+        ].join(' ').toLowerCase();
+        const matches = query.every(token => haystack.includes(token));
+        return { matches, highlight: matches };
+    },
+
+    setModuleSearchQuery(query) {
+        const normalized = String(query || '').trim().toLowerCase();
+        if (normalized === this.moduleSearchQuery) return;
+        this.moduleSearchQuery = normalized;
+        this.renderModuleList();
+    },
+
+    openModulePreview(moduleId) {
+        if (!moduleId) return;
+        const module = QuickActionModuleMap.get(moduleId);
+        if (!module) return;
+        this.modulePreviewModuleId = moduleId;
+        this.renderModulePreview();
+    },
+
+    closeModulePreview() {
+        if (this.elements.modulePreview) {
+            this.elements.modulePreview.setAttribute('aria-hidden', 'true');
+        }
+        this.modulePreviewModuleId = null;
+    },
+
+    renderModulePreview() {
+        const container = this.elements.modulePreview;
+        if (!container) return;
+        const moduleId = this.modulePreviewModuleId;
+        if (!moduleId) {
+            container.setAttribute('aria-hidden', 'true');
+            return;
+        }
+        const module = QuickActionModuleMap.get(moduleId);
+        const searchInfo = this.getModuleSearchInfo(module);
+        if (!module || (this.moduleSearchQuery && !searchInfo.matches)) {
+            this.closeModulePreview();
+            return;
+        }
+
+        container.setAttribute('aria-hidden', 'false');
+        if (this.elements.modulePreviewName) {
+            this.elements.modulePreviewName.textContent = this.getModuleName(module);
+        }
+        if (this.elements.modulePreviewDescription) {
+            this.elements.modulePreviewDescription.textContent = this.getModuleDescription(module);
+        }
+
+        if (this.elements.modulePreviewDetails) {
+            const list = this.elements.modulePreviewDetails;
+            list.innerHTML = '';
+            const addDetail = (label, value) => {
+                if (!value) return;
+                list.appendChild(Utils.createElement('dt', { text: label }));
+                list.appendChild(Utils.createElement('dd', { text: value }));
+            };
+            addDetail('Identifier', module.id);
+            addDetail('Category', module.category ? module.category.charAt(0).toUpperCase() + module.category.slice(1) : '');
+            addDetail('Icon', module.icon);
+            addDetail('Accent', module.accent);
+            if (Array.isArray(module.inputs) && module.inputs.length > 0) {
+                addDetail('Inputs', module.inputs.map(input => input.label || input.id).join(', '));
+            }
+            if (Array.isArray(module.outputs) && module.outputs.length > 0) {
+                addDetail('Outputs', module.outputs.map(output => output.label || output.id).join(', '));
+            }
+            if (Array.isArray(module.tags) && module.tags.length > 0) {
+                addDetail('Tags', module.tags.join(', '));
+            }
+        }
+
+        if (this.elements.modulePreviewForm) {
+            const formContainer = this.elements.modulePreviewForm;
+            formContainer.innerHTML = '';
+            if (Array.isArray(module.form) && module.form.length > 0) {
+                module.form.forEach(field => {
+                    const fieldWrapper = Utils.createElement('div', { className: 'preview-field' });
+                    fieldWrapper.appendChild(Utils.createElement('label', { text: field.label || field.key || 'Field' }));
+                    const details = [];
+                    if (field.type) details.push(`Type: ${field.type}`);
+                    if (field.placeholder) details.push(`Placeholder: ${field.placeholder}`);
+                    if (typeof field.rows === 'number') details.push(`Rows: ${field.rows}`);
+                    if (typeof field.min === 'number') details.push(`Min: ${field.min}`);
+                    if (typeof field.max === 'number') details.push(`Max: ${field.max}`);
+                    if (typeof field.step === 'number') details.push(`Step: ${field.step}`);
+                    if (field.description) details.push(field.description);
+                    if (Array.isArray(field.options) && field.options.length > 0) {
+                        details.push(`Options: ${field.options.map(opt => opt.label || opt.value).join(', ')}`);
+                    }
+                    fieldWrapper.appendChild(Utils.createElement('span', { text: details.join(' • ') || 'No additional configuration.' }));
+                    formContainer.appendChild(fieldWrapper);
+                });
+            } else {
+                formContainer.appendChild(Utils.createElement('p', {
+                    text: LocalizationRenderer.t('quick_actions_no_settings') || 'This block has no configurable options.'
+                }));
+            }
+        }
+    },
+
+    openModulePreviewWindow(moduleId = this.modulePreviewModuleId) {
+        const module = moduleId ? QuickActionModuleMap.get(moduleId) : null;
+        if (!module) {
+            if (!moduleId) {
+                alert(LocalizationRenderer.t('quick_actions_builder_select_module') || 'Select a block to preview it.');
+            }
+            return;
+        }
+        const previewWindow = window.open('', '', 'width=520,height=640');
+        if (!previewWindow) {
+            alert(LocalizationRenderer.t('quick_actions_builder_popup_blocked') || 'Unable to open preview window.');
+            return;
+        }
+        const moduleData = {
+            id: module.id,
+            name: this.getModuleName(module),
+            description: this.getModuleDescription(module),
+            category: module.category,
+            icon: module.icon,
+            accent: module.accent,
+            tags: module.tags || [],
+            inputs: module.inputs || [],
+            outputs: module.outputs || [],
+            form: module.form || [],
+            defaultConfig: module.defaultConfig || {}
+        };
+        const serialized = JSON.stringify(moduleData).replace(/</g, '\\u003c');
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>${moduleData.name}</title>
+<style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 24px; background: #0f172a; color: #f8fafc; }
+    h1 { margin-top: 0; font-size: 22px; }
+    .category { text-transform: uppercase; letter-spacing: 0.18em; font-size: 12px; opacity: 0.7; margin-bottom: 8px; }
+    .section { margin-top: 24px; padding: 16px; border-radius: 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .tag { padding: 4px 10px; border-radius: 999px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(96, 165, 250, 0.4); font-size: 12px; }
+    button { background: #38bdf8; color: #0f172a; border: none; border-radius: 999px; padding: 10px 20px; font-weight: 600; cursor: pointer; margin-right: 12px; }
+    button.secondary { background: transparent; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.6); }
+    dl { margin: 0; }
+    dt { font-size: 12px; opacity: 0.7; margin-top: 12px; text-transform: uppercase; }
+    dd { margin: 4px 0 0 0; font-size: 14px; }
+    ul { margin: 0; padding-left: 18px; }
+    li { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+    <div class="category">${moduleData.category || ''}</div>
+    <h1>${moduleData.name}</h1>
+    <p>${moduleData.description}</p>
+    <div class="section">
+        <button id="preview-add">Add to builder</button>
+        <button id="preview-preview" class="secondary">Highlight in builder</button>
+    </div>
+    <div class="section">
+        <dl id="module-details"></dl>
+    </div>
+    <div class="section">
+        <h2 style="margin-top:0;font-size:16px;">Fields</h2>
+        <div id="module-fields"></div>
+    </div>
+    <script>
+        const moduleData = ${serialized};
+        const details = document.getElementById('module-details');
+        const addDetail = (label, value) => {
+            if (!value) return;
+            const dt = document.createElement('dt');
+            dt.textContent = label;
+            const dd = document.createElement('dd');
+            dd.textContent = value;
+            details.appendChild(dt);
+            details.appendChild(dd);
+        };
+        addDetail('Identifier', moduleData.id);
+        addDetail('Icon', moduleData.icon);
+        addDetail('Accent', moduleData.accent);
+        if (moduleData.inputs.length) addDetail('Inputs', moduleData.inputs.map(i => i.label || i.id).join(', '));
+        if (moduleData.outputs.length) addDetail('Outputs', moduleData.outputs.map(o => o.label || o.id).join(', '));
+        if (moduleData.tags.length) {
+            const tagWrapper = document.createElement('div');
+            tagWrapper.className = 'tags';
+            moduleData.tags.forEach(tag => {
+                const span = document.createElement('span');
+                span.className = 'tag';
+                span.textContent = tag;
+                tagWrapper.appendChild(span);
+            });
+            details.appendChild(tagWrapper);
+        }
+        const fieldContainer = document.getElementById('module-fields');
+        if (moduleData.form.length === 0) {
+            const empty = document.createElement('p');
+            empty.textContent = 'This block has no configurable options.';
+            fieldContainer.appendChild(empty);
+        } else {
+            const list = document.createElement('ul');
+            moduleData.form.forEach(field => {
+                const item = document.createElement('li');
+                const parts = [field.label || field.key];
+                if (field.type) parts.push('type: ' + field.type);
+                if (field.placeholder) parts.push('placeholder: ' + field.placeholder);
+                if (field.options && field.options.length) parts.push('options: ' + field.options.map(opt => opt.label || opt.value).join(', '));
+                if (field.description) parts.push(field.description);
+                item.textContent = parts.filter(Boolean).join(' • ');
+                list.appendChild(item);
+            });
+            fieldContainer.appendChild(list);
+        }
+        document.getElementById('preview-add').addEventListener('click', () => {
+            window.opener?.postMessage({ type: 'builder-add-module', moduleId: moduleData.id }, '*');
+        });
+        document.getElementById('preview-preview').addEventListener('click', () => {
+            window.opener?.postMessage({ type: 'builder-preview-module', moduleId: moduleData.id }, '*');
+            window.focus();
+        });
+    </script>
+</body>
+</html>`;
+        previewWindow.document.open();
+        previewWindow.document.write(html);
+        previewWindow.document.close();
+    },
+
+    openModuleLibraryWindow() {
+        if (this.libraryWindow && !this.libraryWindow.closed) {
+            this.libraryWindow.focus();
+            return;
+        }
+        const modules = QuickActionModuleDefinitions.map(def => ({
+            id: def.id,
+            name: this.getModuleName(def),
+            description: this.getModuleDescription(def),
+            category: def.category,
+            icon: def.icon,
+            accent: def.accent,
+            tags: def.tags || [],
+            searchable: [
+                def.id,
+                def.category,
+                def.icon,
+                this.getModuleName(def),
+                this.getModuleDescription(def),
+                Array.isArray(def.tags) ? def.tags.join(' ') : '',
+                Array.isArray(def.keywords) ? def.keywords.join(' ') : ''
+            ].join(' ').toLowerCase()
+        }));
+        const serialized = JSON.stringify(modules).replace(/</g, '\\u003c');
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Block library</title>
+<style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #020617; color: #e2e8f0; display: flex; flex-direction: column; min-height: 100vh; }
+    header { padding: 24px; border-bottom: 1px solid rgba(148, 163, 184, 0.2); background: rgba(15, 23, 42, 0.8); position: sticky; top: 0; backdrop-filter: blur(12px); z-index: 10; }
+    h1 { margin: 0 0 12px 0; font-size: 22px; }
+    input { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.35); background: rgba(15, 23, 42, 0.8); color: inherit; }
+    main { flex: 1; overflow-y: auto; padding: 24px; display: grid; gap: 16px; }
+    .card { border-radius: 16px; padding: 20px; background: rgba(15, 23, 42, 0.72); border: 1px solid rgba(148, 163, 184, 0.25); display: grid; gap: 10px; }
+    .card h2 { margin: 0; font-size: 18px; }
+    .category { font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.6; }
+    .actions { display: flex; gap: 10px; }
+    button { flex: 1; border-radius: 999px; padding: 10px 16px; border: none; cursor: pointer; font-weight: 600; background: #38bdf8; color: #0f172a; }
+    button.secondary { background: transparent; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5); }
+    .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag { padding: 4px 10px; border-radius: 999px; background: rgba(59, 130, 246, 0.2); font-size: 12px; }
+    .empty { text-align: center; opacity: 0.7; padding: 40px 0; }
+</style>
+</head>
+<body>
+    <header>
+        <h1>Block library</h1>
+        <input id="library-search" type="search" placeholder="Search blocks" autofocus>
+    </header>
+    <main id="library-list"></main>
+    <script>
+        const modules = ${serialized};
+        const list = document.getElementById('library-list');
+        const search = document.getElementById('library-search');
+        const render = (query = '') => {
+            const tokens = query.toLowerCase().trim().split(/\\s+/).filter(Boolean);
+            list.innerHTML = '';
+            const filtered = modules.filter(module => tokens.length === 0 || tokens.every(token => module.searchable.includes(token)));
+            if (filtered.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'empty';
+                empty.textContent = 'No blocks match your search.';
+                list.appendChild(empty);
+                return;
+            }
+            filtered.forEach(module => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                const category = document.createElement('div');
+                category.className = 'category';
+                category.textContent = module.category || '';
+                card.appendChild(category);
+                const title = document.createElement('h2');
+                title.textContent = module.name;
+                card.appendChild(title);
+                const desc = document.createElement('p');
+                desc.textContent = module.description;
+                card.appendChild(desc);
+                if (module.tags.length) {
+                    const tags = document.createElement('div');
+                    tags.className = 'tags';
+                    module.tags.slice(0, 8).forEach(tag => {
+                        const span = document.createElement('span');
+                        span.className = 'tag';
+                        span.textContent = tag;
+                        tags.appendChild(span);
+                    });
+                    card.appendChild(tags);
+                }
+                const actions = document.createElement('div');
+                actions.className = 'actions';
+                const add = document.createElement('button');
+                add.textContent = 'Add to builder';
+                add.addEventListener('click', () => {
+                    window.opener?.postMessage({ type: 'builder-add-module', moduleId: module.id }, '*');
+                });
+                const preview = document.createElement('button');
+                preview.className = 'secondary';
+                preview.textContent = 'Preview';
+                preview.addEventListener('click', () => {
+                    window.opener?.postMessage({ type: 'builder-preview-module', moduleId: module.id }, '*');
+                });
+                actions.appendChild(add);
+                actions.appendChild(preview);
+                card.appendChild(actions);
+                list.appendChild(card);
+            });
+        };
+        search.addEventListener('input', (event) => render(event.target.value));
+        render('');
+        window.addEventListener('beforeunload', () => {
+            window.opener?.postMessage({ type: 'builder-library-closed' }, '*');
+        });
+    </script>
+</body>
+</html>`;
+        this.libraryWindow = window.open('', '', 'width=760,height=840');
+        if (!this.libraryWindow) {
+            alert(LocalizationRenderer.t('quick_actions_builder_popup_blocked') || 'Unable to open the block library window.');
+            return;
+        }
+        this.libraryWindow.document.open();
+        this.libraryWindow.document.write(html);
+        this.libraryWindow.document.close();
+        if (this.libraryWindowMonitor) {
+            clearInterval(this.libraryWindowMonitor);
+        }
+        this.libraryWindowMonitor = setInterval(() => {
+            if (!this.libraryWindow || this.libraryWindow.closed) {
+                clearInterval(this.libraryWindowMonitor);
+                this.libraryWindowMonitor = null;
+                this.libraryWindow = null;
+            }
+        }, 1000);
+    },
+
+    closeLibraryWindow() {
+        if (this.libraryWindowMonitor) {
+            clearInterval(this.libraryWindowMonitor);
+            this.libraryWindowMonitor = null;
+        }
+        if (this.libraryWindow && !this.libraryWindow.closed) {
+            this.libraryWindow.close();
+        }
+        this.libraryWindow = null;
+    },
+
+    handleLibraryWindowMessage(event) {
+        if (!event || !event.data) return;
+        const { type, moduleId } = event.data;
+        if (type === 'builder-library-closed') {
+            this.closeLibraryWindow();
+            return;
+        }
+        if (!moduleId) return;
+        if (type === 'builder-add-module') {
+            this.addNode(moduleId);
+        }
+        if (type === 'builder-preview-module') {
+            this.openModulePreview(moduleId);
+        }
     },
 
     renderCanvas() {
