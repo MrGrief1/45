@@ -3151,7 +3151,7 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 .builder-body {
   display: grid;
-  grid-template-columns: minmax(220px, 260px) 1fr minmax(320px, 380px);
+  grid-template-columns: minmax(260px, 320px) 1fr minmax(320px, 380px);
   gap: 0;
   flex: 1;
   min-height: 0;
