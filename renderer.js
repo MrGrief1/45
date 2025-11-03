@@ -4224,10 +4224,10 @@ const QuickActionLab = {
         this.renderActiveList();
     },
 
-    openBuilder(actionId = null, options = {}) {
+    async openBuilder(actionId = null, options = {}) {
         if (!this.hasBuilderAccess()) {
             SettingsModule?.openSubscriptionTab?.();
-            alert(LocalizationRenderer.t('subscription_builder_requires_upgrade'));
+            await customAlert(LocalizationRenderer.t('subscription_builder_requires_upgrade'));
             return;
         }
         QuickActionStore.ensureStructure();
@@ -4655,6 +4655,7 @@ const QuickActionLab = {
                 portEl.setAttribute('data-node-id', node.id);
                 portEl.setAttribute('data-port-id', port.id);
                 portEl.setAttribute('data-role', 'input');
+                portEl.setAttribute('title', ''); // Remove default browser tooltip
                 portEl.addEventListener('click', (event) => this.handlePortClick(node.id, port.id, 'input', event));
                 footer.appendChild(portEl);
             });
@@ -4664,6 +4665,7 @@ const QuickActionLab = {
                 portEl.setAttribute('data-node-id', node.id);
                 portEl.setAttribute('data-port-id', port.id);
                 portEl.setAttribute('data-role', 'output');
+                portEl.setAttribute('title', ''); // Remove default browser tooltip
                 portEl.addEventListener('click', (event) => this.handlePortClick(node.id, port.id, 'output', event));
                 footer.appendChild(portEl);
             });
@@ -5350,10 +5352,10 @@ const QuickActionLab = {
         }
     },
 
-    saveAction() {
+    async saveAction() {
         if (!this.builderState) return;
         if (!this.builderState.metadata.label || !this.builderState.metadata.label.trim()) {
-            alert(LocalizationRenderer.t('quick_actions_error_name') || 'Please enter a name for your quick action.');
+            await customAlert(LocalizationRenderer.t('quick_actions_error_name') || 'Please enter a name for your quick action.');
             this.elements.actionLabelInput?.focus();
             return;
         }
@@ -5372,7 +5374,7 @@ const QuickActionLab = {
         }));
 
         if (nodes.length === 0) {
-            alert(LocalizationRenderer.t('quick_actions_error_empty') || 'Add at least one block to the workflow.');
+            await customAlert(LocalizationRenderer.t('quick_actions_error_empty') || 'Add at least one block to the workflow.');
             return;
         }
 
@@ -5438,7 +5440,7 @@ const QuickActionLab = {
             }
         };
         ipcRenderer.send('copy-to-clipboard', JSON.stringify(payload, null, 2));
-        alert(LocalizationRenderer.t('quick_actions_exported') || 'Configuration copied to clipboard.');
+        await customAlert(LocalizationRenderer.t('quick_actions_exported') || 'Configuration copied to clipboard.');
     },
 
     toggleImportArea(show) {
@@ -7143,6 +7145,14 @@ const PinnedAppsModule = {
             item.style.opacity = '0.7';
             item.style.transition = 'all 0.1s ease';
             onClick(e);
+            // Remove focus to prevent stuck state
+            item.blur();
+            // Reset styles after animation
+            setTimeout(() => {
+                item.style.transform = '';
+                item.style.opacity = '';
+                item.style.transition = '';
+            }, 150);
         });
 
         // --- D&D Source ---
@@ -7917,6 +7927,60 @@ const CustomSelect = {
     }
 };
 
+// Global custom alert function
+const customAlert = (message) => {
+    return new Promise((resolve) => {
+        const dialog = document.getElementById('global-alert-dialog');
+        const messageEl = document.getElementById('global-alert-message');
+        const okBtn = document.getElementById('global-alert-ok');
+        
+        if (!dialog || !messageEl || !okBtn) {
+            console.warn('Alert dialog elements not found, using fallback');
+            alert(message);
+            resolve();
+            return;
+        }
+
+        messageEl.textContent = message;
+        dialog.setAttribute('aria-hidden', 'false');
+        
+        // Refresh feather icons
+        if (window.feather) {
+            feather.replace();
+        }
+
+        const cleanup = () => {
+            dialog.setAttribute('aria-hidden', 'true');
+            okBtn.removeEventListener('click', handleOk);
+            dialog.removeEventListener('click', handleBackdrop);
+            document.removeEventListener('keydown', handleEscape);
+        };
+
+        const handleOk = () => {
+            cleanup();
+            resolve();
+        };
+
+        const handleBackdrop = (event) => {
+            if (event.target.classList.contains('global-alert-backdrop')) {
+                cleanup();
+                resolve();
+            }
+        };
+
+        const handleEscape = (event) => {
+            if (event.key === 'Escape' || event.key === 'Enter') {
+                cleanup();
+                resolve();
+            }
+        };
+
+        okBtn.addEventListener('click', handleOk);
+        dialog.addEventListener('click', handleBackdrop);
+        document.addEventListener('keydown', handleEscape);
+    });
+};
+
 const ViewManager = {
     init: function() { this.setupEventListeners(); },
     setupEventListeners: function() {
@@ -8223,6 +8287,12 @@ document.addEventListener('DOMContentLoaded', () => {
     ipcRenderer.on('trigger-show-animation', () => {
         if (!document.body.classList.contains('visible')) document.body.classList.add('visible');
         Utils.getElement('#search-input')?.focus();
+        // Reset all pinned items styles when window is shown
+        document.querySelectorAll('.pinned-item').forEach(item => {
+            item.style.transform = '';
+            item.style.opacity = '';
+            item.style.transition = '';
+        });
     });
 
     ipcRenderer.on('prompt-rename-folder', (event, folderId) => {

@@ -536,6 +536,18 @@
                     </div>
                 </div>
             </div>
+            <div id="custom-alert-dialog" class="custom-alert-dialog" aria-hidden="true">
+                <div class="custom-alert-backdrop"></div>
+                <div class="custom-alert-card">
+                    <div class="custom-alert-icon">
+                        <i data-feather="info"></i>
+                    </div>
+                    <p id="custom-alert-message" class="custom-alert-message">Сообщение</p>
+                    <div class="custom-alert-actions">
+                        <button id="custom-alert-ok" class="custom-alert-button primary">OK</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -563,6 +575,18 @@
     </div>
     <div id="pinned-context-menu" class="pinned-context-menu" role="menu">
         <button type="button" data-action="create-folder" data-i18n="context_create_folder">Create Folder</button>
+    </div>
+    <div id="global-alert-dialog" class="global-alert-dialog" aria-hidden="true">
+        <div class="global-alert-backdrop"></div>
+        <div class="global-alert-card">
+            <div class="global-alert-icon">
+                <i data-feather="info"></i>
+            </div>
+            <p id="global-alert-message" class="global-alert-message">Сообщение</p>
+            <div class="global-alert-actions">
+                <button id="global-alert-ok" class="global-alert-button primary">OK</button>
+            </div>
+        </div>
     </div>
     <script src="renderer.js"></script>
 </body>
