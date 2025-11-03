@@ -3721,7 +3721,18 @@ const QuickActionManager = {
             button.setAttribute('data-action-id', id);
 
             const iconName = definition.icon || definition.payload?.icon || 'zap';
-            if (window.feather?.icons?.[iconName]) {
+            if (String(iconName).startsWith('custom:')) {
+                const id = String(iconName).slice(7);
+                const found = (AppState.settings.customIcons || []).find(i => i.id === id);
+                if (found) {
+                    const img = document.createElement('img');
+                    img.className = 'icon';
+                    img.src = found.dataUrl;
+                    button.appendChild(img);
+                } else if (window.feather?.icons?.['zap']) {
+                    button.innerHTML = window.feather.icons['zap'].toSvg({ class: 'icon' });
+                }
+            } else if (window.feather?.icons?.[iconName]) {
                 button.innerHTML = window.feather.icons[iconName].toSvg({ class: 'icon' });
             } else {
                 const iconFallback = Utils.createElement('span', { className: 'icon', text: '⚡' });
@@ -4212,15 +4223,19 @@ const QuickActionLab = {
             card.appendChild(info);
 
             const controls = Utils.createElement('div', { className: 'quick-action-card-controls' });
-            const toggleLabel = Utils.createElement('label', { className: 'toggle-switch-ios' });
-            const toggleInput = document.createElement('input');
-            toggleInput.type = 'checkbox';
-            toggleInput.checked = isActive;
-            toggleInput.addEventListener('change', () => this.toggleAction(action.id, toggleInput.checked));
-            const slider = Utils.createElement('span', { className: 'slider' });
-            toggleLabel.appendChild(toggleInput);
-            toggleLabel.appendChild(slider);
-            controls.appendChild(toggleLabel);
+            const tags = Array.isArray(action.tags) ? action.tags.map(t => String(t).toLowerCase()) : [];
+            const isCore = tags.includes('default') || tags.includes('system');
+            if (!isCore) {
+                const toggleLabel = Utils.createElement('label', { className: 'toggle-switch-ios' });
+                const toggleInput = document.createElement('input');
+                toggleInput.type = 'checkbox';
+                toggleInput.checked = isActive;
+                toggleInput.addEventListener('change', () => this.toggleAction(action.id, toggleInput.checked));
+                const slider = Utils.createElement('span', { className: 'slider' });
+                toggleLabel.appendChild(toggleInput);
+                toggleLabel.appendChild(slider);
+                controls.appendChild(toggleLabel);
+            }
 
             // Reorder controls for active actions
             const indexInActive = activeIds.indexOf(action.id);
@@ -5358,7 +5373,12 @@ const QuickActionLab = {
     updateIconPreview() {
         if (!this.elements.iconPreview || !this.builderState) return;
         const iconName = this.builderState.metadata.icon || 'zap';
-        if (window.feather?.icons?.[iconName]) {
+        if (String(iconName).startsWith('custom:')) {
+            const id = String(iconName).slice(7);
+            const found = (AppState.settings.customIcons || []).find(i => i.id === id);
+            if (found) this.elements.iconPreview.innerHTML = `<img src="${found.dataUrl}" alt="icon" />`;
+            else this.elements.iconPreview.textContent = '';
+        } else if (window.feather?.icons?.[iconName]) {
             this.elements.iconPreview.innerHTML = window.feather.icons[iconName].toSvg();
         } else {
             this.elements.iconPreview.textContent = '⚡';
@@ -5379,7 +5399,8 @@ const QuickActionLab = {
         } else {
             names = ['zap', 'grid', 'folder', 'command', 'copy', 'settings', 'bookmark', 'globe', 'bell', 'clock', 'edit-3', 'type', 'database'];
         }
-        this.cachedIconList = names.sort((a, b) => a.localeCompare(b));
+        const custom = Array.isArray(AppState.settings.customIcons) ? AppState.settings.customIcons.map(i => `custom:${i.id}`) : [];
+        this.cachedIconList = [...custom, ...names.sort((a, b) => a.localeCompare(b))];
         return this.cachedIconList;
     },
 
@@ -5393,17 +5414,27 @@ const QuickActionLab = {
             const button = document.createElement('button');
             button.type = 'button';
             button.setAttribute('data-icon', name);
-            button.setAttribute('title', name);
-            if (window.feather?.icons?.[name]) {
+            let title = name;
+            if (String(name).startsWith('custom:')) {
+                const id = String(name).slice(7);
+                const found = (AppState.settings.customIcons || []).find(i => i.id === id);
+                title = found?.name || 'custom';
+                if (found) {
+                    const img = new Image();
+                    img.src = found.dataUrl;
+                    button.appendChild(img);
+                }
+            } else if (window.feather?.icons?.[name]) {
                 button.innerHTML = window.feather.icons[name].toSvg();
             } else {
                 const fallback = document.createElement('span');
                 fallback.textContent = name.slice(0, 2).toUpperCase();
                 button.appendChild(fallback);
             }
+            button.setAttribute('title', title);
             const srOnly = document.createElement('span');
             srOnly.className = 'sr-only';
-            srOnly.textContent = name;
+            srOnly.textContent = title;
             button.appendChild(srOnly);
             this.iconPickerButtons.set(name, button);
             container.appendChild(button);
@@ -5775,6 +5806,30 @@ const SettingsModule = {
             toggleButton.addEventListener('click', () => this.toggleSubscription());
         }
 
+        // Custom SVG Icons uploads
+        const uploadBtn = Utils.getElement('#custom-icon-upload');
+        const fileInput = Utils.getElement('#custom-icon-file');
+        const clearBtn = Utils.getElement('#custom-icon-clear');
+        if (uploadBtn && fileInput) {
+            uploadBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', async (e) => {
+                const files = Array.from(e.target.files || []);
+                if (files.length) {
+                    await SettingsModule.addCustomIconsFromFiles(files);
+                    fileInput.value = '';
+                }
+            });
+        }
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                if (Array.isArray(AppState.settings.customIcons) && AppState.settings.customIcons.length) {
+                    AppState.settings.customIcons = [];
+                    ipcRenderer.send('update-setting', 'customIcons', []);
+                    SettingsModule.renderCustomIconLibrary();
+                }
+            });
+        }
+
     },
     
     bindSetting: function(elementId, settingKey) {
@@ -5871,6 +5926,7 @@ const SettingsModule = {
         this.renderAddonBuilder();
         this.renderIndexedDirectories();
         this.renderAutomations();
+        this.renderCustomIconLibrary();
     },
     
     setElementValue: function(elementId, value, isCheckbox = false) {
@@ -5912,6 +5968,53 @@ const SettingsModule = {
             directories.splice(index, 1);
             ipcRenderer.send('update-setting', 'indexedDirectories', directories);
         }
+    },
+
+    // ================= Custom Icons ==================
+    sanitizeSvgText: function(text) {
+        if (typeof text !== 'string') return null;
+        const lower = text.toLowerCase();
+        if (!lower.includes('<svg')) return null;
+        if (lower.includes('<script')) return null;
+        return text;
+    },
+
+    async addCustomIconsFromFiles(files) {
+        const icons = Array.isArray(AppState.settings.customIcons) ? [...AppState.settings.customIcons] : [];
+        for (const file of files) {
+            try {
+                const content = await file.text();
+                const safe = this.sanitizeSvgText(content);
+                if (!safe) continue;
+                const dataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(safe)}`;
+                icons.push({ id: `u${Date.now()}_${Math.random().toString(36).slice(2,8)}`, name: file.name.replace(/\.svg$/i,'') || 'icon', dataUrl });
+            } catch {}
+        }
+        AppState.settings.customIcons = icons;
+        ipcRenderer.send('update-setting', 'customIcons', icons);
+        this.renderCustomIconLibrary();
+    },
+
+    renderCustomIconLibrary() {
+        const wrap = Utils.getElement('#custom-icon-library');
+        if (!wrap) return;
+        wrap.innerHTML = '';
+        const icons = Array.isArray(AppState.settings.customIcons) ? AppState.settings.customIcons : [];
+        icons.forEach((icon) => {
+            const item = Utils.createElement('div', { className: 'custom-icon-item' });
+            const img = new Image();
+            img.src = icon.dataUrl;
+            item.appendChild(img);
+            const remove = Utils.createElement('button', { className: 'remove', text: '×' });
+            remove.addEventListener('click', () => {
+                const next = icons.filter(i => i.id !== icon.id);
+                AppState.settings.customIcons = next;
+                ipcRenderer.send('update-setting', 'customIcons', next);
+                this.renderCustomIconLibrary();
+            });
+            item.appendChild(remove);
+            wrap.appendChild(item);
+        });
     },
 
     updateIndexingStatus: function(state) {
@@ -6878,6 +6981,26 @@ const FolderContextMenu = {
         if (!this.iconsContainer) return;
         this.iconsContainer.innerHTML = '';
 
+        // 1) Custom icons first
+        const customIcons = Array.isArray(AppState.settings.customIcons) ? AppState.settings.customIcons : [];
+        customIcons.forEach(ci => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'folder-icon-option';
+            btn.dataset.value = `custom:${ci.id}`;
+            btn.title = ci.name || 'Custom';
+            const img = new Image();
+            img.src = ci.dataUrl;
+            img.width = 20; img.height = 20;
+            btn.appendChild(img);
+            btn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                this.applyIcon(`custom:${ci.id}`);
+            });
+            this.iconsContainer.appendChild(btn);
+        });
+
+        // 2) Feather icon set
         this.icons.forEach(iconName => {
             const button = document.createElement('button');
             button.type = 'button';
@@ -7000,8 +7123,14 @@ const FolderContextMenu = {
             PinnedAppsModule.applyFolderStyles(folderElement, resolvedFolder.color || null, resolvedFolder.icon || 'folder');
             const iconContainer = folderElement.querySelector('.pinned-item-icon');
             const iconName = resolvedFolder.icon || 'folder';
-            if (iconContainer && !iconContainer.querySelector('img')) {
-                if (window.feather?.icons[iconName]) {
+            if (iconContainer) {
+                if (String(iconName).startsWith('custom:')) {
+                    const id = String(iconName).slice(7);
+                    const found = (AppState.settings.customIcons || []).find(i => i.id === id);
+                    if (found) {
+                        iconContainer.innerHTML = `<img src="${found.dataUrl}" alt="folder" />`;
+                    }
+                } else if (window.feather?.icons[iconName]) {
                     iconContainer.innerHTML = window.feather.icons[iconName].toSvg();
                 }
             }
@@ -7302,7 +7431,18 @@ const PinnedAppsModule = {
             const src = (cachedSrc && typeof cachedSrc === 'string' && cachedSrc.startsWith('data:image'))
                         ? cachedSrc
                         : (fallbackIcon || SearchModule.getFallbackIconDataUrl('cpu'));
-            icon.src = src;
+            // Apply custom override if present
+            const overrideId = AppState.settings?.appIconOverrides?.[path];
+            if (overrideId) {
+                const found = (AppState.settings.customIcons || []).find(i => i.id === overrideId);
+                if (found) {
+                    icon.src = found.dataUrl;
+                } else {
+                    icon.src = src;
+                }
+            } else {
+                icon.src = src;
+            }
             icon.setAttribute('data-path', path);
             icon.setAttribute('data-app-name', name);
             icon.classList.add('app-icon');
@@ -7337,8 +7477,16 @@ const PinnedAppsModule = {
         }
         if (iconName && !item.querySelector('.pinned-item-icon img')) {
             const iconContainer = item.querySelector('.pinned-item-icon');
-            if (iconContainer && window.feather?.icons[iconName]) {
-                iconContainer.innerHTML = window.feather.icons[iconName].toSvg();
+            if (iconContainer) {
+                if (String(iconName).startsWith('custom:')) {
+                    const id = String(iconName).slice(7);
+                    const found = (AppState.settings.customIcons || []).find(i => i.id === id);
+                    if (found) {
+                        iconContainer.innerHTML = `<img src="${found.dataUrl}" alt="folder" />`;
+                    }
+                } else if (window.feather?.icons[iconName]) {
+                    iconContainer.innerHTML = window.feather.icons[iconName].toSvg();
+                }
             }
         }
     }
@@ -8266,6 +8414,43 @@ const AppContextMenu = {
             });
             this.el.appendChild(btn);
         });
+
+        // Custom icons picker inline
+        const customIcons = Array.isArray(AppState.settings.customIcons) ? AppState.settings.customIcons : [];
+        if (customIcons.length && this.currentApp.path) {
+            const div = document.createElement('div');
+            div.className = 'app-context-custom-icons';
+            customIcons.forEach(ci => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'app-context-icon-btn';
+                const img = new Image(); img.src = ci.dataUrl; b.appendChild(img);
+                b.addEventListener('click', () => {
+                    const map = { ...(AppState.settings.appIconOverrides || {}) };
+                    map[this.currentApp.path] = ci.id;
+                    AppState.settings.appIconOverrides = map;
+                    ipcRenderer.send('update-setting', 'appIconOverrides', map);
+                    PinnedAppsModule.render?.();
+                    this.hide();
+                });
+                div.appendChild(b);
+            });
+            this.el.appendChild(document.createElement('div')).className = 'app-context-divider';
+            this.el.appendChild(div);
+            const reset = document.createElement('button');
+            reset.type = 'button';
+            reset.className = 'app-context-item';
+            reset.textContent = t('settings_remove') || 'Сбросить иконку';
+            reset.addEventListener('click', () => {
+                const map = { ...(AppState.settings.appIconOverrides || {}) };
+                delete map[this.currentApp.path];
+                AppState.settings.appIconOverrides = map;
+                ipcRenderer.send('update-setting', 'appIconOverrides', map);
+                PinnedAppsModule.render?.();
+                this.hide();
+            });
+            this.el.appendChild(reset);
+        }
     },
     show(appData, x, y) {
         if (!this.el) return;
@@ -8612,6 +8797,15 @@ document.addEventListener('DOMContentLoaded', () => {
         LocalizationRenderer.applyTranslations();
         SettingsModule.populateSettingsUI();
         PinnedAppsModule.render();
+        // Перестроить списки иконок (папки/билдер) при загрузке новых SVG
+        if (typeof FolderContextMenu?.renderIconOptions === 'function') {
+            FolderContextMenu.renderIconOptions();
+        }
+        if (QuickActionLab) {
+            QuickActionLab.cachedIconList = null;
+            QuickActionLab.buildIconPicker();
+            QuickActionLab.updateIconPreview();
+        }
         FolderContextMenu.highlightSelection();
         if (AuxPanelManager.currentPanel === 'apps-library') {
             AuxPanelManager.loadAppsLibrary();

@@ -58,6 +58,7 @@
                         <ul>
                             <li data-tab="general" class="active" data-i18n="settings_general">General</li>
                             <li data-tab="appearance" data-i18n="settings_appearance">Appearance</li>
+                            <li data-tab="icons" data-i18n="settings_icons">Icons</li>
                             <li data-tab="indexing" data-i18n="settings_indexing">Indexing</li>
                             <li data-tab="automations" data-i18n="settings_automations">Automations</li>
                             <li data-tab="subscription" data-i18n="settings_subscription">Subscription</li>
@@ -230,6 +231,7 @@
                                     </div>
                                 </div>
                             </div>
+                            
                              <div class="setting-item">
                                 <label data-i18n="settings_opacity">Opacity (%)</label>
                                 <input type="range" id="setting-opacity" min="0" max="100" step="1">
@@ -250,6 +252,21 @@
                             <div class="setting-item">
                                 <label data-i18n="settings_border_radius">Corner Radius (px)</label>
                                 <input type="range" id="setting-border-radius" min="10" max="40" step="1">
+                            </div>
+                        </div>
+
+                        <div id="tab-icons" class="tab-content">
+                            <div class="setting-item">
+                                <label data-i18n="settings_custom_icons">Пользовательские иконки (SVG)</label>
+                                <div class="custom-icon-controls">
+                                    <input type="file" id="custom-icon-file" accept=".svg" multiple hidden>
+                                    <button id="custom-icon-upload" class="settings-button" data-i18n="settings_upload_svg">Загрузить SVG</button>
+                                    <button id="custom-icon-clear" class="settings-button secondary" data-i18n="settings_clear_all">Очистить все</button>
+                                </div>
+                                <div id="custom-icon-library" class="custom-icon-library"></div>
+                                <div class="setting-item-description small">
+                                    <p data-i18n="settings_custom_icons_hint">Загрузите SVG‑иконки и используйте их для папок и приложений. Скрипты внутри SVG блокируются.</p>
+                                </div>
                             </div>
                         </div>
 

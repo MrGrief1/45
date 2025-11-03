@@ -3158,6 +3158,79 @@ input[type="range"]:active::-webkit-slider-thumb {
   line-height: 1.45;
 }
 
+/* ===================== Custom Icon Library (Settings) ======================= */
+.custom-icon-controls {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0 10px;
+}
+
+.custom-icon-library {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 72px));
+  gap: 10px;
+  width: 100%;
+  flex-basis: 100%;
+  justify-content: start;
+}
+
+.custom-icon-item {
+  position: relative;
+  border-radius: 12px;
+  background: rgba(var(--secondary-bg-color-rgb), 0.5);
+  border: 1px solid rgba(var(--border-color-rgb, 148, 163, 184), 0.25);
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 64px;
+}
+
+.custom-icon-item .remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid rgba(var(--border-color-rgb, 148, 163, 184), 0.35);
+  background: rgba(var(--base-bg-color-rgb), 0.8);
+  color: var(--text-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.custom-icon-item svg,
+.custom-icon-item img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* Context menu custom icon grid */
+.app-context-custom-icons {
+  display: grid;
+  grid-template-columns: repeat(6, 32px);
+  gap: 8px;
+  padding: 6px 4px 2px;
+}
+
+.app-context-icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--border-color-rgb, 255, 255, 255), 0.2);
+  background: rgba(var(--secondary-bg-color-rgb), 0.6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.app-context-icon-btn img,
+.app-context-icon-btn svg { width: 18px; height: 18px; }
+
 .quick-action-template .template-icon {
   width: 48px;
   height: 48px;
