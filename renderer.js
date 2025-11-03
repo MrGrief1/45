@@ -4222,6 +4222,50 @@ const QuickActionLab = {
             toggleLabel.appendChild(slider);
             controls.appendChild(toggleLabel);
 
+            // Reorder controls for active actions
+            const indexInActive = activeIds.indexOf(action.id);
+            if (indexInActive !== -1) {
+                const upBtn = Utils.createElement('button', { className: 'settings-button secondary qa-reorder' });
+                upBtn.setAttribute('aria-label', 'Move up');
+                upBtn.disabled = indexInActive === 0;
+                if (window.feather?.icons?.['chevron-up']) {
+                    upBtn.innerHTML = window.feather.icons['chevron-up'].toSvg();
+                } else { upBtn.textContent = '↑'; }
+                upBtn.addEventListener('click', () => {
+                    const ids = QuickActionStore.getActiveIds();
+                    const i = ids.indexOf(action.id);
+                    if (i > 0) {
+                        const tmp = ids[i - 1];
+                        ids[i - 1] = ids[i];
+                        ids[i] = tmp;
+                        QuickActionStore.reorderActiveIds(ids);
+                        QuickActionManager.refresh();
+                        this.renderAll();
+                    }
+                });
+                controls.appendChild(upBtn);
+
+                const downBtn = Utils.createElement('button', { className: 'settings-button secondary qa-reorder' });
+                downBtn.setAttribute('aria-label', 'Move down');
+                downBtn.disabled = indexInActive === activeIds.length - 1;
+                if (window.feather?.icons?.['chevron-down']) {
+                    downBtn.innerHTML = window.feather.icons['chevron-down'].toSvg();
+                } else { downBtn.textContent = '↓'; }
+                downBtn.addEventListener('click', () => {
+                    const ids = QuickActionStore.getActiveIds();
+                    const i = ids.indexOf(action.id);
+                    if (i !== -1 && i < ids.length - 1) {
+                        const tmp = ids[i + 1];
+                        ids[i + 1] = ids[i];
+                        ids[i] = tmp;
+                        QuickActionStore.reorderActiveIds(ids);
+                        QuickActionManager.refresh();
+                        this.renderAll();
+                    }
+                });
+                controls.appendChild(downBtn);
+            }
+
             if (action.type === 'workflow' || action.id?.startsWith('quick-')) {
                 const editBtn = Utils.createElement('button', { className: 'settings-button secondary', text: LocalizationRenderer.t('quick_actions_edit') || 'Edit' });
                 editBtn.addEventListener('click', () => this.openBuilder(action.id));

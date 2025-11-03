@@ -3093,6 +3093,20 @@ input[type="range"]:active::-webkit-slider-thumb {
   padding: 8px 14px;
 }
 
+/* Small square buttons for reordering actions */
+.quick-action-card-controls .qa-reorder {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.quick-action-card-controls .qa-reorder svg {
+  width: 18px;
+  height: 18px;
+}
+
 .quick-action-catalog {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
