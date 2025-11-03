@@ -980,6 +980,176 @@ body.dark-theme .aux-header {
   transform: translateY(-1px);
 }
 
+/* Custom Context Menu */
+.custom-context-menu {
+  position: fixed;
+  z-index: 9999;
+  min-width: 240px;
+  background: rgba(var(--base-bg-color-rgb), 0.98);
+  border: 1px solid rgba(var(--border-color-rgb, 255, 255, 255), 0.2);
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  padding: 8px;
+  display: none;
+  animation: contextMenuSlideIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes contextMenuSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.custom-context-menu[aria-hidden="false"] {
+  display: block;
+}
+
+.custom-context-item {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.custom-context-item i {
+  width: 18px;
+  height: 18px;
+  opacity: 0.75;
+}
+
+.custom-context-item:hover {
+  background: rgba(var(--highlight-color-rgb, 88, 101, 242), 0.12);
+  transform: translateX(2px);
+}
+
+.custom-context-item.danger {
+  color: #ef4444;
+}
+
+.custom-context-item.danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.custom-context-divider {
+  height: 1px;
+  background: rgba(var(--border-color-rgb, 255, 255, 255), 0.15);
+  margin: 6px 0;
+}
+
+/* ================================================================================
+// === Glass Tooltip for Quick Actions ===========================================
+// ================================================================================ */
+.qa-tooltip {
+  position: fixed;
+  z-index: 12000;
+  max-width: 320px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(var(--base-bg-color-rgb, 17, 24, 39), 0.86);
+  border: 1px solid rgba(var(--border-color-rgb, 148, 163, 184), 0.28);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--text-color);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.qa-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.qa-tooltip .tt-title {
+  margin: 0 0 4px;
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.qa-tooltip .tt-desc {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+/* ================================================================================
+// === App Context Menu (for apps right click) ====================================
+// ================================================================================ */
+.app-context-menu {
+  position: fixed;
+  z-index: 11000;
+  min-width: 240px;
+  background: rgba(var(--base-bg-color-rgb), 0.98);
+  border: 1px solid rgba(var(--border-color-rgb, 255, 255, 255), 0.2);
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  padding: 8px;
+  display: none;
+  animation: contextMenuSlideIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.app-context-menu[aria-hidden="false"] {
+  display: block;
+}
+
+.app-context-item {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-context-item:hover {
+  background: rgba(var(--highlight-color-rgb, 88, 101, 242), 0.12);
+  transform: translateX(2px);
+}
+
+.app-context-item.danger {
+  color: #ef4444;
+}
+
+.app-context-item.danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.app-context-divider {
+  height: 1px;
+  background: rgba(var(--border-color-rgb, 255, 255, 255), 0.15);
+  margin: 6px 0;
+}
+
 .pinned-item {
   display: flex;
   flex-direction: column;

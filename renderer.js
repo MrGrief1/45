@@ -3673,6 +3673,23 @@ const QuickActionManager = {
         this.container = Utils.getElement('#quick-action-bar');
         if (!this.container) return;
         this.container.addEventListener('click', (event) => this.handleClick(event));
+        // Tooltip handlers for quick action buttons
+        this.container.addEventListener('mouseenter', (e) => {
+            const btn = e.target.closest('.quick-action-button');
+            if (!btn) return;
+            QuickTooltip.showFor(btn);
+        }, true);
+        this.container.addEventListener('mouseleave', (e) => {
+            const btn = e.target.closest('.quick-action-button');
+            if (!btn) return;
+            QuickTooltip.hide();
+        }, true);
+        this.container.addEventListener('focusin', (e) => {
+            const btn = e.target.closest('.quick-action-button');
+            if (!btn) return;
+            QuickTooltip.showFor(btn);
+        });
+        this.container.addEventListener('focusout', () => QuickTooltip.hide());
         this.render();
     },
 
@@ -3717,7 +3734,10 @@ const QuickActionManager = {
             const description = definition.descriptionKey
                 ? LocalizationRenderer.t(definition.descriptionKey)
                 : (definition.description || '');
-            button.title = description ? `${title}\n${description}` : title;
+            // Store tooltip data for custom tooltip and avoid native browser tooltip
+            button.setAttribute('data-tooltip-title', title);
+            if (description) button.setAttribute('data-tooltip-desc', description);
+            button.setAttribute('aria-label', title);
 
             this.container.appendChild(button);
         });
@@ -3734,6 +3754,69 @@ const QuickActionManager = {
         if (!button) return;
         const actionId = button.getAttribute('data-action-id');
         QuickActionExecutor.run(actionId);
+    }
+};
+
+// Lightweight glass tooltip for quick action buttons
+const QuickTooltip = {
+    el: null,
+    showTimer: null,
+    currentTarget: null,
+    delayMs: 600,
+    init() {
+        if (this.el) return;
+        this.el = document.getElementById('qa-tooltip');
+        if (!this.el) {
+            this.el = document.createElement('div');
+            this.el.id = 'qa-tooltip';
+            this.el.className = 'qa-tooltip';
+            this.el.setAttribute('role', 'tooltip');
+            this.el.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(this.el);
+        }
+    },
+    showFor(button) {
+        this.init();
+        if (!button || !this.el) return;
+        this.currentTarget = button;
+        clearTimeout(this.showTimer);
+        this.showTimer = setTimeout(() => {
+            if (this.currentTarget !== button) return;
+            this._showNow(button);
+        }, this.delayMs);
+    },
+    _showNow(button) {
+        const title = button.getAttribute('data-tooltip-title') || '';
+        const desc = button.getAttribute('data-tooltip-desc') || '';
+        const html = `<div class="tt-title">${Utils.escapeHtml(title)}</div>` + (desc ? `<div class="tt-desc">${Utils.escapeHtml(desc)}</div>` : '');
+        this.el.innerHTML = html;
+        this.el.removeAttribute('hidden');
+        this.el.setAttribute('aria-hidden', 'false');
+        this.el.classList.add('visible');
+
+        // Position centered above the button with viewport clamping
+        this.el.style.left = '-9999px';
+        this.el.style.top = '-9999px';
+        requestAnimationFrame(() => {
+            const rect = button.getBoundingClientRect();
+            const tipRect = this.el.getBoundingClientRect();
+            const margin = 10;
+            let left = rect.left + rect.width / 2 - tipRect.width / 2;
+            let top = rect.top - tipRect.height - margin;
+            if (left + tipRect.width > window.innerWidth - 8) left = window.innerWidth - tipRect.width - 8;
+            if (left < 8) left = 8;
+            if (top < 8) top = rect.bottom + margin; // flip below if not enough space
+            this.el.style.left = `${Math.round(left)}px`;
+            this.el.style.top = `${Math.round(top)}px`;
+        });
+    },
+    hide() {
+        if (!this.el) return;
+        clearTimeout(this.showTimer);
+        this.currentTarget = null;
+        this.el.classList.remove('visible');
+        this.el.setAttribute('aria-hidden', 'true');
+        this.el.setAttribute('hidden', '');
     }
 };
 
@@ -5421,7 +5504,7 @@ const QuickActionLab = {
         QuickActionExecutor.runDefinition(preview);
     },
 
-    exportCurrentAction() {
+    async exportCurrentAction() {
         if (!this.builderState) return;
         const payload = {
             id: this.builderState.metadata.id || `quick-${Date.now()}`,
@@ -5454,13 +5537,13 @@ const QuickActionLab = {
         }
     },
 
-    handleImport() {
+    async handleImport() {
         const text = this.elements.importText?.value?.trim();
         if (!text) return;
         try {
             const parsed = JSON.parse(text);
             if (!parsed || typeof parsed !== 'object' || !parsed.workflow) {
-                alert(LocalizationRenderer.t('quick_actions_import_invalid') || 'Invalid configuration file.');
+                await customAlert(LocalizationRenderer.t('quick_actions_import_invalid') || 'Invalid configuration file.');
                 return;
             }
             parsed.id = parsed.id || `quick-${Date.now()}`;
@@ -5470,7 +5553,7 @@ const QuickActionLab = {
             this.renderAll();
             this.toggleImportArea(false);
         } catch (error) {
-            alert(LocalizationRenderer.t('quick_actions_import_invalid') || 'Invalid configuration file.');
+            await customAlert(LocalizationRenderer.t('quick_actions_import_invalid') || 'Invalid configuration file.');
         }
     },
 
@@ -5832,19 +5915,19 @@ const SettingsModule = {
         }
     },
 
-    addAutomation: function() {
+    async addAutomation() {
         const name = Utils.getElement('#new-auto-name').value.trim();
         const keyword = Utils.getElement('#new-auto-keyword').value.trim().toLowerCase();
         const command = Utils.getElement('#new-auto-command').value.trim();
         if (name && keyword && command) {
             const automations = [...(AppState.settings.customAutomations || [])];
             if (automations.some(a => a.keyword === keyword)) {
-                alert("Error: Keyword already exists.");
+                await customAlert("Ошибка: Ключевое слово уже используется.");
                 return;
             }
             const limit = this.getAutomationLimit();
             if (Number.isFinite(limit) && automations.length >= limit) {
-                alert(LocalizationRenderer.t('subscription_automation_limit_reached', limit));
+                await customAlert(LocalizationRenderer.t('subscription_automation_limit_reached', limit));
                 return;
             }
             automations.push({ id: `custom-${Date.now()}`, name, keyword, command });
@@ -5853,7 +5936,7 @@ const SettingsModule = {
             Utils.getElement('#new-auto-keyword').value = '';
             Utils.getElement('#new-auto-command').value = '';
         } else {
-            alert("Error: All fields are required.");
+            await customAlert("Ошибка: Все поля обязательны для заполнения.");
         }
     },
 
@@ -6274,7 +6357,7 @@ const SearchModule = {
                     e.preventDefault();
                     e.stopPropagation(); // ВАЖНО: Останавливаем дальнейшее всплытие
                     console.log('[Renderer] Right click on app:', result.name, result.path);
-                    ipcRenderer.send('show-app-context-menu', result);
+                    AppContextMenu.show({ name: result.name, path: result.path, sourceFolderId: null }, e.clientX, e.clientY);
                 });
             }
             fragment.appendChild(li);
@@ -7091,7 +7174,7 @@ const PinnedAppsModule = {
                     appEl.addEventListener('contextmenu', (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        ipcRenderer.send('show-app-context-menu', { ...app, sourceFolderId: 'pinned' });
+                        AppContextMenu.show({ ...app, sourceFolderId: 'pinned' }, e.clientX, e.clientY);
                     });
                     fragment.appendChild(appEl);
                 });
@@ -7111,7 +7194,7 @@ const PinnedAppsModule = {
                 appEl.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    ipcRenderer.send('show-app-context-menu', { ...app, sourceFolderId: this.currentFolderId });
+                    AppContextMenu.show({ ...app, sourceFolderId: this.currentFolderId }, e.clientX, e.clientY);
                 });
                 fragment.appendChild(appEl);
             });
@@ -7981,6 +8064,231 @@ const customAlert = (message) => {
     });
 };
 
+// Custom Context Menu Manager
+const CustomContextMenu = {
+    element: null,
+    
+    init() {
+        this.element = document.getElementById('custom-context-menu');
+        if (!this.element) return;
+        
+        // Hide "Run as admin" on non-Windows platforms
+        const runAdminBtn = this.element.querySelector('[data-action="run-admin"]');
+        if (runAdminBtn && process.platform !== 'win32') {
+            runAdminBtn.style.display = 'none';
+            // Also hide the divider before it if it's the only item in that section
+            const prevDiv = runAdminBtn.previousElementSibling;
+            if (prevDiv?.classList.contains('custom-context-divider')) {
+                const prevItem = prevDiv.previousElementSibling;
+                if (prevItem?.getAttribute('data-action') === 'open-location') {
+                    prevDiv.style.display = 'none';
+                }
+            }
+        }
+        
+        // Setup click handlers
+        this.element.querySelectorAll('.custom-context-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const action = item.getAttribute('data-action');
+                this.handleAction(action);
+                this.hide();
+            });
+        });
+        
+        // Hide on click outside
+        document.addEventListener('click', (e) => {
+            if (this.element && !this.element.contains(e.target)) {
+                this.hide();
+            }
+        });
+        
+        // Hide on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.element?.getAttribute('aria-hidden') === 'false') {
+                this.hide();
+            }
+        });
+    },
+    
+    show(event) {
+        if (!this.element) return;
+        
+        const x = event.clientX;
+        const y = event.clientY;
+        
+        this.element.style.left = `${x}px`;
+        this.element.style.top = `${y}px`;
+        this.element.setAttribute('aria-hidden', 'false');
+        
+        // Refresh feather icons
+        if (window.feather) {
+            feather.replace();
+        }
+        
+        // Adjust position if menu goes off screen
+        requestAnimationFrame(() => {
+            const rect = this.element.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            if (rect.right > viewportWidth) {
+                this.element.style.left = `${viewportWidth - rect.width - 10}px`;
+            }
+            if (rect.bottom > viewportHeight) {
+                this.element.style.top = `${viewportHeight - rect.height - 10}px`;
+            }
+        });
+    },
+    
+    hide() {
+        if (this.element) {
+            this.element.setAttribute('aria-hidden', 'true');
+        }
+    },
+    
+    handleAction(action) {
+        switch (action) {
+            case 'settings':
+                ViewManager.switchView('settings');
+                break;
+            case 'open-location':
+                ipcRenderer.send('open-app-location');
+                break;
+            case 'run-admin':
+                ipcRenderer.send('relaunch-as-admin');
+                break;
+            case 'quit':
+                ipcRenderer.send('quit-app');
+                break;
+        }
+    }
+};
+
+// App-specific context menu (HTML, glass styled)
+const AppContextMenu = {
+    el: null,
+    currentApp: null,
+    init() {
+        this.el = document.getElementById('app-context-menu');
+        if (!this.el) return;
+        document.addEventListener('click', (e) => {
+            if (!this.el.contains(e.target)) this.hide();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.hide();
+        });
+        window.addEventListener('blur', () => this.hide());
+        this.el.addEventListener('contextmenu', (e) => e.preventDefault());
+    },
+    isPinned(path) {
+        try {
+            const pinnedFolder = (AppState.settings?.appFolders || []).find(f => f.id === 'pinned');
+            return !!pinnedFolder?.apps?.some(a => a.path === path);
+        } catch { return false; }
+    },
+    renderItems() {
+        if (!this.el || !this.currentApp) return;
+        const t = (k) => LocalizationRenderer.t(k) || k;
+        const items = [];
+        const pinned = this.isPinned(this.currentApp.path);
+        if (pinned) {
+            items.push({ action: 'unpin', label: t('context_unpin_app'), danger: true });
+        } else {
+            items.push({ action: 'pin', label: t('context_add_to_apps') });
+        }
+        if (this.currentApp.sourceFolderId && this.currentApp.sourceFolderId !== 'pinned') {
+            items.push({ action: 'remove-from-folder', label: t('context_remove_from_folder'), danger: true });
+        }
+        items.push({ divider: true });
+        items.push({ action: 'open-location', label: t('context_open_location') });
+
+        // Build DOM
+        this.el.innerHTML = '';
+        items.forEach(item => {
+            if (item.divider) {
+                const div = document.createElement('div');
+                div.className = 'app-context-divider';
+                this.el.appendChild(div);
+                return;
+            }
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'app-context-item' + (item.danger ? ' danger' : '');
+            btn.textContent = item.label;
+            btn.setAttribute('data-action', item.action);
+            btn.addEventListener('click', () => {
+                this.handleAction(item.action);
+                this.hide();
+            });
+            this.el.appendChild(btn);
+        });
+    },
+    show(appData, x, y) {
+        if (!this.el) return;
+        this.currentApp = appData;
+        this.renderItems();
+        this.el.setAttribute('aria-hidden', 'false');
+        this.el.style.left = '-9999px';
+        this.el.style.top = '-9999px';
+        requestAnimationFrame(() => {
+            const rect = this.el.getBoundingClientRect();
+            let posX = x, posY = y;
+            if (posX + rect.width > window.innerWidth) posX = window.innerWidth - rect.width - 8;
+            if (posY + rect.height > window.innerHeight) posY = window.innerHeight - rect.height - 8;
+            this.el.style.left = `${Math.max(8, posX)}px`;
+            this.el.style.top = `${Math.max(8, posY)}px`;
+        });
+    },
+    hide() {
+        if (!this.el) return;
+        this.el.setAttribute('aria-hidden', 'true');
+    },
+    handleAction(action) {
+        if (!this.currentApp) return;
+        const path = this.currentApp.path;
+        if (!path) return;
+        const folders = Array.isArray(AppState.settings?.appFolders) ? [...AppState.settings.appFolders] : [];
+        const pinnedIndex = folders.findIndex(f => f.id === 'pinned');
+        switch (action) {
+            case 'pin': {
+                if (pinnedIndex !== -1 && !folders[pinnedIndex].apps.some(a => a.path === path)) {
+                    const newApp = { name: this.currentApp.name, path: path, isApp: true, type: 'file', extension: path.toLowerCase().split('.').pop() };
+                    const updated = { ...folders[pinnedIndex], apps: [...folders[pinnedIndex].apps, newApp] };
+                    folders[pinnedIndex] = updated;
+                    AppState.settings.appFolders = folders;
+                    ipcRenderer.send('update-setting', 'appFolders', folders);
+                    PinnedAppsModule.render?.();
+                }
+                break;
+            }
+            case 'unpin': {
+                if (pinnedIndex !== -1) {
+                    const updated = { ...folders[pinnedIndex], apps: folders[pinnedIndex].apps.filter(a => a.path !== path) };
+                    folders[pinnedIndex] = updated;
+                    AppState.settings.appFolders = folders;
+                    ipcRenderer.send('update-setting', 'appFolders', folders);
+                    PinnedAppsModule.render?.();
+                }
+                break;
+            }
+            case 'remove-from-folder': {
+                const srcId = this.currentApp.sourceFolderId;
+                const idx = folders.findIndex(f => f.id === srcId);
+                if (idx !== -1) {
+                    folders[idx] = { ...folders[idx], apps: folders[idx].apps.filter(a => a.path !== path) };
+                    AppState.settings.appFolders = folders;
+                    ipcRenderer.send('update-setting', 'appFolders', folders);
+                    PinnedAppsModule.render?.();
+                }
+                break;
+            }
+            case 'open-location':
+                ipcRenderer.send('show-item-in-folder', path);
+                break;
+        }
+    }
+};
+
 const ViewManager = {
     init: function() { this.setupEventListeners(); },
     setupEventListeners: function() {
@@ -7992,11 +8300,13 @@ const ViewManager = {
             if (QuickActionBuilder.builderState?.isOpen || document.querySelector('#quick-action-builder-modal.active')) {
                 return;
             }
-            ipcRenderer.send('show-context-menu'); 
+            // Show custom context menu instead of system menu
+            CustomContextMenu.show(e);
         }, false);
     },
     switchView: function(viewName) {
         if (AppState.currentView === viewName) return;
+        CustomContextMenu?.hide?.();
         AppState.currentView = viewName;
         document.querySelector('.view.active')?.classList.remove('active');
         const newView = Utils.getElement(`#${viewName}-view`);
@@ -8211,6 +8521,8 @@ document.addEventListener('DOMContentLoaded', () => {
     SearchModule.init();
     FolderContextMenu.init();
     PinnedContextMenu.init();
+    CustomContextMenu.init();
+    AppContextMenu.init();
     PinnedAppsModule.init();
     AuxPanelManager.init();
     CustomSelect.init();

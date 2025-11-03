@@ -576,6 +576,27 @@
     <div id="pinned-context-menu" class="pinned-context-menu" role="menu">
         <button type="button" data-action="create-folder" data-i18n="context_create_folder">Create Folder</button>
     </div>
+    <div id="app-context-menu" class="app-context-menu" role="menu" aria-hidden="true"></div>
+    <div id="custom-context-menu" class="custom-context-menu" role="menu" aria-hidden="true">
+        <button type="button" class="custom-context-item" data-action="settings">
+            <i data-feather="settings"></i>
+            <span data-i18n="context_settings">Настройки</span>
+        </button>
+        <div class="custom-context-divider"></div>
+        <button type="button" class="custom-context-item" data-action="open-location">
+            <i data-feather="folder"></i>
+            <span data-i18n="context_open_location">Открыть расположение файла</span>
+        </button>
+        <button type="button" class="custom-context-item" data-action="run-admin">
+            <i data-feather="shield"></i>
+            <span data-i18n="context_run_as_admin">Запустить от имени администратора</span>
+        </button>
+        <div class="custom-context-divider"></div>
+        <button type="button" class="custom-context-item danger" data-action="quit">
+            <i data-feather="x-circle"></i>
+            <span data-i18n="context_quit">Выход</span>
+        </button>
+    </div>
     <div id="global-alert-dialog" class="global-alert-dialog" aria-hidden="true">
         <div class="global-alert-backdrop"></div>
         <div class="global-alert-card">
@@ -588,6 +609,7 @@
             </div>
         </div>
     </div>
+    <div id="qa-tooltip" class="qa-tooltip" role="tooltip" aria-hidden="true" hidden></div>
     <script src="renderer.js"></script>
 </body>
 </html>

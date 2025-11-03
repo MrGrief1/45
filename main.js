@@ -2906,6 +2906,19 @@ ipcMain.on('show-context-menu', (event) => {
     menu.popup(BrowserWindow.fromWebContents(event.sender));
 });
 
+// Custom context menu actions
+ipcMain.on('open-app-location', () => {
+    shell.showItemInFolder(process.execPath);
+});
+
+ipcMain.on('relaunch-as-admin', () => {
+    relaunchAsAdmin();
+});
+
+ipcMain.on('quit-app', () => {
+    app.quit();
+});
+
 // НОВАЯ ФУНКЦИЯ для перепозиционирования
 WindowManager.repositionAuxiliaryWindows = function() {
     const mainBounds = mainWindow.getBounds();
@@ -3022,6 +3035,13 @@ ipcMain.on('open-item', (event, itemPath) => {
                 Logger.info(`✓ Item opened in ${launchTime}ms: ${itemPath}`);
             })
             .catch(err => Logger.error(`Failed to open item ${itemPath}: ${err.message}`));
+    }
+});
+
+// Open file location in explorer for a specific path
+ipcMain.on('show-item-in-folder', (event, itemPath) => {
+    if (typeof itemPath === 'string' && itemPath.length > 0) {
+        try { shell.showItemInFolder(itemPath); } catch {}
     }
 });
 ipcMain.on('copy-to-clipboard', (event, text) => clipboard.writeText(text));
