@@ -1,5 +1,6 @@
 // renderer.js
 const { ipcRenderer, shell } = require('electron');
+const createQuickActionImaginationModules = require('./quick-action-imagination-modules');
 
 // =================================================================================
 // === Глобальное Состояние и Утилиты ===
@@ -478,6 +479,16 @@ const QuickActionTools = {
             return value === undefined ? '' : this.toText(value);
         });
         return result;
+    }
+};
+
+const QuickActionContext = {
+    clone(base = {}) {
+        return {
+            payload: base.payload ?? null,
+            vars: { ...(base.vars || {}) },
+            logs: Array.isArray(base.logs) ? [...base.logs] : []
+        };
     }
 };
 
@@ -3403,6 +3414,9 @@ const QuickActionAdditionalModules = [
 
 QuickActionModuleDefinitions.push(...QuickActionAdditionalModules);
 
+const QuickActionImaginationModules = createQuickActionImaginationModules({ QuickActionContext, QuickActionTools });
+QuickActionModuleDefinitions.push(...QuickActionImaginationModules);
+
 const QuickActionModuleMap = new Map();
 const QuickActionModulesByCategory = { triggers: [], actions: [], utilities: [] };
 
@@ -3542,16 +3556,6 @@ const QuickActionStore = {
     persist() {
         if (!AppState.settings?.quickActions) return;
         ipcRenderer.send('update-setting', 'quickActions', JSON.parse(JSON.stringify(AppState.settings.quickActions)));
-    }
-};
-
-const QuickActionContext = {
-    clone(base = {}) {
-        return {
-            payload: base.payload ?? null,
-            vars: { ...(base.vars || {}) },
-            logs: Array.isArray(base.logs) ? [...base.logs] : []
-        };
     }
 };
 
