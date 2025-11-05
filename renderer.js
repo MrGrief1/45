@@ -3401,6 +3401,1678 @@ const QuickActionAdditionalModules = [
     }
 ];
 
+const QuickActionCreativeModules = [
+    {
+        id: 'trigger-timestamp',
+        category: 'trigger',
+        name: 'Timestamp trigger',
+        nameKey: 'qa_module_trigger_timestamp_name',
+        description: 'Begin the workflow with the current ISO timestamp as payload.',
+        descriptionKey: 'qa_module_trigger_timestamp_description',
+        icon: 'clock',
+        accent: '#38bdf8',
+        tags: ['time', 'date'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'iso' },
+        form: [{ key: 'mode', label: 'Format', type: 'select', options: [{ value: 'iso', label: 'ISO timestamp' }, { value: 'locale', label: 'Locale timestamp' }] }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            clone.payload = config?.mode === 'locale'
+                ? now.toLocaleString()
+                : now.toISOString();
+            clone.logs.push(`Generated timestamp using ${config?.mode === 'locale' ? 'locale' : 'ISO'} format.`);
+            return [clone];
+        },
+    },
+    {
+        id: 'trigger-date-today',
+        category: 'trigger',
+        name: "Today's date trigger",
+        nameKey: 'qa_module_trigger_date_today_name',
+        description: "Set the payload to today's date in the selected format.",
+        descriptionKey: 'qa_module_trigger_date_today_description',
+        icon: 'calendar',
+        accent: '#22c55e',
+        tags: ['time', 'date'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { format: 'iso' },
+        form: [{ key: 'format', label: 'Format', type: 'select', options: [{ value: 'iso', label: 'ISO (YYYY-MM-DD)' }, { value: 'locale-long', label: 'Locale - long' }, { value: 'locale-short', label: 'Locale - short' }] }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const format = config?.format || 'iso';
+            if (format === 'locale-long') {
+                clone.payload = new Intl.DateTimeFormat(undefined, { dateStyle: 'full' }).format(now);
+            } else if (format === 'locale-short') {
+                clone.payload = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now);
+            } else {
+                clone.payload = now.toISOString().slice(0, 10);
+            }
+            clone.logs.push('Generated date payload.');
+            return [clone];
+        },
+    },
+    {
+        id: 'trigger-weekday',
+        category: 'trigger',
+        name: 'Weekday trigger',
+        nameKey: 'qa_module_trigger_weekday_name',
+        description: 'Insert the current weekday name as the initial payload.',
+        descriptionKey: 'qa_module_trigger_weekday_description',
+        icon: 'sun',
+        accent: '#fbbf24',
+        tags: ['time', 'date'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'long' },
+        form: [{ key: 'style', label: 'Weekday style', type: 'select', options: [{ value: 'long', label: 'Long' }, { value: 'short', label: 'Short' }, { value: 'narrow', label: 'Narrow' }] }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const formatter = new Intl.DateTimeFormat(undefined, { weekday: config?.style || "long" });
+            clone.payload = formatter.format(new Date());
+            clone.logs.push('Generated weekday payload.');
+            return [clone];
+        },
+    },
+    {
+        id: 'trigger-random-color',
+        category: 'trigger',
+        name: 'Random colour trigger',
+        nameKey: 'qa_module_trigger_random_color_name',
+        description: 'Start with a random colour name from your palette.',
+        descriptionKey: 'qa_module_trigger_random_color_description',
+        icon: 'droplet',
+        accent: '#ec4899',
+        tags: ['random', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { palette: 'Azure\nCoral\nMint\nLavender\nAmber' },
+        form: [{ key: 'palette', label: 'Palette (one per line)', type: 'textarea', rows: 4, placeholder: 'Azure\nCoral\nMint' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const paletteInput = config?.palette || "";
+            const palette = paletteInput.split(/\r?\n|,/).map(item => item.trim()).filter(Boolean);
+            const source = palette.length > 0 ? palette : ['Azure', 'Coral', 'Mint', 'Lavender', 'Amber'];
+            const index = Math.floor(Math.random() * source.length);
+            clone.payload = source[index];
+            clone.logs.push('Selected random colour from palette.');
+            return [clone];
+        },
+    },
+    {
+        id: 'trigger-random-emoji',
+        category: 'trigger',
+        name: 'Random emoji trigger',
+        nameKey: 'qa_module_trigger_random_emoji_name',
+        description: 'Generate a friendly emoji as the payload each time.',
+        descriptionKey: 'qa_module_trigger_random_emoji_description',
+        icon: 'smile',
+        accent: '#f97316',
+        tags: ['random', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { emojis: '😀,🚀,✨,🧠,🎯,🌈,🔥,🪄' },
+        form: [{ key: 'emojis', label: 'Emoji list', type: 'text', placeholder: '😀,🚀,✨' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const emojis = (config?.emojis || '').split(/[,\s]+/).map(item => item.trim()).filter(Boolean);
+            const pool = emojis.length > 0 ? emojis : ['😀', '🚀', '✨', '🧠', '🎯', '🌈', '🔥', '🪄'];
+            const index = Math.floor(Math.random() * pool.length);
+            clone.payload = pool[index];
+            clone.logs.push('Selected random emoji.');
+            return [clone];
+        },
+    },
+    {
+        id: 'trigger-static-text',
+        category: 'trigger',
+        name: 'Static text trigger',
+        nameKey: 'qa_module_trigger_static_text_name',
+        description: 'Always use the configured text as the starting payload.',
+        descriptionKey: 'qa_module_trigger_static_text_description',
+        icon: 'type',
+        accent: '#a855f7',
+        tags: ['text'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { text: 'FlashSearch quick action' },
+        form: [{ key: 'text', label: 'Text', type: 'textarea', rows: 3, placeholder: 'Starting payload' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = config?.text ?? "";
+            clone.logs.push('Loaded static text payload.');
+            return [clone];
+        },
+    },
+    {
+        id: 'trigger-generate-uuid',
+        category: 'trigger',
+        name: 'UUID trigger',
+        nameKey: 'qa_module_trigger_generate_uuid_name',
+        description: 'Produce a brand-new UUID and store it as payload.',
+        descriptionKey: 'qa_module_trigger_generate_uuid_description',
+        icon: 'hash',
+        accent: '#60a5fa',
+        tags: ['random', 'id'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { uppercase: false },
+        form: [{ key: 'uppercase', label: 'Uppercase', type: 'checkbox' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            let value = QuickActionTools.uuid();
+            if (config?.uppercase) value = value.toUpperCase();
+            clone.payload = value;
+            clone.logs.push('Generated UUID payload.');
+            return [clone];
+        },
+    },
+    {
+        id: 'trigger-sequence-counter',
+        category: 'trigger',
+        name: 'Sequence counter trigger',
+        nameKey: 'qa_module_trigger_sequence_counter_name',
+        description: 'Increase a running counter and expose it as payload.',
+        descriptionKey: 'qa_module_trigger_sequence_counter_description',
+        icon: 'list-ol',
+        accent: '#0ea5e9',
+        tags: ['counter'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'counter', start: 0, step: 1 },
+        form: [{ key: 'key', label: 'Counter variable', type: 'text', placeholder: 'counter' }, { key: 'start', label: 'Start value', type: 'number', placeholder: '0' }, { key: 'step', label: 'Step', type: 'number', placeholder: '1' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = config?.key?.trim() || 'counter';
+            const start = Number(config?.start ?? 0);
+            const step = Number(config?.step ?? 1);
+            const current = Number(clone.vars[key] ?? start);
+            const next = current + step;
+            clone.vars[key] = next;
+            clone.payload = String(next);
+            clone.logs.push(`Counter ${key} advanced to ${next}.`);
+            return [clone];
+        },
+    },
+    {
+        id: 'trigger-template-note',
+        category: 'trigger',
+        name: 'Template note trigger',
+        nameKey: 'qa_module_trigger_template_note_name',
+        description: 'Create a note from a template with automatic placeholders.',
+        descriptionKey: 'qa_module_trigger_template_note_description',
+        icon: 'file-text',
+        accent: '#f59e0b',
+        tags: ['template'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { template: '## Daily note\nDate: {{date}}\nTime: {{time}}\nFocus: ' },
+        form: [{ key: 'template', label: 'Template', type: 'textarea', rows: 4, placeholder: '## Note\nDate: {{date}}' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const template = config?.template ?? "";
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            let output = QuickActionTools.applyTemplate(template, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output;
+            clone.logs.push('Generated templated note payload.');
+            return [clone];
+        },
+    },
+    {
+        id: 'trigger-empty-payload',
+        category: 'trigger',
+        name: 'Empty payload trigger',
+        nameKey: 'qa_module_trigger_empty_payload_name',
+        description: 'Reset the workflow with an empty payload value.',
+        descriptionKey: 'qa_module_trigger_empty_payload_description',
+        icon: 'square',
+        accent: '#94a3b8',
+        tags: ['reset'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = '';
+            clone.logs.push('Payload cleared by trigger.');
+            return [clone];
+        },
+    },
+    {
+        id: 'payload-sentence-case',
+        category: 'utility',
+        name: 'Sentence case text',
+        nameKey: 'qa_module_payload_sentence_case_name',
+        description: 'Convert the payload so each sentence starts with a capital letter.',
+        descriptionKey: 'qa_module_payload_sentence_case_description',
+        icon: 'align-left',
+        accent: '#6366f1',
+        tags: ['text'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const text = QuickActionTools.toText(clone.payload).toLowerCase();
+            const result = text.replace(/(^|[.!?]\s+)([\p{L}\p{N}])/gu, (match, prefix, char) => `${prefix}${char.toUpperCase()}`);
+            clone.payload = result;
+            clone.logs.push('Converted payload to sentence case.');
+            return [clone];
+        },
+    },
+    {
+        id: 'payload-toggle-case',
+        category: 'utility',
+        name: 'Toggle text case',
+        nameKey: 'qa_module_payload_toggle_case_name',
+        description: 'Swap lowercase characters for uppercase and vice versa.',
+        descriptionKey: 'qa_module_payload_toggle_case_description',
+        icon: 'type',
+        accent: '#0ea5e9',
+        tags: ['text'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const text = QuickActionTools.toText(clone.payload);
+            let output = "";
+            for (const char of text) {
+                const upper = char.toUpperCase();
+                const lower = char.toLowerCase();
+                output += char === upper ? lower : upper;
+            }
+            clone.payload = output;
+            clone.logs.push('Toggled payload character case.');
+            return [clone];
+        },
+    },
+    {
+        id: 'payload-repeat-text',
+        category: 'utility',
+        name: 'Repeat payload text',
+        nameKey: 'qa_module_payload_repeat_text_name',
+        description: 'Repeat the payload multiple times with a chosen separator.',
+        descriptionKey: 'qa_module_payload_repeat_text_description',
+        icon: 'repeat',
+        accent: '#22c55e',
+        tags: ['text'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { count: 2, separator: '\n' },
+        form: [{ key: 'count', label: 'Repetitions', type: 'number', placeholder: '2' }, { key: 'separator', label: 'Separator', type: 'text', placeholder: '\\n' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const count = Math.max(1, parseInt(config?.count, 10) || 1);
+            const separator = config?.separator ?? '\n';
+            const text = QuickActionTools.toText(clone.payload);
+            clone.payload = Array.from({ length: count }, () => text).join(separator);
+            clone.logs.push(`Repeated payload ${count} time(s).`);
+            return [clone];
+        },
+    },
+    {
+        id: 'payload-prefix-lines',
+        category: 'utility',
+        name: 'Prefix every line',
+        nameKey: 'qa_module_payload_prefix_lines_name',
+        description: 'Add a prefix string in front of each payload line.',
+        descriptionKey: 'qa_module_payload_prefix_lines_description',
+        icon: 'corner-down-right',
+        accent: '#f97316',
+        tags: ['text'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { prefix: '> ' },
+        form: [{ key: 'prefix', label: 'Prefix', type: 'text', placeholder: '> ' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const prefix = config?.prefix ?? '';
+            const lines = QuickActionTools.toLines(clone.payload).map(line => `${prefix}${line}`);
+            clone.payload = lines.join(`
+`);
+            clone.logs.push('Prefixed payload lines.');
+            return [clone];
+        },
+    },
+    {
+        id: 'payload-suffix-lines',
+        category: 'utility',
+        name: 'Suffix every line',
+        nameKey: 'qa_module_payload_suffix_lines_name',
+        description: 'Append a suffix string to each payload line.',
+        descriptionKey: 'qa_module_payload_suffix_lines_description',
+        icon: 'corner-down-left',
+        accent: '#fb7185',
+        tags: ['text'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { suffix: ' — done' },
+        form: [{ key: 'suffix', label: 'Suffix', type: 'text', placeholder: ' — done' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const suffix = config?.suffix ?? '';
+            const lines = QuickActionTools.toLines(clone.payload).map(line => `${line}${suffix}`);
+            clone.payload = lines.join(`
+`);
+            clone.logs.push('Appended suffix to payload lines.');
+            return [clone];
+        },
+    },
+    {
+        id: 'payload-number-lines',
+        category: 'utility',
+        name: 'Numbered lines',
+        nameKey: 'qa_module_payload_number_lines_name',
+        description: 'Add incremental numbering to the start of each line.',
+        descriptionKey: 'qa_module_payload_number_lines_description',
+        icon: 'list-ol',
+        accent: '#facc15',
+        tags: ['text', 'format'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { start: 1, pad: 2, separator: '. ' },
+        form: [{ key: 'start', label: 'Start number', type: 'number', placeholder: '1' }, { key: 'pad', label: 'Pad digits', type: 'number', placeholder: '2' }, { key: 'separator', label: 'Separator', type: 'text', placeholder: '. ' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const start = parseInt(config?.start, 10) || 1;
+            const pad = Math.max(0, parseInt(config?.pad, 10) || 0);
+            const separator = config?.separator ?? '. ';
+            const lines = QuickActionTools.toLines(clone.payload);
+            const numbered = lines.map((line, index) => {
+                const number = String(start + index).padStart(pad > 0 ? pad : 0, "0");
+                return `${number}${separator}${line}`;
+            });
+            clone.payload = numbered.join(`
+`);
+            clone.logs.push('Numbered payload lines.');
+            return [clone];
+        },
+    },
+    {
+        id: 'payload-strip-blank-lines',
+        category: 'utility',
+        name: 'Strip blank lines',
+        nameKey: 'qa_module_payload_strip_blank_lines_name',
+        description: 'Remove empty or whitespace-only lines from the payload.',
+        descriptionKey: 'qa_module_payload_strip_blank_lines_description',
+        icon: 'delete',
+        accent: '#ef4444',
+        tags: ['text', 'clean'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const lines = QuickActionTools.toLines(clone.payload).filter(line => line.trim().length > 0);
+            clone.payload = lines.join(`
+`);
+            clone.logs.push('Removed blank lines from payload.');
+            return [clone];
+        },
+    },
+    {
+        id: 'payload-collapse-whitespace',
+        category: 'utility',
+        name: 'Collapse whitespace',
+        nameKey: 'qa_module_payload_collapse_whitespace_name',
+        description: 'Replace repeated whitespace with single spaces.',
+        descriptionKey: 'qa_module_payload_collapse_whitespace_description',
+        icon: 'minimize-2',
+        accent: '#a855f7',
+        tags: ['text', 'clean'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const text = QuickActionTools.toText(clone.payload);
+            clone.payload = text.replace(/\s+/g, ' ').trim();
+            clone.logs.push('Collapsed whitespace in payload.');
+            return [clone];
+        },
+    },
+    {
+        id: 'payload-camel-case',
+        category: 'utility',
+        name: 'Camel case text',
+        nameKey: 'qa_module_payload_camel_case_name',
+        description: 'Transform the payload into lowerCamelCase form.',
+        descriptionKey: 'qa_module_payload_camel_case_description',
+        icon: 'italic',
+        accent: '#14b8a6',
+        tags: ['text', 'format'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const words = QuickActionTools.toText(clone.payload).split(/[^\p{L}\p{N}]+/u).filter(Boolean).map(word => word.toLowerCase());
+            if (words.length === 0) {
+                clone.payload = '';
+            } else {
+                const [first, ...rest] = words;
+                clone.payload = first + rest.map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('');
+            }
+            clone.logs.push('Converted payload to camelCase.');
+            return [clone];
+        },
+    },
+    {
+        id: 'payload-snake-case',
+        category: 'utility',
+        name: 'Snake case text',
+        nameKey: 'qa_module_payload_snake_case_name',
+        description: 'Convert the payload into snake_case.',
+        descriptionKey: 'qa_module_payload_snake_case_description',
+        icon: 'underline',
+        accent: '#6366f1',
+        tags: ['text', 'format'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const words = QuickActionTools.toText(clone.payload).split(/[^\p{L}\p{N}]+/u).filter(Boolean).map(word => word.toLowerCase());
+            clone.payload = words.join('_');
+            clone.logs.push('Converted payload to snake_case.');
+            return [clone];
+        },
+    },
+    {
+        id: 'vars-store-date',
+        category: 'utility',
+        name: 'Store date variable',
+        nameKey: 'qa_module_vars_store_date_name',
+        description: "Save today's date in a named workflow variable.",
+        descriptionKey: 'qa_module_vars_store_date_description',
+        icon: 'calendar',
+        accent: '#0ea5e9',
+        tags: ['variables', 'time'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'today', style: 'medium' },
+        form: [{ key: 'key', label: 'Variable name', type: 'text', placeholder: 'today' }, { key: 'style', label: 'Date style', type: 'select', options: [{ value: 'short', label: 'Short' }, { value: 'medium', label: 'Medium' }, { value: 'long', label: 'Long' }] }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = config?.key?.trim() || 'today';
+            const style = config?.style || 'medium';
+            const formatter = new Intl.DateTimeFormat(undefined, { dateStyle: style });
+            clone.vars[key] = formatter.format(new Date());
+            clone.logs.push(`Stored ${style} date in ${key}.`);
+            return [clone];
+        },
+    },
+    {
+        id: 'vars-store-time',
+        category: 'utility',
+        name: 'Store time variable',
+        nameKey: 'qa_module_vars_store_time_name',
+        description: 'Save the current time in a named workflow variable.',
+        descriptionKey: 'qa_module_vars_store_time_description',
+        icon: 'clock',
+        accent: '#38bdf8',
+        tags: ['variables', 'time'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'now', style: 'short' },
+        form: [{ key: 'key', label: 'Variable name', type: 'text', placeholder: 'now' }, { key: 'style', label: 'Time style', type: 'select', options: [{ value: 'short', label: 'Short' }, { value: 'medium', label: 'Medium' }] }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = config?.key?.trim() || 'now';
+            const style = config?.style || 'short';
+            const formatter = new Intl.DateTimeFormat(undefined, { timeStyle: style });
+            clone.vars[key] = formatter.format(new Date());
+            clone.logs.push(`Stored ${style} time in ${key}.`);
+            return [clone];
+        },
+    },
+    {
+        id: 'vars-store-weekday',
+        category: 'utility',
+        name: 'Store weekday variable',
+        nameKey: 'qa_module_vars_store_weekday_name',
+        description: 'Save the weekday name in a workflow variable.',
+        descriptionKey: 'qa_module_vars_store_weekday_description',
+        icon: 'sun',
+        accent: '#fbbf24',
+        tags: ['variables', 'time'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'weekday', style: 'long' },
+        form: [{ key: 'key', label: 'Variable name', type: 'text', placeholder: 'weekday' }, { key: 'style', label: 'Weekday style', type: 'select', options: [{ value: 'long', label: 'Long' }, { value: 'short', label: 'Short' }, { value: 'narrow', label: 'Narrow' }] }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = config?.key?.trim() || 'weekday';
+            const style = config?.style || 'long';
+            const formatter = new Intl.DateTimeFormat(undefined, { weekday: style });
+            clone.vars[key] = formatter.format(new Date());
+            clone.logs.push(`Stored ${style} weekday in ${key}.`);
+            return [clone];
+        },
+    },
+    {
+        id: 'vars-store-length',
+        category: 'utility',
+        name: 'Store payload length',
+        nameKey: 'qa_module_vars_store_length_name',
+        description: 'Save the character length of the payload to a variable.',
+        descriptionKey: 'qa_module_vars_store_length_description',
+        icon: 'ruler',
+        accent: '#a855f7',
+        tags: ['variables', 'metrics'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'length' },
+        form: [{ key: 'key', label: 'Variable name', type: 'text', placeholder: 'length' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = config?.key?.trim() || "length";
+            const value = QuickActionTools.toText(clone.payload).length;
+            clone.vars[key] = value;
+            clone.logs.push(`Stored payload length ${value} in ${key}.`);
+            return [clone];
+        },
+    },
+    {
+        id: 'vars-store-word-count',
+        category: 'utility',
+        name: 'Store word count',
+        nameKey: 'qa_module_vars_store_word_count_name',
+        description: 'Store the payload word count in a variable.',
+        descriptionKey: 'qa_module_vars_store_word_count_description',
+        icon: 'hash',
+        accent: '#34d399',
+        tags: ['variables', 'metrics'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'words' },
+        form: [{ key: 'key', label: 'Variable name', type: 'text', placeholder: 'words' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = config?.key?.trim() || "words";
+            const words = QuickActionTools.toText(clone.payload).trim().split(/\s+/).filter(Boolean);
+            const value = words.length;
+            clone.vars[key] = value;
+            clone.logs.push(`Stored word count ${value} in ${key}.`);
+            return [clone];
+        },
+    },
+    {
+        id: 'vars-store-line-count',
+        category: 'utility',
+        name: 'Store line count',
+        nameKey: 'qa_module_vars_store_line_count_name',
+        description: 'Store the payload line count in a variable.',
+        descriptionKey: 'qa_module_vars_store_line_count_description',
+        icon: 'align-justify',
+        accent: '#f59e0b',
+        tags: ['variables', 'metrics'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'lines' },
+        form: [{ key: 'key', label: 'Variable name', type: 'text', placeholder: 'lines' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = config?.key?.trim() || "lines";
+            const value = QuickActionTools.toLines(clone.payload).length;
+            clone.vars[key] = value;
+            clone.logs.push(`Stored line count ${value} in ${key}.`);
+            return [clone];
+        },
+    },
+    {
+        id: 'vars-increment-counter',
+        category: 'utility',
+        name: 'Increment counter variable',
+        nameKey: 'qa_module_vars_increment_counter_name',
+        description: 'Increase a numeric variable and optionally wrap around.',
+        descriptionKey: 'qa_module_vars_increment_counter_description',
+        icon: 'plus-circle',
+        accent: '#f87171',
+        tags: ['variables', 'counter'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'counter', start: 0, step: 1, wrap: '' },
+        form: [{ key: 'key', label: 'Variable name', type: 'text', placeholder: 'counter' }, { key: 'start', label: 'Start value', type: 'number', placeholder: '0' }, { key: 'step', label: 'Step', type: 'number', placeholder: '1' }, { key: 'wrap', label: 'Wrap after (optional)', type: 'number', placeholder: '' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = config?.key?.trim() || 'counter';
+            const start = Number(config?.start ?? 0);
+            const step = Number(config?.step ?? 1);
+            const wrapRaw = config?.wrap;
+            const wrapText = wrapRaw === undefined || wrapRaw === null ? '' : String(wrapRaw).trim();
+            const limit = wrapText ? Number(wrapText) : null;
+            const currentRaw = Number(clone.vars[key]);
+            const current = Number.isFinite(currentRaw) ? currentRaw : start;
+            let next = current + step;
+            if (Number.isFinite(limit)) {
+                if (step >= 0 && next > limit) {
+                    next = start;
+                } else if (step < 0 && next < limit) {
+                    next = start;
+                }
+            }
+            clone.vars[key] = next;
+            clone.payload = String(next);
+            clone.logs.push(`Counter ${key} is now ${next}.`);
+            return [clone];
+        },
+    },
+    {
+        id: 'vars-copy-value',
+        category: 'utility',
+        name: 'Copy variable value',
+        nameKey: 'qa_module_vars_copy_value_name',
+        description: "Copy one variable's value into another variable.",
+        descriptionKey: 'qa_module_vars_copy_value_description',
+        icon: 'copy',
+        accent: '#60a5fa',
+        tags: ['variables'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { from: 'source', to: 'target', fallback: '' },
+        form: [{ key: 'from', label: 'Source variable', type: 'text', placeholder: 'source' }, { key: 'to', label: 'Target variable', type: 'text', placeholder: 'target' }, { key: 'fallback', label: 'Fallback value', type: 'text', placeholder: '' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const from = config?.from?.trim() || 'source';
+            const to = config?.to?.trim() || 'target';
+            const value = clone.vars[from] ?? config?.fallback ?? '';
+            clone.vars[to] = value;
+            clone.logs.push(`Copied variable ${from} into ${to}.`);
+            return [clone];
+        },
+    },
+    {
+        id: 'vars-ensure-default',
+        category: 'utility',
+        name: 'Ensure default variable',
+        nameKey: 'qa_module_vars_ensure_default_name',
+        description: 'Assign a default value when a variable is empty.',
+        descriptionKey: 'qa_module_vars_ensure_default_description',
+        icon: 'shield',
+        accent: '#22d3ee',
+        tags: ['variables'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'status', value: 'pending' },
+        form: [{ key: 'key', label: 'Variable name', type: 'text', placeholder: 'status' }, { key: 'value', label: 'Default value', type: 'text', placeholder: 'pending' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = config?.key?.trim() || "status";
+            const existing = clone.vars[key];
+            if (existing === undefined || existing === null || String(existing).trim() === '') {
+                clone.vars[key] = config?.value ?? '';
+                clone.logs.push(`Applied default value to ${key}.`);
+            } else {
+                clone.logs.push(`${key} already had a value.`);
+            }
+            return [clone];
+        },
+    },
+    {
+        id: 'vars-append-to-list',
+        category: 'utility',
+        name: 'Append to list variable',
+        nameKey: 'qa_module_vars_append_to_list_name',
+        description: 'Append the payload value to an array variable.',
+        descriptionKey: 'qa_module_vars_append_to_list_description',
+        icon: 'list',
+        accent: '#16a34a',
+        tags: ['variables'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'items', unique: false },
+        form: [{ key: 'key', label: 'Variable name', type: 'text', placeholder: 'items' }, { key: 'unique', label: 'Avoid duplicates', type: 'checkbox' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = config?.key?.trim() || "items";
+            const list = Array.isArray(clone.vars[key]) ? clone.vars[key].slice() : [];
+            const value = clone.payload;
+            if (config?.unique) {
+                const exists = list.some(item => QuickActionTools.toText(item) === QuickActionTools.toText(value));
+                if (!exists) list.push(value);
+            } else {
+                list.push(value);
+            }
+            clone.vars[key] = list;
+            clone.logs.push(`Appended value to ${key} (size ${list.length}).`);
+            return [clone];
+        },
+    },
+    {
+        id: 'template-brainstorm-board',
+        category: 'utility',
+        name: 'Brainstorm board',
+        nameKey: 'qa_module_template_brainstorm_board_name',
+        description: 'Lay out prompts to explore fresh ideas with your team.',
+        descriptionKey: 'qa_module_template_brainstorm_board_description',
+        icon: 'feather',
+        accent: '#a855f7',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { topic: 'New initiative', owner: '', seed_one: '', seed_two: '', seed_three: '', notes: '' },
+        form: [{ key: 'topic', label: 'Topic', type: 'text', placeholder: 'New feature concept' }, { key: 'owner', label: 'Facilitator', type: 'text', placeholder: 'You' }, { key: 'seed_one', label: 'Seed idea 1', type: 'text', placeholder: 'Streamline onboarding' }, { key: 'seed_two', label: 'Seed idea 2', type: 'text', placeholder: 'Delight returning users' }, { key: 'seed_three', label: 'Seed idea 3', type: 'text', placeholder: 'Improve retention' }, { key: 'notes', label: 'Notes', type: 'textarea', placeholder: '', rows: 4 }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Brainstorm: {{config.topic}}
+Date: {{date}}
+Facilitator: {{config.owner}}
+
+### Idea seeds
+- {{config.seed_one}}
+- {{config.seed_two}}
+- {{config.seed_three}}
+
+### Notes
+{{config.notes}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared brainstorm board template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-meeting-snapshot',
+        category: 'utility',
+        name: 'Meeting snapshot',
+        nameKey: 'qa_module_template_meeting_snapshot_name',
+        description: 'Capture agenda, decisions and next steps in one view.',
+        descriptionKey: 'qa_module_template_meeting_snapshot_description',
+        icon: 'clipboard',
+        accent: '#38bdf8',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { owner: '', topic: '', agenda_one: '', agenda_two: '', agenda_three: '', decision_one: '', decision_two: '', action_one: '', action_owner_one: '', action_two: '', action_owner_two: '' },
+        form: [{ key: 'owner', label: 'Meeting owner', type: 'text', placeholder: 'Alex' }, { key: 'topic', label: 'Topic', type: 'text', placeholder: 'Weekly sync' }, { key: 'agenda_one', label: 'Agenda item 1', type: 'text', placeholder: 'Updates' }, { key: 'agenda_two', label: 'Agenda item 2', type: 'text', placeholder: 'Risks' }, { key: 'agenda_three', label: 'Agenda item 3', type: 'text', placeholder: 'Decisions' }, { key: 'decision_one', label: 'Decision 1', type: 'text', placeholder: '...' }, { key: 'decision_two', label: 'Decision 2', type: 'text', placeholder: '...' }, { key: 'action_one', label: 'Action item 1', type: 'text', placeholder: 'Prepare summary' }, { key: 'action_owner_one', label: 'Action owner 1', type: 'text', placeholder: 'Sam' }, { key: 'action_two', label: 'Action item 2', type: 'text', placeholder: 'Follow up with client' }, { key: 'action_owner_two', label: 'Action owner 2', type: 'text', placeholder: 'Riley' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Meeting snapshot
+Date: {{date}}
+Owner: {{config.owner}}
+Topic: {{config.topic}}
+
+### Agenda
+1. {{config.agenda_one}}
+2. {{config.agenda_two}}
+3. {{config.agenda_three}}
+
+### Decisions
+- {{config.decision_one}}
+- {{config.decision_two}}
+
+### Action items
+- {{config.action_one}} (Owner: {{config.action_owner_one}})
+- {{config.action_two}} (Owner: {{config.action_owner_two}})
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared meeting snapshot template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-retro-notes',
+        category: 'utility',
+        name: 'Retro notes',
+        nameKey: 'qa_module_template_retro_notes_name',
+        description: 'Document went well, to improve and experiments to try.',
+        descriptionKey: 'qa_module_template_retro_notes_description',
+        icon: 'rotate-ccw',
+        accent: '#f97316',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { topic: '', sprint: '', owner: '', good_one: '', good_two: '', bad_one: '', bad_two: '', experiment_one: '', experiment_two: '' },
+        form: [{ key: 'topic', label: 'Retro topic', type: 'text', placeholder: 'Release prep' }, { key: 'sprint', label: 'Sprint number', type: 'text', placeholder: 'Sprint 12' }, { key: 'owner', label: 'Facilitator', type: 'text', placeholder: 'Jamie' }, { key: 'good_one', label: 'Went well 1', type: 'text', placeholder: 'Automated tests passed' }, { key: 'good_two', label: 'Went well 2', type: 'text', placeholder: 'Stakeholder alignment' }, { key: 'bad_one', label: 'To improve 1', type: 'text', placeholder: 'Deployment speed' }, { key: 'bad_two', label: 'To improve 2', type: 'text', placeholder: 'Bug triage' }, { key: 'experiment_one', label: 'Experiment 1', type: 'text', placeholder: 'Pair review' }, { key: 'experiment_two', label: 'Experiment 2', type: 'text', placeholder: 'Add health check' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Retro: {{config.topic}}
+Sprint: {{config.sprint}}
+Facilitator: {{config.owner}}
+
+### Went well
+- {{config.good_one}}
+- {{config.good_two}}
+
+### To improve
+- {{config.bad_one}}
+- {{config.bad_two}}
+
+### Experiments
+- {{config.experiment_one}}
+- {{config.experiment_two}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared retro notes template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-product-vision',
+        category: 'utility',
+        name: 'Product vision sketch',
+        nameKey: 'qa_module_template_product_vision_name',
+        description: 'Outline audience, promise and guiding principles.',
+        descriptionKey: 'qa_module_template_product_vision_description',
+        icon: 'eye',
+        accent: '#facc15',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { name: '', owner: '', audience: '', promise: '', principle_one: '', principle_two: '', principle_three: '' },
+        form: [{ key: 'name', label: 'Product or team', type: 'text', placeholder: 'Search assistant' }, { key: 'owner', label: 'Champion', type: 'text', placeholder: 'Team lead' }, { key: 'audience', label: 'Audience', type: 'textarea', placeholder: 'Who is it for?', rows: 3 }, { key: 'promise', label: 'Promise', type: 'textarea', placeholder: 'Outcome we deliver', rows: 3 }, { key: 'principle_one', label: 'Principle 1', type: 'text', placeholder: 'Simple defaults' }, { key: 'principle_two', label: 'Principle 2', type: 'text', placeholder: 'Helpful guidance' }, { key: 'principle_three', label: 'Principle 3', type: 'text', placeholder: 'Speed above all' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Vision: {{config.name}}
+Date: {{date}}
+Champion: {{config.owner}}
+
+### Audience
+{{config.audience}}
+
+### Promise
+{{config.promise}}
+
+### Principles
+1. {{config.principle_one}}
+2. {{config.principle_two}}
+3. {{config.principle_three}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared product vision sketch template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-customer-journey',
+        category: 'utility',
+        name: 'Customer journey map',
+        nameKey: 'qa_module_template_customer_journey_name',
+        description: 'Describe stages, goals and friction across the journey.',
+        descriptionKey: 'qa_module_template_customer_journey_description',
+        icon: 'map',
+        accent: '#4ade80',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { persona: '', scenario: '', stage_one: '', goal_one: '', friction_one: '', stage_two: '', goal_two: '', friction_two: '', stage_three: '', goal_three: '', friction_three: '' },
+        form: [{ key: 'persona', label: 'Persona', type: 'text', placeholder: 'Busy manager' }, { key: 'scenario', label: 'Scenario', type: 'text', placeholder: 'Evaluating tools' }, { key: 'stage_one', label: 'Stage 1', type: 'text', placeholder: 'Discover' }, { key: 'goal_one', label: 'Goal 1', type: 'text', placeholder: 'Find options' }, { key: 'friction_one', label: 'Friction 1', type: 'text', placeholder: 'Too much jargon' }, { key: 'stage_two', label: 'Stage 2', type: 'text', placeholder: 'Compare' }, { key: 'goal_two', label: 'Goal 2', type: 'text', placeholder: 'Judge fit' }, { key: 'friction_two', label: 'Friction 2', type: 'text', placeholder: 'Lack of proof' }, { key: 'stage_three', label: 'Stage 3', type: 'text', placeholder: 'Adopt' }, { key: 'goal_three', label: 'Goal 3', type: 'text', placeholder: 'Launch quickly' }, { key: 'friction_three', label: 'Friction 3', type: 'text', placeholder: 'Slow onboarding' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Journey: {{config.persona}}
+Scenario: {{config.scenario}}
+
+### Stage 1 - {{config.stage_one}}
+- Goal: {{config.goal_one}}
+- Friction: {{config.friction_one}}
+
+### Stage 2 - {{config.stage_two}}
+- Goal: {{config.goal_two}}
+- Friction: {{config.friction_two}}
+
+### Stage 3 - {{config.stage_three}}
+- Goal: {{config.goal_three}}
+- Friction: {{config.friction_three}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared customer journey map template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-problem-solution',
+        category: 'utility',
+        name: 'Problem / solution canvas',
+        nameKey: 'qa_module_template_problem_solution_name',
+        description: 'Summarise pains, target audience and how you solve them.',
+        descriptionKey: 'qa_module_template_problem_solution_description',
+        icon: 'layers',
+        accent: '#818cf8',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { topic: '', problem: '', audience: '', solution: '', proof: '' },
+        form: [{ key: 'topic', label: 'Topic', type: 'text', placeholder: 'Support backlog' }, { key: 'problem', label: 'Problem', type: 'textarea', placeholder: 'What is broken', rows: 3 }, { key: 'audience', label: 'Audience', type: 'textarea', placeholder: 'Who is impacted', rows: 3 }, { key: 'solution', label: 'Solution', type: 'textarea', placeholder: 'Our approach', rows: 3 }, { key: 'proof', label: 'Proof or metrics', type: 'textarea', placeholder: 'Evidence', rows: 3 }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Problem / Solution
+Topic: {{config.topic}}
+Date: {{date}}
+
+### Problem
+{{config.problem}}
+
+### Audience
+{{config.audience}}
+
+### Solution
+{{config.solution}}
+
+### Proof
+{{config.proof}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared problem / solution canvas template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-experiment-plan',
+        category: 'utility',
+        name: 'Experiment plan',
+        nameKey: 'qa_module_template_experiment_plan_name',
+        description: 'Track hypothesis, metrics, guardrails and timeline.',
+        descriptionKey: 'qa_module_template_experiment_plan_description',
+        icon: 'flask',
+        accent: '#f472b6',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { name: '', hypothesis: '', metric: '', guardrails: '', start: '', end: '', task_one: '', task_two: '', task_three: '' },
+        form: [{ key: 'name', label: 'Experiment name', type: 'text', placeholder: 'Pricing test' }, { key: 'hypothesis', label: 'Hypothesis', type: 'text', placeholder: 'If we ... then ...' }, { key: 'metric', label: 'Success metric', type: 'text', placeholder: 'Activation rate' }, { key: 'guardrails', label: 'Guardrails', type: 'text', placeholder: 'Do not hurt retention' }, { key: 'start', label: 'Start date', type: 'text', placeholder: 'Next Monday' }, { key: 'end', label: 'End date', type: 'text', placeholder: 'Two weeks later' }, { key: 'task_one', label: 'Task 1', type: 'text', placeholder: 'Prepare variant' }, { key: 'task_two', label: 'Task 2', type: 'text', placeholder: 'Set tracking' }, { key: 'task_three', label: 'Task 3', type: 'text', placeholder: 'Analyze results' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Experiment: {{config.name}}
+Hypothesis: {{config.hypothesis}}
+Success metric: {{config.metric}}
+Guardrails: {{config.guardrails}}
+
+### Timeline
+Start: {{config.start}}
+End: {{config.end}}
+
+### Tasks
+- {{config.task_one}}
+- {{config.task_two}}
+- {{config.task_three}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared experiment plan template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-launch-checklist',
+        category: 'utility',
+        name: 'Launch checklist',
+        nameKey: 'qa_module_template_launch_checklist_name',
+        description: 'List pre-launch tasks, owners and final verification.',
+        descriptionKey: 'qa_module_template_launch_checklist_description',
+        icon: 'check-square',
+        accent: '#10b981',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { project: '', launch_date: '', prep_one: '', owner_one: '', prep_two: '', owner_two: '', comms_one: '', comms_two: '', verify_one: '', verify_two: '' },
+        form: [{ key: 'project', label: 'Project', type: 'text', placeholder: 'Feature launch' }, { key: 'launch_date', label: 'Launch date', type: 'text', placeholder: 'dd.mm.yyyy' }, { key: 'prep_one', label: 'Prep task 1', type: 'text', placeholder: 'Finalize docs' }, { key: 'owner_one', label: 'Prep owner 1', type: 'text', placeholder: 'Alex' }, { key: 'prep_two', label: 'Prep task 2', type: 'text', placeholder: 'QA sign-off' }, { key: 'owner_two', label: 'Prep owner 2', type: 'text', placeholder: 'Taylor' }, { key: 'comms_one', label: 'Comms task 1', type: 'text', placeholder: 'Blog post ready' }, { key: 'comms_two', label: 'Comms task 2', type: 'text', placeholder: 'Email drafted' }, { key: 'verify_one', label: 'Verification 1', type: 'text', placeholder: 'Monitoring in place' }, { key: 'verify_two', label: 'Verification 2', type: 'text', placeholder: 'Rollback plan prepared' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Launch checklist
+Project: {{config.project}}
+Launch date: {{config.launch_date}}
+
+### Prep
+- {{config.prep_one}} (Owner: {{config.owner_one}})
+- {{config.prep_two}} (Owner: {{config.owner_two}})
+
+### Comms
+- {{config.comms_one}}
+- {{config.comms_two}}
+
+### Verification
+- {{config.verify_one}}
+- {{config.verify_two}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared launch checklist template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-roadmap-slice',
+        category: 'utility',
+        name: 'Roadmap slice',
+        nameKey: 'qa_module_template_roadmap_slice_name',
+        description: 'Capture now, next, later items with owners.',
+        descriptionKey: 'qa_module_template_roadmap_slice_description',
+        icon: 'trello',
+        accent: '#60a5fa',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { theme: '', now_one: '', now_owner_one: '', now_two: '', now_owner_two: '', next_one: '', next_two: '', later_one: '', later_two: '' },
+        form: [{ key: 'theme', label: 'Theme', type: 'text', placeholder: 'Collaboration' }, { key: 'now_one', label: 'Now item 1', type: 'text', placeholder: 'Ship templates' }, { key: 'now_owner_one', label: 'Now owner 1', type: 'text', placeholder: 'Nina' }, { key: 'now_two', label: 'Now item 2', type: 'text', placeholder: 'Improve search' }, { key: 'now_owner_two', label: 'Now owner 2', type: 'text', placeholder: 'Leo' }, { key: 'next_one', label: 'Next item 1', type: 'text', placeholder: 'Mobile polish' }, { key: 'next_two', label: 'Next item 2', type: 'text', placeholder: 'Analytics V2' }, { key: 'later_one', label: 'Later item 1', type: 'text', placeholder: 'Integrations' }, { key: 'later_two', label: 'Later item 2', type: 'text', placeholder: 'AI research' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Roadmap slice
+Theme: {{config.theme}}
+Date: {{date}}
+
+### Now
+- {{config.now_one}} (Owner: {{config.now_owner_one}})
+- {{config.now_two}} (Owner: {{config.now_owner_two}})
+
+### Next
+- {{config.next_one}}
+- {{config.next_two}}
+
+### Later
+- {{config.later_one}}
+- {{config.later_two}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared roadmap slice template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-support-playbook',
+        category: 'utility',
+        name: 'Support playbook',
+        nameKey: 'qa_module_template_support_playbook_name',
+        description: 'Draft response tone, diagnostic steps and escalation path.',
+        descriptionKey: 'qa_module_template_support_playbook_description',
+        icon: 'life-buoy',
+        accent: '#f59e0b',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { use_case: '', tone: '', step_one: '', step_two: '', step_three: '', snippet_one: '', snippet_two: '', escalation: '' },
+        form: [{ key: 'use_case', label: 'Use case', type: 'text', placeholder: 'Password reset' }, { key: 'tone', label: 'Tone', type: 'text', placeholder: 'Warm and clear' }, { key: 'step_one', label: 'Step 1', type: 'text', placeholder: 'Verify user' }, { key: 'step_two', label: 'Step 2', type: 'text', placeholder: 'Check logs' }, { key: 'step_three', label: 'Step 3', type: 'text', placeholder: 'Reset manually' }, { key: 'snippet_one', label: 'Snippet 1', type: 'text', placeholder: 'Helpful message' }, { key: 'snippet_two', label: 'Snippet 2', type: 'text', placeholder: 'FAQ link' }, { key: 'escalation', label: 'Escalation path', type: 'textarea', placeholder: 'When to involve engineering', rows: 3 }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Support playbook
+Use case: {{config.use_case}}
+Tone: {{config.tone}}
+
+### Diagnostic steps
+1. {{config.step_one}}
+2. {{config.step_two}}
+3. {{config.step_three}}
+
+### Helpful snippets
+- {{config.snippet_one}}
+- {{config.snippet_two}}
+
+### Escalation
+{{config.escalation}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared support playbook template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-story-outline',
+        category: 'utility',
+        name: 'Story outline',
+        nameKey: 'qa_module_template_story_outline_name',
+        description: 'Map characters, tension and resolution beats.',
+        descriptionKey: 'qa_module_template_story_outline_description',
+        icon: 'book-open',
+        accent: '#fb7185',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { title: '', audience: '', protagonist: '', antagonist: '', conflict: '', resolution: '' },
+        form: [{ key: 'title', label: 'Title', type: 'text', placeholder: 'Great escape' }, { key: 'audience', label: 'Audience', type: 'text', placeholder: 'Customers' }, { key: 'protagonist', label: 'Protagonist', type: 'text', placeholder: 'Main character' }, { key: 'antagonist', label: 'Antagonist', type: 'text', placeholder: 'Obstacle' }, { key: 'conflict', label: 'Conflict', type: 'textarea', placeholder: 'What stands in the way', rows: 3 }, { key: 'resolution', label: 'Resolution', type: 'textarea', placeholder: 'How it ends', rows: 3 }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Story outline
+Title: {{config.title}}
+Audience: {{config.audience}}
+
+### Characters
+- Protagonist: {{config.protagonist}}
+- Antagonist: {{config.antagonist}}
+
+### Conflict
+{{config.conflict}}
+
+### Resolution
+{{config.resolution}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared story outline template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-design-critique',
+        category: 'utility',
+        name: 'Design critique brief',
+        nameKey: 'qa_module_template_design_critique_name',
+        description: 'Share goals, constraints and key questions for feedback.',
+        descriptionKey: 'qa_module_template_design_critique_description',
+        icon: 'figma',
+        accent: '#a78bfa',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { project: '', goal: '', stage: '', context: '', constraint_one: '', constraint_two: '', question_one: '', question_two: '' },
+        form: [{ key: 'project', label: 'Project', type: 'text', placeholder: 'Settings revamp' }, { key: 'goal', label: 'Goal', type: 'text', placeholder: 'Simplify controls' }, { key: 'stage', label: 'Stage', type: 'text', placeholder: 'Wireframes' }, { key: 'context', label: 'Context', type: 'textarea', placeholder: 'Why we are here', rows: 3 }, { key: 'constraint_one', label: 'Constraint 1', type: 'text', placeholder: 'Deadline' }, { key: 'constraint_two', label: 'Constraint 2', type: 'text', placeholder: 'Platform limits' }, { key: 'question_one', label: 'Question 1', type: 'text', placeholder: 'Is navigation intuitive?' }, { key: 'question_two', label: 'Question 2', type: 'text', placeholder: 'Does layout scale?' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Design critique
+Project: {{config.project}}
+Goal: {{config.goal}}
+Stage: {{config.stage}}
+
+### Context
+{{config.context}}
+
+### Constraints
+- {{config.constraint_one}}
+- {{config.constraint_two}}
+
+### Questions
+- {{config.question_one}}
+- {{config.question_two}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared design critique brief template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-research-plan',
+        category: 'utility',
+        name: 'Research plan',
+        nameKey: 'qa_module_template_research_plan_name',
+        description: 'Outline objectives, participants and script highlights.',
+        descriptionKey: 'qa_module_template_research_plan_description',
+        icon: 'target',
+        accent: '#ef4444',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { study: '', owner: '', objective_one: '', objective_two: '', participants: '', question_one: '', question_two: '', question_three: '' },
+        form: [{ key: 'study', label: 'Study name', type: 'text', placeholder: 'Search usability' }, { key: 'owner', label: 'Researcher', type: 'text', placeholder: 'Dana' }, { key: 'objective_one', label: 'Objective 1', type: 'text', placeholder: 'Assess clarity' }, { key: 'objective_two', label: 'Objective 2', type: 'text', placeholder: 'Identify gaps' }, { key: 'participants', label: 'Participant profile', type: 'textarea', placeholder: 'Who to recruit', rows: 3 }, { key: 'question_one', label: 'Question 1', type: 'text', placeholder: 'Walk me through...' }, { key: 'question_two', label: 'Question 2', type: 'text', placeholder: 'What confuses you?' }, { key: 'question_three', label: 'Question 3', type: 'text', placeholder: 'What would you change?' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Research plan
+Study: {{config.study}}
+Owner: {{config.owner}}
+
+### Objectives
+- {{config.objective_one}}
+- {{config.objective_two}}
+
+### Participants
+{{config.participants}}
+
+### Discussion guide
+1. {{config.question_one}}
+2. {{config.question_two}}
+3. {{config.question_three}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared research plan template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-feedback-log',
+        category: 'utility',
+        name: 'Feedback log',
+        nameKey: 'qa_module_template_feedback_log_name',
+        description: 'Track source, themes and follow-up actions.',
+        descriptionKey: 'qa_module_template_feedback_log_description',
+        icon: 'message-circle',
+        accent: '#34d399',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { topic: '', source_one: '', theme_one: '', follow_one: '', source_two: '', theme_two: '', follow_two: '', source_three: '', theme_three: '', follow_three: '' },
+        form: [{ key: 'topic', label: 'Topic', type: 'text', placeholder: 'Dashboard feedback' }, { key: 'source_one', label: 'Source 1', type: 'text', placeholder: 'Customer call' }, { key: 'theme_one', label: 'Theme 1', type: 'text', placeholder: 'Navigation' }, { key: 'follow_one', label: 'Follow-up 1', type: 'text', placeholder: 'Investigate IA' }, { key: 'source_two', label: 'Source 2', type: 'text', placeholder: 'CS ticket' }, { key: 'theme_two', label: 'Theme 2', type: 'text', placeholder: 'Performance' }, { key: 'follow_two', label: 'Follow-up 2', type: 'text', placeholder: 'Profile caching' }, { key: 'source_three', label: 'Source 3', type: 'text', placeholder: 'Survey' }, { key: 'theme_three', label: 'Theme 3', type: 'text', placeholder: 'Customization' }, { key: 'follow_three', label: 'Follow-up 3', type: 'text', placeholder: 'Design mock' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Feedback log
+Topic: {{config.topic}}
+Updated: {{date}}
+
+| Source | Theme | Follow-up |
+| --- | --- | --- |
+| {{config.source_one}} | {{config.theme_one}} | {{config.follow_one}} |
+| {{config.source_two}} | {{config.theme_two}} | {{config.follow_two}} |
+| {{config.source_three}} | {{config.theme_three}} | {{config.follow_three}} |
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared feedback log template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-learning-journal',
+        category: 'utility',
+        name: 'Learning journal',
+        nameKey: 'qa_module_template_learning_journal_name',
+        description: 'Reflect on lessons, wins and next experiments.',
+        descriptionKey: 'qa_module_template_learning_journal_description',
+        icon: 'edit-3',
+        accent: '#fbbf24',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { focus: '', lesson: '', win: '', next_experiment: '' },
+        form: [{ key: 'focus', label: 'Focus area', type: 'text', placeholder: 'Team leadership' }, { key: 'lesson', label: 'Key lesson', type: 'textarea', placeholder: 'What you discovered', rows: 3 }, { key: 'win', label: 'Biggest win', type: 'textarea', placeholder: 'Celebrate progress', rows: 3 }, { key: 'next_experiment', label: 'Next experiment', type: 'textarea', placeholder: 'What to try next', rows: 3 }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Learning journal
+Focus: {{config.focus}}
+Date: {{date}}
+
+### Key lesson
+{{config.lesson}}
+
+### Biggest win
+{{config.win}}
+
+### Next experiment
+{{config.next_experiment}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared learning journal template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-standup-update',
+        category: 'utility',
+        name: 'Standup update',
+        nameKey: 'qa_module_template_standup_update_name',
+        description: 'Share yesterday, today and blockers quickly.',
+        descriptionKey: 'qa_module_template_standup_update_description',
+        icon: 'sunrise',
+        accent: '#0ea5e9',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { name: '', yesterday: '', today: '', blockers: '' },
+        form: [{ key: 'name', label: 'Your name', type: 'text', placeholder: 'Morgan' }, { key: 'yesterday', label: 'Yesterday', type: 'text', placeholder: 'Reviewed PRs' }, { key: 'today', label: 'Today', type: 'text', placeholder: 'Ship new flow' }, { key: 'blockers', label: 'Blockers', type: 'text', placeholder: 'Waiting on API' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Standup - {{config.name}}
+Date: {{date}}
+
+**Yesterday**
+- {{config.yesterday}}
+
+**Today**
+- {{config.today}}
+
+**Blockers**
+- {{config.blockers}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared standup update template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-vision-statement',
+        category: 'utility',
+        name: 'Vision statement',
+        nameKey: 'qa_module_template_vision_statement_name',
+        description: 'Draft an inspiring one-liner and narrative.',
+        descriptionKey: 'qa_module_template_vision_statement_description',
+        icon: 'sparkles',
+        accent: '#a855f7',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { oneliner: '', narrative: '', success_one: '', success_two: '' },
+        form: [{ key: 'oneliner', label: 'One-liner', type: 'text', placeholder: 'Empower everyone to...' }, { key: 'narrative', label: 'Narrative', type: 'textarea', placeholder: 'Describe the future', rows: 4 }, { key: 'success_one', label: 'Success signal 1', type: 'text', placeholder: 'Happier customers' }, { key: 'success_two', label: 'Success signal 2', type: 'text', placeholder: 'Faster workflows' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Vision statement
+One-liner: {{config.oneliner}}
+
+### Narrative
+{{config.narrative}}
+
+### Success looks like
+- {{config.success_one}}
+- {{config.success_two}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared vision statement template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-idea-pitch',
+        category: 'utility',
+        name: 'Idea pitch sheet',
+        nameKey: 'qa_module_template_idea_pitch_name',
+        description: 'Highlight problem, opportunity and success metrics.',
+        descriptionKey: 'qa_module_template_idea_pitch_description',
+        icon: 'megaphone',
+        accent: '#fb7185',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { title: '', owner: '', problem: '', opportunity: '', metric_one: '', metric_two: '' },
+        form: [{ key: 'title', label: 'Pitch title', type: 'text', placeholder: 'Smart shortcuts' }, { key: 'owner', label: 'Owner', type: 'text', placeholder: 'Avery' }, { key: 'problem', label: 'Problem', type: 'textarea', placeholder: 'Pain to solve', rows: 3 }, { key: 'opportunity', label: 'Opportunity', type: 'textarea', placeholder: 'Benefit or impact', rows: 3 }, { key: 'metric_one', label: 'Metric 1', type: 'text', placeholder: 'Time saved' }, { key: 'metric_two', label: 'Metric 2', type: 'text', placeholder: 'NPS uplift' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Idea pitch
+Title: {{config.title}}
+Owner: {{config.owner}}
+
+### Problem
+{{config.problem}}
+
+### Opportunity
+{{config.opportunity}}
+
+### Success metrics
+- {{config.metric_one}}
+- {{config.metric_two}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared idea pitch sheet template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-sprint-goals',
+        category: 'utility',
+        name: 'Sprint goals canvas',
+        nameKey: 'qa_module_template_sprint_goals_name',
+        description: 'Set goals, measures and guardrails for the sprint.',
+        descriptionKey: 'qa_module_template_sprint_goals_description',
+        icon: 'flag',
+        accent: '#22c55e',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { sprint: '', team: '', goal_one: '', goal_two: '', measure_one: '', measure_two: '', guardrail_one: '', guardrail_two: '' },
+        form: [{ key: 'sprint', label: 'Sprint', type: 'text', placeholder: 'Sprint 15' }, { key: 'team', label: 'Team', type: 'text', placeholder: 'Core product' }, { key: 'goal_one', label: 'Goal 1', type: 'text', placeholder: 'Release automation' }, { key: 'goal_two', label: 'Goal 2', type: 'text', placeholder: 'Improve docs' }, { key: 'measure_one', label: 'Measure 1', type: 'text', placeholder: 'Bug count' }, { key: 'measure_two', label: 'Measure 2', type: 'text', placeholder: 'Activation rate' }, { key: 'guardrail_one', label: 'Guardrail 1', type: 'text', placeholder: 'Maintain SLA' }, { key: 'guardrail_two', label: 'Guardrail 2', type: 'text', placeholder: 'No new debt' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Sprint goals
+Sprint: {{config.sprint}}
+Team: {{config.team}}
+
+### Goals
+- {{config.goal_one}}
+- {{config.goal_two}}
+
+### Measures
+- {{config.measure_one}}
+- {{config.measure_two}}
+
+### Guardrails
+- {{config.guardrail_one}}
+- {{config.guardrail_two}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared sprint goals canvas template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-values-playbook',
+        category: 'utility',
+        name: 'Team values playbook',
+        nameKey: 'qa_module_template_values_playbook_name',
+        description: 'Reaffirm core values and sample behaviours.',
+        descriptionKey: 'qa_module_template_values_playbook_description',
+        icon: 'heart',
+        accent: '#f472b6',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { team: '', value_one: '', behaviour_one: '', value_two: '', behaviour_two: '', value_three: '', behaviour_three: '' },
+        form: [{ key: 'team', label: 'Team', type: 'text', placeholder: 'Product crew' }, { key: 'value_one', label: 'Value 1', type: 'text', placeholder: 'Empathy' }, { key: 'behaviour_one', label: 'Behaviours 1', type: 'text', placeholder: 'Active listening' }, { key: 'value_two', label: 'Value 2', type: 'text', placeholder: 'Focus' }, { key: 'behaviour_two', label: 'Behaviours 2', type: 'text', placeholder: 'Say no strategically' }, { key: 'value_three', label: 'Value 3', type: 'text', placeholder: 'Learning' }, { key: 'behaviour_three', label: 'Behaviours 3', type: 'text', placeholder: 'Celebrate experiments' }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Team values
+Team: {{config.team}}
+Updated: {{date}}
+
+### Value 1 - {{config.value_one}}
+- Behaviours: {{config.behaviour_one}}
+
+### Value 2 - {{config.value_two}}
+- Behaviours: {{config.behaviour_two}}
+
+### Value 3 - {{config.value_three}}
+- Behaviours: {{config.behaviour_three}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared team values playbook template.');
+            return [clone];
+        },
+    },
+    {
+        id: 'template-daily-planner',
+        category: 'utility',
+        name: 'Daily planner',
+        nameKey: 'qa_module_template_daily_planner_name',
+        description: 'Start with focus, must-dos and reflection prompts.',
+        descriptionKey: 'qa_module_template_daily_planner_description',
+        icon: 'calendar-check',
+        accent: '#60a5fa',
+        tags: ['template', 'creative'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { focus: '', priority_one: '', priority_two: '', priority_three: '', task_one: '', task_two: '', reflection: '' },
+        form: [{ key: 'focus', label: 'Daily focus', type: 'text', placeholder: 'Ship design update' }, { key: 'priority_one', label: 'Priority 1', type: 'text', placeholder: 'Finalize spec' }, { key: 'priority_two', label: 'Priority 2', type: 'text', placeholder: 'Sync with QA' }, { key: 'priority_three', label: 'Priority 3', type: 'text', placeholder: 'Review metrics' }, { key: 'task_one', label: 'Quick task 1', type: 'text', placeholder: 'Inbox zero' }, { key: 'task_two', label: 'Quick task 2', type: 'text', placeholder: 'Update docs' }, { key: 'reflection', label: 'Reflection prompt', type: 'textarea', placeholder: 'What will make today great?', rows: 3 }],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const now = new Date();
+            const replacements = {
+                date: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now),
+                time: new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(now),
+                weekday: new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now)
+            };
+            const baseTemplate = `## Daily planner
+Date: {{date}}
+Focus: {{config.focus}}
+
+### Top priorities
+1. {{config.priority_one}}
+2. {{config.priority_two}}
+3. {{config.priority_three}}
+
+### Quick tasks
+- {{config.task_one}}
+- {{config.task_two}}
+
+### Reflection
+{{config.reflection}}
+`;
+            let output = QuickActionTools.applyTemplate(baseTemplate, clone, config);
+            output = output.replace(/\{\{\s*(date|time|weekday)\s*\}\}/gi, (_, key) => replacements[key.toLowerCase()] || '');
+            clone.payload = output.trimEnd();
+            clone.logs.push('Prepared daily planner template.');
+            return [clone];
+        },
+    },
+];
+
+QuickActionModuleDefinitions.push(...QuickActionCreativeModules);
+
 QuickActionModuleDefinitions.push(...QuickActionAdditionalModules);
 
 const QuickActionModuleMap = new Map();
