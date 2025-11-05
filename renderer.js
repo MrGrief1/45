@@ -3403,6 +3403,22 @@ const QuickActionAdditionalModules = [
 
 QuickActionModuleDefinitions.push(...QuickActionAdditionalModules);
 
+const buildExtendedQuickActionModules = require('./quick-action-extended-modules');
+const QuickActionExtendedModules = buildExtendedQuickActionModules({
+    QuickActionContext: {
+        clone(base = {}) {
+            return {
+                payload: base?.payload ?? null,
+                vars: { ...(base?.vars || {}) },
+                logs: Array.isArray(base?.logs) ? [...base.logs] : []
+            };
+        }
+    },
+    QuickActionTools
+});
+
+QuickActionModuleDefinitions.push(...QuickActionExtendedModules);
+
 const QuickActionModuleMap = new Map();
 const QuickActionModulesByCategory = { triggers: [], actions: [], utilities: [] };
 
