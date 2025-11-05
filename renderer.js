@@ -16842,10 +16842,14 @@ const FolderContextMenu = {
                     const id = String(iconName).slice(7);
                     const found = (AppState.settings.customIcons || []).find(i => i.id === id);
                     if (found) {
-                        iconContainer.innerHTML = `<img src="${found.dataUrl}" alt="folder" />`;
+                        iconContainer.innerHTML = `<img src="${found.dataUrl}" alt="folder" style="width: 32px; height: 32px; object-fit: contain;" />`;
+                    } else {
+                        iconContainer.innerHTML = window.feather?.icons['folder']?.toSvg() || '';
                     }
                 } else if (window.feather?.icons[iconName]) {
                     iconContainer.innerHTML = window.feather.icons[iconName].toSvg();
+                } else {
+                    iconContainer.innerHTML = window.feather?.icons['folder']?.toSvg() || '';
                 }
             }
         }
@@ -17106,7 +17110,7 @@ const PinnedAppsModule = {
         if (options.folderId) {
             item.classList.add('pinned-item-folder');
             item.setAttribute('data-folder-id', options.folderId);
-            this.applyFolderStyles(item, options.color || null, options.icon || iconName);
+            // NOTE: applyFolderStyles moved to after icon creation
         }
 
         // === УЛУЧШЕНО: Визуальная обратная связь при клике ===
@@ -17165,7 +17169,25 @@ const PinnedAppsModule = {
             }
         } else {
             const folderIconName = options.icon || iconName;
-            icon.innerHTML = window.feather.icons[folderIconName] ? window.feather.icons[folderIconName].toSvg() : (window.feather.icons[iconName]?.toSvg() || '');
+            // Handle custom icons for folders
+            if (String(folderIconName).startsWith('custom:')) {
+                const customId = String(folderIconName).slice(7);
+                const customIcons = Array.isArray(AppState.settings.customIcons) ? AppState.settings.customIcons : [];
+                const found = customIcons.find(ci => ci.id === customId);
+                if (found) {
+                    const img = document.createElement('img');
+                    img.src = found.dataUrl;
+                    img.style.width = '32px';
+                    img.style.height = '32px';
+                    img.style.objectFit = 'contain';
+                    img.alt = 'folder';
+                    icon.appendChild(img);
+                } else {
+                    icon.innerHTML = window.feather.icons['folder'] ? window.feather.icons['folder'].toSvg() : '';
+                }
+            } else {
+                icon.innerHTML = window.feather.icons[folderIconName] ? window.feather.icons[folderIconName].toSvg() : (window.feather.icons[iconName]?.toSvg() || '');
+            }
         }
 
         const nameEl = Utils.createElement('div', { className: 'pinned-item-name' });
@@ -17173,6 +17195,12 @@ const PinnedAppsModule = {
         
         item.appendChild(icon);
         item.appendChild(nameEl);
+        
+        // Apply folder styles AFTER icon is in DOM
+        if (options.folderId) {
+            this.applyFolderStyles(item, options.color || null, options.icon || iconName);
+        }
+        
         return item;
     },
 
@@ -17189,17 +17217,24 @@ const PinnedAppsModule = {
             item.style.removeProperty('--folder-accent-border');
             item.style.removeProperty('--folder-accent-color');
         }
-        if (iconName && !item.querySelector('.pinned-item-icon img')) {
+        // Always update icon if iconName is provided (removed check for existing img)
+        if (iconName) {
             const iconContainer = item.querySelector('.pinned-item-icon');
             if (iconContainer) {
                 if (String(iconName).startsWith('custom:')) {
                     const id = String(iconName).slice(7);
                     const found = (AppState.settings.customIcons || []).find(i => i.id === id);
                     if (found) {
-                        iconContainer.innerHTML = `<img src="${found.dataUrl}" alt="folder" />`;
+                        iconContainer.innerHTML = `<img src="${found.dataUrl}" alt="folder" style="width: 32px; height: 32px; object-fit: contain;" />`;
+                    } else {
+                        // Fallback to folder icon if custom icon not found
+                        iconContainer.innerHTML = window.feather?.icons['folder']?.toSvg() || '';
                     }
                 } else if (window.feather?.icons[iconName]) {
                     iconContainer.innerHTML = window.feather.icons[iconName].toSvg();
+                } else {
+                    // Fallback to folder icon
+                    iconContainer.innerHTML = window.feather?.icons['folder']?.toSvg() || '';
                 }
             }
         }

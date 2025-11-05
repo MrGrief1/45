@@ -173,7 +173,7 @@ function renderAppGrid() {
         // Сначала папки
         AppState.appFolders.forEach(folder => {
             if (folder.id === 'pinned') return;
-            const item = createGridItem(folder.name, 'folder', () => {
+            const item = createGridItem(folder.name, folder.icon || 'folder', () => {
                 AppState.currentFolderId = folder.id;
                 renderAppGrid();
             });
@@ -291,7 +291,24 @@ function createGridItem(name, iconName, onClick, path = null) {
             ipcRenderer.send('request-file-icon', path);
         }
     } else {
-        icon.innerHTML = feather.icons[iconName] ? feather.icons[iconName].toSvg() : '';
+        // Handle custom icons
+        if (String(iconName).startsWith('custom:')) {
+            const customId = String(iconName).slice(7);
+            const customIcons = Array.isArray(AppState.settings.customIcons) ? AppState.settings.customIcons : [];
+            const found = customIcons.find(ci => ci.id === customId);
+            if (found) {
+                const img = document.createElement('img');
+                img.src = found.dataUrl;
+                img.style.width = '48px';
+                img.style.height = '48px';
+                img.style.objectFit = 'contain';
+                icon.appendChild(img);
+            } else {
+                icon.innerHTML = feather.icons['folder'] ? feather.icons['folder'].toSvg() : '';
+            }
+        } else {
+            icon.innerHTML = feather.icons[iconName] ? feather.icons[iconName].toSvg() : '';
+        }
     }
     
     const nameEl = document.createElement('div');

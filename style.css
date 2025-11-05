@@ -1237,6 +1237,13 @@ body.dark-theme .aux-header {
   color: var(--folder-accent-color, var(--text-color));
 }
 
+.pinned-item-folder .pinned-item-icon img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  display: block;
+}
+
 .folder-context-menu {
   position: fixed;
   z-index: 3000;
