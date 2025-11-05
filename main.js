@@ -126,6 +126,9 @@ const DEFAULT_SETTINGS = {
             icon: 'folder'
         }
     ],
+    // Лицензионный ключ (офлайн)
+    licenseKey: null,
+    usedLicenseKeyHashes: [],
     subscription: {
         isActive: false,
         planId: SUBSCRIPTION_PLANS.free.id,
@@ -144,6 +147,49 @@ const DEFAULT_SETTINGS = {
 // === Система Логирования ===
 // =================================================================================
 // ... existing code ...
+// === Лицензирование (офлайн, HMAC) ===
+const LICENSE_SECRET = 'fs_lic_secret_2025_11_v1';
+
+function base64UrlEncode(buffer) {
+    return Buffer.from(buffer).toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+}
+
+function base64UrlDecode(str) {
+    const pad = 4 - (str.length % 4 || 4);
+    const base64 = str.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat(pad === 4 ? 0 : pad);
+    return Buffer.from(base64, 'base64');
+}
+
+function verifyLicenseToken(token) {
+    try {
+        if (typeof token !== 'string' || token.indexOf('.') === -1) {
+            return { valid: false, reason: 'format' };
+        }
+        const [payloadPart, signaturePart] = token.split('.');
+        const payloadBuf = base64UrlDecode(payloadPart);
+        const signatureBuf = base64UrlDecode(signaturePart);
+        const hmac = crypto.createHmac('sha256', LICENSE_SECRET).update(payloadBuf).digest();
+        if (!crypto.timingSafeEqual(hmac, signatureBuf)) {
+            return { valid: false, reason: 'signature' };
+        }
+        const payloadJson = JSON.parse(payloadBuf.toString('utf8')) || {};
+        const nowSec = Math.floor(Date.now() / 1000);
+        const expSec = Number(payloadJson.exp || 0);
+        const iatSec = Number(payloadJson.iat || 0);
+        const isExpired = !(expSec > nowSec);
+        const plan = payloadJson.plan || 'pro';
+        return { valid: true, isExpired, expSec, iatSec, plan, raw: payloadJson };
+    } catch (e) {
+        return { valid: false, reason: 'exception' };
+    }
+}
+
+function computeLicenseHash(token) {
+    try {
+        return crypto.createHash('sha256').update(String(token || '')).digest('hex');
+    } catch { return null; }
+}
+
 const Logger = {
     log: function(level, message) {
         const timestamp = new Date().toISOString();
@@ -313,23 +359,26 @@ class SettingsManager {
                 icon: folder.icon || 'folder'
             }));
 
+        // НОРМАЛИЗУЕМ подписку на основе лицензионного ключа
         if (!currentSettings.subscription || typeof currentSettings.subscription !== 'object') {
             currentSettings.subscription = { ...DEFAULT_SETTINGS.subscription };
         }
 
-        const incomingPlanId = currentSettings.subscription.planId;
-        const isActiveSubscription = currentSettings.subscription.isActive === true;
-        const resolvedPlan = isActiveSubscription
-            ? (SUBSCRIPTION_PLANS[incomingPlanId] || SUBSCRIPTION_PLANS.pro)
-            : SUBSCRIPTION_PLANS.free;
+        if (!Array.isArray(currentSettings.usedLicenseKeyHashes)) {
+            currentSettings.usedLicenseKeyHashes = [];
+        } else {
+            currentSettings.usedLicenseKeyHashes = Array.from(new Set(currentSettings.usedLicenseKeyHashes.filter(Boolean)));
+        }
+
+        const lic = verifyLicenseToken(currentSettings.licenseKey);
+        const hasValidLicense = lic.valid && !lic.isExpired;
+        const resolvedPlan = hasValidLicense ? SUBSCRIPTION_PLANS.pro : SUBSCRIPTION_PLANS.free;
 
         currentSettings.subscription = {
-            isActive: isActiveSubscription && resolvedPlan.id !== SUBSCRIPTION_PLANS.free.id,
+            isActive: hasValidLicense,
             planId: resolvedPlan.id,
             planName: resolvedPlan.name,
-            renewalDate: isActiveSubscription
-                ? (currentSettings.subscription.renewalDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString())
-                : null,
+            renewalDate: hasValidLicense ? new Date(lic.expSec * 1000).toISOString() : null,
             features: [...resolvedPlan.features],
             entitlements: {
                 automations: resolvedPlan.entitlements.automations,
@@ -419,13 +468,54 @@ class SettingsManager {
         let requiresReindex = false;
 
         if (['indexedDirectories', 'customAutomations', 'quickActions', 'subscription'].includes(key)) {
-            currentSettings[key] = value;
-            if (key === 'subscription' || key === 'quickActions') {
+            if (key === 'subscription') {
+                // Подписка вычисляется из licenseKey — игнорируем прямые изменения
                 this.validateSettings();
-            } else if (key === 'customAutomations') {
-                this.enforceAutomationLimit();
+            } else {
+                currentSettings[key] = value;
+                if (key === 'quickActions') {
+                    this.validateSettings();
+                } else if (key === 'customAutomations') {
+                    this.enforceAutomationLimit();
+                }
+                if (key === 'indexedDirectories') requiresReindex = true;
             }
-            if (key === 'indexedDirectories') requiresReindex = true;
+        } else if (key === 'licenseKey') {
+            const incoming = (value || '').toString().trim();
+            const current = (currentSettings.licenseKey || '').toString().trim();
+
+            // Пустая строка — деактивация (всегда разрешаем)
+            if (!incoming) {
+                currentSettings.licenseKey = null;
+                this.validateSettings();
+            } else {
+                // Если уже активна валидная лицензия или ключ не меняется — игнорируем
+                const active = verifyLicenseToken(current);
+                if ((active.valid && !active.isExpired) || current === incoming) {
+                    return;
+                }
+
+                // Запрет повторного использования ранее активированных ключей (по хешу)
+                const hash = computeLicenseHash(incoming);
+                if (hash && Array.isArray(currentSettings.usedLicenseKeyHashes) && currentSettings.usedLicenseKeyHashes.includes(hash)) {
+                    return; // ключ уже использован на этом устройстве
+                }
+
+                // Принимаем только валидные и неистёкшие ключи
+                const check = verifyLicenseToken(incoming);
+                if (!check.valid || check.isExpired) {
+                    return; // невалидный или истёкший — игнорируем
+                }
+
+                // Сохраняем ключ и помечаем его как использованный
+                currentSettings.licenseKey = incoming;
+                if (hash) {
+                    const list = Array.isArray(currentSettings.usedLicenseKeyHashes) ? currentSettings.usedLicenseKeyHashes : [];
+                    if (!list.includes(hash)) list.push(hash);
+                    currentSettings.usedLicenseKeyHashes = list;
+                }
+                this.validateSettings();
+            }
         } else if (currentSettings[key] !== value) {
             if (['opacity', 'blurStrength', 'maxIndexDepth', 'width', 'height', 'borderRadius'].includes(key)) {
                 value = parseInt(value, 10);
@@ -2955,7 +3045,8 @@ const SubscriptionPortal = {
             autoHideMenuBar: true,
             webPreferences: {
                 nodeIntegration: false,
-                contextIsolation: true
+                contextIsolation: true,
+                preload: path.join(__dirname, 'subscription-preload.js')
             }
         });
 
@@ -2978,6 +3069,25 @@ ipcMain.on('update-setting', (event, key, value) => {
 });
 ipcMain.on('open-subscription-portal', () => {
     SubscriptionPortal.open();
+});
+ipcMain.on('set-license-key', (event, key) => {
+    try {
+        const value = (key || '').toString().trim();
+        settingsManager.updateSetting('licenseKey', value);
+        if (SubscriptionPortal.window && !SubscriptionPortal.window.isDestroyed()) {
+            SubscriptionPortal.window.close();
+        }
+    } catch {}
+});
+ipcMain.on('close-subscription-portal', () => {
+    if (SubscriptionPortal.window && !SubscriptionPortal.window.isDestroyed()) {
+        SubscriptionPortal.window.close();
+    }
+});
+ipcMain.on('deactivate-license', () => {
+    try {
+        settingsManager.updateSetting('licenseKey', ''); // сохранит и оповестит
+    } catch {}
 });
 ipcMain.on('open-auxiliary-window', (event, type) => {
     // This is now handled by the renderer process.

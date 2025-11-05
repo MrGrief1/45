@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор ключей FlashSearch</title>
+    <link rel="stylesheet" href="subscription-site.css">
+    <link rel="icon" type="image/png" href="logo.png">
+    <style>
+        .generator-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .row { display: flex; gap: 12px; align-items: center; }
+        .row > * { flex: 1; }
+        .input { padding: 10px 12px; border-radius: 10px; border: 1px solid #374151; background: #111827; color: #e5e7eb; outline: none; }
+        .input::placeholder { color: #6b7280; }
+        .label { font-size: 13px; color: #9ca3af; }
+        .results { margin-top: 16px; }
+        .token-item { background: #0b1220; border: 1px solid #1f2937; border-radius: 12px; padding: 12px; display: grid; gap: 6px; }
+        .token-text { width: 100%; background: #0b1220; color: #e5e7eb; border: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12px; }
+        .muted { color: #9ca3af; font-size: 12px; }
+        .inline { display: inline-flex; gap: 8px; align-items: center; }
+        .mini { padding: 8px 10px; font-size: 12px; border-radius: 8px; }
+    </style>
+    <script defer src="license-generator.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const y = document.getElementById('year-gen');
+            if (y) y.textContent = new Date().getFullYear();
+        });
+    </script>
+    </head>
+<body>
+    <div class="background-gradient"></div>
+    <main class="subscription-main" style="display:flex;align-items:center;justify-content:center;min-height:80vh;">
+        <div class="checkout-card" style="max-width:760px;width:100%;">
+            <h3>Генератор лицензий</h3>
+            <p class="checkout-subtitle">Создаёт офлайн‑ключи для Pro (месяц или год). Ключи подписываются HMAC‑SHA256.</p>
+            <div class="generator-grid">
+                <div>
+                    <div class="label">Секрет (должен совпадать с секретом приложения)</div>
+                    <input id="secret" type="text" class="input" placeholder="fs_lic_secret_2025_11_v1" value="fs_lic_secret_2025_11_v1">
+                </div>
+                <div class="row">
+                    <div>
+                        <div class="label">Длительность</div>
+                        <select id="duration" class="input">
+                            <option value="month">Месяц (30 дней)</option>
+                            <option value="year">Год (365 дней)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div class="label">Количество</div>
+                        <input id="count" type="number" min="1" max="1000" value="1" class="input">
+                    </div>
+                </div>
+                <div class="row">
+                    <button id="generate" class="primary-button">Сгенерировать</button>
+                    <button id="exportCsv" class="secondary-button">Экспорт CSV</button>
+                </div>
+                <div id="status" class="muted"></div>
+                <div id="results" class="results"></div>
+            </div>
+        </div>
+    </main>
+    <footer class="site-footer">
+        <span>© <span id="year-gen"></span> FlashSearch. Локальный генератор ключей.</span>
+    </footer>
+</body>
+</html>
+
+

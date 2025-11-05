@@ -15509,15 +15509,32 @@ const SettingsModule = {
 
         const manageButton = Utils.getElement('#subscription-manage-button');
         if (manageButton) {
+            // UI скрыта, но на всякий случай блокируем открытие портала
             manageButton.addEventListener('click', (event) => {
                 event.preventDefault();
-                ipcRenderer.send('open-subscription-portal');
             });
         }
 
-        const toggleButton = Utils.getElement('#subscription-toggle');
-        if (toggleButton) {
-            toggleButton.addEventListener('click', () => this.toggleSubscription());
+        // Лицензионный ключ: активация/деактивация через основное окно
+        const activateBtn = Utils.getElement('#license-activate-button');
+        const licenseInput = Utils.getElement('#license-key-input');
+        const deactivateBtn = Utils.getElement('#license-deactivate-button');
+        if (activateBtn && licenseInput) {
+            const doActivate = () => {
+                if (this.hasAddonBuilderAccess && this.hasAddonBuilderAccess()) return; // блок повторной активации
+                const key = (licenseInput.value || '').trim();
+                if (key.length === 0) return;
+                ipcRenderer.send('update-setting', 'licenseKey', key);
+            };
+            activateBtn.addEventListener('click', doActivate);
+            licenseInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') doActivate();
+            });
+        }
+        if (deactivateBtn) {
+            deactivateBtn.addEventListener('click', () => {
+                ipcRenderer.send('deactivate-license');
+            });
         }
 
         // Custom SVG Icons uploads
@@ -15903,6 +15920,24 @@ const SettingsModule = {
             toggleButton.classList.toggle('is-active', hasBuilder);
             toggleButton.setAttribute('aria-pressed', String(hasBuilder));
             toggleButton.setAttribute('data-plan', activePlanId);
+        }
+
+        // Управление UI лицензии: скрыть ввод при активной Pro, показать кнопку деактивации
+        const licenseGroupEl = Utils.getElement('.license-input-group');
+        const deactivateBtnEl = Utils.getElement('#license-deactivate-button');
+        const activateBtnEl = Utils.getElement('#license-activate-button');
+        const inputEl = Utils.getElement('#license-key-input');
+        if (licenseGroupEl) {
+            if (hasBuilder) {
+                if (inputEl) inputEl.value = '';
+                if (activateBtnEl) activateBtnEl.style.display = 'none';
+                if (inputEl) inputEl.style.display = 'none';
+                if (deactivateBtnEl) deactivateBtnEl.style.display = 'inline-flex';
+            } else {
+                if (activateBtnEl) activateBtnEl.style.display = 'inline-flex';
+                if (inputEl) inputEl.style.display = 'inline-flex';
+                if (deactivateBtnEl) deactivateBtnEl.style.display = 'none';
+            }
         }
 
         this.renderPlanFeatureList(Utils.getElement('#subscription-feature-list'), proPlan, { highlight: hasBuilder });
