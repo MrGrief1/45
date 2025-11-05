@@ -1114,6 +1114,6251 @@ const QuickActionModuleDefinitions = [
     }
 ];
 
+const QuickActionImaginationModules = [
+{
+    id: 'imagination-trigger-dawn-chime',
+    category: 'trigger',
+    name: 'Dawn chime trigger',
+    nameKey: null,
+    description: 'Fires in the early hours to greet the day and capture morning energy.',
+    descriptionKey: null,
+    icon: 'sunrise',
+    accent: '#f97316',
+    tags: [
+    'trigger',
+    'time',
+    'morning'
+],
+    inputs: [],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    note: 'Welcoming the sunrise',
+    allowedHours: '5,6,7',
+    allowedWeekdays: '1,2,3,4,5',
+    fanOut: false,
+    repeatCount: 3,
+    allowPassthrough: false
+},
+    form: [
+    {
+        key: 'note',
+        label: 'Trigger note',
+        type: 'text',
+        placeholder: 'Welcoming the sunrise'
+    },
+    {
+        key: 'allowedHours',
+        label: 'Allowed hours (comma-separated)',
+        type: 'text',
+        placeholder: '5,6,7'
+    },
+    {
+        key: 'allowedWeekdays',
+        label: 'Allowed weekdays (0-6)',
+        type: 'text',
+        placeholder: '1,2,3,4,5'
+    },
+    {
+        key: 'fanOut',
+        label: 'Create clones for each pulse',
+        type: 'checkbox'
+    },
+    {
+        key: 'repeatCount',
+        label: 'Clone count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'allowPassthrough',
+        label: 'Allow original path when blocked',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const now = new Date();
+        const parseNumberList = (input) => {
+            if (Array.isArray(input)) {
+                return input
+                    .map(value => parseInt(value, 10))
+                    .filter(value => !Number.isNaN(value));
+            }
+            return String(input || '')
+                .split(',')
+                .map(part => parseInt(part.trim(), 10))
+                .filter(num => !Number.isNaN(num));
+        };
+        const allowedHours = parseNumberList(config?.allowedHours ?? '5,6,7');
+        const allowedWeekdays = parseNumberList(config?.allowedWeekdays ?? '1,2,3,4,5');
+        const hour = now.getHours();
+        const weekday = now.getDay();
+        const shouldAllowHour = allowedHours.length === 0 || allowedHours.includes(hour);
+        const shouldAllowWeekday = allowedWeekdays.length === 0 || allowedWeekdays.includes(weekday);
+        const note = QuickActionTools.applyTemplate(config?.note ?? 'Welcoming the sunrise', clone, config);
+        clone.logs.push('Dawn chime evaluating configured hours.');
+        clone.vars.dawnChime = clone.vars.dawnChime || {};
+        clone.vars.dawnChime.last = {
+            triggeredAt: now.toISOString(),
+            hour,
+            weekday,
+            note
+        };
+        if (!shouldAllowHour || !shouldAllowWeekday) {
+            clone.logs.push('Dawn chime skipped because the moment is outside the configured hours or days.');
+            if (!config?.allowPassthrough) {
+                return [];
+            }
+            return [clone];
+        }
+        const repeatCount = Math.max(1, Math.min(10, parseInt(config?.repeatCount ?? 1, 10) || 1));
+        if (config?.fanOut) {
+            const branches = [];
+            for (let index = 0; index < repeatCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars.dawnChime = branchClone.vars.dawnChime || {};
+                branchClone.vars.dawnChime.lastIndex = index;
+                branchClone.logs.push('Dawn chime spawn' + ' #' + (index + 1));
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+        return [clone];
+    }
+}
+{
+    id: 'imagination-trigger-noon-spark',
+    category: 'trigger',
+    name: 'Noon spark trigger',
+    nameKey: null,
+    description: 'Activates around midday to refocus attention on bold ideas.',
+    descriptionKey: null,
+    icon: 'sun',
+    accent: '#facc15',
+    tags: [
+    'trigger',
+    'time',
+    'midday'
+],
+    inputs: [],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    note: 'Midday ignition',
+    allowedHours: '11,12,13',
+    allowedWeekdays: '0,1,2,3,4,5,6',
+    fanOut: false,
+    repeatCount: 2,
+    allowPassthrough: false
+},
+    form: [
+    {
+        key: 'note',
+        label: 'Trigger note',
+        type: 'text',
+        placeholder: 'Midday ignition'
+    },
+    {
+        key: 'allowedHours',
+        label: 'Allowed hours (comma-separated)',
+        type: 'text',
+        placeholder: '11,12,13'
+    },
+    {
+        key: 'allowedWeekdays',
+        label: 'Allowed weekdays (0-6)',
+        type: 'text',
+        placeholder: '0,1,2,3,4,5,6'
+    },
+    {
+        key: 'fanOut',
+        label: 'Create clones for each pulse',
+        type: 'checkbox'
+    },
+    {
+        key: 'repeatCount',
+        label: 'Clone count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'allowPassthrough',
+        label: 'Allow original path when blocked',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const now = new Date();
+        const parseNumberList = (input) => {
+            if (Array.isArray(input)) {
+                return input
+                    .map(value => parseInt(value, 10))
+                    .filter(value => !Number.isNaN(value));
+            }
+            return String(input || '')
+                .split(',')
+                .map(part => parseInt(part.trim(), 10))
+                .filter(num => !Number.isNaN(num));
+        };
+        const allowedHours = parseNumberList(config?.allowedHours ?? '11,12,13');
+        const allowedWeekdays = parseNumberList(config?.allowedWeekdays ?? '0,1,2,3,4,5,6');
+        const hour = now.getHours();
+        const weekday = now.getDay();
+        const shouldAllowHour = allowedHours.length === 0 || allowedHours.includes(hour);
+        const shouldAllowWeekday = allowedWeekdays.length === 0 || allowedWeekdays.includes(weekday);
+        const note = QuickActionTools.applyTemplate(config?.note ?? 'Midday ignition', clone, config);
+        clone.logs.push('Noon spark checking daylight cadence.');
+        clone.vars.noonSpark = clone.vars.noonSpark || {};
+        clone.vars.noonSpark.last = {
+            triggeredAt: now.toISOString(),
+            hour,
+            weekday,
+            note
+        };
+        if (!shouldAllowHour || !shouldAllowWeekday) {
+            clone.logs.push('Noon spark rested because the cadence did not match.');
+            if (!config?.allowPassthrough) {
+                return [];
+            }
+            return [clone];
+        }
+        const repeatCount = Math.max(1, Math.min(10, parseInt(config?.repeatCount ?? 1, 10) || 1));
+        if (config?.fanOut) {
+            const branches = [];
+            for (let index = 0; index < repeatCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars.noonSpark = branchClone.vars.noonSpark || {};
+                branchClone.vars.noonSpark.lastIndex = index;
+                branchClone.logs.push('Noon spark branch' + ' #' + (index + 1));
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+        return [clone];
+    }
+}
+{
+    id: 'imagination-trigger-twilight-beacon',
+    category: 'trigger',
+    name: 'Twilight beacon trigger',
+    nameKey: null,
+    description: 'Awakens ideas in the quiet twilight zone to prepare for evening sessions.',
+    descriptionKey: null,
+    icon: 'moon',
+    accent: '#6366f1',
+    tags: [
+    'trigger',
+    'time',
+    'evening'
+],
+    inputs: [],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    note: 'Twilight planning',
+    allowedHours: '18,19,20',
+    allowedWeekdays: '0,2,4,6',
+    fanOut: false,
+    repeatCount: 4,
+    allowPassthrough: false
+},
+    form: [
+    {
+        key: 'note',
+        label: 'Trigger note',
+        type: 'text',
+        placeholder: 'Twilight planning'
+    },
+    {
+        key: 'allowedHours',
+        label: 'Allowed hours (comma-separated)',
+        type: 'text',
+        placeholder: '18,19,20'
+    },
+    {
+        key: 'allowedWeekdays',
+        label: 'Allowed weekdays (0-6)',
+        type: 'text',
+        placeholder: '0,2,4,6'
+    },
+    {
+        key: 'fanOut',
+        label: 'Create clones for each pulse',
+        type: 'checkbox'
+    },
+    {
+        key: 'repeatCount',
+        label: 'Clone count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'allowPassthrough',
+        label: 'Allow original path when blocked',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const now = new Date();
+        const parseNumberList = (input) => {
+            if (Array.isArray(input)) {
+                return input
+                    .map(value => parseInt(value, 10))
+                    .filter(value => !Number.isNaN(value));
+            }
+            return String(input || '')
+                .split(',')
+                .map(part => parseInt(part.trim(), 10))
+                .filter(num => !Number.isNaN(num));
+        };
+        const allowedHours = parseNumberList(config?.allowedHours ?? '18,19,20');
+        const allowedWeekdays = parseNumberList(config?.allowedWeekdays ?? '0,2,4,6');
+        const hour = now.getHours();
+        const weekday = now.getDay();
+        const shouldAllowHour = allowedHours.length === 0 || allowedHours.includes(hour);
+        const shouldAllowWeekday = allowedWeekdays.length === 0 || allowedWeekdays.includes(weekday);
+        const note = QuickActionTools.applyTemplate(config?.note ?? 'Twilight planning', clone, config);
+        clone.logs.push('Twilight beacon evaluating dusk preferences.');
+        clone.vars.twilightBeacon = clone.vars.twilightBeacon || {};
+        clone.vars.twilightBeacon.last = {
+            triggeredAt: now.toISOString(),
+            hour,
+            weekday,
+            note
+        };
+        if (!shouldAllowHour || !shouldAllowWeekday) {
+            clone.logs.push('Twilight beacon paused because evening rules were not satisfied.');
+            if (!config?.allowPassthrough) {
+                return [];
+            }
+            return [clone];
+        }
+        const repeatCount = Math.max(1, Math.min(10, parseInt(config?.repeatCount ?? 1, 10) || 1));
+        if (config?.fanOut) {
+            const branches = [];
+            for (let index = 0; index < repeatCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars.twilightBeacon = branchClone.vars.twilightBeacon || {};
+                branchClone.vars.twilightBeacon.lastIndex = index;
+                branchClone.logs.push('Twilight beacon echo' + ' #' + (index + 1));
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+        return [clone];
+    }
+}
+{
+    id: 'imagination-trigger-midnight-ink',
+    category: 'trigger',
+    name: 'Midnight ink trigger',
+    nameKey: null,
+    description: 'Invites nocturnal exploration when inspiration strikes past midnight.',
+    descriptionKey: null,
+    icon: 'moon',
+    accent: '#a855f7',
+    tags: [
+    'trigger',
+    'time',
+    'night'
+],
+    inputs: [],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    note: 'Midnight drafting',
+    allowedHours: '0,1,2,3',
+    allowedWeekdays: '5,6',
+    fanOut: false,
+    repeatCount: 3,
+    allowPassthrough: false
+},
+    form: [
+    {
+        key: 'note',
+        label: 'Trigger note',
+        type: 'text',
+        placeholder: 'Midnight drafting'
+    },
+    {
+        key: 'allowedHours',
+        label: 'Allowed hours (comma-separated)',
+        type: 'text',
+        placeholder: '0,1,2,3'
+    },
+    {
+        key: 'allowedWeekdays',
+        label: 'Allowed weekdays (0-6)',
+        type: 'text',
+        placeholder: '5,6'
+    },
+    {
+        key: 'fanOut',
+        label: 'Create clones for each pulse',
+        type: 'checkbox'
+    },
+    {
+        key: 'repeatCount',
+        label: 'Clone count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'allowPassthrough',
+        label: 'Allow original path when blocked',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const now = new Date();
+        const parseNumberList = (input) => {
+            if (Array.isArray(input)) {
+                return input
+                    .map(value => parseInt(value, 10))
+                    .filter(value => !Number.isNaN(value));
+            }
+            return String(input || '')
+                .split(',')
+                .map(part => parseInt(part.trim(), 10))
+                .filter(num => !Number.isNaN(num));
+        };
+        const allowedHours = parseNumberList(config?.allowedHours ?? '0,1,2,3');
+        const allowedWeekdays = parseNumberList(config?.allowedWeekdays ?? '5,6');
+        const hour = now.getHours();
+        const weekday = now.getDay();
+        const shouldAllowHour = allowedHours.length === 0 || allowedHours.includes(hour);
+        const shouldAllowWeekday = allowedWeekdays.length === 0 || allowedWeekdays.includes(weekday);
+        const note = QuickActionTools.applyTemplate(config?.note ?? 'Midnight drafting', clone, config);
+        clone.logs.push('Midnight ink listening for late night intent.');
+        clone.vars.midnightInk = clone.vars.midnightInk || {};
+        clone.vars.midnightInk.last = {
+            triggeredAt: now.toISOString(),
+            hour,
+            weekday,
+            note
+        };
+        if (!shouldAllowHour || !shouldAllowWeekday) {
+            clone.logs.push('Midnight ink held back to protect rest hours.');
+            if (!config?.allowPassthrough) {
+                return [];
+            }
+            return [clone];
+        }
+        const repeatCount = Math.max(1, Math.min(10, parseInt(config?.repeatCount ?? 1, 10) || 1));
+        if (config?.fanOut) {
+            const branches = [];
+            for (let index = 0; index < repeatCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars.midnightInk = branchClone.vars.midnightInk || {};
+                branchClone.vars.midnightInk.lastIndex = index;
+                branchClone.logs.push('Midnight ink echo' + ' #' + (index + 1));
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+        return [clone];
+    }
+}
+{
+    id: 'imagination-trigger-weekend-awakening',
+    category: 'trigger',
+    name: 'Weekend awakening trigger',
+    nameKey: null,
+    description: 'Reserved for leisurely weekends to explore experimental branches.',
+    descriptionKey: null,
+    icon: 'coffee',
+    accent: '#fb7185',
+    tags: [
+    'trigger',
+    'weekend',
+    'ritual'
+],
+    inputs: [],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    note: 'Weekend exploration',
+    allowedHours: '8,9,10',
+    allowedWeekdays: '6,0',
+    fanOut: false,
+    repeatCount: 5,
+    allowPassthrough: false
+},
+    form: [
+    {
+        key: 'note',
+        label: 'Trigger note',
+        type: 'text',
+        placeholder: 'Weekend exploration'
+    },
+    {
+        key: 'allowedHours',
+        label: 'Allowed hours (comma-separated)',
+        type: 'text',
+        placeholder: '8,9,10'
+    },
+    {
+        key: 'allowedWeekdays',
+        label: 'Allowed weekdays (0-6)',
+        type: 'text',
+        placeholder: '6,0'
+    },
+    {
+        key: 'fanOut',
+        label: 'Create clones for each pulse',
+        type: 'checkbox'
+    },
+    {
+        key: 'repeatCount',
+        label: 'Clone count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'allowPassthrough',
+        label: 'Allow original path when blocked',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const now = new Date();
+        const parseNumberList = (input) => {
+            if (Array.isArray(input)) {
+                return input
+                    .map(value => parseInt(value, 10))
+                    .filter(value => !Number.isNaN(value));
+            }
+            return String(input || '')
+                .split(',')
+                .map(part => parseInt(part.trim(), 10))
+                .filter(num => !Number.isNaN(num));
+        };
+        const allowedHours = parseNumberList(config?.allowedHours ?? '8,9,10');
+        const allowedWeekdays = parseNumberList(config?.allowedWeekdays ?? '6,0');
+        const hour = now.getHours();
+        const weekday = now.getDay();
+        const shouldAllowHour = allowedHours.length === 0 || allowedHours.includes(hour);
+        const shouldAllowWeekday = allowedWeekdays.length === 0 || allowedWeekdays.includes(weekday);
+        const note = QuickActionTools.applyTemplate(config?.note ?? 'Weekend exploration', clone, config);
+        clone.logs.push('Weekend awakening verifying relaxed schedule.');
+        clone.vars.weekendAwakening = clone.vars.weekendAwakening || {};
+        clone.vars.weekendAwakening.last = {
+            triggeredAt: now.toISOString(),
+            hour,
+            weekday,
+            note
+        };
+        if (!shouldAllowHour || !shouldAllowWeekday) {
+            clone.logs.push('Weekend awakening held because today is not part of the retreat.');
+            if (!config?.allowPassthrough) {
+                return [];
+            }
+            return [clone];
+        }
+        const repeatCount = Math.max(1, Math.min(10, parseInt(config?.repeatCount ?? 1, 10) || 1));
+        if (config?.fanOut) {
+            const branches = [];
+            for (let index = 0; index < repeatCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars.weekendAwakening = branchClone.vars.weekendAwakening || {};
+                branchClone.vars.weekendAwakening.lastIndex = index;
+                branchClone.logs.push('Weekend awakening branch' + ' #' + (index + 1));
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+        return [clone];
+    }
+}
+{
+    id: 'imagination-trigger-focus-signal',
+    category: 'trigger',
+    name: 'Focus signal trigger',
+    nameKey: null,
+    description: 'Keeps deep work cycles aligned with carefully chosen hours.',
+    descriptionKey: null,
+    icon: 'target',
+    accent: '#22d3ee',
+    tags: [
+    'trigger',
+    'focus',
+    'cycle'
+],
+    inputs: [],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    note: 'Focus warmup',
+    allowedHours: '9,10,11,14,15',
+    allowedWeekdays: '1,2,3,4',
+    fanOut: false,
+    repeatCount: 3,
+    allowPassthrough: false
+},
+    form: [
+    {
+        key: 'note',
+        label: 'Trigger note',
+        type: 'text',
+        placeholder: 'Focus warmup'
+    },
+    {
+        key: 'allowedHours',
+        label: 'Allowed hours (comma-separated)',
+        type: 'text',
+        placeholder: '9,10,11,14,15'
+    },
+    {
+        key: 'allowedWeekdays',
+        label: 'Allowed weekdays (0-6)',
+        type: 'text',
+        placeholder: '1,2,3,4'
+    },
+    {
+        key: 'fanOut',
+        label: 'Create clones for each pulse',
+        type: 'checkbox'
+    },
+    {
+        key: 'repeatCount',
+        label: 'Clone count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'allowPassthrough',
+        label: 'Allow original path when blocked',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const now = new Date();
+        const parseNumberList = (input) => {
+            if (Array.isArray(input)) {
+                return input
+                    .map(value => parseInt(value, 10))
+                    .filter(value => !Number.isNaN(value));
+            }
+            return String(input || '')
+                .split(',')
+                .map(part => parseInt(part.trim(), 10))
+                .filter(num => !Number.isNaN(num));
+        };
+        const allowedHours = parseNumberList(config?.allowedHours ?? '9,10,11,14,15');
+        const allowedWeekdays = parseNumberList(config?.allowedWeekdays ?? '1,2,3,4');
+        const hour = now.getHours();
+        const weekday = now.getDay();
+        const shouldAllowHour = allowedHours.length === 0 || allowedHours.includes(hour);
+        const shouldAllowWeekday = allowedWeekdays.length === 0 || allowedWeekdays.includes(weekday);
+        const note = QuickActionTools.applyTemplate(config?.note ?? 'Focus warmup', clone, config);
+        clone.logs.push('Focus signal evaluating cycle entry.');
+        clone.vars.focusSignal = clone.vars.focusSignal || {};
+        clone.vars.focusSignal.last = {
+            triggeredAt: now.toISOString(),
+            hour,
+            weekday,
+            note
+        };
+        if (!shouldAllowHour || !shouldAllowWeekday) {
+            clone.logs.push('Focus signal muted because the focus window is closed.');
+            if (!config?.allowPassthrough) {
+                return [];
+            }
+            return [clone];
+        }
+        const repeatCount = Math.max(1, Math.min(10, parseInt(config?.repeatCount ?? 1, 10) || 1));
+        if (config?.fanOut) {
+            const branches = [];
+            for (let index = 0; index < repeatCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars.focusSignal = branchClone.vars.focusSignal || {};
+                branchClone.vars.focusSignal.lastIndex = index;
+                branchClone.logs.push('Focus signal iteration' + ' #' + (index + 1));
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+        return [clone];
+    }
+}
+{
+    id: 'imagination-trigger-evening-retrospective',
+    category: 'trigger',
+    name: 'Evening retrospective trigger',
+    nameKey: null,
+    description: 'Collects highlights during evening reflection rituals.',
+    descriptionKey: null,
+    icon: 'book-open',
+    accent: '#38bdf8',
+    tags: [
+    'trigger',
+    'reflection',
+    'evening'
+],
+    inputs: [],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    note: 'Evening reflections',
+    allowedHours: '19,20,21',
+    allowedWeekdays: '1,3,5',
+    fanOut: false,
+    repeatCount: 4,
+    allowPassthrough: false
+},
+    form: [
+    {
+        key: 'note',
+        label: 'Trigger note',
+        type: 'text',
+        placeholder: 'Evening reflections'
+    },
+    {
+        key: 'allowedHours',
+        label: 'Allowed hours (comma-separated)',
+        type: 'text',
+        placeholder: '19,20,21'
+    },
+    {
+        key: 'allowedWeekdays',
+        label: 'Allowed weekdays (0-6)',
+        type: 'text',
+        placeholder: '1,3,5'
+    },
+    {
+        key: 'fanOut',
+        label: 'Create clones for each pulse',
+        type: 'checkbox'
+    },
+    {
+        key: 'repeatCount',
+        label: 'Clone count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'allowPassthrough',
+        label: 'Allow original path when blocked',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const now = new Date();
+        const parseNumberList = (input) => {
+            if (Array.isArray(input)) {
+                return input
+                    .map(value => parseInt(value, 10))
+                    .filter(value => !Number.isNaN(value));
+            }
+            return String(input || '')
+                .split(',')
+                .map(part => parseInt(part.trim(), 10))
+                .filter(num => !Number.isNaN(num));
+        };
+        const allowedHours = parseNumberList(config?.allowedHours ?? '19,20,21');
+        const allowedWeekdays = parseNumberList(config?.allowedWeekdays ?? '1,3,5');
+        const hour = now.getHours();
+        const weekday = now.getDay();
+        const shouldAllowHour = allowedHours.length === 0 || allowedHours.includes(hour);
+        const shouldAllowWeekday = allowedWeekdays.length === 0 || allowedWeekdays.includes(weekday);
+        const note = QuickActionTools.applyTemplate(config?.note ?? 'Evening reflections', clone, config);
+        clone.logs.push('Evening retrospective gathering context for review.');
+        clone.vars.eveningRetrospective = clone.vars.eveningRetrospective || {};
+        clone.vars.eveningRetrospective.last = {
+            triggeredAt: now.toISOString(),
+            hour,
+            weekday,
+            note
+        };
+        if (!shouldAllowHour || !shouldAllowWeekday) {
+            clone.logs.push('Evening retrospective skipped due to schedule constraints.');
+            if (!config?.allowPassthrough) {
+                return [];
+            }
+            return [clone];
+        }
+        const repeatCount = Math.max(1, Math.min(10, parseInt(config?.repeatCount ?? 1, 10) || 1));
+        if (config?.fanOut) {
+            const branches = [];
+            for (let index = 0; index < repeatCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars.eveningRetrospective = branchClone.vars.eveningRetrospective || {};
+                branchClone.vars.eveningRetrospective.lastIndex = index;
+                branchClone.logs.push('Evening retrospective branch' + ' #' + (index + 1));
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+        return [clone];
+    }
+}
+{
+    id: 'imagination-trigger-creative-sprint',
+    category: 'trigger',
+    name: 'Creative sprint trigger',
+    nameKey: null,
+    description: 'Encourages micro creative sprints with limited fan-out clones.',
+    descriptionKey: null,
+    icon: 'wind',
+    accent: '#34d399',
+    tags: [
+    'trigger',
+    'creative',
+    'sprint'
+],
+    inputs: [],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    note: 'Sprint kickoff',
+    allowedHours: '10,11,16',
+    allowedWeekdays: '1,2,3,4,5',
+    fanOut: false,
+    repeatCount: 6,
+    allowPassthrough: false
+},
+    form: [
+    {
+        key: 'note',
+        label: 'Trigger note',
+        type: 'text',
+        placeholder: 'Sprint kickoff'
+    },
+    {
+        key: 'allowedHours',
+        label: 'Allowed hours (comma-separated)',
+        type: 'text',
+        placeholder: '10,11,16'
+    },
+    {
+        key: 'allowedWeekdays',
+        label: 'Allowed weekdays (0-6)',
+        type: 'text',
+        placeholder: '1,2,3,4,5'
+    },
+    {
+        key: 'fanOut',
+        label: 'Create clones for each pulse',
+        type: 'checkbox'
+    },
+    {
+        key: 'repeatCount',
+        label: 'Clone count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'allowPassthrough',
+        label: 'Allow original path when blocked',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const now = new Date();
+        const parseNumberList = (input) => {
+            if (Array.isArray(input)) {
+                return input
+                    .map(value => parseInt(value, 10))
+                    .filter(value => !Number.isNaN(value));
+            }
+            return String(input || '')
+                .split(',')
+                .map(part => parseInt(part.trim(), 10))
+                .filter(num => !Number.isNaN(num));
+        };
+        const allowedHours = parseNumberList(config?.allowedHours ?? '10,11,16');
+        const allowedWeekdays = parseNumberList(config?.allowedWeekdays ?? '1,2,3,4,5');
+        const hour = now.getHours();
+        const weekday = now.getDay();
+        const shouldAllowHour = allowedHours.length === 0 || allowedHours.includes(hour);
+        const shouldAllowWeekday = allowedWeekdays.length === 0 || allowedWeekdays.includes(weekday);
+        const note = QuickActionTools.applyTemplate(config?.note ?? 'Sprint kickoff', clone, config);
+        clone.logs.push('Creative sprint calibrating warmup.');
+        clone.vars.creativeSprint = clone.vars.creativeSprint || {};
+        clone.vars.creativeSprint.last = {
+            triggeredAt: now.toISOString(),
+            hour,
+            weekday,
+            note
+        };
+        if (!shouldAllowHour || !shouldAllowWeekday) {
+            clone.logs.push('Creative sprint waiting for the configured sprint window.');
+            if (!config?.allowPassthrough) {
+                return [];
+            }
+            return [clone];
+        }
+        const repeatCount = Math.max(1, Math.min(10, parseInt(config?.repeatCount ?? 1, 10) || 1));
+        if (config?.fanOut) {
+            const branches = [];
+            for (let index = 0; index < repeatCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars.creativeSprint = branchClone.vars.creativeSprint || {};
+                branchClone.vars.creativeSprint.lastIndex = index;
+                branchClone.logs.push('Creative sprint branch' + ' #' + (index + 1));
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+        return [clone];
+    }
+}
+{
+    id: 'imagination-trigger-night-shift',
+    category: 'trigger',
+    name: 'Night shift trigger',
+    nameKey: null,
+    description: 'Supports late working sessions with gentle guardrails for rest.',
+    descriptionKey: null,
+    icon: 'moon',
+    accent: '#0ea5e9',
+    tags: [
+    'trigger',
+    'night',
+    'support'
+],
+    inputs: [],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    note: 'Night shift guardian',
+    allowedHours: '22,23,0,1',
+    allowedWeekdays: '1,2,3,4',
+    fanOut: false,
+    repeatCount: 2,
+    allowPassthrough: false
+},
+    form: [
+    {
+        key: 'note',
+        label: 'Trigger note',
+        type: 'text',
+        placeholder: 'Night shift guardian'
+    },
+    {
+        key: 'allowedHours',
+        label: 'Allowed hours (comma-separated)',
+        type: 'text',
+        placeholder: '22,23,0,1'
+    },
+    {
+        key: 'allowedWeekdays',
+        label: 'Allowed weekdays (0-6)',
+        type: 'text',
+        placeholder: '1,2,3,4'
+    },
+    {
+        key: 'fanOut',
+        label: 'Create clones for each pulse',
+        type: 'checkbox'
+    },
+    {
+        key: 'repeatCount',
+        label: 'Clone count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'allowPassthrough',
+        label: 'Allow original path when blocked',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const now = new Date();
+        const parseNumberList = (input) => {
+            if (Array.isArray(input)) {
+                return input
+                    .map(value => parseInt(value, 10))
+                    .filter(value => !Number.isNaN(value));
+            }
+            return String(input || '')
+                .split(',')
+                .map(part => parseInt(part.trim(), 10))
+                .filter(num => !Number.isNaN(num));
+        };
+        const allowedHours = parseNumberList(config?.allowedHours ?? '22,23,0,1');
+        const allowedWeekdays = parseNumberList(config?.allowedWeekdays ?? '1,2,3,4');
+        const hour = now.getHours();
+        const weekday = now.getDay();
+        const shouldAllowHour = allowedHours.length === 0 || allowedHours.includes(hour);
+        const shouldAllowWeekday = allowedWeekdays.length === 0 || allowedWeekdays.includes(weekday);
+        const note = QuickActionTools.applyTemplate(config?.note ?? 'Night shift guardian', clone, config);
+        clone.logs.push('Night shift confirming deliberate intent.');
+        clone.vars.nightShift = clone.vars.nightShift || {};
+        clone.vars.nightShift.last = {
+            triggeredAt: now.toISOString(),
+            hour,
+            weekday,
+            note
+        };
+        if (!shouldAllowHour || !shouldAllowWeekday) {
+            clone.logs.push('Night shift paused to prevent fatigue outside the selected slots.');
+            if (!config?.allowPassthrough) {
+                return [];
+            }
+            return [clone];
+        }
+        const repeatCount = Math.max(1, Math.min(10, parseInt(config?.repeatCount ?? 1, 10) || 1));
+        if (config?.fanOut) {
+            const branches = [];
+            for (let index = 0; index < repeatCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars.nightShift = branchClone.vars.nightShift || {};
+                branchClone.vars.nightShift.lastIndex = index;
+                branchClone.logs.push('Night shift branch' + ' #' + (index + 1));
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+        return [clone];
+    }
+}
+{
+    id: 'imagination-trigger-idea-scout',
+    category: 'trigger',
+    name: 'Idea scout trigger',
+    nameKey: null,
+    description: 'Scans for idea hunting windows sprinkled throughout the week.',
+    descriptionKey: null,
+    icon: 'compass',
+    accent: '#f472b6',
+    tags: [
+    'trigger',
+    'scout',
+    'ideation'
+],
+    inputs: [],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    note: 'Idea scout patrol',
+    allowedHours: '7,12,17',
+    allowedWeekdays: '1,2,4,6',
+    fanOut: false,
+    repeatCount: 5,
+    allowPassthrough: false
+},
+    form: [
+    {
+        key: 'note',
+        label: 'Trigger note',
+        type: 'text',
+        placeholder: 'Idea scout patrol'
+    },
+    {
+        key: 'allowedHours',
+        label: 'Allowed hours (comma-separated)',
+        type: 'text',
+        placeholder: '7,12,17'
+    },
+    {
+        key: 'allowedWeekdays',
+        label: 'Allowed weekdays (0-6)',
+        type: 'text',
+        placeholder: '1,2,4,6'
+    },
+    {
+        key: 'fanOut',
+        label: 'Create clones for each pulse',
+        type: 'checkbox'
+    },
+    {
+        key: 'repeatCount',
+        label: 'Clone count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'allowPassthrough',
+        label: 'Allow original path when blocked',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const now = new Date();
+        const parseNumberList = (input) => {
+            if (Array.isArray(input)) {
+                return input
+                    .map(value => parseInt(value, 10))
+                    .filter(value => !Number.isNaN(value));
+            }
+            return String(input || '')
+                .split(',')
+                .map(part => parseInt(part.trim(), 10))
+                .filter(num => !Number.isNaN(num));
+        };
+        const allowedHours = parseNumberList(config?.allowedHours ?? '7,12,17');
+        const allowedWeekdays = parseNumberList(config?.allowedWeekdays ?? '1,2,4,6');
+        const hour = now.getHours();
+        const weekday = now.getDay();
+        const shouldAllowHour = allowedHours.length === 0 || allowedHours.includes(hour);
+        const shouldAllowWeekday = allowedWeekdays.length === 0 || allowedWeekdays.includes(weekday);
+        const note = QuickActionTools.applyTemplate(config?.note ?? 'Idea scout patrol', clone, config);
+        clone.logs.push('Idea scout reviewing exploration map.');
+        clone.vars.ideaScout = clone.vars.ideaScout || {};
+        clone.vars.ideaScout.last = {
+            triggeredAt: now.toISOString(),
+            hour,
+            weekday,
+            note
+        };
+        if (!shouldAllowHour || !shouldAllowWeekday) {
+            clone.logs.push('Idea scout postponed because map conditions were unmet.');
+            if (!config?.allowPassthrough) {
+                return [];
+            }
+            return [clone];
+        }
+        const repeatCount = Math.max(1, Math.min(10, parseInt(config?.repeatCount ?? 1, 10) || 1));
+        if (config?.fanOut) {
+            const branches = [];
+            for (let index = 0; index < repeatCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars.ideaScout = branchClone.vars.ideaScout || {};
+                branchClone.vars.ideaScout.lastIndex = index;
+                branchClone.logs.push('Idea scout branch' + ' #' + (index + 1));
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+        return [clone];
+    }
+}
+{
+    id: 'imagination-trigger-habit-anchor',
+    category: 'trigger',
+    name: 'Habit anchor trigger',
+    nameKey: null,
+    description: 'Locks in supportive rituals by reminding the workflow about anchors.',
+    descriptionKey: null,
+    icon: 'anchor',
+    accent: '#fbbf24',
+    tags: [
+    'trigger',
+    'habit',
+    'ritual'
+],
+    inputs: [],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    note: 'Habit anchor check-in',
+    allowedHours: '6,8,13,18',
+    allowedWeekdays: '0,1,2,3,4,5,6',
+    fanOut: false,
+    repeatCount: 3,
+    allowPassthrough: false
+},
+    form: [
+    {
+        key: 'note',
+        label: 'Trigger note',
+        type: 'text',
+        placeholder: 'Habit anchor check-in'
+    },
+    {
+        key: 'allowedHours',
+        label: 'Allowed hours (comma-separated)',
+        type: 'text',
+        placeholder: '6,8,13,18'
+    },
+    {
+        key: 'allowedWeekdays',
+        label: 'Allowed weekdays (0-6)',
+        type: 'text',
+        placeholder: '0,1,2,3,4,5,6'
+    },
+    {
+        key: 'fanOut',
+        label: 'Create clones for each pulse',
+        type: 'checkbox'
+    },
+    {
+        key: 'repeatCount',
+        label: 'Clone count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'allowPassthrough',
+        label: 'Allow original path when blocked',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const now = new Date();
+        const parseNumberList = (input) => {
+            if (Array.isArray(input)) {
+                return input
+                    .map(value => parseInt(value, 10))
+                    .filter(value => !Number.isNaN(value));
+            }
+            return String(input || '')
+                .split(',')
+                .map(part => parseInt(part.trim(), 10))
+                .filter(num => !Number.isNaN(num));
+        };
+        const allowedHours = parseNumberList(config?.allowedHours ?? '6,8,13,18');
+        const allowedWeekdays = parseNumberList(config?.allowedWeekdays ?? '0,1,2,3,4,5,6');
+        const hour = now.getHours();
+        const weekday = now.getDay();
+        const shouldAllowHour = allowedHours.length === 0 || allowedHours.includes(hour);
+        const shouldAllowWeekday = allowedWeekdays.length === 0 || allowedWeekdays.includes(weekday);
+        const note = QuickActionTools.applyTemplate(config?.note ?? 'Habit anchor check-in', clone, config);
+        clone.logs.push('Habit anchor aligning anchors with the current moment.');
+        clone.vars.habitAnchor = clone.vars.habitAnchor || {};
+        clone.vars.habitAnchor.last = {
+            triggeredAt: now.toISOString(),
+            hour,
+            weekday,
+            note
+        };
+        if (!shouldAllowHour || !shouldAllowWeekday) {
+            clone.logs.push('Habit anchor deferred until the next anchor window.');
+            if (!config?.allowPassthrough) {
+                return [];
+            }
+            return [clone];
+        }
+        const repeatCount = Math.max(1, Math.min(10, parseInt(config?.repeatCount ?? 1, 10) || 1));
+        if (config?.fanOut) {
+            const branches = [];
+            for (let index = 0; index < repeatCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars.habitAnchor = branchClone.vars.habitAnchor || {};
+                branchClone.vars.habitAnchor.lastIndex = index;
+                branchClone.logs.push('Habit anchor branch' + ' #' + (index + 1));
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+        return [clone];
+    }
+}
+{
+    id: 'imagination-trigger-breathing-room',
+    category: 'trigger',
+    name: 'Breathing room trigger',
+    nameKey: null,
+    description: 'Creates intentional pauses to notice breathing and rest cycles.',
+    descriptionKey: null,
+    icon: 'activity',
+    accent: '#22c55e',
+    tags: [
+    'trigger',
+    'wellness',
+    'pause'
+],
+    inputs: [],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    note: 'Breathing room pause',
+    allowedHours: '9,12,15',
+    allowedWeekdays: '1,2,3,4,5',
+    fanOut: false,
+    repeatCount: 4,
+    allowPassthrough: false
+},
+    form: [
+    {
+        key: 'note',
+        label: 'Trigger note',
+        type: 'text',
+        placeholder: 'Breathing room pause'
+    },
+    {
+        key: 'allowedHours',
+        label: 'Allowed hours (comma-separated)',
+        type: 'text',
+        placeholder: '9,12,15'
+    },
+    {
+        key: 'allowedWeekdays',
+        label: 'Allowed weekdays (0-6)',
+        type: 'text',
+        placeholder: '1,2,3,4,5'
+    },
+    {
+        key: 'fanOut',
+        label: 'Create clones for each pulse',
+        type: 'checkbox'
+    },
+    {
+        key: 'repeatCount',
+        label: 'Clone count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'allowPassthrough',
+        label: 'Allow original path when blocked',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const now = new Date();
+        const parseNumberList = (input) => {
+            if (Array.isArray(input)) {
+                return input
+                    .map(value => parseInt(value, 10))
+                    .filter(value => !Number.isNaN(value));
+            }
+            return String(input || '')
+                .split(',')
+                .map(part => parseInt(part.trim(), 10))
+                .filter(num => !Number.isNaN(num));
+        };
+        const allowedHours = parseNumberList(config?.allowedHours ?? '9,12,15');
+        const allowedWeekdays = parseNumberList(config?.allowedWeekdays ?? '1,2,3,4,5');
+        const hour = now.getHours();
+        const weekday = now.getDay();
+        const shouldAllowHour = allowedHours.length === 0 || allowedHours.includes(hour);
+        const shouldAllowWeekday = allowedWeekdays.length === 0 || allowedWeekdays.includes(weekday);
+        const note = QuickActionTools.applyTemplate(config?.note ?? 'Breathing room pause', clone, config);
+        clone.logs.push('Breathing room verifying pause allowance.');
+        clone.vars.breathingRoom = clone.vars.breathingRoom || {};
+        clone.vars.breathingRoom.last = {
+            triggeredAt: now.toISOString(),
+            hour,
+            weekday,
+            note
+        };
+        if (!shouldAllowHour || !shouldAllowWeekday) {
+            clone.logs.push('Breathing room skipped to maintain focus on the active sprint.');
+            if (!config?.allowPassthrough) {
+                return [];
+            }
+            return [clone];
+        }
+        const repeatCount = Math.max(1, Math.min(10, parseInt(config?.repeatCount ?? 1, 10) || 1));
+        if (config?.fanOut) {
+            const branches = [];
+            for (let index = 0; index < repeatCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars.breathingRoom = branchClone.vars.breathingRoom || {};
+                branchClone.vars.breathingRoom.lastIndex = index;
+                branchClone.logs.push('Breathing room branch' + ' #' + (index + 1));
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+        return [clone];
+    }
+}
+{
+    id: 'imagination-trigger-storyteller',
+    category: 'trigger',
+    name: 'Storyteller trigger',
+    nameKey: null,
+    description: 'Captures narrative beats during journaling-friendly hours.',
+    descriptionKey: null,
+    icon: 'feather',
+    accent: '#ef4444',
+    tags: [
+    'trigger',
+    'story',
+    'journal'
+],
+    inputs: [],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    note: 'Storyteller channel',
+    allowedHours: '6,20,21',
+    allowedWeekdays: '0,2,3,6',
+    fanOut: false,
+    repeatCount: 3,
+    allowPassthrough: false
+},
+    form: [
+    {
+        key: 'note',
+        label: 'Trigger note',
+        type: 'text',
+        placeholder: 'Storyteller channel'
+    },
+    {
+        key: 'allowedHours',
+        label: 'Allowed hours (comma-separated)',
+        type: 'text',
+        placeholder: '6,20,21'
+    },
+    {
+        key: 'allowedWeekdays',
+        label: 'Allowed weekdays (0-6)',
+        type: 'text',
+        placeholder: '0,2,3,6'
+    },
+    {
+        key: 'fanOut',
+        label: 'Create clones for each pulse',
+        type: 'checkbox'
+    },
+    {
+        key: 'repeatCount',
+        label: 'Clone count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'allowPassthrough',
+        label: 'Allow original path when blocked',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const now = new Date();
+        const parseNumberList = (input) => {
+            if (Array.isArray(input)) {
+                return input
+                    .map(value => parseInt(value, 10))
+                    .filter(value => !Number.isNaN(value));
+            }
+            return String(input || '')
+                .split(',')
+                .map(part => parseInt(part.trim(), 10))
+                .filter(num => !Number.isNaN(num));
+        };
+        const allowedHours = parseNumberList(config?.allowedHours ?? '6,20,21');
+        const allowedWeekdays = parseNumberList(config?.allowedWeekdays ?? '0,2,3,6');
+        const hour = now.getHours();
+        const weekday = now.getDay();
+        const shouldAllowHour = allowedHours.length === 0 || allowedHours.includes(hour);
+        const shouldAllowWeekday = allowedWeekdays.length === 0 || allowedWeekdays.includes(weekday);
+        const note = QuickActionTools.applyTemplate(config?.note ?? 'Storyteller channel', clone, config);
+        clone.logs.push('Storyteller scanning narrative windows.');
+        clone.vars.storyteller = clone.vars.storyteller || {};
+        clone.vars.storyteller.last = {
+            triggeredAt: now.toISOString(),
+            hour,
+            weekday,
+            note
+        };
+        if (!shouldAllowHour || !shouldAllowWeekday) {
+            clone.logs.push('Storyteller resting because narrative hours are closed.');
+            if (!config?.allowPassthrough) {
+                return [];
+            }
+            return [clone];
+        }
+        const repeatCount = Math.max(1, Math.min(10, parseInt(config?.repeatCount ?? 1, 10) || 1));
+        if (config?.fanOut) {
+            const branches = [];
+            for (let index = 0; index < repeatCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars.storyteller = branchClone.vars.storyteller || {};
+                branchClone.vars.storyteller.lastIndex = index;
+                branchClone.logs.push('Storyteller branch' + ' #' + (index + 1));
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+        return [clone];
+    }
+}
+{
+    id: 'imagination-trigger-mentor-signal',
+    category: 'trigger',
+    name: 'Mentor signal trigger',
+    nameKey: null,
+    description: 'Sends mentoring cues to revisit learning highlights.',
+    descriptionKey: null,
+    icon: 'users',
+    accent: '#7c3aed',
+    tags: [
+    'trigger',
+    'learning',
+    'mentor'
+],
+    inputs: [],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    note: 'Mentor signal reflection',
+    allowedHours: '8,11,19',
+    allowedWeekdays: '1,3,4,6',
+    fanOut: false,
+    repeatCount: 4,
+    allowPassthrough: false
+},
+    form: [
+    {
+        key: 'note',
+        label: 'Trigger note',
+        type: 'text',
+        placeholder: 'Mentor signal reflection'
+    },
+    {
+        key: 'allowedHours',
+        label: 'Allowed hours (comma-separated)',
+        type: 'text',
+        placeholder: '8,11,19'
+    },
+    {
+        key: 'allowedWeekdays',
+        label: 'Allowed weekdays (0-6)',
+        type: 'text',
+        placeholder: '1,3,4,6'
+    },
+    {
+        key: 'fanOut',
+        label: 'Create clones for each pulse',
+        type: 'checkbox'
+    },
+    {
+        key: 'repeatCount',
+        label: 'Clone count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'allowPassthrough',
+        label: 'Allow original path when blocked',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const now = new Date();
+        const parseNumberList = (input) => {
+            if (Array.isArray(input)) {
+                return input
+                    .map(value => parseInt(value, 10))
+                    .filter(value => !Number.isNaN(value));
+            }
+            return String(input || '')
+                .split(',')
+                .map(part => parseInt(part.trim(), 10))
+                .filter(num => !Number.isNaN(num));
+        };
+        const allowedHours = parseNumberList(config?.allowedHours ?? '8,11,19');
+        const allowedWeekdays = parseNumberList(config?.allowedWeekdays ?? '1,3,4,6');
+        const hour = now.getHours();
+        const weekday = now.getDay();
+        const shouldAllowHour = allowedHours.length === 0 || allowedHours.includes(hour);
+        const shouldAllowWeekday = allowedWeekdays.length === 0 || allowedWeekdays.includes(weekday);
+        const note = QuickActionTools.applyTemplate(config?.note ?? 'Mentor signal reflection', clone, config);
+        clone.logs.push('Mentor signal collecting review questions.');
+        clone.vars.mentorSignal = clone.vars.mentorSignal || {};
+        clone.vars.mentorSignal.last = {
+            triggeredAt: now.toISOString(),
+            hour,
+            weekday,
+            note
+        };
+        if (!shouldAllowHour || !shouldAllowWeekday) {
+            clone.logs.push('Mentor signal muted because mentoring slots are inactive.');
+            if (!config?.allowPassthrough) {
+                return [];
+            }
+            return [clone];
+        }
+        const repeatCount = Math.max(1, Math.min(10, parseInt(config?.repeatCount ?? 1, 10) || 1));
+        if (config?.fanOut) {
+            const branches = [];
+            for (let index = 0; index < repeatCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars.mentorSignal = branchClone.vars.mentorSignal || {};
+                branchClone.vars.mentorSignal.lastIndex = index;
+                branchClone.logs.push('Mentor signal branch' + ' #' + (index + 1));
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+        return [clone];
+    }
+}
+{
+    id: 'imagination-trigger-celebration',
+    category: 'trigger',
+    name: 'Celebration trigger',
+    nameKey: null,
+    description: 'Invites celebration rituals when wins are logged.',
+    descriptionKey: null,
+    icon: 'star',
+    accent: '#f59e0b',
+    tags: [
+    'trigger',
+    'celebration',
+    'ritual'
+],
+    inputs: [],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    note: 'Celebration cue',
+    allowedHours: '12,17,20',
+    allowedWeekdays: '5,6',
+    fanOut: false,
+    repeatCount: 6,
+    allowPassthrough: false
+},
+    form: [
+    {
+        key: 'note',
+        label: 'Trigger note',
+        type: 'text',
+        placeholder: 'Celebration cue'
+    },
+    {
+        key: 'allowedHours',
+        label: 'Allowed hours (comma-separated)',
+        type: 'text',
+        placeholder: '12,17,20'
+    },
+    {
+        key: 'allowedWeekdays',
+        label: 'Allowed weekdays (0-6)',
+        type: 'text',
+        placeholder: '5,6'
+    },
+    {
+        key: 'fanOut',
+        label: 'Create clones for each pulse',
+        type: 'checkbox'
+    },
+    {
+        key: 'repeatCount',
+        label: 'Clone count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'allowPassthrough',
+        label: 'Allow original path when blocked',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const now = new Date();
+        const parseNumberList = (input) => {
+            if (Array.isArray(input)) {
+                return input
+                    .map(value => parseInt(value, 10))
+                    .filter(value => !Number.isNaN(value));
+            }
+            return String(input || '')
+                .split(',')
+                .map(part => parseInt(part.trim(), 10))
+                .filter(num => !Number.isNaN(num));
+        };
+        const allowedHours = parseNumberList(config?.allowedHours ?? '12,17,20');
+        const allowedWeekdays = parseNumberList(config?.allowedWeekdays ?? '5,6');
+        const hour = now.getHours();
+        const weekday = now.getDay();
+        const shouldAllowHour = allowedHours.length === 0 || allowedHours.includes(hour);
+        const shouldAllowWeekday = allowedWeekdays.length === 0 || allowedWeekdays.includes(weekday);
+        const note = QuickActionTools.applyTemplate(config?.note ?? 'Celebration cue', clone, config);
+        clone.logs.push('Celebration trigger watching for milestone hours.');
+        clone.vars.celebration = clone.vars.celebration || {};
+        clone.vars.celebration.last = {
+            triggeredAt: now.toISOString(),
+            hour,
+            weekday,
+            note
+        };
+        if (!shouldAllowHour || !shouldAllowWeekday) {
+            clone.logs.push('Celebration trigger paused until the next milestone window.');
+            if (!config?.allowPassthrough) {
+                return [];
+            }
+            return [clone];
+        }
+        const repeatCount = Math.max(1, Math.min(10, parseInt(config?.repeatCount ?? 1, 10) || 1));
+        if (config?.fanOut) {
+            const branches = [];
+            for (let index = 0; index < repeatCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars.celebration = branchClone.vars.celebration || {};
+                branchClone.vars.celebration.lastIndex = index;
+                branchClone.logs.push('Celebration trigger branch' + ' #' + (index + 1));
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+        return [clone];
+    }
+}
+{
+    id: 'imagination-trigger-reset-signal',
+    category: 'trigger',
+    name: 'Reset signal trigger',
+    nameKey: null,
+    description: 'Facilitates gentle resets to clear the stage for new ideas.',
+    descriptionKey: null,
+    icon: 'rotate-ccw',
+    accent: '#14b8a6',
+    tags: [
+    'trigger',
+    'reset',
+    'clarity'
+],
+    inputs: [],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    note: 'Reset signal',
+    allowedHours: '7,13,18',
+    allowedWeekdays: '0,1,2,3,4,5,6',
+    fanOut: false,
+    repeatCount: 5,
+    allowPassthrough: false
+},
+    form: [
+    {
+        key: 'note',
+        label: 'Trigger note',
+        type: 'text',
+        placeholder: 'Reset signal'
+    },
+    {
+        key: 'allowedHours',
+        label: 'Allowed hours (comma-separated)',
+        type: 'text',
+        placeholder: '7,13,18'
+    },
+    {
+        key: 'allowedWeekdays',
+        label: 'Allowed weekdays (0-6)',
+        type: 'text',
+        placeholder: '0,1,2,3,4,5,6'
+    },
+    {
+        key: 'fanOut',
+        label: 'Create clones for each pulse',
+        type: 'checkbox'
+    },
+    {
+        key: 'repeatCount',
+        label: 'Clone count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'allowPassthrough',
+        label: 'Allow original path when blocked',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const now = new Date();
+        const parseNumberList = (input) => {
+            if (Array.isArray(input)) {
+                return input
+                    .map(value => parseInt(value, 10))
+                    .filter(value => !Number.isNaN(value));
+            }
+            return String(input || '')
+                .split(',')
+                .map(part => parseInt(part.trim(), 10))
+                .filter(num => !Number.isNaN(num));
+        };
+        const allowedHours = parseNumberList(config?.allowedHours ?? '7,13,18');
+        const allowedWeekdays = parseNumberList(config?.allowedWeekdays ?? '0,1,2,3,4,5,6');
+        const hour = now.getHours();
+        const weekday = now.getDay();
+        const shouldAllowHour = allowedHours.length === 0 || allowedHours.includes(hour);
+        const shouldAllowWeekday = allowedWeekdays.length === 0 || allowedWeekdays.includes(weekday);
+        const note = QuickActionTools.applyTemplate(config?.note ?? 'Reset signal', clone, config);
+        clone.logs.push('Reset signal checking restoration agenda.');
+        clone.vars.resetSignal = clone.vars.resetSignal || {};
+        clone.vars.resetSignal.last = {
+            triggeredAt: now.toISOString(),
+            hour,
+            weekday,
+            note
+        };
+        if (!shouldAllowHour || !shouldAllowWeekday) {
+            clone.logs.push('Reset signal postponed because the reset window is closed.');
+            if (!config?.allowPassthrough) {
+                return [];
+            }
+            return [clone];
+        }
+        const repeatCount = Math.max(1, Math.min(10, parseInt(config?.repeatCount ?? 1, 10) || 1));
+        if (config?.fanOut) {
+            const branches = [];
+            for (let index = 0; index < repeatCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars.resetSignal = branchClone.vars.resetSignal || {};
+                branchClone.vars.resetSignal.lastIndex = index;
+                branchClone.logs.push('Reset signal branch' + ' #' + (index + 1));
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+        return [clone];
+    }
+}
+{
+            id: 'imagination-utility-aurora-threads-01',
+            category: 'utility',
+            name: 'Aurora Threads designer',
+            nameKey: null,
+            description: 'Shapes payloads using the aurora threads motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'layers',
+            accent: '#ec4899',
+            tags: [
+            'utility',
+            'mosaic',
+            'aurora',
+            'threads'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            fragments: 'aurora threads
+threads echo
+aurora motif
+threads trail
+aurora spark',
+            joiner: ' ',
+            wrapWith: '',
+            preservePayload: true
+        },
+            form: [
+            {
+                key: 'fragments',
+                label: 'Fragments',
+                type: 'textarea',
+                rows: 4,
+                placeholder: 'One fragment per line'
+            },
+            {
+                key: 'joiner',
+                label: 'Joiner',
+                type: 'text',
+                placeholder: ' ',
+                description: 'Placed between fragments.'
+            },
+            {
+                key: 'wrapWith',
+                label: 'Wrap with',
+                type: 'text',
+                placeholder: '~'
+            },
+            {
+                key: 'preservePayload',
+                label: 'Keep original payload in vars',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const sourceText = QuickActionTools.toText(clone.payload);
+                if (config?.preservePayload) {
+                    clone.vars['imagination_utility_aurora_threads_01'] = clone.vars['imagination_utility_aurora_threads_01'] || {};
+                    clone.vars['imagination_utility_aurora_threads_01'].original = sourceText;
+                }
+                const rawFragments = QuickActionTools.toLines(config?.fragments ?? '').filter(Boolean);
+                const fallbackFragments = [
+                'aurora threads',
+                'threads echo',
+                'aurora motif',
+                'threads trail',
+                'aurora spark'
+            ];
+                const fragments = rawFragments.length > 0 ? rawFragments : fallbackFragments;
+                const joiner = config?.joiner ?? ' ';
+                const wrapWith = config?.wrapWith ?? '';
+                const rendered = fragments
+                    .map(fragment => QuickActionTools.applyTemplate(fragment, clone, config))
+                    .filter(Boolean);
+                const result = wrapWith + rendered.join(joiner) + wrapWith;
+                clone.payload = result;
+                clone.logs.push('Aurora Threads designer' + ' produced a mosaic from ' + String(rendered.length) + ' fragments.');
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-luminous-cadence-02',
+            category: 'utility',
+            name: 'Luminous Cadence designer',
+            nameKey: null,
+            description: 'Shapes payloads using the luminous cadence motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'grid',
+            accent: '#22d3ee',
+            tags: [
+            'utility',
+            'pattern',
+            'luminous',
+            'cadence'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            mode: 'wave',
+            divider: ' • ',
+            repeat: 2,
+            accentWord: 'luminous'
+        },
+            form: [
+            {
+                key: 'mode',
+                label: 'Mode',
+                type: 'select',
+                options: [
+                    {
+                        value: 'wave',
+                        label: 'Wave'
+                    },
+                    {
+                        value: 'grid',
+                        label: 'Grid'
+                    },
+                    {
+                        value: 'spiral',
+                        label: 'Spiral'
+                    }
+                ]
+            },
+            {
+                key: 'divider',
+                label: 'Divider',
+                type: 'text',
+                placeholder: ' • '
+            },
+            {
+                key: 'repeat',
+                label: 'Repeat',
+                type: 'number',
+                min: 1,
+                max: 12
+            },
+            {
+                key: 'accentWord',
+                label: 'Accent word',
+                type: 'text',
+                placeholder: 'luminous'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const lines = QuickActionTools.toLines(clone.payload);
+                const accentWord = QuickActionTools.applyTemplate(config?.accentWord ?? 'luminous', clone, config);
+                const repeatCount = Math.max(1, Math.min(12, parseInt(config?.repeat ?? 2, 10) || 1));
+                const mode = config?.mode || 'wave';
+                const divider = config?.divider ?? ' • ';
+                const sequences = [];
+                for (let iteration = 0; iteration < repeatCount; iteration += 1) {
+                    const offset = iteration % (lines.length || 1);
+                    const segment = lines.slice(offset).concat(lines.slice(0, offset));
+                    const prepared = segment.map((line, index) => {
+                        const label = `${accentWord} ${iteration + 1}.${index + 1}`;
+                        if (mode === 'grid') {
+                            return `[${label}] ${line}`;
+                        }
+                        if (mode === 'spiral') {
+                            const indent = ' '.repeat((iteration + index) % 6);
+                            return `${indent}${label}: ${line}`;
+                        }
+                        return `${label} → ${line}`;
+                    });
+                    sequences.push(prepared.join(divider));
+                }
+                clone.payload = sequences.join('
+');
+                clone.logs.push('Luminous Cadence designer' + ' rearranged lines using the ' + mode + ' pattern.');
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-velvet-spiral-03',
+            category: 'utility',
+            name: 'Velvet Spiral designer',
+            nameKey: null,
+            description: 'Shapes payloads using the velvet spiral motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'music',
+            accent: '#34d399',
+            tags: [
+            'utility',
+            'cadence',
+            'velvet',
+            'spiral'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            tempo: 'moderato',
+            emphasisWords: 'velvet spiral',
+            groupSize: 3,
+            delimiter: ' | '
+        },
+            form: [
+            {
+                key: 'tempo',
+                label: 'Tempo',
+                type: 'select',
+                options: [
+                    {
+                        value: 'largo',
+                        label: 'Largo'
+                    },
+                    {
+                        value: 'adagio',
+                        label: 'Adagio'
+                    },
+                    {
+                        value: 'moderato',
+                        label: 'Moderato'
+                    },
+                    {
+                        value: 'allegro',
+                        label: 'Allegro'
+                    }
+                ]
+            },
+            {
+                key: 'emphasisWords',
+                label: 'Emphasis words',
+                type: 'text',
+                placeholder: 'velvet spiral'
+            },
+            {
+                key: 'groupSize',
+                label: 'Group size',
+                type: 'number',
+                min: 1,
+                max: 8
+            },
+            {
+                key: 'delimiter',
+                label: 'Delimiter',
+                type: 'text',
+                placeholder: ' | '
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const text = QuickActionTools.toText(clone.payload);
+                const tempo = (config?.tempo || 'moderato').toLowerCase();
+                const emphasisWords = QuickActionTools.applyTemplate(config?.emphasisWords ?? '', clone, config);
+                const groupSize = Math.max(1, Math.min(8, parseInt(config?.groupSize ?? 3, 10) || 3));
+                const delimiter = config?.delimiter ?? ' | ';
+                const words = text.split(/\s+/).filter(Boolean);
+                const emphasisSet = new Set(emphasisWords.split(/[ ,
+]+/).filter(Boolean).map(word => word.toLowerCase()));
+                const groups = [];
+                let current = [];
+                let beat = 0;
+                for (const word of words) {
+                    const baseWord = word.replace(/[^\p{L}\p{N}]/gu, '').toLowerCase();
+                    const emphasised = emphasisSet.has(baseWord);
+                    const decorated = emphasised ? `*${word}*` : word;
+                    current.push(decorated);
+                    beat += 1;
+                    if (current.length >= groupSize) {
+                        groups.push(current.join(' '));
+                        current = [];
+                    }
+                }
+                if (current.length > 0) {
+                    groups.push(current.join(' '));
+                }
+                const tempoLabel = tempo === 'largo' ? 'slow tide' : tempo === 'allegro' ? 'bright sprint' : tempo;
+                clone.payload = groups.join(delimiter) + `
+Tempo: ${tempoLabel}`;
+                clone.logs.push('Velvet Spiral designer' + ' grouped words into ' + String(groups.length) + ' cadence cells.');
+                clone.vars.lastCadenceBeat = beat;
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-crystal-puzzle-04',
+            category: 'utility',
+            name: 'Crystal Puzzle designer',
+            nameKey: null,
+            description: 'Shapes payloads using the crystal puzzle motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'edit',
+            accent: '#a855f7',
+            tags: [
+            'utility',
+            'reflection',
+            'crystal',
+            'puzzle'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            questionPrefix: 'What does crystal mean today?',
+            summaryLabel: 'Puzzle summary',
+            includeTimestamp: true
+        },
+            form: [
+            {
+                key: 'questionPrefix',
+                label: 'Question prefix',
+                type: 'text',
+                placeholder: 'What does crystal mean today?'
+            },
+            {
+                key: 'summaryLabel',
+                label: 'Summary label',
+                type: 'text',
+                placeholder: 'Puzzle summary'
+            },
+            {
+                key: 'includeTimestamp',
+                label: 'Include timestamp',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const payloadText = QuickActionTools.toText(clone.payload);
+                const questions = payloadText.split(/
++/).filter(Boolean).map(line => line.trim());
+                const prefix = QuickActionTools.applyTemplate(config?.questionPrefix ?? '', clone, config);
+                const label = QuickActionTools.applyTemplate(config?.summaryLabel ?? '', clone, config);
+                const includeTimestamp = Boolean(config?.includeTimestamp);
+                const responses = questions.map((line, index) => `Q${index + 1}: ${prefix} → ${line}`);
+                const timestamp = includeTimestamp ? new Date().toISOString() : '';
+                clone.payload = [label, timestamp, ...responses].filter(Boolean).join('
+');
+                clone.logs.push('Crystal Puzzle designer' + ' reframed ' + String(responses.length) + ' questions.');
+                clone.vars.lastReflectionCount = responses.length;
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-ember-canvas-05',
+            category: 'utility',
+            name: 'Ember Canvas designer',
+            nameKey: null,
+            description: 'Shapes payloads using the ember canvas motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'sun',
+            accent: '#f97316',
+            tags: [
+            'utility',
+            'spectrum',
+            'ember',
+            'canvas'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            palette: 'ember canvas
+canvas echo
+ember motif
+canvas trail
+ember spark',
+            mode: 'layered',
+            highlightSymbol: '✧',
+            storeHighlights: true
+        },
+            form: [
+            {
+                key: 'palette',
+                label: 'Palette',
+                type: 'textarea',
+                rows: 4,
+                placeholder: 'One tone per line'
+            },
+            {
+                key: 'mode',
+                label: 'Mode',
+                type: 'select',
+                options: [
+                    {
+                        value: 'layered',
+                        label: 'Layered'
+                    },
+                    {
+                        value: 'mirrored',
+                        label: 'Mirrored'
+                    },
+                    {
+                        value: 'ascending',
+                        label: 'Ascending'
+                    }
+                ]
+            },
+            {
+                key: 'highlightSymbol',
+                label: 'Highlight symbol',
+                type: 'text',
+                placeholder: '✧'
+            },
+            {
+                key: 'storeHighlights',
+                label: 'Store highlights in vars',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const baseText = QuickActionTools.toText(clone.payload);
+                const paletteLines = QuickActionTools.toLines(config?.palette ?? '').filter(Boolean);
+                const fallbackPalette = [
+                'ember canvas',
+                'canvas echo',
+                'ember motif',
+                'canvas trail',
+                'ember spark'
+            ];
+                const palette = paletteLines.length > 0 ? paletteLines : fallbackPalette;
+                const symbol = config?.highlightSymbol ?? '✧';
+                const mode = config?.mode || 'layered';
+                const lines = baseText.split(/
+/);
+                const highlights = [];
+                const decorated = lines.map((line, index) => {
+                    const tone = palette[index % palette.length];
+                    const highlight = `${symbol} ${tone}`;
+                    highlights.push(highlight);
+                    if (mode === 'mirrored') {
+                        return `${highlight} ${line} ${highlight}`;
+                    }
+                    if (mode === 'ascending') {
+                        return `${symbol.repeat((index % 5) + 1)} ${tone}: ${line}`;
+                    }
+                    return `${highlight} ${line}`;
+                });
+                clone.payload = decorated.join('
+');
+                if (config?.storeHighlights) {
+                    clone.vars['imagination_utility_ember_canvas_05'] = clone.vars['imagination_utility_ember_canvas_05'] || {};
+                    clone.vars['imagination_utility_ember_canvas_05'].highlights = highlights;
+                }
+                clone.logs.push('Ember Canvas designer' + ' applied ' + String(highlights.length) + ' spectrum accents.');
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-misty-river-06',
+            category: 'utility',
+            name: 'Misty River designer',
+            nameKey: null,
+            description: 'Shapes payloads using the misty river motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'layers',
+            accent: '#ec4899',
+            tags: [
+            'utility',
+            'mosaic',
+            'misty',
+            'river'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            fragments: 'misty river
+river echo
+misty motif
+river trail
+misty spark',
+            joiner: ' ',
+            wrapWith: '',
+            preservePayload: true
+        },
+            form: [
+            {
+                key: 'fragments',
+                label: 'Fragments',
+                type: 'textarea',
+                rows: 4,
+                placeholder: 'One fragment per line'
+            },
+            {
+                key: 'joiner',
+                label: 'Joiner',
+                type: 'text',
+                placeholder: ' ',
+                description: 'Placed between fragments.'
+            },
+            {
+                key: 'wrapWith',
+                label: 'Wrap with',
+                type: 'text',
+                placeholder: '~'
+            },
+            {
+                key: 'preservePayload',
+                label: 'Keep original payload in vars',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const sourceText = QuickActionTools.toText(clone.payload);
+                if (config?.preservePayload) {
+                    clone.vars['imagination_utility_misty_river_06'] = clone.vars['imagination_utility_misty_river_06'] || {};
+                    clone.vars['imagination_utility_misty_river_06'].original = sourceText;
+                }
+                const rawFragments = QuickActionTools.toLines(config?.fragments ?? '').filter(Boolean);
+                const fallbackFragments = [
+                'misty river',
+                'river echo',
+                'misty motif',
+                'river trail',
+                'misty spark'
+            ];
+                const fragments = rawFragments.length > 0 ? rawFragments : fallbackFragments;
+                const joiner = config?.joiner ?? ' ';
+                const wrapWith = config?.wrapWith ?? '';
+                const rendered = fragments
+                    .map(fragment => QuickActionTools.applyTemplate(fragment, clone, config))
+                    .filter(Boolean);
+                const result = wrapWith + rendered.join(joiner) + wrapWith;
+                clone.payload = result;
+                clone.logs.push('Misty River designer' + ' produced a mosaic from ' + String(rendered.length) + ' fragments.');
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-solar-groove-07',
+            category: 'utility',
+            name: 'Solar Groove designer',
+            nameKey: null,
+            description: 'Shapes payloads using the solar groove motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'grid',
+            accent: '#22d3ee',
+            tags: [
+            'utility',
+            'pattern',
+            'solar',
+            'groove'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            mode: 'wave',
+            divider: ' • ',
+            repeat: 2,
+            accentWord: 'solar'
+        },
+            form: [
+            {
+                key: 'mode',
+                label: 'Mode',
+                type: 'select',
+                options: [
+                    {
+                        value: 'wave',
+                        label: 'Wave'
+                    },
+                    {
+                        value: 'grid',
+                        label: 'Grid'
+                    },
+                    {
+                        value: 'spiral',
+                        label: 'Spiral'
+                    }
+                ]
+            },
+            {
+                key: 'divider',
+                label: 'Divider',
+                type: 'text',
+                placeholder: ' • '
+            },
+            {
+                key: 'repeat',
+                label: 'Repeat',
+                type: 'number',
+                min: 1,
+                max: 12
+            },
+            {
+                key: 'accentWord',
+                label: 'Accent word',
+                type: 'text',
+                placeholder: 'solar'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const lines = QuickActionTools.toLines(clone.payload);
+                const accentWord = QuickActionTools.applyTemplate(config?.accentWord ?? 'solar', clone, config);
+                const repeatCount = Math.max(1, Math.min(12, parseInt(config?.repeat ?? 2, 10) || 1));
+                const mode = config?.mode || 'wave';
+                const divider = config?.divider ?? ' • ';
+                const sequences = [];
+                for (let iteration = 0; iteration < repeatCount; iteration += 1) {
+                    const offset = iteration % (lines.length || 1);
+                    const segment = lines.slice(offset).concat(lines.slice(0, offset));
+                    const prepared = segment.map((line, index) => {
+                        const label = `${accentWord} ${iteration + 1}.${index + 1}`;
+                        if (mode === 'grid') {
+                            return `[${label}] ${line}`;
+                        }
+                        if (mode === 'spiral') {
+                            const indent = ' '.repeat((iteration + index) % 6);
+                            return `${indent}${label}: ${line}`;
+                        }
+                        return `${label} → ${line}`;
+                    });
+                    sequences.push(prepared.join(divider));
+                }
+                clone.payload = sequences.join('
+');
+                clone.logs.push('Solar Groove designer' + ' rearranged lines using the ' + mode + ' pattern.');
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-echoing-sequence-08',
+            category: 'utility',
+            name: 'Echoing Sequence designer',
+            nameKey: null,
+            description: 'Shapes payloads using the echoing sequence motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'music',
+            accent: '#34d399',
+            tags: [
+            'utility',
+            'cadence',
+            'echoing',
+            'sequence'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            tempo: 'moderato',
+            emphasisWords: 'echoing sequence',
+            groupSize: 3,
+            delimiter: ' | '
+        },
+            form: [
+            {
+                key: 'tempo',
+                label: 'Tempo',
+                type: 'select',
+                options: [
+                    {
+                        value: 'largo',
+                        label: 'Largo'
+                    },
+                    {
+                        value: 'adagio',
+                        label: 'Adagio'
+                    },
+                    {
+                        value: 'moderato',
+                        label: 'Moderato'
+                    },
+                    {
+                        value: 'allegro',
+                        label: 'Allegro'
+                    }
+                ]
+            },
+            {
+                key: 'emphasisWords',
+                label: 'Emphasis words',
+                type: 'text',
+                placeholder: 'echoing sequence'
+            },
+            {
+                key: 'groupSize',
+                label: 'Group size',
+                type: 'number',
+                min: 1,
+                max: 8
+            },
+            {
+                key: 'delimiter',
+                label: 'Delimiter',
+                type: 'text',
+                placeholder: ' | '
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const text = QuickActionTools.toText(clone.payload);
+                const tempo = (config?.tempo || 'moderato').toLowerCase();
+                const emphasisWords = QuickActionTools.applyTemplate(config?.emphasisWords ?? '', clone, config);
+                const groupSize = Math.max(1, Math.min(8, parseInt(config?.groupSize ?? 3, 10) || 3));
+                const delimiter = config?.delimiter ?? ' | ';
+                const words = text.split(/\s+/).filter(Boolean);
+                const emphasisSet = new Set(emphasisWords.split(/[ ,
+]+/).filter(Boolean).map(word => word.toLowerCase()));
+                const groups = [];
+                let current = [];
+                let beat = 0;
+                for (const word of words) {
+                    const baseWord = word.replace(/[^\p{L}\p{N}]/gu, '').toLowerCase();
+                    const emphasised = emphasisSet.has(baseWord);
+                    const decorated = emphasised ? `*${word}*` : word;
+                    current.push(decorated);
+                    beat += 1;
+                    if (current.length >= groupSize) {
+                        groups.push(current.join(' '));
+                        current = [];
+                    }
+                }
+                if (current.length > 0) {
+                    groups.push(current.join(' '));
+                }
+                const tempoLabel = tempo === 'largo' ? 'slow tide' : tempo === 'allegro' ? 'bright sprint' : tempo;
+                clone.payload = groups.join(delimiter) + `
+Tempo: ${tempoLabel}`;
+                clone.logs.push('Echoing Sequence designer' + ' grouped words into ' + String(groups.length) + ' cadence cells.');
+                clone.vars.lastCadenceBeat = beat;
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-silver-atlas-09',
+            category: 'utility',
+            name: 'Silver Atlas designer',
+            nameKey: null,
+            description: 'Shapes payloads using the silver atlas motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'edit',
+            accent: '#a855f7',
+            tags: [
+            'utility',
+            'reflection',
+            'silver',
+            'atlas'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            questionPrefix: 'What does silver mean today?',
+            summaryLabel: 'Atlas summary',
+            includeTimestamp: true
+        },
+            form: [
+            {
+                key: 'questionPrefix',
+                label: 'Question prefix',
+                type: 'text',
+                placeholder: 'What does silver mean today?'
+            },
+            {
+                key: 'summaryLabel',
+                label: 'Summary label',
+                type: 'text',
+                placeholder: 'Atlas summary'
+            },
+            {
+                key: 'includeTimestamp',
+                label: 'Include timestamp',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const payloadText = QuickActionTools.toText(clone.payload);
+                const questions = payloadText.split(/
++/).filter(Boolean).map(line => line.trim());
+                const prefix = QuickActionTools.applyTemplate(config?.questionPrefix ?? '', clone, config);
+                const label = QuickActionTools.applyTemplate(config?.summaryLabel ?? '', clone, config);
+                const includeTimestamp = Boolean(config?.includeTimestamp);
+                const responses = questions.map((line, index) => `Q${index + 1}: ${prefix} → ${line}`);
+                const timestamp = includeTimestamp ? new Date().toISOString() : '';
+                clone.payload = [label, timestamp, ...responses].filter(Boolean).join('
+');
+                clone.logs.push('Silver Atlas designer' + ' reframed ' + String(responses.length) + ' questions.');
+                clone.vars.lastReflectionCount = responses.length;
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-amber-verse-10',
+            category: 'utility',
+            name: 'Amber Verse designer',
+            nameKey: null,
+            description: 'Shapes payloads using the amber verse motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'sun',
+            accent: '#f97316',
+            tags: [
+            'utility',
+            'spectrum',
+            'amber',
+            'verse'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            palette: 'amber verse
+verse echo
+amber motif
+verse trail
+amber spark',
+            mode: 'layered',
+            highlightSymbol: '✧',
+            storeHighlights: true
+        },
+            form: [
+            {
+                key: 'palette',
+                label: 'Palette',
+                type: 'textarea',
+                rows: 4,
+                placeholder: 'One tone per line'
+            },
+            {
+                key: 'mode',
+                label: 'Mode',
+                type: 'select',
+                options: [
+                    {
+                        value: 'layered',
+                        label: 'Layered'
+                    },
+                    {
+                        value: 'mirrored',
+                        label: 'Mirrored'
+                    },
+                    {
+                        value: 'ascending',
+                        label: 'Ascending'
+                    }
+                ]
+            },
+            {
+                key: 'highlightSymbol',
+                label: 'Highlight symbol',
+                type: 'text',
+                placeholder: '✧'
+            },
+            {
+                key: 'storeHighlights',
+                label: 'Store highlights in vars',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const baseText = QuickActionTools.toText(clone.payload);
+                const paletteLines = QuickActionTools.toLines(config?.palette ?? '').filter(Boolean);
+                const fallbackPalette = [
+                'amber verse',
+                'verse echo',
+                'amber motif',
+                'verse trail',
+                'amber spark'
+            ];
+                const palette = paletteLines.length > 0 ? paletteLines : fallbackPalette;
+                const symbol = config?.highlightSymbol ?? '✧';
+                const mode = config?.mode || 'layered';
+                const lines = baseText.split(/
+/);
+                const highlights = [];
+                const decorated = lines.map((line, index) => {
+                    const tone = palette[index % palette.length];
+                    const highlight = `${symbol} ${tone}`;
+                    highlights.push(highlight);
+                    if (mode === 'mirrored') {
+                        return `${highlight} ${line} ${highlight}`;
+                    }
+                    if (mode === 'ascending') {
+                        return `${symbol.repeat((index % 5) + 1)} ${tone}: ${line}`;
+                    }
+                    return `${highlight} ${line}`;
+                });
+                clone.payload = decorated.join('
+');
+                if (config?.storeHighlights) {
+                    clone.vars['imagination_utility_amber_verse_10'] = clone.vars['imagination_utility_amber_verse_10'] || {};
+                    clone.vars['imagination_utility_amber_verse_10'].highlights = highlights;
+                }
+                clone.logs.push('Amber Verse designer' + ' applied ' + String(highlights.length) + ' spectrum accents.');
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-glacial-lantern-11',
+            category: 'utility',
+            name: 'Glacial Lantern designer',
+            nameKey: null,
+            description: 'Shapes payloads using the glacial lantern motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'layers',
+            accent: '#ec4899',
+            tags: [
+            'utility',
+            'mosaic',
+            'glacial',
+            'lantern'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            fragments: 'glacial lantern
+lantern echo
+glacial motif
+lantern trail
+glacial spark',
+            joiner: ' ',
+            wrapWith: '',
+            preservePayload: true
+        },
+            form: [
+            {
+                key: 'fragments',
+                label: 'Fragments',
+                type: 'textarea',
+                rows: 4,
+                placeholder: 'One fragment per line'
+            },
+            {
+                key: 'joiner',
+                label: 'Joiner',
+                type: 'text',
+                placeholder: ' ',
+                description: 'Placed between fragments.'
+            },
+            {
+                key: 'wrapWith',
+                label: 'Wrap with',
+                type: 'text',
+                placeholder: '~'
+            },
+            {
+                key: 'preservePayload',
+                label: 'Keep original payload in vars',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const sourceText = QuickActionTools.toText(clone.payload);
+                if (config?.preservePayload) {
+                    clone.vars['imagination_utility_glacial_lantern_11'] = clone.vars['imagination_utility_glacial_lantern_11'] || {};
+                    clone.vars['imagination_utility_glacial_lantern_11'].original = sourceText;
+                }
+                const rawFragments = QuickActionTools.toLines(config?.fragments ?? '').filter(Boolean);
+                const fallbackFragments = [
+                'glacial lantern',
+                'lantern echo',
+                'glacial motif',
+                'lantern trail',
+                'glacial spark'
+            ];
+                const fragments = rawFragments.length > 0 ? rawFragments : fallbackFragments;
+                const joiner = config?.joiner ?? ' ';
+                const wrapWith = config?.wrapWith ?? '';
+                const rendered = fragments
+                    .map(fragment => QuickActionTools.applyTemplate(fragment, clone, config))
+                    .filter(Boolean);
+                const result = wrapWith + rendered.join(joiner) + wrapWith;
+                clone.payload = result;
+                clone.logs.push('Glacial Lantern designer' + ' produced a mosaic from ' + String(rendered.length) + ' fragments.');
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-wild-garden-12',
+            category: 'utility',
+            name: 'Wild Garden designer',
+            nameKey: null,
+            description: 'Shapes payloads using the wild garden motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'grid',
+            accent: '#22d3ee',
+            tags: [
+            'utility',
+            'pattern',
+            'wild',
+            'garden'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            mode: 'wave',
+            divider: ' • ',
+            repeat: 2,
+            accentWord: 'wild'
+        },
+            form: [
+            {
+                key: 'mode',
+                label: 'Mode',
+                type: 'select',
+                options: [
+                    {
+                        value: 'wave',
+                        label: 'Wave'
+                    },
+                    {
+                        value: 'grid',
+                        label: 'Grid'
+                    },
+                    {
+                        value: 'spiral',
+                        label: 'Spiral'
+                    }
+                ]
+            },
+            {
+                key: 'divider',
+                label: 'Divider',
+                type: 'text',
+                placeholder: ' • '
+            },
+            {
+                key: 'repeat',
+                label: 'Repeat',
+                type: 'number',
+                min: 1,
+                max: 12
+            },
+            {
+                key: 'accentWord',
+                label: 'Accent word',
+                type: 'text',
+                placeholder: 'wild'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const lines = QuickActionTools.toLines(clone.payload);
+                const accentWord = QuickActionTools.applyTemplate(config?.accentWord ?? 'wild', clone, config);
+                const repeatCount = Math.max(1, Math.min(12, parseInt(config?.repeat ?? 2, 10) || 1));
+                const mode = config?.mode || 'wave';
+                const divider = config?.divider ?? ' • ';
+                const sequences = [];
+                for (let iteration = 0; iteration < repeatCount; iteration += 1) {
+                    const offset = iteration % (lines.length || 1);
+                    const segment = lines.slice(offset).concat(lines.slice(0, offset));
+                    const prepared = segment.map((line, index) => {
+                        const label = `${accentWord} ${iteration + 1}.${index + 1}`;
+                        if (mode === 'grid') {
+                            return `[${label}] ${line}`;
+                        }
+                        if (mode === 'spiral') {
+                            const indent = ' '.repeat((iteration + index) % 6);
+                            return `${indent}${label}: ${line}`;
+                        }
+                        return `${label} → ${line}`;
+                    });
+                    sequences.push(prepared.join(divider));
+                }
+                clone.payload = sequences.join('
+');
+                clone.logs.push('Wild Garden designer' + ' rearranged lines using the ' + mode + ' pattern.');
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-horizon-rhythm-13',
+            category: 'utility',
+            name: 'Horizon Rhythm designer',
+            nameKey: null,
+            description: 'Shapes payloads using the horizon rhythm motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'music',
+            accent: '#34d399',
+            tags: [
+            'utility',
+            'cadence',
+            'horizon',
+            'rhythm'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            tempo: 'moderato',
+            emphasisWords: 'horizon rhythm',
+            groupSize: 3,
+            delimiter: ' | '
+        },
+            form: [
+            {
+                key: 'tempo',
+                label: 'Tempo',
+                type: 'select',
+                options: [
+                    {
+                        value: 'largo',
+                        label: 'Largo'
+                    },
+                    {
+                        value: 'adagio',
+                        label: 'Adagio'
+                    },
+                    {
+                        value: 'moderato',
+                        label: 'Moderato'
+                    },
+                    {
+                        value: 'allegro',
+                        label: 'Allegro'
+                    }
+                ]
+            },
+            {
+                key: 'emphasisWords',
+                label: 'Emphasis words',
+                type: 'text',
+                placeholder: 'horizon rhythm'
+            },
+            {
+                key: 'groupSize',
+                label: 'Group size',
+                type: 'number',
+                min: 1,
+                max: 8
+            },
+            {
+                key: 'delimiter',
+                label: 'Delimiter',
+                type: 'text',
+                placeholder: ' | '
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const text = QuickActionTools.toText(clone.payload);
+                const tempo = (config?.tempo || 'moderato').toLowerCase();
+                const emphasisWords = QuickActionTools.applyTemplate(config?.emphasisWords ?? '', clone, config);
+                const groupSize = Math.max(1, Math.min(8, parseInt(config?.groupSize ?? 3, 10) || 3));
+                const delimiter = config?.delimiter ?? ' | ';
+                const words = text.split(/\s+/).filter(Boolean);
+                const emphasisSet = new Set(emphasisWords.split(/[ ,
+]+/).filter(Boolean).map(word => word.toLowerCase()));
+                const groups = [];
+                let current = [];
+                let beat = 0;
+                for (const word of words) {
+                    const baseWord = word.replace(/[^\p{L}\p{N}]/gu, '').toLowerCase();
+                    const emphasised = emphasisSet.has(baseWord);
+                    const decorated = emphasised ? `*${word}*` : word;
+                    current.push(decorated);
+                    beat += 1;
+                    if (current.length >= groupSize) {
+                        groups.push(current.join(' '));
+                        current = [];
+                    }
+                }
+                if (current.length > 0) {
+                    groups.push(current.join(' '));
+                }
+                const tempoLabel = tempo === 'largo' ? 'slow tide' : tempo === 'allegro' ? 'bright sprint' : tempo;
+                clone.payload = groups.join(delimiter) + `
+Tempo: ${tempoLabel}`;
+                clone.logs.push('Horizon Rhythm designer' + ' grouped words into ' + String(groups.length) + ' cadence cells.');
+                clone.vars.lastCadenceBeat = beat;
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-mosaic-compass-14',
+            category: 'utility',
+            name: 'Mosaic Compass designer',
+            nameKey: null,
+            description: 'Shapes payloads using the mosaic compass motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'edit',
+            accent: '#a855f7',
+            tags: [
+            'utility',
+            'reflection',
+            'mosaic',
+            'compass'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            questionPrefix: 'What does mosaic mean today?',
+            summaryLabel: 'Compass summary',
+            includeTimestamp: true
+        },
+            form: [
+            {
+                key: 'questionPrefix',
+                label: 'Question prefix',
+                type: 'text',
+                placeholder: 'What does mosaic mean today?'
+            },
+            {
+                key: 'summaryLabel',
+                label: 'Summary label',
+                type: 'text',
+                placeholder: 'Compass summary'
+            },
+            {
+                key: 'includeTimestamp',
+                label: 'Include timestamp',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const payloadText = QuickActionTools.toText(clone.payload);
+                const questions = payloadText.split(/
++/).filter(Boolean).map(line => line.trim());
+                const prefix = QuickActionTools.applyTemplate(config?.questionPrefix ?? '', clone, config);
+                const label = QuickActionTools.applyTemplate(config?.summaryLabel ?? '', clone, config);
+                const includeTimestamp = Boolean(config?.includeTimestamp);
+                const responses = questions.map((line, index) => `Q${index + 1}: ${prefix} → ${line}`);
+                const timestamp = includeTimestamp ? new Date().toISOString() : '';
+                clone.payload = [label, timestamp, ...responses].filter(Boolean).join('
+');
+                clone.logs.push('Mosaic Compass designer' + ' reframed ' + String(responses.length) + ' questions.');
+                clone.vars.lastReflectionCount = responses.length;
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-serene-story-15',
+            category: 'utility',
+            name: 'Serene Story designer',
+            nameKey: null,
+            description: 'Shapes payloads using the serene story motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'sun',
+            accent: '#f97316',
+            tags: [
+            'utility',
+            'spectrum',
+            'serene',
+            'story'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            palette: 'serene story
+story echo
+serene motif
+story trail
+serene spark',
+            mode: 'layered',
+            highlightSymbol: '✧',
+            storeHighlights: true
+        },
+            form: [
+            {
+                key: 'palette',
+                label: 'Palette',
+                type: 'textarea',
+                rows: 4,
+                placeholder: 'One tone per line'
+            },
+            {
+                key: 'mode',
+                label: 'Mode',
+                type: 'select',
+                options: [
+                    {
+                        value: 'layered',
+                        label: 'Layered'
+                    },
+                    {
+                        value: 'mirrored',
+                        label: 'Mirrored'
+                    },
+                    {
+                        value: 'ascending',
+                        label: 'Ascending'
+                    }
+                ]
+            },
+            {
+                key: 'highlightSymbol',
+                label: 'Highlight symbol',
+                type: 'text',
+                placeholder: '✧'
+            },
+            {
+                key: 'storeHighlights',
+                label: 'Store highlights in vars',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const baseText = QuickActionTools.toText(clone.payload);
+                const paletteLines = QuickActionTools.toLines(config?.palette ?? '').filter(Boolean);
+                const fallbackPalette = [
+                'serene story',
+                'story echo',
+                'serene motif',
+                'story trail',
+                'serene spark'
+            ];
+                const palette = paletteLines.length > 0 ? paletteLines : fallbackPalette;
+                const symbol = config?.highlightSymbol ?? '✧';
+                const mode = config?.mode || 'layered';
+                const lines = baseText.split(/
+/);
+                const highlights = [];
+                const decorated = lines.map((line, index) => {
+                    const tone = palette[index % palette.length];
+                    const highlight = `${symbol} ${tone}`;
+                    highlights.push(highlight);
+                    if (mode === 'mirrored') {
+                        return `${highlight} ${line} ${highlight}`;
+                    }
+                    if (mode === 'ascending') {
+                        return `${symbol.repeat((index % 5) + 1)} ${tone}: ${line}`;
+                    }
+                    return `${highlight} ${line}`;
+                });
+                clone.payload = decorated.join('
+');
+                if (config?.storeHighlights) {
+                    clone.vars['imagination_utility_serene_story_15'] = clone.vars['imagination_utility_serene_story_15'] || {};
+                    clone.vars['imagination_utility_serene_story_15'].highlights = highlights;
+                }
+                clone.logs.push('Serene Story designer' + ' applied ' + String(highlights.length) + ' spectrum accents.');
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-vivid-glow-16',
+            category: 'utility',
+            name: 'Vivid Glow designer',
+            nameKey: null,
+            description: 'Shapes payloads using the vivid glow motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'layers',
+            accent: '#ec4899',
+            tags: [
+            'utility',
+            'mosaic',
+            'vivid',
+            'glow'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            fragments: 'vivid glow
+glow echo
+vivid motif
+glow trail
+vivid spark',
+            joiner: ' ',
+            wrapWith: '',
+            preservePayload: true
+        },
+            form: [
+            {
+                key: 'fragments',
+                label: 'Fragments',
+                type: 'textarea',
+                rows: 4,
+                placeholder: 'One fragment per line'
+            },
+            {
+                key: 'joiner',
+                label: 'Joiner',
+                type: 'text',
+                placeholder: ' ',
+                description: 'Placed between fragments.'
+            },
+            {
+                key: 'wrapWith',
+                label: 'Wrap with',
+                type: 'text',
+                placeholder: '~'
+            },
+            {
+                key: 'preservePayload',
+                label: 'Keep original payload in vars',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const sourceText = QuickActionTools.toText(clone.payload);
+                if (config?.preservePayload) {
+                    clone.vars['imagination_utility_vivid_glow_16'] = clone.vars['imagination_utility_vivid_glow_16'] || {};
+                    clone.vars['imagination_utility_vivid_glow_16'].original = sourceText;
+                }
+                const rawFragments = QuickActionTools.toLines(config?.fragments ?? '').filter(Boolean);
+                const fallbackFragments = [
+                'vivid glow',
+                'glow echo',
+                'vivid motif',
+                'glow trail',
+                'vivid spark'
+            ];
+                const fragments = rawFragments.length > 0 ? rawFragments : fallbackFragments;
+                const joiner = config?.joiner ?? ' ';
+                const wrapWith = config?.wrapWith ?? '';
+                const rendered = fragments
+                    .map(fragment => QuickActionTools.applyTemplate(fragment, clone, config))
+                    .filter(Boolean);
+                const result = wrapWith + rendered.join(joiner) + wrapWith;
+                clone.payload = result;
+                clone.logs.push('Vivid Glow designer' + ' produced a mosaic from ' + String(rendered.length) + ' fragments.');
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-quiet-pattern-17',
+            category: 'utility',
+            name: 'Quiet Pattern designer',
+            nameKey: null,
+            description: 'Shapes payloads using the quiet pattern motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'grid',
+            accent: '#22d3ee',
+            tags: [
+            'utility',
+            'pattern',
+            'quiet',
+            'pattern'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            mode: 'wave',
+            divider: ' • ',
+            repeat: 2,
+            accentWord: 'quiet'
+        },
+            form: [
+            {
+                key: 'mode',
+                label: 'Mode',
+                type: 'select',
+                options: [
+                    {
+                        value: 'wave',
+                        label: 'Wave'
+                    },
+                    {
+                        value: 'grid',
+                        label: 'Grid'
+                    },
+                    {
+                        value: 'spiral',
+                        label: 'Spiral'
+                    }
+                ]
+            },
+            {
+                key: 'divider',
+                label: 'Divider',
+                type: 'text',
+                placeholder: ' • '
+            },
+            {
+                key: 'repeat',
+                label: 'Repeat',
+                type: 'number',
+                min: 1,
+                max: 12
+            },
+            {
+                key: 'accentWord',
+                label: 'Accent word',
+                type: 'text',
+                placeholder: 'quiet'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const lines = QuickActionTools.toLines(clone.payload);
+                const accentWord = QuickActionTools.applyTemplate(config?.accentWord ?? 'quiet', clone, config);
+                const repeatCount = Math.max(1, Math.min(12, parseInt(config?.repeat ?? 2, 10) || 1));
+                const mode = config?.mode || 'wave';
+                const divider = config?.divider ?? ' • ';
+                const sequences = [];
+                for (let iteration = 0; iteration < repeatCount; iteration += 1) {
+                    const offset = iteration % (lines.length || 1);
+                    const segment = lines.slice(offset).concat(lines.slice(0, offset));
+                    const prepared = segment.map((line, index) => {
+                        const label = `${accentWord} ${iteration + 1}.${index + 1}`;
+                        if (mode === 'grid') {
+                            return `[${label}] ${line}`;
+                        }
+                        if (mode === 'spiral') {
+                            const indent = ' '.repeat((iteration + index) % 6);
+                            return `${indent}${label}: ${line}`;
+                        }
+                        return `${label} → ${line}`;
+                    });
+                    sequences.push(prepared.join(divider));
+                }
+                clone.payload = sequences.join('
+');
+                clone.logs.push('Quiet Pattern designer' + ' rearranged lines using the ' + mode + ' pattern.');
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-bold-murmur-18',
+            category: 'utility',
+            name: 'Bold Murmur designer',
+            nameKey: null,
+            description: 'Shapes payloads using the bold murmur motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'music',
+            accent: '#34d399',
+            tags: [
+            'utility',
+            'cadence',
+            'bold',
+            'murmur'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            tempo: 'moderato',
+            emphasisWords: 'bold murmur',
+            groupSize: 3,
+            delimiter: ' | '
+        },
+            form: [
+            {
+                key: 'tempo',
+                label: 'Tempo',
+                type: 'select',
+                options: [
+                    {
+                        value: 'largo',
+                        label: 'Largo'
+                    },
+                    {
+                        value: 'adagio',
+                        label: 'Adagio'
+                    },
+                    {
+                        value: 'moderato',
+                        label: 'Moderato'
+                    },
+                    {
+                        value: 'allegro',
+                        label: 'Allegro'
+                    }
+                ]
+            },
+            {
+                key: 'emphasisWords',
+                label: 'Emphasis words',
+                type: 'text',
+                placeholder: 'bold murmur'
+            },
+            {
+                key: 'groupSize',
+                label: 'Group size',
+                type: 'number',
+                min: 1,
+                max: 8
+            },
+            {
+                key: 'delimiter',
+                label: 'Delimiter',
+                type: 'text',
+                placeholder: ' | '
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const text = QuickActionTools.toText(clone.payload);
+                const tempo = (config?.tempo || 'moderato').toLowerCase();
+                const emphasisWords = QuickActionTools.applyTemplate(config?.emphasisWords ?? '', clone, config);
+                const groupSize = Math.max(1, Math.min(8, parseInt(config?.groupSize ?? 3, 10) || 3));
+                const delimiter = config?.delimiter ?? ' | ';
+                const words = text.split(/\s+/).filter(Boolean);
+                const emphasisSet = new Set(emphasisWords.split(/[ ,
+]+/).filter(Boolean).map(word => word.toLowerCase()));
+                const groups = [];
+                let current = [];
+                let beat = 0;
+                for (const word of words) {
+                    const baseWord = word.replace(/[^\p{L}\p{N}]/gu, '').toLowerCase();
+                    const emphasised = emphasisSet.has(baseWord);
+                    const decorated = emphasised ? `*${word}*` : word;
+                    current.push(decorated);
+                    beat += 1;
+                    if (current.length >= groupSize) {
+                        groups.push(current.join(' '));
+                        current = [];
+                    }
+                }
+                if (current.length > 0) {
+                    groups.push(current.join(' '));
+                }
+                const tempoLabel = tempo === 'largo' ? 'slow tide' : tempo === 'allegro' ? 'bright sprint' : tempo;
+                clone.payload = groups.join(delimiter) + `
+Tempo: ${tempoLabel}`;
+                clone.logs.push('Bold Murmur designer' + ' grouped words into ' + String(groups.length) + ' cadence cells.');
+                clone.vars.lastCadenceBeat = beat;
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-stellar-matrix-19',
+            category: 'utility',
+            name: 'Stellar Matrix designer',
+            nameKey: null,
+            description: 'Shapes payloads using the stellar matrix motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'edit',
+            accent: '#a855f7',
+            tags: [
+            'utility',
+            'reflection',
+            'stellar',
+            'matrix'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            questionPrefix: 'What does stellar mean today?',
+            summaryLabel: 'Matrix summary',
+            includeTimestamp: true
+        },
+            form: [
+            {
+                key: 'questionPrefix',
+                label: 'Question prefix',
+                type: 'text',
+                placeholder: 'What does stellar mean today?'
+            },
+            {
+                key: 'summaryLabel',
+                label: 'Summary label',
+                type: 'text',
+                placeholder: 'Matrix summary'
+            },
+            {
+                key: 'includeTimestamp',
+                label: 'Include timestamp',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const payloadText = QuickActionTools.toText(clone.payload);
+                const questions = payloadText.split(/
++/).filter(Boolean).map(line => line.trim());
+                const prefix = QuickActionTools.applyTemplate(config?.questionPrefix ?? '', clone, config);
+                const label = QuickActionTools.applyTemplate(config?.summaryLabel ?? '', clone, config);
+                const includeTimestamp = Boolean(config?.includeTimestamp);
+                const responses = questions.map((line, index) => `Q${index + 1}: ${prefix} → ${line}`);
+                const timestamp = includeTimestamp ? new Date().toISOString() : '';
+                clone.payload = [label, timestamp, ...responses].filter(Boolean).join('
+');
+                clone.logs.push('Stellar Matrix designer' + ' reframed ' + String(responses.length) + ' questions.');
+                clone.vars.lastReflectionCount = responses.length;
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-gilded-harvest-20',
+            category: 'utility',
+            name: 'Gilded Harvest designer',
+            nameKey: null,
+            description: 'Shapes payloads using the gilded harvest motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'sun',
+            accent: '#f97316',
+            tags: [
+            'utility',
+            'spectrum',
+            'gilded',
+            'harvest'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            palette: 'gilded harvest
+harvest echo
+gilded motif
+harvest trail
+gilded spark',
+            mode: 'layered',
+            highlightSymbol: '✧',
+            storeHighlights: true
+        },
+            form: [
+            {
+                key: 'palette',
+                label: 'Palette',
+                type: 'textarea',
+                rows: 4,
+                placeholder: 'One tone per line'
+            },
+            {
+                key: 'mode',
+                label: 'Mode',
+                type: 'select',
+                options: [
+                    {
+                        value: 'layered',
+                        label: 'Layered'
+                    },
+                    {
+                        value: 'mirrored',
+                        label: 'Mirrored'
+                    },
+                    {
+                        value: 'ascending',
+                        label: 'Ascending'
+                    }
+                ]
+            },
+            {
+                key: 'highlightSymbol',
+                label: 'Highlight symbol',
+                type: 'text',
+                placeholder: '✧'
+            },
+            {
+                key: 'storeHighlights',
+                label: 'Store highlights in vars',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const baseText = QuickActionTools.toText(clone.payload);
+                const paletteLines = QuickActionTools.toLines(config?.palette ?? '').filter(Boolean);
+                const fallbackPalette = [
+                'gilded harvest',
+                'harvest echo',
+                'gilded motif',
+                'harvest trail',
+                'gilded spark'
+            ];
+                const palette = paletteLines.length > 0 ? paletteLines : fallbackPalette;
+                const symbol = config?.highlightSymbol ?? '✧';
+                const mode = config?.mode || 'layered';
+                const lines = baseText.split(/
+/);
+                const highlights = [];
+                const decorated = lines.map((line, index) => {
+                    const tone = palette[index % palette.length];
+                    const highlight = `${symbol} ${tone}`;
+                    highlights.push(highlight);
+                    if (mode === 'mirrored') {
+                        return `${highlight} ${line} ${highlight}`;
+                    }
+                    if (mode === 'ascending') {
+                        return `${symbol.repeat((index % 5) + 1)} ${tone}: ${line}`;
+                    }
+                    return `${highlight} ${line}`;
+                });
+                clone.payload = decorated.join('
+');
+                if (config?.storeHighlights) {
+                    clone.vars['imagination_utility_gilded_harvest_20'] = clone.vars['imagination_utility_gilded_harvest_20'] || {};
+                    clone.vars['imagination_utility_gilded_harvest_20'].highlights = highlights;
+                }
+                clone.logs.push('Gilded Harvest designer' + ' applied ' + String(highlights.length) + ' spectrum accents.');
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-flux-spark-21',
+            category: 'utility',
+            name: 'Flux Spark designer',
+            nameKey: null,
+            description: 'Shapes payloads using the flux spark motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'layers',
+            accent: '#ec4899',
+            tags: [
+            'utility',
+            'mosaic',
+            'flux',
+            'spark'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            fragments: 'flux spark
+spark echo
+flux motif
+spark trail
+flux spark',
+            joiner: ' ',
+            wrapWith: '',
+            preservePayload: true
+        },
+            form: [
+            {
+                key: 'fragments',
+                label: 'Fragments',
+                type: 'textarea',
+                rows: 4,
+                placeholder: 'One fragment per line'
+            },
+            {
+                key: 'joiner',
+                label: 'Joiner',
+                type: 'text',
+                placeholder: ' ',
+                description: 'Placed between fragments.'
+            },
+            {
+                key: 'wrapWith',
+                label: 'Wrap with',
+                type: 'text',
+                placeholder: '~'
+            },
+            {
+                key: 'preservePayload',
+                label: 'Keep original payload in vars',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const sourceText = QuickActionTools.toText(clone.payload);
+                if (config?.preservePayload) {
+                    clone.vars['imagination_utility_flux_spark_21'] = clone.vars['imagination_utility_flux_spark_21'] || {};
+                    clone.vars['imagination_utility_flux_spark_21'].original = sourceText;
+                }
+                const rawFragments = QuickActionTools.toLines(config?.fragments ?? '').filter(Boolean);
+                const fallbackFragments = [
+                'flux spark',
+                'spark echo',
+                'flux motif',
+                'spark trail',
+                'flux spark'
+            ];
+                const fragments = rawFragments.length > 0 ? rawFragments : fallbackFragments;
+                const joiner = config?.joiner ?? ' ';
+                const wrapWith = config?.wrapWith ?? '';
+                const rendered = fragments
+                    .map(fragment => QuickActionTools.applyTemplate(fragment, clone, config))
+                    .filter(Boolean);
+                const result = wrapWith + rendered.join(joiner) + wrapWith;
+                clone.payload = result;
+                clone.logs.push('Flux Spark designer' + ' produced a mosaic from ' + String(rendered.length) + ' fragments.');
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-gentle-lattice-22',
+            category: 'utility',
+            name: 'Gentle Lattice designer',
+            nameKey: null,
+            description: 'Shapes payloads using the gentle lattice motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'grid',
+            accent: '#22d3ee',
+            tags: [
+            'utility',
+            'pattern',
+            'gentle',
+            'lattice'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            mode: 'wave',
+            divider: ' • ',
+            repeat: 2,
+            accentWord: 'gentle'
+        },
+            form: [
+            {
+                key: 'mode',
+                label: 'Mode',
+                type: 'select',
+                options: [
+                    {
+                        value: 'wave',
+                        label: 'Wave'
+                    },
+                    {
+                        value: 'grid',
+                        label: 'Grid'
+                    },
+                    {
+                        value: 'spiral',
+                        label: 'Spiral'
+                    }
+                ]
+            },
+            {
+                key: 'divider',
+                label: 'Divider',
+                type: 'text',
+                placeholder: ' • '
+            },
+            {
+                key: 'repeat',
+                label: 'Repeat',
+                type: 'number',
+                min: 1,
+                max: 12
+            },
+            {
+                key: 'accentWord',
+                label: 'Accent word',
+                type: 'text',
+                placeholder: 'gentle'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const lines = QuickActionTools.toLines(clone.payload);
+                const accentWord = QuickActionTools.applyTemplate(config?.accentWord ?? 'gentle', clone, config);
+                const repeatCount = Math.max(1, Math.min(12, parseInt(config?.repeat ?? 2, 10) || 1));
+                const mode = config?.mode || 'wave';
+                const divider = config?.divider ?? ' • ';
+                const sequences = [];
+                for (let iteration = 0; iteration < repeatCount; iteration += 1) {
+                    const offset = iteration % (lines.length || 1);
+                    const segment = lines.slice(offset).concat(lines.slice(0, offset));
+                    const prepared = segment.map((line, index) => {
+                        const label = `${accentWord} ${iteration + 1}.${index + 1}`;
+                        if (mode === 'grid') {
+                            return `[${label}] ${line}`;
+                        }
+                        if (mode === 'spiral') {
+                            const indent = ' '.repeat((iteration + index) % 6);
+                            return `${indent}${label}: ${line}`;
+                        }
+                        return `${label} → ${line}`;
+                    });
+                    sequences.push(prepared.join(divider));
+                }
+                clone.payload = sequences.join('
+');
+                clone.logs.push('Gentle Lattice designer' + ' rearranged lines using the ' + mode + ' pattern.');
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-radiant-bridge-23',
+            category: 'utility',
+            name: 'Radiant Bridge designer',
+            nameKey: null,
+            description: 'Shapes payloads using the radiant bridge motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'music',
+            accent: '#34d399',
+            tags: [
+            'utility',
+            'cadence',
+            'radiant',
+            'bridge'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            tempo: 'moderato',
+            emphasisWords: 'radiant bridge',
+            groupSize: 3,
+            delimiter: ' | '
+        },
+            form: [
+            {
+                key: 'tempo',
+                label: 'Tempo',
+                type: 'select',
+                options: [
+                    {
+                        value: 'largo',
+                        label: 'Largo'
+                    },
+                    {
+                        value: 'adagio',
+                        label: 'Adagio'
+                    },
+                    {
+                        value: 'moderato',
+                        label: 'Moderato'
+                    },
+                    {
+                        value: 'allegro',
+                        label: 'Allegro'
+                    }
+                ]
+            },
+            {
+                key: 'emphasisWords',
+                label: 'Emphasis words',
+                type: 'text',
+                placeholder: 'radiant bridge'
+            },
+            {
+                key: 'groupSize',
+                label: 'Group size',
+                type: 'number',
+                min: 1,
+                max: 8
+            },
+            {
+                key: 'delimiter',
+                label: 'Delimiter',
+                type: 'text',
+                placeholder: ' | '
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const text = QuickActionTools.toText(clone.payload);
+                const tempo = (config?.tempo || 'moderato').toLowerCase();
+                const emphasisWords = QuickActionTools.applyTemplate(config?.emphasisWords ?? '', clone, config);
+                const groupSize = Math.max(1, Math.min(8, parseInt(config?.groupSize ?? 3, 10) || 3));
+                const delimiter = config?.delimiter ?? ' | ';
+                const words = text.split(/\s+/).filter(Boolean);
+                const emphasisSet = new Set(emphasisWords.split(/[ ,
+]+/).filter(Boolean).map(word => word.toLowerCase()));
+                const groups = [];
+                let current = [];
+                let beat = 0;
+                for (const word of words) {
+                    const baseWord = word.replace(/[^\p{L}\p{N}]/gu, '').toLowerCase();
+                    const emphasised = emphasisSet.has(baseWord);
+                    const decorated = emphasised ? `*${word}*` : word;
+                    current.push(decorated);
+                    beat += 1;
+                    if (current.length >= groupSize) {
+                        groups.push(current.join(' '));
+                        current = [];
+                    }
+                }
+                if (current.length > 0) {
+                    groups.push(current.join(' '));
+                }
+                const tempoLabel = tempo === 'largo' ? 'slow tide' : tempo === 'allegro' ? 'bright sprint' : tempo;
+                clone.payload = groups.join(delimiter) + `
+Tempo: ${tempoLabel}`;
+                clone.logs.push('Radiant Bridge designer' + ' grouped words into ' + String(groups.length) + ' cadence cells.');
+                clone.vars.lastCadenceBeat = beat;
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-woven-gale-24',
+            category: 'utility',
+            name: 'Woven Gale designer',
+            nameKey: null,
+            description: 'Shapes payloads using the woven gale motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'edit',
+            accent: '#a855f7',
+            tags: [
+            'utility',
+            'reflection',
+            'woven',
+            'gale'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            questionPrefix: 'What does woven mean today?',
+            summaryLabel: 'Gale summary',
+            includeTimestamp: true
+        },
+            form: [
+            {
+                key: 'questionPrefix',
+                label: 'Question prefix',
+                type: 'text',
+                placeholder: 'What does woven mean today?'
+            },
+            {
+                key: 'summaryLabel',
+                label: 'Summary label',
+                type: 'text',
+                placeholder: 'Gale summary'
+            },
+            {
+                key: 'includeTimestamp',
+                label: 'Include timestamp',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const payloadText = QuickActionTools.toText(clone.payload);
+                const questions = payloadText.split(/
++/).filter(Boolean).map(line => line.trim());
+                const prefix = QuickActionTools.applyTemplate(config?.questionPrefix ?? '', clone, config);
+                const label = QuickActionTools.applyTemplate(config?.summaryLabel ?? '', clone, config);
+                const includeTimestamp = Boolean(config?.includeTimestamp);
+                const responses = questions.map((line, index) => `Q${index + 1}: ${prefix} → ${line}`);
+                const timestamp = includeTimestamp ? new Date().toISOString() : '';
+                clone.payload = [label, timestamp, ...responses].filter(Boolean).join('
+');
+                clone.logs.push('Woven Gale designer' + ' reframed ' + String(responses.length) + ' questions.');
+                clone.vars.lastReflectionCount = responses.length;
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-magnetic-pulse-25',
+            category: 'utility',
+            name: 'Magnetic Pulse designer',
+            nameKey: null,
+            description: 'Shapes payloads using the magnetic pulse motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'sun',
+            accent: '#f97316',
+            tags: [
+            'utility',
+            'spectrum',
+            'magnetic',
+            'pulse'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            palette: 'magnetic pulse
+pulse echo
+magnetic motif
+pulse trail
+magnetic spark',
+            mode: 'layered',
+            highlightSymbol: '✧',
+            storeHighlights: true
+        },
+            form: [
+            {
+                key: 'palette',
+                label: 'Palette',
+                type: 'textarea',
+                rows: 4,
+                placeholder: 'One tone per line'
+            },
+            {
+                key: 'mode',
+                label: 'Mode',
+                type: 'select',
+                options: [
+                    {
+                        value: 'layered',
+                        label: 'Layered'
+                    },
+                    {
+                        value: 'mirrored',
+                        label: 'Mirrored'
+                    },
+                    {
+                        value: 'ascending',
+                        label: 'Ascending'
+                    }
+                ]
+            },
+            {
+                key: 'highlightSymbol',
+                label: 'Highlight symbol',
+                type: 'text',
+                placeholder: '✧'
+            },
+            {
+                key: 'storeHighlights',
+                label: 'Store highlights in vars',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const baseText = QuickActionTools.toText(clone.payload);
+                const paletteLines = QuickActionTools.toLines(config?.palette ?? '').filter(Boolean);
+                const fallbackPalette = [
+                'magnetic pulse',
+                'pulse echo',
+                'magnetic motif',
+                'pulse trail',
+                'magnetic spark'
+            ];
+                const palette = paletteLines.length > 0 ? paletteLines : fallbackPalette;
+                const symbol = config?.highlightSymbol ?? '✧';
+                const mode = config?.mode || 'layered';
+                const lines = baseText.split(/
+/);
+                const highlights = [];
+                const decorated = lines.map((line, index) => {
+                    const tone = palette[index % palette.length];
+                    const highlight = `${symbol} ${tone}`;
+                    highlights.push(highlight);
+                    if (mode === 'mirrored') {
+                        return `${highlight} ${line} ${highlight}`;
+                    }
+                    if (mode === 'ascending') {
+                        return `${symbol.repeat((index % 5) + 1)} ${tone}: ${line}`;
+                    }
+                    return `${highlight} ${line}`;
+                });
+                clone.payload = decorated.join('
+');
+                if (config?.storeHighlights) {
+                    clone.vars['imagination_utility_magnetic_pulse_25'] = clone.vars['imagination_utility_magnetic_pulse_25'] || {};
+                    clone.vars['imagination_utility_magnetic_pulse_25'].highlights = highlights;
+                }
+                clone.logs.push('Magnetic Pulse designer' + ' applied ' + String(highlights.length) + ' spectrum accents.');
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-kinetic-overture-26',
+            category: 'utility',
+            name: 'Kinetic Overture designer',
+            nameKey: null,
+            description: 'Shapes payloads using the kinetic overture motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'layers',
+            accent: '#ec4899',
+            tags: [
+            'utility',
+            'mosaic',
+            'kinetic',
+            'overture'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            fragments: 'kinetic overture
+overture echo
+kinetic motif
+overture trail
+kinetic spark',
+            joiner: ' ',
+            wrapWith: '',
+            preservePayload: true
+        },
+            form: [
+            {
+                key: 'fragments',
+                label: 'Fragments',
+                type: 'textarea',
+                rows: 4,
+                placeholder: 'One fragment per line'
+            },
+            {
+                key: 'joiner',
+                label: 'Joiner',
+                type: 'text',
+                placeholder: ' ',
+                description: 'Placed between fragments.'
+            },
+            {
+                key: 'wrapWith',
+                label: 'Wrap with',
+                type: 'text',
+                placeholder: '~'
+            },
+            {
+                key: 'preservePayload',
+                label: 'Keep original payload in vars',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const sourceText = QuickActionTools.toText(clone.payload);
+                if (config?.preservePayload) {
+                    clone.vars['imagination_utility_kinetic_overture_26'] = clone.vars['imagination_utility_kinetic_overture_26'] || {};
+                    clone.vars['imagination_utility_kinetic_overture_26'].original = sourceText;
+                }
+                const rawFragments = QuickActionTools.toLines(config?.fragments ?? '').filter(Boolean);
+                const fallbackFragments = [
+                'kinetic overture',
+                'overture echo',
+                'kinetic motif',
+                'overture trail',
+                'kinetic spark'
+            ];
+                const fragments = rawFragments.length > 0 ? rawFragments : fallbackFragments;
+                const joiner = config?.joiner ?? ' ';
+                const wrapWith = config?.wrapWith ?? '';
+                const rendered = fragments
+                    .map(fragment => QuickActionTools.applyTemplate(fragment, clone, config))
+                    .filter(Boolean);
+                const result = wrapWith + rendered.join(joiner) + wrapWith;
+                clone.payload = result;
+                clone.logs.push('Kinetic Overture designer' + ' produced a mosaic from ' + String(rendered.length) + ' fragments.');
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-harbor-cocoon-27',
+            category: 'utility',
+            name: 'Harbor Cocoon designer',
+            nameKey: null,
+            description: 'Shapes payloads using the harbor cocoon motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'grid',
+            accent: '#22d3ee',
+            tags: [
+            'utility',
+            'pattern',
+            'harbor',
+            'cocoon'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            mode: 'wave',
+            divider: ' • ',
+            repeat: 2,
+            accentWord: 'harbor'
+        },
+            form: [
+            {
+                key: 'mode',
+                label: 'Mode',
+                type: 'select',
+                options: [
+                    {
+                        value: 'wave',
+                        label: 'Wave'
+                    },
+                    {
+                        value: 'grid',
+                        label: 'Grid'
+                    },
+                    {
+                        value: 'spiral',
+                        label: 'Spiral'
+                    }
+                ]
+            },
+            {
+                key: 'divider',
+                label: 'Divider',
+                type: 'text',
+                placeholder: ' • '
+            },
+            {
+                key: 'repeat',
+                label: 'Repeat',
+                type: 'number',
+                min: 1,
+                max: 12
+            },
+            {
+                key: 'accentWord',
+                label: 'Accent word',
+                type: 'text',
+                placeholder: 'harbor'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const lines = QuickActionTools.toLines(clone.payload);
+                const accentWord = QuickActionTools.applyTemplate(config?.accentWord ?? 'harbor', clone, config);
+                const repeatCount = Math.max(1, Math.min(12, parseInt(config?.repeat ?? 2, 10) || 1));
+                const mode = config?.mode || 'wave';
+                const divider = config?.divider ?? ' • ';
+                const sequences = [];
+                for (let iteration = 0; iteration < repeatCount; iteration += 1) {
+                    const offset = iteration % (lines.length || 1);
+                    const segment = lines.slice(offset).concat(lines.slice(0, offset));
+                    const prepared = segment.map((line, index) => {
+                        const label = `${accentWord} ${iteration + 1}.${index + 1}`;
+                        if (mode === 'grid') {
+                            return `[${label}] ${line}`;
+                        }
+                        if (mode === 'spiral') {
+                            const indent = ' '.repeat((iteration + index) % 6);
+                            return `${indent}${label}: ${line}`;
+                        }
+                        return `${label} → ${line}`;
+                    });
+                    sequences.push(prepared.join(divider));
+                }
+                clone.payload = sequences.join('
+');
+                clone.logs.push('Harbor Cocoon designer' + ' rearranged lines using the ' + mode + ' pattern.');
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-nebula-voyage-28',
+            category: 'utility',
+            name: 'Nebula Voyage designer',
+            nameKey: null,
+            description: 'Shapes payloads using the nebula voyage motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'music',
+            accent: '#34d399',
+            tags: [
+            'utility',
+            'cadence',
+            'nebula',
+            'voyage'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            tempo: 'moderato',
+            emphasisWords: 'nebula voyage',
+            groupSize: 3,
+            delimiter: ' | '
+        },
+            form: [
+            {
+                key: 'tempo',
+                label: 'Tempo',
+                type: 'select',
+                options: [
+                    {
+                        value: 'largo',
+                        label: 'Largo'
+                    },
+                    {
+                        value: 'adagio',
+                        label: 'Adagio'
+                    },
+                    {
+                        value: 'moderato',
+                        label: 'Moderato'
+                    },
+                    {
+                        value: 'allegro',
+                        label: 'Allegro'
+                    }
+                ]
+            },
+            {
+                key: 'emphasisWords',
+                label: 'Emphasis words',
+                type: 'text',
+                placeholder: 'nebula voyage'
+            },
+            {
+                key: 'groupSize',
+                label: 'Group size',
+                type: 'number',
+                min: 1,
+                max: 8
+            },
+            {
+                key: 'delimiter',
+                label: 'Delimiter',
+                type: 'text',
+                placeholder: ' | '
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const text = QuickActionTools.toText(clone.payload);
+                const tempo = (config?.tempo || 'moderato').toLowerCase();
+                const emphasisWords = QuickActionTools.applyTemplate(config?.emphasisWords ?? '', clone, config);
+                const groupSize = Math.max(1, Math.min(8, parseInt(config?.groupSize ?? 3, 10) || 3));
+                const delimiter = config?.delimiter ?? ' | ';
+                const words = text.split(/\s+/).filter(Boolean);
+                const emphasisSet = new Set(emphasisWords.split(/[ ,
+]+/).filter(Boolean).map(word => word.toLowerCase()));
+                const groups = [];
+                let current = [];
+                let beat = 0;
+                for (const word of words) {
+                    const baseWord = word.replace(/[^\p{L}\p{N}]/gu, '').toLowerCase();
+                    const emphasised = emphasisSet.has(baseWord);
+                    const decorated = emphasised ? `*${word}*` : word;
+                    current.push(decorated);
+                    beat += 1;
+                    if (current.length >= groupSize) {
+                        groups.push(current.join(' '));
+                        current = [];
+                    }
+                }
+                if (current.length > 0) {
+                    groups.push(current.join(' '));
+                }
+                const tempoLabel = tempo === 'largo' ? 'slow tide' : tempo === 'allegro' ? 'bright sprint' : tempo;
+                clone.payload = groups.join(delimiter) + `
+Tempo: ${tempoLabel}`;
+                clone.logs.push('Nebula Voyage designer' + ' grouped words into ' + String(groups.length) + ' cadence cells.');
+                clone.vars.lastCadenceBeat = beat;
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-mirthful-melody-29',
+            category: 'utility',
+            name: 'Mirthful Melody designer',
+            nameKey: null,
+            description: 'Shapes payloads using the mirthful melody motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'edit',
+            accent: '#a855f7',
+            tags: [
+            'utility',
+            'reflection',
+            'mirthful',
+            'melody'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            questionPrefix: 'What does mirthful mean today?',
+            summaryLabel: 'Melody summary',
+            includeTimestamp: true
+        },
+            form: [
+            {
+                key: 'questionPrefix',
+                label: 'Question prefix',
+                type: 'text',
+                placeholder: 'What does mirthful mean today?'
+            },
+            {
+                key: 'summaryLabel',
+                label: 'Summary label',
+                type: 'text',
+                placeholder: 'Melody summary'
+            },
+            {
+                key: 'includeTimestamp',
+                label: 'Include timestamp',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const payloadText = QuickActionTools.toText(clone.payload);
+                const questions = payloadText.split(/
++/).filter(Boolean).map(line => line.trim());
+                const prefix = QuickActionTools.applyTemplate(config?.questionPrefix ?? '', clone, config);
+                const label = QuickActionTools.applyTemplate(config?.summaryLabel ?? '', clone, config);
+                const includeTimestamp = Boolean(config?.includeTimestamp);
+                const responses = questions.map((line, index) => `Q${index + 1}: ${prefix} → ${line}`);
+                const timestamp = includeTimestamp ? new Date().toISOString() : '';
+                clone.payload = [label, timestamp, ...responses].filter(Boolean).join('
+');
+                clone.logs.push('Mirthful Melody designer' + ' reframed ' + String(responses.length) + ' questions.');
+                clone.vars.lastReflectionCount = responses.length;
+                return [clone];
+            }
+        }
+{
+            id: 'imagination-utility-saffron-constellation-30',
+            category: 'utility',
+            name: 'Saffron Constellation designer',
+            nameKey: null,
+            description: 'Shapes payloads using the saffron constellation motif to encourage imaginative structure.',
+            descriptionKey: null,
+            icon: 'sun',
+            accent: '#f97316',
+            tags: [
+            'utility',
+            'spectrum',
+            'saffron',
+            'constellation'
+        ],
+            inputs: [{ id: 'input', label: 'Input' }],
+            outputs: [{ id: 'next', label: 'Next' }],
+            defaultConfig: {
+            palette: 'saffron constellation
+constellation echo
+saffron motif
+constellation trail
+saffron spark',
+            mode: 'layered',
+            highlightSymbol: '✧',
+            storeHighlights: true
+        },
+            form: [
+            {
+                key: 'palette',
+                label: 'Palette',
+                type: 'textarea',
+                rows: 4,
+                placeholder: 'One tone per line'
+            },
+            {
+                key: 'mode',
+                label: 'Mode',
+                type: 'select',
+                options: [
+                    {
+                        value: 'layered',
+                        label: 'Layered'
+                    },
+                    {
+                        value: 'mirrored',
+                        label: 'Mirrored'
+                    },
+                    {
+                        value: 'ascending',
+                        label: 'Ascending'
+                    }
+                ]
+            },
+            {
+                key: 'highlightSymbol',
+                label: 'Highlight symbol',
+                type: 'text',
+                placeholder: '✧'
+            },
+            {
+                key: 'storeHighlights',
+                label: 'Store highlights in vars',
+                type: 'checkbox'
+            }
+        ],
+            run: async (context, config) => {
+                const clone = QuickActionContext.clone(context);
+                const baseText = QuickActionTools.toText(clone.payload);
+                const paletteLines = QuickActionTools.toLines(config?.palette ?? '').filter(Boolean);
+                const fallbackPalette = [
+                'saffron constellation',
+                'constellation echo',
+                'saffron motif',
+                'constellation trail',
+                'saffron spark'
+            ];
+                const palette = paletteLines.length > 0 ? paletteLines : fallbackPalette;
+                const symbol = config?.highlightSymbol ?? '✧';
+                const mode = config?.mode || 'layered';
+                const lines = baseText.split(/
+/);
+                const highlights = [];
+                const decorated = lines.map((line, index) => {
+                    const tone = palette[index % palette.length];
+                    const highlight = `${symbol} ${tone}`;
+                    highlights.push(highlight);
+                    if (mode === 'mirrored') {
+                        return `${highlight} ${line} ${highlight}`;
+                    }
+                    if (mode === 'ascending') {
+                        return `${symbol.repeat((index % 5) + 1)} ${tone}: ${line}`;
+                    }
+                    return `${highlight} ${line}`;
+                });
+                clone.payload = decorated.join('
+');
+                if (config?.storeHighlights) {
+                    clone.vars['imagination_utility_saffron_constellation_30'] = clone.vars['imagination_utility_saffron_constellation_30'] || {};
+                    clone.vars['imagination_utility_saffron_constellation_30'].highlights = highlights;
+                }
+                clone.logs.push('Saffron Constellation designer' + ' applied ' + String(highlights.length) + ' spectrum accents.');
+                return [clone];
+            }
+        }
+{
+                id: 'imagination-action-orchestrate-01',
+                category: 'action',
+                name: 'Orchestrate Relay',
+                nameKey: null,
+                description: 'Helps orchestrate the workflow narrative using the relay pattern.',
+                descriptionKey: null,
+                icon: 'zap',
+                accent: '#38bdf8',
+                tags: [
+            'action',
+            'relay',
+            'orchestrate'
+        ],
+                inputs: [{ id: 'input', label: 'Input' }],
+                outputs: [{ id: 'next', label: 'Next' }],
+                defaultConfig: {
+            headline: 'Orchestrate headline',
+            body: '{{payload}}',
+            footer: '',
+            updatePayload: true
+        },
+                form: [
+            {
+                key: 'headline',
+                label: 'Headline',
+                type: 'text',
+                placeholder: 'Orchestrate headline'
+            },
+            {
+                key: 'body',
+                label: 'Body template',
+                type: 'textarea',
+                rows: 4,
+                placeholder: '{{payload}}'
+            },
+            {
+                key: 'footer',
+                label: 'Footer',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                key: 'updatePayload',
+                label: 'Write back to payload',
+                type: 'checkbox'
+            }
+        ],
+                run: async (context, config) => {
+                    const clone = QuickActionContext.clone(context);
+                    const headline = QuickActionTools.applyTemplate(config?.headline ?? '', clone, config);
+                    const body = QuickActionTools.applyTemplate(config?.body ?? '{payload}', clone, config);
+                    const footer = QuickActionTools.applyTemplate(config?.footer ?? '', clone, config);
+                    const composed = [headline, body, footer].filter(Boolean).join('
+
+');
+                    clone.logs.push('Orchestrate Relay' + ' relayed a composed message.');
+                    clone.vars['imagination_action_orchestrate_01'] = clone.vars['imagination_action_orchestrate_01'] || {};
+                    clone.vars['imagination_action_orchestrate_01'].message = composed;
+                    if (config?.updatePayload) {
+                        clone.payload = composed;
+                    }
+                    return [clone];
+                }
+            }
+{
+        id: 'imagination-action-illuminate-02',
+        category: 'action',
+        name: 'Illuminate Branch',
+        nameKey: null,
+        description: 'Helps illuminate the workflow narrative using the branch pattern.',
+        descriptionKey: null,
+        icon: 'share-2',
+        accent: '#f97316',
+        tags: [
+    'action',
+    'branch',
+    'illuminate'
+],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+    branchCount: 3,
+    label: 'Illuminate branch',
+    sharePayload: true,
+    note: ''
+},
+        form: [
+    {
+        key: 'branchCount',
+        label: 'Branch count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'label',
+        label: 'Branch label',
+        type: 'text',
+        placeholder: 'Illuminate branch'
+    },
+    {
+        key: 'sharePayload',
+        label: 'Share payload with branches',
+        type: 'checkbox'
+    },
+    {
+        key: 'note',
+        label: 'Note',
+        type: 'text',
+        placeholder: ''
+    }
+],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const branchCount = Math.max(1, Math.min(10, parseInt(config?.branchCount ?? 1, 10) || 1));
+            const label = QuickActionTools.applyTemplate(config?.label ?? '', clone, config);
+            const note = QuickActionTools.applyTemplate(config?.note ?? '', clone, config);
+            const branches = [];
+            for (let index = 0; index < branchCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars['imagination_action_illuminate_02'] = branchClone.vars['imagination_action_illuminate_02'] || {};
+                branchClone.vars['imagination_action_illuminate_02'].index = index;
+                branchClone.vars['imagination_action_illuminate_02'].label = label;
+                branchClone.vars['imagination_action_illuminate_02'].note = note;
+                branchClone.logs.push('Illuminate Branch' + ' preparing branch #' + String(index + 1));
+                if (!config?.sharePayload) {
+                    branchClone.payload = QuickActionTools.toText(clone.payload);
+                }
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+    }
+{
+        id: 'imagination-action-harmonize-03',
+        category: 'action',
+        name: 'Harmonize Notebook',
+        nameKey: null,
+        description: 'Helps harmonize the workflow narrative using the notebook pattern.',
+        descriptionKey: null,
+        icon: 'book',
+        accent: '#34d399',
+        tags: [
+    'action',
+    'notebook',
+    'harmonize'
+],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+    title: 'Harmonize journal',
+    capture: '{{payload}}',
+    tag: 'harmonize',
+    limit: 50
+},
+        form: [
+    {
+        key: 'title',
+        label: 'Title',
+        type: 'text',
+        placeholder: 'Harmonize journal'
+    },
+    {
+        key: 'capture',
+        label: 'Capture template',
+        type: 'textarea',
+        rows: 3,
+        placeholder: '{{payload}}'
+    },
+    {
+        key: 'tag',
+        label: 'Tag',
+        type: 'text',
+        placeholder: 'harmonize'
+    },
+    {
+        key: 'limit',
+        label: 'Entry limit',
+        type: 'number',
+        min: 1,
+        max: 200
+    }
+],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const title = QuickActionTools.applyTemplate(config?.title ?? '', clone, config);
+            const capture = QuickActionTools.applyTemplate(config?.capture ?? '{payload}', clone, config);
+            const tag = QuickActionTools.applyTemplate(config?.tag ?? '', clone, config);
+            const limit = Math.max(1, Math.min(200, parseInt(config?.limit ?? 50, 10) || 50));
+            clone.vars['imagination_action_harmonize_03'] = clone.vars['imagination_action_harmonize_03'] || { entries: [] };
+            const store = clone.vars['imagination_action_harmonize_03'];
+            store.entries = store.entries || [];
+            store.entries.unshift({ title, capture, tag, timestamp: new Date().toISOString() });
+            if (store.entries.length > limit) {
+                store.entries = store.entries.slice(0, limit);
+            }
+            clone.logs.push('Harmonize Notebook' + ' captured an entry with tag ' + tag + '.');
+            return [clone];
+        }
+    }
+{
+        id: 'imagination-action-anchor-04',
+        category: 'action',
+        name: 'Anchor Tracker',
+        nameKey: null,
+        description: 'Helps anchor the workflow narrative using the tracker pattern.',
+        descriptionKey: null,
+        icon: 'activity',
+        accent: '#a855f7',
+        tags: [
+    'action',
+    'tracker',
+    'anchor'
+],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+    counterKey: 'anchor',
+    increment: 1,
+    resetThreshold: 0,
+    emitSummary: true
+},
+        form: [
+    {
+        key: 'counterKey',
+        label: 'Counter key',
+        type: 'text',
+        placeholder: 'anchor'
+    },
+    {
+        key: 'increment',
+        label: 'Increment',
+        type: 'number',
+        min: -1000,
+        max: 1000
+    },
+    {
+        key: 'resetThreshold',
+        label: 'Reset at',
+        type: 'number',
+        min: -1000,
+        max: 1000
+    },
+    {
+        key: 'emitSummary',
+        label: 'Emit summary into payload',
+        type: 'checkbox'
+    }
+],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = QuickActionTools.applyTemplate(config?.counterKey ?? '', clone, config);
+            const increment = parseFloat(config?.increment ?? 1) || 0;
+            const resetThreshold = parseFloat(config?.resetThreshold ?? 0) || 0;
+            clone.vars['imagination_action_anchor_04'] = clone.vars['imagination_action_anchor_04'] || {};
+            const store = clone.vars['imagination_action_anchor_04'];
+            store.counters = store.counters || {};
+            const current = store.counters[key] || 0;
+            let nextValue = current + increment;
+            if (resetThreshold && Math.abs(nextValue) >= Math.abs(resetThreshold)) {
+                nextValue = 0;
+            }
+            store.counters[key] = nextValue;
+            clone.logs.push('Anchor Tracker' + ' set counter ' + key + ' to ' + String(nextValue));
+            if (config?.emitSummary) {
+                clone.payload = `Counter ${key}: ${nextValue}`;
+            }
+            return [clone];
+        }
+    }
+{
+    id: 'imagination-action-celebrate-05',
+    category: 'action',
+    name: 'Celebrate Harmonizer',
+    nameKey: null,
+    description: 'Helps celebrate the workflow narrative using the harmonizer pattern.',
+    descriptionKey: null,
+    icon: 'shuffle',
+    accent: '#facc15',
+    tags: [
+    'action',
+    'harmonizer',
+    'celebrate'
+],
+    inputs: [{ id: 'input', label: 'Input' }],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    primary: 'Celebrate',
+    secondary: 'celebrate',
+    mode: 'blend',
+    fanOut: false
+},
+    form: [
+    {
+        key: 'primary',
+        label: 'Primary word',
+        type: 'text',
+        placeholder: 'Celebrate'
+    },
+    {
+        key: 'secondary',
+        label: 'Secondary word',
+        type: 'text',
+        placeholder: 'celebrate'
+    },
+    {
+        key: 'mode',
+        label: 'Mode',
+        type: 'select',
+        options: [
+            {
+                value: 'blend',
+                label: 'Blend'
+            },
+            {
+                value: 'alternate',
+                label: 'Alternate'
+            },
+            {
+                value: 'mirror',
+                label: 'Mirror'
+            }
+        ]
+    },
+    {
+        key: 'fanOut',
+        label: 'Create harmonic clones',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const primary = QuickActionTools.applyTemplate(config?.primary ?? '', clone, config);
+        const secondary = QuickActionTools.applyTemplate(config?.secondary ?? '', clone, config);
+        const mode = config?.mode || 'blend';
+        const base = QuickActionTools.toText(clone.payload);
+        let output = '';
+        if (mode === 'alternate') {
+            const words = base.split(/\s+/).filter(Boolean);
+            output = words.map((word, index) => (index % 2 === 0 ? `${primary} ${word}` : `${secondary} ${word}`)).join(' ');
+        } else if (mode === 'mirror') {
+            output = `${primary} ${base.split('').reverse().join('')} ${secondary}`;
+        } else {
+            output = `${primary} ${base} ${secondary}`;
+        }
+        clone.payload = output.trim();
+        clone.logs.push('Celebrate Harmonizer' + ' harmonized payload using mode ' + mode + '.');
+        if (config?.fanOut) {
+            const clones = [];
+            for (let index = 0; index < 3; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars['imagination_action_celebrate_05'] = branchClone.vars['imagination_action_celebrate_05'] || {};
+                branchClone.vars['imagination_action_celebrate_05'].mode = mode;
+                branchClone.vars['imagination_action_celebrate_05'].index = index;
+                branchClone.logs.push('Celebrate Harmonizer' + ' fan-out clone #' + String(index + 1));
+                clones.push(branchClone);
+            }
+            return clones;
+        }
+        return [clone];
+    }
+}
+{
+                id: 'imagination-action-distill-06',
+                category: 'action',
+                name: 'Distill Relay',
+                nameKey: null,
+                description: 'Helps distill the workflow narrative using the relay pattern.',
+                descriptionKey: null,
+                icon: 'zap',
+                accent: '#38bdf8',
+                tags: [
+            'action',
+            'relay',
+            'distill'
+        ],
+                inputs: [{ id: 'input', label: 'Input' }],
+                outputs: [{ id: 'next', label: 'Next' }],
+                defaultConfig: {
+            headline: 'Distill headline',
+            body: '{{payload}}',
+            footer: '',
+            updatePayload: true
+        },
+                form: [
+            {
+                key: 'headline',
+                label: 'Headline',
+                type: 'text',
+                placeholder: 'Distill headline'
+            },
+            {
+                key: 'body',
+                label: 'Body template',
+                type: 'textarea',
+                rows: 4,
+                placeholder: '{{payload}}'
+            },
+            {
+                key: 'footer',
+                label: 'Footer',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                key: 'updatePayload',
+                label: 'Write back to payload',
+                type: 'checkbox'
+            }
+        ],
+                run: async (context, config) => {
+                    const clone = QuickActionContext.clone(context);
+                    const headline = QuickActionTools.applyTemplate(config?.headline ?? '', clone, config);
+                    const body = QuickActionTools.applyTemplate(config?.body ?? '{payload}', clone, config);
+                    const footer = QuickActionTools.applyTemplate(config?.footer ?? '', clone, config);
+                    const composed = [headline, body, footer].filter(Boolean).join('
+
+');
+                    clone.logs.push('Distill Relay' + ' relayed a composed message.');
+                    clone.vars['imagination_action_distill_06'] = clone.vars['imagination_action_distill_06'] || {};
+                    clone.vars['imagination_action_distill_06'].message = composed;
+                    if (config?.updatePayload) {
+                        clone.payload = composed;
+                    }
+                    return [clone];
+                }
+            }
+{
+        id: 'imagination-action-choreograph-07',
+        category: 'action',
+        name: 'Choreograph Branch',
+        nameKey: null,
+        description: 'Helps choreograph the workflow narrative using the branch pattern.',
+        descriptionKey: null,
+        icon: 'share-2',
+        accent: '#f97316',
+        tags: [
+    'action',
+    'branch',
+    'choreograph'
+],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+    branchCount: 3,
+    label: 'Choreograph branch',
+    sharePayload: true,
+    note: ''
+},
+        form: [
+    {
+        key: 'branchCount',
+        label: 'Branch count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'label',
+        label: 'Branch label',
+        type: 'text',
+        placeholder: 'Choreograph branch'
+    },
+    {
+        key: 'sharePayload',
+        label: 'Share payload with branches',
+        type: 'checkbox'
+    },
+    {
+        key: 'note',
+        label: 'Note',
+        type: 'text',
+        placeholder: ''
+    }
+],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const branchCount = Math.max(1, Math.min(10, parseInt(config?.branchCount ?? 1, 10) || 1));
+            const label = QuickActionTools.applyTemplate(config?.label ?? '', clone, config);
+            const note = QuickActionTools.applyTemplate(config?.note ?? '', clone, config);
+            const branches = [];
+            for (let index = 0; index < branchCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars['imagination_action_choreograph_07'] = branchClone.vars['imagination_action_choreograph_07'] || {};
+                branchClone.vars['imagination_action_choreograph_07'].index = index;
+                branchClone.vars['imagination_action_choreograph_07'].label = label;
+                branchClone.vars['imagination_action_choreograph_07'].note = note;
+                branchClone.logs.push('Choreograph Branch' + ' preparing branch #' + String(index + 1));
+                if (!config?.sharePayload) {
+                    branchClone.payload = QuickActionTools.toText(clone.payload);
+                }
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+    }
+{
+        id: 'imagination-action-propel-08',
+        category: 'action',
+        name: 'Propel Notebook',
+        nameKey: null,
+        description: 'Helps propel the workflow narrative using the notebook pattern.',
+        descriptionKey: null,
+        icon: 'book',
+        accent: '#34d399',
+        tags: [
+    'action',
+    'notebook',
+    'propel'
+],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+    title: 'Propel journal',
+    capture: '{{payload}}',
+    tag: 'propel',
+    limit: 50
+},
+        form: [
+    {
+        key: 'title',
+        label: 'Title',
+        type: 'text',
+        placeholder: 'Propel journal'
+    },
+    {
+        key: 'capture',
+        label: 'Capture template',
+        type: 'textarea',
+        rows: 3,
+        placeholder: '{{payload}}'
+    },
+    {
+        key: 'tag',
+        label: 'Tag',
+        type: 'text',
+        placeholder: 'propel'
+    },
+    {
+        key: 'limit',
+        label: 'Entry limit',
+        type: 'number',
+        min: 1,
+        max: 200
+    }
+],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const title = QuickActionTools.applyTemplate(config?.title ?? '', clone, config);
+            const capture = QuickActionTools.applyTemplate(config?.capture ?? '{payload}', clone, config);
+            const tag = QuickActionTools.applyTemplate(config?.tag ?? '', clone, config);
+            const limit = Math.max(1, Math.min(200, parseInt(config?.limit ?? 50, 10) || 50));
+            clone.vars['imagination_action_propel_08'] = clone.vars['imagination_action_propel_08'] || { entries: [] };
+            const store = clone.vars['imagination_action_propel_08'];
+            store.entries = store.entries || [];
+            store.entries.unshift({ title, capture, tag, timestamp: new Date().toISOString() });
+            if (store.entries.length > limit) {
+                store.entries = store.entries.slice(0, limit);
+            }
+            clone.logs.push('Propel Notebook' + ' captured an entry with tag ' + tag + '.');
+            return [clone];
+        }
+    }
+{
+        id: 'imagination-action-unfold-09',
+        category: 'action',
+        name: 'Unfold Tracker',
+        nameKey: null,
+        description: 'Helps unfold the workflow narrative using the tracker pattern.',
+        descriptionKey: null,
+        icon: 'activity',
+        accent: '#a855f7',
+        tags: [
+    'action',
+    'tracker',
+    'unfold'
+],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+    counterKey: 'unfold',
+    increment: 1,
+    resetThreshold: 0,
+    emitSummary: true
+},
+        form: [
+    {
+        key: 'counterKey',
+        label: 'Counter key',
+        type: 'text',
+        placeholder: 'unfold'
+    },
+    {
+        key: 'increment',
+        label: 'Increment',
+        type: 'number',
+        min: -1000,
+        max: 1000
+    },
+    {
+        key: 'resetThreshold',
+        label: 'Reset at',
+        type: 'number',
+        min: -1000,
+        max: 1000
+    },
+    {
+        key: 'emitSummary',
+        label: 'Emit summary into payload',
+        type: 'checkbox'
+    }
+],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = QuickActionTools.applyTemplate(config?.counterKey ?? '', clone, config);
+            const increment = parseFloat(config?.increment ?? 1) || 0;
+            const resetThreshold = parseFloat(config?.resetThreshold ?? 0) || 0;
+            clone.vars['imagination_action_unfold_09'] = clone.vars['imagination_action_unfold_09'] || {};
+            const store = clone.vars['imagination_action_unfold_09'];
+            store.counters = store.counters || {};
+            const current = store.counters[key] || 0;
+            let nextValue = current + increment;
+            if (resetThreshold && Math.abs(nextValue) >= Math.abs(resetThreshold)) {
+                nextValue = 0;
+            }
+            store.counters[key] = nextValue;
+            clone.logs.push('Unfold Tracker' + ' set counter ' + key + ' to ' + String(nextValue));
+            if (config?.emitSummary) {
+                clone.payload = `Counter ${key}: ${nextValue}`;
+            }
+            return [clone];
+        }
+    }
+{
+    id: 'imagination-action-nurture-10',
+    category: 'action',
+    name: 'Nurture Harmonizer',
+    nameKey: null,
+    description: 'Helps nurture the workflow narrative using the harmonizer pattern.',
+    descriptionKey: null,
+    icon: 'shuffle',
+    accent: '#facc15',
+    tags: [
+    'action',
+    'harmonizer',
+    'nurture'
+],
+    inputs: [{ id: 'input', label: 'Input' }],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    primary: 'Nurture',
+    secondary: 'nurture',
+    mode: 'blend',
+    fanOut: false
+},
+    form: [
+    {
+        key: 'primary',
+        label: 'Primary word',
+        type: 'text',
+        placeholder: 'Nurture'
+    },
+    {
+        key: 'secondary',
+        label: 'Secondary word',
+        type: 'text',
+        placeholder: 'nurture'
+    },
+    {
+        key: 'mode',
+        label: 'Mode',
+        type: 'select',
+        options: [
+            {
+                value: 'blend',
+                label: 'Blend'
+            },
+            {
+                value: 'alternate',
+                label: 'Alternate'
+            },
+            {
+                value: 'mirror',
+                label: 'Mirror'
+            }
+        ]
+    },
+    {
+        key: 'fanOut',
+        label: 'Create harmonic clones',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const primary = QuickActionTools.applyTemplate(config?.primary ?? '', clone, config);
+        const secondary = QuickActionTools.applyTemplate(config?.secondary ?? '', clone, config);
+        const mode = config?.mode || 'blend';
+        const base = QuickActionTools.toText(clone.payload);
+        let output = '';
+        if (mode === 'alternate') {
+            const words = base.split(/\s+/).filter(Boolean);
+            output = words.map((word, index) => (index % 2 === 0 ? `${primary} ${word}` : `${secondary} ${word}`)).join(' ');
+        } else if (mode === 'mirror') {
+            output = `${primary} ${base.split('').reverse().join('')} ${secondary}`;
+        } else {
+            output = `${primary} ${base} ${secondary}`;
+        }
+        clone.payload = output.trim();
+        clone.logs.push('Nurture Harmonizer' + ' harmonized payload using mode ' + mode + '.');
+        if (config?.fanOut) {
+            const clones = [];
+            for (let index = 0; index < 3; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars['imagination_action_nurture_10'] = branchClone.vars['imagination_action_nurture_10'] || {};
+                branchClone.vars['imagination_action_nurture_10'].mode = mode;
+                branchClone.vars['imagination_action_nurture_10'].index = index;
+                branchClone.logs.push('Nurture Harmonizer' + ' fan-out clone #' + String(index + 1));
+                clones.push(branchClone);
+            }
+            return clones;
+        }
+        return [clone];
+    }
+}
+{
+                id: 'imagination-action-spark-11',
+                category: 'action',
+                name: 'Spark Relay',
+                nameKey: null,
+                description: 'Helps spark the workflow narrative using the relay pattern.',
+                descriptionKey: null,
+                icon: 'zap',
+                accent: '#38bdf8',
+                tags: [
+            'action',
+            'relay',
+            'spark'
+        ],
+                inputs: [{ id: 'input', label: 'Input' }],
+                outputs: [{ id: 'next', label: 'Next' }],
+                defaultConfig: {
+            headline: 'Spark headline',
+            body: '{{payload}}',
+            footer: '',
+            updatePayload: true
+        },
+                form: [
+            {
+                key: 'headline',
+                label: 'Headline',
+                type: 'text',
+                placeholder: 'Spark headline'
+            },
+            {
+                key: 'body',
+                label: 'Body template',
+                type: 'textarea',
+                rows: 4,
+                placeholder: '{{payload}}'
+            },
+            {
+                key: 'footer',
+                label: 'Footer',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                key: 'updatePayload',
+                label: 'Write back to payload',
+                type: 'checkbox'
+            }
+        ],
+                run: async (context, config) => {
+                    const clone = QuickActionContext.clone(context);
+                    const headline = QuickActionTools.applyTemplate(config?.headline ?? '', clone, config);
+                    const body = QuickActionTools.applyTemplate(config?.body ?? '{payload}', clone, config);
+                    const footer = QuickActionTools.applyTemplate(config?.footer ?? '', clone, config);
+                    const composed = [headline, body, footer].filter(Boolean).join('
+
+');
+                    clone.logs.push('Spark Relay' + ' relayed a composed message.');
+                    clone.vars['imagination_action_spark_11'] = clone.vars['imagination_action_spark_11'] || {};
+                    clone.vars['imagination_action_spark_11'].message = composed;
+                    if (config?.updatePayload) {
+                        clone.payload = composed;
+                    }
+                    return [clone];
+                }
+            }
+{
+        id: 'imagination-action-stream-12',
+        category: 'action',
+        name: 'Stream Branch',
+        nameKey: null,
+        description: 'Helps stream the workflow narrative using the branch pattern.',
+        descriptionKey: null,
+        icon: 'share-2',
+        accent: '#f97316',
+        tags: [
+    'action',
+    'branch',
+    'stream'
+],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+    branchCount: 3,
+    label: 'Stream branch',
+    sharePayload: true,
+    note: ''
+},
+        form: [
+    {
+        key: 'branchCount',
+        label: 'Branch count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'label',
+        label: 'Branch label',
+        type: 'text',
+        placeholder: 'Stream branch'
+    },
+    {
+        key: 'sharePayload',
+        label: 'Share payload with branches',
+        type: 'checkbox'
+    },
+    {
+        key: 'note',
+        label: 'Note',
+        type: 'text',
+        placeholder: ''
+    }
+],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const branchCount = Math.max(1, Math.min(10, parseInt(config?.branchCount ?? 1, 10) || 1));
+            const label = QuickActionTools.applyTemplate(config?.label ?? '', clone, config);
+            const note = QuickActionTools.applyTemplate(config?.note ?? '', clone, config);
+            const branches = [];
+            for (let index = 0; index < branchCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars['imagination_action_stream_12'] = branchClone.vars['imagination_action_stream_12'] || {};
+                branchClone.vars['imagination_action_stream_12'].index = index;
+                branchClone.vars['imagination_action_stream_12'].label = label;
+                branchClone.vars['imagination_action_stream_12'].note = note;
+                branchClone.logs.push('Stream Branch' + ' preparing branch #' + String(index + 1));
+                if (!config?.sharePayload) {
+                    branchClone.payload = QuickActionTools.toText(clone.payload);
+                }
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+    }
+{
+        id: 'imagination-action-catalogue-13',
+        category: 'action',
+        name: 'Catalogue Notebook',
+        nameKey: null,
+        description: 'Helps catalogue the workflow narrative using the notebook pattern.',
+        descriptionKey: null,
+        icon: 'book',
+        accent: '#34d399',
+        tags: [
+    'action',
+    'notebook',
+    'catalogue'
+],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+    title: 'Catalogue journal',
+    capture: '{{payload}}',
+    tag: 'catalogue',
+    limit: 50
+},
+        form: [
+    {
+        key: 'title',
+        label: 'Title',
+        type: 'text',
+        placeholder: 'Catalogue journal'
+    },
+    {
+        key: 'capture',
+        label: 'Capture template',
+        type: 'textarea',
+        rows: 3,
+        placeholder: '{{payload}}'
+    },
+    {
+        key: 'tag',
+        label: 'Tag',
+        type: 'text',
+        placeholder: 'catalogue'
+    },
+    {
+        key: 'limit',
+        label: 'Entry limit',
+        type: 'number',
+        min: 1,
+        max: 200
+    }
+],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const title = QuickActionTools.applyTemplate(config?.title ?? '', clone, config);
+            const capture = QuickActionTools.applyTemplate(config?.capture ?? '{payload}', clone, config);
+            const tag = QuickActionTools.applyTemplate(config?.tag ?? '', clone, config);
+            const limit = Math.max(1, Math.min(200, parseInt(config?.limit ?? 50, 10) || 50));
+            clone.vars['imagination_action_catalogue_13'] = clone.vars['imagination_action_catalogue_13'] || { entries: [] };
+            const store = clone.vars['imagination_action_catalogue_13'];
+            store.entries = store.entries || [];
+            store.entries.unshift({ title, capture, tag, timestamp: new Date().toISOString() });
+            if (store.entries.length > limit) {
+                store.entries = store.entries.slice(0, limit);
+            }
+            clone.logs.push('Catalogue Notebook' + ' captured an entry with tag ' + tag + '.');
+            return [clone];
+        }
+    }
+{
+        id: 'imagination-action-echo-14',
+        category: 'action',
+        name: 'Echo Tracker',
+        nameKey: null,
+        description: 'Helps echo the workflow narrative using the tracker pattern.',
+        descriptionKey: null,
+        icon: 'activity',
+        accent: '#a855f7',
+        tags: [
+    'action',
+    'tracker',
+    'echo'
+],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+    counterKey: 'echo',
+    increment: 1,
+    resetThreshold: 0,
+    emitSummary: true
+},
+        form: [
+    {
+        key: 'counterKey',
+        label: 'Counter key',
+        type: 'text',
+        placeholder: 'echo'
+    },
+    {
+        key: 'increment',
+        label: 'Increment',
+        type: 'number',
+        min: -1000,
+        max: 1000
+    },
+    {
+        key: 'resetThreshold',
+        label: 'Reset at',
+        type: 'number',
+        min: -1000,
+        max: 1000
+    },
+    {
+        key: 'emitSummary',
+        label: 'Emit summary into payload',
+        type: 'checkbox'
+    }
+],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = QuickActionTools.applyTemplate(config?.counterKey ?? '', clone, config);
+            const increment = parseFloat(config?.increment ?? 1) || 0;
+            const resetThreshold = parseFloat(config?.resetThreshold ?? 0) || 0;
+            clone.vars['imagination_action_echo_14'] = clone.vars['imagination_action_echo_14'] || {};
+            const store = clone.vars['imagination_action_echo_14'];
+            store.counters = store.counters || {};
+            const current = store.counters[key] || 0;
+            let nextValue = current + increment;
+            if (resetThreshold && Math.abs(nextValue) >= Math.abs(resetThreshold)) {
+                nextValue = 0;
+            }
+            store.counters[key] = nextValue;
+            clone.logs.push('Echo Tracker' + ' set counter ' + key + ' to ' + String(nextValue));
+            if (config?.emitSummary) {
+                clone.payload = `Counter ${key}: ${nextValue}`;
+            }
+            return [clone];
+        }
+    }
+{
+    id: 'imagination-action-bloom-15',
+    category: 'action',
+    name: 'Bloom Harmonizer',
+    nameKey: null,
+    description: 'Helps bloom the workflow narrative using the harmonizer pattern.',
+    descriptionKey: null,
+    icon: 'shuffle',
+    accent: '#facc15',
+    tags: [
+    'action',
+    'harmonizer',
+    'bloom'
+],
+    inputs: [{ id: 'input', label: 'Input' }],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    primary: 'Bloom',
+    secondary: 'bloom',
+    mode: 'blend',
+    fanOut: false
+},
+    form: [
+    {
+        key: 'primary',
+        label: 'Primary word',
+        type: 'text',
+        placeholder: 'Bloom'
+    },
+    {
+        key: 'secondary',
+        label: 'Secondary word',
+        type: 'text',
+        placeholder: 'bloom'
+    },
+    {
+        key: 'mode',
+        label: 'Mode',
+        type: 'select',
+        options: [
+            {
+                value: 'blend',
+                label: 'Blend'
+            },
+            {
+                value: 'alternate',
+                label: 'Alternate'
+            },
+            {
+                value: 'mirror',
+                label: 'Mirror'
+            }
+        ]
+    },
+    {
+        key: 'fanOut',
+        label: 'Create harmonic clones',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const primary = QuickActionTools.applyTemplate(config?.primary ?? '', clone, config);
+        const secondary = QuickActionTools.applyTemplate(config?.secondary ?? '', clone, config);
+        const mode = config?.mode || 'blend';
+        const base = QuickActionTools.toText(clone.payload);
+        let output = '';
+        if (mode === 'alternate') {
+            const words = base.split(/\s+/).filter(Boolean);
+            output = words.map((word, index) => (index % 2 === 0 ? `${primary} ${word}` : `${secondary} ${word}`)).join(' ');
+        } else if (mode === 'mirror') {
+            output = `${primary} ${base.split('').reverse().join('')} ${secondary}`;
+        } else {
+            output = `${primary} ${base} ${secondary}`;
+        }
+        clone.payload = output.trim();
+        clone.logs.push('Bloom Harmonizer' + ' harmonized payload using mode ' + mode + '.');
+        if (config?.fanOut) {
+            const clones = [];
+            for (let index = 0; index < 3; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars['imagination_action_bloom_15'] = branchClone.vars['imagination_action_bloom_15'] || {};
+                branchClone.vars['imagination_action_bloom_15'].mode = mode;
+                branchClone.vars['imagination_action_bloom_15'].index = index;
+                branchClone.logs.push('Bloom Harmonizer' + ' fan-out clone #' + String(index + 1));
+                clones.push(branchClone);
+            }
+            return clones;
+        }
+        return [clone];
+    }
+}
+{
+                id: 'imagination-action-rally-16',
+                category: 'action',
+                name: 'Rally Relay',
+                nameKey: null,
+                description: 'Helps rally the workflow narrative using the relay pattern.',
+                descriptionKey: null,
+                icon: 'zap',
+                accent: '#38bdf8',
+                tags: [
+            'action',
+            'relay',
+            'rally'
+        ],
+                inputs: [{ id: 'input', label: 'Input' }],
+                outputs: [{ id: 'next', label: 'Next' }],
+                defaultConfig: {
+            headline: 'Rally headline',
+            body: '{{payload}}',
+            footer: '',
+            updatePayload: true
+        },
+                form: [
+            {
+                key: 'headline',
+                label: 'Headline',
+                type: 'text',
+                placeholder: 'Rally headline'
+            },
+            {
+                key: 'body',
+                label: 'Body template',
+                type: 'textarea',
+                rows: 4,
+                placeholder: '{{payload}}'
+            },
+            {
+                key: 'footer',
+                label: 'Footer',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                key: 'updatePayload',
+                label: 'Write back to payload',
+                type: 'checkbox'
+            }
+        ],
+                run: async (context, config) => {
+                    const clone = QuickActionContext.clone(context);
+                    const headline = QuickActionTools.applyTemplate(config?.headline ?? '', clone, config);
+                    const body = QuickActionTools.applyTemplate(config?.body ?? '{payload}', clone, config);
+                    const footer = QuickActionTools.applyTemplate(config?.footer ?? '', clone, config);
+                    const composed = [headline, body, footer].filter(Boolean).join('
+
+');
+                    clone.logs.push('Rally Relay' + ' relayed a composed message.');
+                    clone.vars['imagination_action_rally_16'] = clone.vars['imagination_action_rally_16'] || {};
+                    clone.vars['imagination_action_rally_16'].message = composed;
+                    if (config?.updatePayload) {
+                        clone.payload = composed;
+                    }
+                    return [clone];
+                }
+            }
+{
+        id: 'imagination-action-craft-17',
+        category: 'action',
+        name: 'Craft Branch',
+        nameKey: null,
+        description: 'Helps craft the workflow narrative using the branch pattern.',
+        descriptionKey: null,
+        icon: 'share-2',
+        accent: '#f97316',
+        tags: [
+    'action',
+    'branch',
+    'craft'
+],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+    branchCount: 3,
+    label: 'Craft branch',
+    sharePayload: true,
+    note: ''
+},
+        form: [
+    {
+        key: 'branchCount',
+        label: 'Branch count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'label',
+        label: 'Branch label',
+        type: 'text',
+        placeholder: 'Craft branch'
+    },
+    {
+        key: 'sharePayload',
+        label: 'Share payload with branches',
+        type: 'checkbox'
+    },
+    {
+        key: 'note',
+        label: 'Note',
+        type: 'text',
+        placeholder: ''
+    }
+],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const branchCount = Math.max(1, Math.min(10, parseInt(config?.branchCount ?? 1, 10) || 1));
+            const label = QuickActionTools.applyTemplate(config?.label ?? '', clone, config);
+            const note = QuickActionTools.applyTemplate(config?.note ?? '', clone, config);
+            const branches = [];
+            for (let index = 0; index < branchCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars['imagination_action_craft_17'] = branchClone.vars['imagination_action_craft_17'] || {};
+                branchClone.vars['imagination_action_craft_17'].index = index;
+                branchClone.vars['imagination_action_craft_17'].label = label;
+                branchClone.vars['imagination_action_craft_17'].note = note;
+                branchClone.logs.push('Craft Branch' + ' preparing branch #' + String(index + 1));
+                if (!config?.sharePayload) {
+                    branchClone.payload = QuickActionTools.toText(clone.payload);
+                }
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+    }
+{
+        id: 'imagination-action-kindle-18',
+        category: 'action',
+        name: 'Kindle Notebook',
+        nameKey: null,
+        description: 'Helps kindle the workflow narrative using the notebook pattern.',
+        descriptionKey: null,
+        icon: 'book',
+        accent: '#34d399',
+        tags: [
+    'action',
+    'notebook',
+    'kindle'
+],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+    title: 'Kindle journal',
+    capture: '{{payload}}',
+    tag: 'kindle',
+    limit: 50
+},
+        form: [
+    {
+        key: 'title',
+        label: 'Title',
+        type: 'text',
+        placeholder: 'Kindle journal'
+    },
+    {
+        key: 'capture',
+        label: 'Capture template',
+        type: 'textarea',
+        rows: 3,
+        placeholder: '{{payload}}'
+    },
+    {
+        key: 'tag',
+        label: 'Tag',
+        type: 'text',
+        placeholder: 'kindle'
+    },
+    {
+        key: 'limit',
+        label: 'Entry limit',
+        type: 'number',
+        min: 1,
+        max: 200
+    }
+],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const title = QuickActionTools.applyTemplate(config?.title ?? '', clone, config);
+            const capture = QuickActionTools.applyTemplate(config?.capture ?? '{payload}', clone, config);
+            const tag = QuickActionTools.applyTemplate(config?.tag ?? '', clone, config);
+            const limit = Math.max(1, Math.min(200, parseInt(config?.limit ?? 50, 10) || 50));
+            clone.vars['imagination_action_kindle_18'] = clone.vars['imagination_action_kindle_18'] || { entries: [] };
+            const store = clone.vars['imagination_action_kindle_18'];
+            store.entries = store.entries || [];
+            store.entries.unshift({ title, capture, tag, timestamp: new Date().toISOString() });
+            if (store.entries.length > limit) {
+                store.entries = store.entries.slice(0, limit);
+            }
+            clone.logs.push('Kindle Notebook' + ' captured an entry with tag ' + tag + '.');
+            return [clone];
+        }
+    }
+{
+        id: 'imagination-action-pilot-19',
+        category: 'action',
+        name: 'Pilot Tracker',
+        nameKey: null,
+        description: 'Helps pilot the workflow narrative using the tracker pattern.',
+        descriptionKey: null,
+        icon: 'activity',
+        accent: '#a855f7',
+        tags: [
+    'action',
+    'tracker',
+    'pilot'
+],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+    counterKey: 'pilot',
+    increment: 1,
+    resetThreshold: 0,
+    emitSummary: true
+},
+        form: [
+    {
+        key: 'counterKey',
+        label: 'Counter key',
+        type: 'text',
+        placeholder: 'pilot'
+    },
+    {
+        key: 'increment',
+        label: 'Increment',
+        type: 'number',
+        min: -1000,
+        max: 1000
+    },
+    {
+        key: 'resetThreshold',
+        label: 'Reset at',
+        type: 'number',
+        min: -1000,
+        max: 1000
+    },
+    {
+        key: 'emitSummary',
+        label: 'Emit summary into payload',
+        type: 'checkbox'
+    }
+],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = QuickActionTools.applyTemplate(config?.counterKey ?? '', clone, config);
+            const increment = parseFloat(config?.increment ?? 1) || 0;
+            const resetThreshold = parseFloat(config?.resetThreshold ?? 0) || 0;
+            clone.vars['imagination_action_pilot_19'] = clone.vars['imagination_action_pilot_19'] || {};
+            const store = clone.vars['imagination_action_pilot_19'];
+            store.counters = store.counters || {};
+            const current = store.counters[key] || 0;
+            let nextValue = current + increment;
+            if (resetThreshold && Math.abs(nextValue) >= Math.abs(resetThreshold)) {
+                nextValue = 0;
+            }
+            store.counters[key] = nextValue;
+            clone.logs.push('Pilot Tracker' + ' set counter ' + key + ' to ' + String(nextValue));
+            if (config?.emitSummary) {
+                clone.payload = `Counter ${key}: ${nextValue}`;
+            }
+            return [clone];
+        }
+    }
+{
+    id: 'imagination-action-etch-20',
+    category: 'action',
+    name: 'Etch Harmonizer',
+    nameKey: null,
+    description: 'Helps etch the workflow narrative using the harmonizer pattern.',
+    descriptionKey: null,
+    icon: 'shuffle',
+    accent: '#facc15',
+    tags: [
+    'action',
+    'harmonizer',
+    'etch'
+],
+    inputs: [{ id: 'input', label: 'Input' }],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    primary: 'Etch',
+    secondary: 'etch',
+    mode: 'blend',
+    fanOut: false
+},
+    form: [
+    {
+        key: 'primary',
+        label: 'Primary word',
+        type: 'text',
+        placeholder: 'Etch'
+    },
+    {
+        key: 'secondary',
+        label: 'Secondary word',
+        type: 'text',
+        placeholder: 'etch'
+    },
+    {
+        key: 'mode',
+        label: 'Mode',
+        type: 'select',
+        options: [
+            {
+                value: 'blend',
+                label: 'Blend'
+            },
+            {
+                value: 'alternate',
+                label: 'Alternate'
+            },
+            {
+                value: 'mirror',
+                label: 'Mirror'
+            }
+        ]
+    },
+    {
+        key: 'fanOut',
+        label: 'Create harmonic clones',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const primary = QuickActionTools.applyTemplate(config?.primary ?? '', clone, config);
+        const secondary = QuickActionTools.applyTemplate(config?.secondary ?? '', clone, config);
+        const mode = config?.mode || 'blend';
+        const base = QuickActionTools.toText(clone.payload);
+        let output = '';
+        if (mode === 'alternate') {
+            const words = base.split(/\s+/).filter(Boolean);
+            output = words.map((word, index) => (index % 2 === 0 ? `${primary} ${word}` : `${secondary} ${word}`)).join(' ');
+        } else if (mode === 'mirror') {
+            output = `${primary} ${base.split('').reverse().join('')} ${secondary}`;
+        } else {
+            output = `${primary} ${base} ${secondary}`;
+        }
+        clone.payload = output.trim();
+        clone.logs.push('Etch Harmonizer' + ' harmonized payload using mode ' + mode + '.');
+        if (config?.fanOut) {
+            const clones = [];
+            for (let index = 0; index < 3; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars['imagination_action_etch_20'] = branchClone.vars['imagination_action_etch_20'] || {};
+                branchClone.vars['imagination_action_etch_20'].mode = mode;
+                branchClone.vars['imagination_action_etch_20'].index = index;
+                branchClone.logs.push('Etch Harmonizer' + ' fan-out clone #' + String(index + 1));
+                clones.push(branchClone);
+            }
+            return clones;
+        }
+        return [clone];
+    }
+}
+{
+                id: 'imagination-action-braid-21',
+                category: 'action',
+                name: 'Braid Relay',
+                nameKey: null,
+                description: 'Helps braid the workflow narrative using the relay pattern.',
+                descriptionKey: null,
+                icon: 'zap',
+                accent: '#38bdf8',
+                tags: [
+            'action',
+            'relay',
+            'braid'
+        ],
+                inputs: [{ id: 'input', label: 'Input' }],
+                outputs: [{ id: 'next', label: 'Next' }],
+                defaultConfig: {
+            headline: 'Braid headline',
+            body: '{{payload}}',
+            footer: '',
+            updatePayload: true
+        },
+                form: [
+            {
+                key: 'headline',
+                label: 'Headline',
+                type: 'text',
+                placeholder: 'Braid headline'
+            },
+            {
+                key: 'body',
+                label: 'Body template',
+                type: 'textarea',
+                rows: 4,
+                placeholder: '{{payload}}'
+            },
+            {
+                key: 'footer',
+                label: 'Footer',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                key: 'updatePayload',
+                label: 'Write back to payload',
+                type: 'checkbox'
+            }
+        ],
+                run: async (context, config) => {
+                    const clone = QuickActionContext.clone(context);
+                    const headline = QuickActionTools.applyTemplate(config?.headline ?? '', clone, config);
+                    const body = QuickActionTools.applyTemplate(config?.body ?? '{payload}', clone, config);
+                    const footer = QuickActionTools.applyTemplate(config?.footer ?? '', clone, config);
+                    const composed = [headline, body, footer].filter(Boolean).join('
+
+');
+                    clone.logs.push('Braid Relay' + ' relayed a composed message.');
+                    clone.vars['imagination_action_braid_21'] = clone.vars['imagination_action_braid_21'] || {};
+                    clone.vars['imagination_action_braid_21'].message = composed;
+                    if (config?.updatePayload) {
+                        clone.payload = composed;
+                    }
+                    return [clone];
+                }
+            }
+{
+        id: 'imagination-action-refine-22',
+        category: 'action',
+        name: 'Refine Branch',
+        nameKey: null,
+        description: 'Helps refine the workflow narrative using the branch pattern.',
+        descriptionKey: null,
+        icon: 'share-2',
+        accent: '#f97316',
+        tags: [
+    'action',
+    'branch',
+    'refine'
+],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+    branchCount: 3,
+    label: 'Refine branch',
+    sharePayload: true,
+    note: ''
+},
+        form: [
+    {
+        key: 'branchCount',
+        label: 'Branch count',
+        type: 'number',
+        min: 1,
+        max: 10
+    },
+    {
+        key: 'label',
+        label: 'Branch label',
+        type: 'text',
+        placeholder: 'Refine branch'
+    },
+    {
+        key: 'sharePayload',
+        label: 'Share payload with branches',
+        type: 'checkbox'
+    },
+    {
+        key: 'note',
+        label: 'Note',
+        type: 'text',
+        placeholder: ''
+    }
+],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const branchCount = Math.max(1, Math.min(10, parseInt(config?.branchCount ?? 1, 10) || 1));
+            const label = QuickActionTools.applyTemplate(config?.label ?? '', clone, config);
+            const note = QuickActionTools.applyTemplate(config?.note ?? '', clone, config);
+            const branches = [];
+            for (let index = 0; index < branchCount; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars['imagination_action_refine_22'] = branchClone.vars['imagination_action_refine_22'] || {};
+                branchClone.vars['imagination_action_refine_22'].index = index;
+                branchClone.vars['imagination_action_refine_22'].label = label;
+                branchClone.vars['imagination_action_refine_22'].note = note;
+                branchClone.logs.push('Refine Branch' + ' preparing branch #' + String(index + 1));
+                if (!config?.sharePayload) {
+                    branchClone.payload = QuickActionTools.toText(clone.payload);
+                }
+                branches.push(branchClone);
+            }
+            return branches;
+        }
+    }
+{
+        id: 'imagination-action-narrate-23',
+        category: 'action',
+        name: 'Narrate Notebook',
+        nameKey: null,
+        description: 'Helps narrate the workflow narrative using the notebook pattern.',
+        descriptionKey: null,
+        icon: 'book',
+        accent: '#34d399',
+        tags: [
+    'action',
+    'notebook',
+    'narrate'
+],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+    title: 'Narrate journal',
+    capture: '{{payload}}',
+    tag: 'narrate',
+    limit: 50
+},
+        form: [
+    {
+        key: 'title',
+        label: 'Title',
+        type: 'text',
+        placeholder: 'Narrate journal'
+    },
+    {
+        key: 'capture',
+        label: 'Capture template',
+        type: 'textarea',
+        rows: 3,
+        placeholder: '{{payload}}'
+    },
+    {
+        key: 'tag',
+        label: 'Tag',
+        type: 'text',
+        placeholder: 'narrate'
+    },
+    {
+        key: 'limit',
+        label: 'Entry limit',
+        type: 'number',
+        min: 1,
+        max: 200
+    }
+],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const title = QuickActionTools.applyTemplate(config?.title ?? '', clone, config);
+            const capture = QuickActionTools.applyTemplate(config?.capture ?? '{payload}', clone, config);
+            const tag = QuickActionTools.applyTemplate(config?.tag ?? '', clone, config);
+            const limit = Math.max(1, Math.min(200, parseInt(config?.limit ?? 50, 10) || 50));
+            clone.vars['imagination_action_narrate_23'] = clone.vars['imagination_action_narrate_23'] || { entries: [] };
+            const store = clone.vars['imagination_action_narrate_23'];
+            store.entries = store.entries || [];
+            store.entries.unshift({ title, capture, tag, timestamp: new Date().toISOString() });
+            if (store.entries.length > limit) {
+                store.entries = store.entries.slice(0, limit);
+            }
+            clone.logs.push('Narrate Notebook' + ' captured an entry with tag ' + tag + '.');
+            return [clone];
+        }
+    }
+{
+        id: 'imagination-action-balance-24',
+        category: 'action',
+        name: 'Balance Tracker',
+        nameKey: null,
+        description: 'Helps balance the workflow narrative using the tracker pattern.',
+        descriptionKey: null,
+        icon: 'activity',
+        accent: '#a855f7',
+        tags: [
+    'action',
+    'tracker',
+    'balance'
+],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {
+    counterKey: 'balance',
+    increment: 1,
+    resetThreshold: 0,
+    emitSummary: true
+},
+        form: [
+    {
+        key: 'counterKey',
+        label: 'Counter key',
+        type: 'text',
+        placeholder: 'balance'
+    },
+    {
+        key: 'increment',
+        label: 'Increment',
+        type: 'number',
+        min: -1000,
+        max: 1000
+    },
+    {
+        key: 'resetThreshold',
+        label: 'Reset at',
+        type: 'number',
+        min: -1000,
+        max: 1000
+    },
+    {
+        key: 'emitSummary',
+        label: 'Emit summary into payload',
+        type: 'checkbox'
+    }
+],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = QuickActionTools.applyTemplate(config?.counterKey ?? '', clone, config);
+            const increment = parseFloat(config?.increment ?? 1) || 0;
+            const resetThreshold = parseFloat(config?.resetThreshold ?? 0) || 0;
+            clone.vars['imagination_action_balance_24'] = clone.vars['imagination_action_balance_24'] || {};
+            const store = clone.vars['imagination_action_balance_24'];
+            store.counters = store.counters || {};
+            const current = store.counters[key] || 0;
+            let nextValue = current + increment;
+            if (resetThreshold && Math.abs(nextValue) >= Math.abs(resetThreshold)) {
+                nextValue = 0;
+            }
+            store.counters[key] = nextValue;
+            clone.logs.push('Balance Tracker' + ' set counter ' + key + ' to ' + String(nextValue));
+            if (config?.emitSummary) {
+                clone.payload = `Counter ${key}: ${nextValue}`;
+            }
+            return [clone];
+        }
+    }
+{
+    id: 'imagination-action-trace-25',
+    category: 'action',
+    name: 'Trace Harmonizer',
+    nameKey: null,
+    description: 'Helps trace the workflow narrative using the harmonizer pattern.',
+    descriptionKey: null,
+    icon: 'shuffle',
+    accent: '#facc15',
+    tags: [
+    'action',
+    'harmonizer',
+    'trace'
+],
+    inputs: [{ id: 'input', label: 'Input' }],
+    outputs: [{ id: 'next', label: 'Next' }],
+    defaultConfig: {
+    primary: 'Trace',
+    secondary: 'trace',
+    mode: 'blend',
+    fanOut: false
+},
+    form: [
+    {
+        key: 'primary',
+        label: 'Primary word',
+        type: 'text',
+        placeholder: 'Trace'
+    },
+    {
+        key: 'secondary',
+        label: 'Secondary word',
+        type: 'text',
+        placeholder: 'trace'
+    },
+    {
+        key: 'mode',
+        label: 'Mode',
+        type: 'select',
+        options: [
+            {
+                value: 'blend',
+                label: 'Blend'
+            },
+            {
+                value: 'alternate',
+                label: 'Alternate'
+            },
+            {
+                value: 'mirror',
+                label: 'Mirror'
+            }
+        ]
+    },
+    {
+        key: 'fanOut',
+        label: 'Create harmonic clones',
+        type: 'checkbox'
+    }
+],
+    run: async (context, config) => {
+        const clone = QuickActionContext.clone(context);
+        const primary = QuickActionTools.applyTemplate(config?.primary ?? '', clone, config);
+        const secondary = QuickActionTools.applyTemplate(config?.secondary ?? '', clone, config);
+        const mode = config?.mode || 'blend';
+        const base = QuickActionTools.toText(clone.payload);
+        let output = '';
+        if (mode === 'alternate') {
+            const words = base.split(/\s+/).filter(Boolean);
+            output = words.map((word, index) => (index % 2 === 0 ? `${primary} ${word}` : `${secondary} ${word}`)).join(' ');
+        } else if (mode === 'mirror') {
+            output = `${primary} ${base.split('').reverse().join('')} ${secondary}`;
+        } else {
+            output = `${primary} ${base} ${secondary}`;
+        }
+        clone.payload = output.trim();
+        clone.logs.push('Trace Harmonizer' + ' harmonized payload using mode ' + mode + '.');
+        if (config?.fanOut) {
+            const clones = [];
+            for (let index = 0; index < 3; index += 1) {
+                const branchClone = QuickActionContext.clone(clone);
+                branchClone.vars['imagination_action_trace_25'] = branchClone.vars['imagination_action_trace_25'] || {};
+                branchClone.vars['imagination_action_trace_25'].mode = mode;
+                branchClone.vars['imagination_action_trace_25'].index = index;
+                branchClone.logs.push('Trace Harmonizer' + ' fan-out clone #' + String(index + 1));
+                clones.push(branchClone);
+            }
+            return clones;
+        }
+        return [clone];
+    }
+}
+];
+QuickActionModuleDefinitions.push(...QuickActionImaginationModules);
+
 const QuickActionAdditionalModules = [
     createAiChatModule({
         id: 'ai-chat-assistant',
