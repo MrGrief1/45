@@ -13333,7 +13333,15 @@ const QuickActionManager = {
     render() {
         if (!this.container) return;
         QuickActionStore.ensureStructure();
-        const activeIds = QuickActionStore.getActiveIds();
+        const hasBuilder = !!(AppState.settings?.subscription?.entitlements?.hasAddonBuilder);
+        const activeIdsRaw = QuickActionStore.getActiveIds();
+        // Если Pro не активна — показываем только встроенные действия, скрываем пользовательские
+        const idsToRender = (() => {
+            if (hasBuilder) return activeIdsRaw;
+            const customSet = new Set((QuickActionStore.getCustomActions() || []).map(a => a.id));
+            return activeIdsRaw.filter(id => !customSet.has(id));
+        })();
+        const activeIds = idsToRender;
         this.container.innerHTML = '';
 
         if (!activeIds.length) {
@@ -15009,10 +15017,15 @@ const QuickActionLab = {
 
     showConfirm(message, title = '') {
         return new Promise((resolve) => {
-            if (!this.elements.confirmDialog) {
-                resolve(false);
+            // Если модалка билдера скрыта, используем нативный confirm, чтобы диалог не "прятался" внутри редактора
+            const modalHidden = !this.elements?.modal || this.elements.modal.getAttribute('aria-hidden') !== 'false';
+            if (modalHidden) {
+                try { resolve(window.confirm(String(message || 'Are you sure?'))); }
+                catch { resolve(false); }
                 return;
             }
+
+            if (!this.elements.confirmDialog) { resolve(false); return; }
 
             if (this.elements.confirmMessage) {
                 this.elements.confirmMessage.textContent = message;
