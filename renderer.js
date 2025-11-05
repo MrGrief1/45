@@ -3401,7 +3401,9638 @@ const QuickActionAdditionalModules = [
     }
 ];
 
+const QuickActionFantasyModules = [
+    {
+        id: 'fantasy-trigger-aurora-pulse',
+        category: 'trigger',
+        name: 'Aurora pulse trigger',
+        description: 'Wake flows whenever shimmering auroras pulse across your workspace.',
+        icon: 'sunrise',
+        accent: '#a78bfa',
+        tags: ['trigger', 'aurora', 'pulse', 'fantasy'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { intensity: 'medium', loops: 1, tempo: 2, includeBase: true, label: 'Aurora memory band' },
+        form: [
+            {
+                key: 'intensity',
+                label: 'Intensity',
+                type: 'select',
+                options: [
+                    { value: 'calm', label: 'Calm' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'bold', label: 'Bold' }
+                ]
+            },
+            { key: 'loops', label: 'Loops', type: 'number', min: 1, max: 9 },
+            { key: 'tempo', label: 'Tempo', type: 'number', min: 1, max: 12 },
+            { key: 'includeBase', label: 'Include base payload', type: 'checkbox' },
+            { key: 'label', label: 'Label', type: 'text', placeholder: 'Aurora memory band' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const intensity = String(config?.intensity || 'medium').toLowerCase();
+            const loops = Math.max(1, parseInt(config?.loops, 10) || 1);
+            const tempo = Math.max(1, parseInt(config?.tempo, 10) || 1);
+            const includeBase = config?.includeBase !== false;
+            const label = (config?.label || 'Aurora memory band').trim() || 'Aurora memory band';
+            const fragments = [
+                'Aurora pulse trigger fragment glittering aurora sequence 1',
+                'Aurora pulse trigger fragment flowing celestial sequence 2',
+                'Aurora pulse trigger fragment spinning curtain sequence 3',
+                'Aurora pulse trigger fragment looping polar sequence 4',
+                'Aurora pulse trigger fragment vibrant glow sequence 5',
+                'Aurora pulse trigger fragment wandering whisper sequence 6',
+                'Aurora pulse trigger fragment braided starlit sequence 7',
+                'Aurora pulse trigger fragment singing veil sequence 8',
+                'Aurora pulse trigger fragment humming aurora sequence 9',
+                'Aurora pulse trigger fragment simmering celestial sequence 10',
+                'Aurora pulse trigger fragment glittering curtain sequence 11',
+                'Aurora pulse trigger fragment flowing polar sequence 12',
+                'Aurora pulse trigger fragment spinning glow sequence 13',
+                'Aurora pulse trigger fragment looping whisper sequence 14',
+                'Aurora pulse trigger fragment vibrant starlit sequence 15',
+                'Aurora pulse trigger fragment wandering veil sequence 16',
+                'Aurora pulse trigger fragment braided aurora sequence 17',
+                'Aurora pulse trigger fragment singing celestial sequence 18',
+                'Aurora pulse trigger fragment humming curtain sequence 19',
+                'Aurora pulse trigger fragment simmering polar sequence 20',
+                'Aurora pulse trigger fragment glittering glow sequence 21',
+                'Aurora pulse trigger fragment flowing whisper sequence 22',
+                'Aurora pulse trigger fragment spinning starlit sequence 23',
+                'Aurora pulse trigger fragment looping veil sequence 24',
+                'Aurora pulse trigger fragment vibrant aurora sequence 25',
+            ];
+            const moods = [
+                'Aurora pulse trigger mood dawn aurora sequence 1',
+                'Aurora pulse trigger mood twilight celestial sequence 2',
+                'Aurora pulse trigger mood echo curtain sequence 3',
+                'Aurora pulse trigger mood glow polar sequence 4',
+                'Aurora pulse trigger mood spark glow sequence 5',
+                'Aurora pulse trigger mood tide whisper sequence 6',
+                'Aurora pulse trigger mood whisper starlit sequence 7',
+                'Aurora pulse trigger mood hum veil sequence 8',
+                'Aurora pulse trigger mood pulse aurora sequence 9',
+                'Aurora pulse trigger mood chorus celestial sequence 10',
+                'Aurora pulse trigger mood dawn curtain sequence 11',
+                'Aurora pulse trigger mood twilight polar sequence 12',
+                'Aurora pulse trigger mood echo glow sequence 13',
+                'Aurora pulse trigger mood glow whisper sequence 14',
+                'Aurora pulse trigger mood spark starlit sequence 15',
+                'Aurora pulse trigger mood tide veil sequence 16',
+                'Aurora pulse trigger mood whisper aurora sequence 17',
+                'Aurora pulse trigger mood hum celestial sequence 18',
+                'Aurora pulse trigger mood pulse curtain sequence 19',
+                'Aurora pulse trigger mood chorus polar sequence 20',
+                'Aurora pulse trigger mood dawn glow sequence 21',
+                'Aurora pulse trigger mood twilight whisper sequence 22',
+                'Aurora pulse trigger mood echo starlit sequence 23',
+                'Aurora pulse trigger mood glow veil sequence 24',
+                'Aurora pulse trigger mood spark aurora sequence 25',
+            ];
+            const connectors = [
+                'Aurora pulse trigger connector weaving aurora sequence 1',
+                'Aurora pulse trigger connector braiding celestial sequence 2',
+                'Aurora pulse trigger connector linking curtain sequence 3',
+                'Aurora pulse trigger connector stitching polar sequence 4',
+                'Aurora pulse trigger connector guiding glow sequence 5',
+                'Aurora pulse trigger connector threading whisper sequence 6',
+                'Aurora pulse trigger connector folding starlit sequence 7',
+                'Aurora pulse trigger connector mapping veil sequence 8',
+                'Aurora pulse trigger connector casting aurora sequence 9',
+                'Aurora pulse trigger connector painting celestial sequence 10',
+                'Aurora pulse trigger connector weaving curtain sequence 11',
+                'Aurora pulse trigger connector braiding polar sequence 12',
+                'Aurora pulse trigger connector linking glow sequence 13',
+                'Aurora pulse trigger connector stitching whisper sequence 14',
+                'Aurora pulse trigger connector guiding starlit sequence 15',
+                'Aurora pulse trigger connector threading veil sequence 16',
+                'Aurora pulse trigger connector folding aurora sequence 17',
+                'Aurora pulse trigger connector mapping celestial sequence 18',
+                'Aurora pulse trigger connector casting curtain sequence 19',
+                'Aurora pulse trigger connector painting polar sequence 20',
+                'Aurora pulse trigger connector weaving glow sequence 21',
+                'Aurora pulse trigger connector braiding whisper sequence 22',
+                'Aurora pulse trigger connector linking starlit sequence 23',
+                'Aurora pulse trigger connector stitching veil sequence 24',
+                'Aurora pulse trigger connector guiding aurora sequence 25',
+            ];
+            const details = [
+                'Aurora pulse trigger detail over valleys aurora sequence 1',
+                'Aurora pulse trigger detail within galleries celestial sequence 2',
+                'Aurora pulse trigger detail across skylines curtain sequence 3',
+                'Aurora pulse trigger detail through spirals polar sequence 4',
+                'Aurora pulse trigger detail inside lanterns glow sequence 5',
+                'Aurora pulse trigger detail beyond harbors whisper sequence 6',
+                'Aurora pulse trigger detail beneath constellations starlit sequence 7',
+                'Aurora pulse trigger detail among terraces veil sequence 8',
+                'Aurora pulse trigger detail into archives aurora sequence 9',
+                'Aurora pulse trigger detail around rivers celestial sequence 10',
+                'Aurora pulse trigger detail over valleys curtain sequence 11',
+                'Aurora pulse trigger detail within galleries polar sequence 12',
+                'Aurora pulse trigger detail across skylines glow sequence 13',
+                'Aurora pulse trigger detail through spirals whisper sequence 14',
+                'Aurora pulse trigger detail inside lanterns starlit sequence 15',
+                'Aurora pulse trigger detail beyond harbors veil sequence 16',
+                'Aurora pulse trigger detail beneath constellations aurora sequence 17',
+                'Aurora pulse trigger detail among terraces celestial sequence 18',
+                'Aurora pulse trigger detail into archives curtain sequence 19',
+                'Aurora pulse trigger detail around rivers polar sequence 20',
+                'Aurora pulse trigger detail over valleys glow sequence 21',
+                'Aurora pulse trigger detail within galleries whisper sequence 22',
+                'Aurora pulse trigger detail across skylines starlit sequence 23',
+                'Aurora pulse trigger detail through spirals veil sequence 24',
+                'Aurora pulse trigger detail inside lanterns aurora sequence 25',
+            ];
+            const compositions = [];
+            for (let cycle = 0; cycle < loops; cycle++) {
+                for (let index = 0; index < fragments.length; index++) {
+                    const fragment = fragments[index];
+                    const mood = moods[(index + cycle) % moods.length];
+                    const connector = connectors[(index + tempo + cycle) % connectors.length];
+                    const detail = details[(index + loops + cycle) % details.length];
+                    const amplitude = ((index + 1) % (tempo + 1)) + cycle;
+                    compositions.push({
+                        fragment,
+                        mood,
+                        connector,
+                        detail,
+                        cycle: cycle + 1,
+                        beat: index + 1,
+                        amplitude,
+                        intensity
+                    });
+                }
+            }
+            const curatedLines = [];
+            compositions.forEach((item, index) => {
+                const emphasiser = index % 2 === 0 ? '>' : '~';
+                const descriptor = `${label} | cycle ${item.cycle} | beat ${item.beat} | ${item.fragment} | ${item.mood} | ${item.connector} | ${item.detail} | amplitude ${item.amplitude} | intensity ${item.intensity}`;
+                curatedLines.push(`${emphasiser} ${descriptor}`);
+                if ((index + 1) % tempo === 0) {
+                    curatedLines.push(`tempo-marker ${tempo} :: segment ${index + 1}`);
+                }
+                if (index % 3 === 0) {
+                    curatedLines.push(`echo ${index + 1} :: ${label} weaving ${item.connector}`);
+                }
+            });
+            const layered = [];
+            for (let index = 0; index < curatedLines.length; index++) {
+                const focus = curatedLines[index];
+                layered.push(`${label} swirl ${index + 1} => ${focus}`);
+                if (index % 4 === 0) {
+                    layered.push(`${label} harmonic ${index + 1} tempo ${tempo}`);
+                }
+            }
+            const ensemble = layered.concat(curatedLines);
+            const deduplicated = [];
+            const seen = new Set();
+            ensemble.forEach((item) => {
+                if (!seen.has(item)) {
+                    deduplicated.push(item);
+                    seen.add(item);
+                }
+            });
+            const trimmedBase = basePayload.trim();
+            if (includeBase && trimmedBase) {
+                deduplicated.unshift(`base-payload :: ${trimmedBase}`);
+            }
+            const numbered = deduplicated.map((line, index) => `${index + 1}. ${line}`);
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_trigger_aurora_pulse';
+            clone.vars[`${safeKey}_intensity`] = intensity;
+            clone.vars[`${safeKey}_compositions`] = compositions.length;
+            clone.vars[`${safeKey}_label`] = label;
+            clone.vars[`${safeKey}_entries`] = numbered.length;
+            clone.payload = numbered.join(newlineChar);
+            clone.logs.push('Aurora pulse trigger emitted aurora memory band sequences.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-trigger-echo-harvest',
+        category: 'trigger',
+        name: 'Echo harvest trigger',
+        description: 'Start sequences when echoing ideas gather into shimmering clusters.',
+        icon: 'radio',
+        accent: '#f472b6',
+        tags: ['trigger', 'echo', 'harvest', 'fantasy'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { intensity: 'medium', loops: 1, tempo: 2, includeBase: true, label: 'Echo harvest chart' },
+        form: [
+            {
+                key: 'intensity',
+                label: 'Intensity',
+                type: 'select',
+                options: [
+                    { value: 'calm', label: 'Calm' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'bold', label: 'Bold' }
+                ]
+            },
+            { key: 'loops', label: 'Loops', type: 'number', min: 1, max: 9 },
+            { key: 'tempo', label: 'Tempo', type: 'number', min: 1, max: 12 },
+            { key: 'includeBase', label: 'Include base payload', type: 'checkbox' },
+            { key: 'label', label: 'Label', type: 'text', placeholder: 'Echo harvest chart' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const intensity = String(config?.intensity || 'medium').toLowerCase();
+            const loops = Math.max(1, parseInt(config?.loops, 10) || 1);
+            const tempo = Math.max(1, parseInt(config?.tempo, 10) || 1);
+            const includeBase = config?.includeBase !== false;
+            const label = (config?.label || 'Echo harvest chart').trim() || 'Echo harvest chart';
+            const fragments = [
+                'Echo harvest trigger fragment glittering echo sequence 1',
+                'Echo harvest trigger fragment flowing harvest sequence 2',
+                'Echo harvest trigger fragment spinning resonance sequence 3',
+                'Echo harvest trigger fragment looping gather sequence 4',
+                'Echo harvest trigger fragment vibrant cluster sequence 5',
+                'Echo harvest trigger fragment wandering gleam sequence 6',
+                'Echo harvest trigger fragment braided cycle sequence 7',
+                'Echo harvest trigger fragment singing orchard sequence 8',
+                'Echo harvest trigger fragment humming echo sequence 9',
+                'Echo harvest trigger fragment simmering harvest sequence 10',
+                'Echo harvest trigger fragment glittering resonance sequence 11',
+                'Echo harvest trigger fragment flowing gather sequence 12',
+                'Echo harvest trigger fragment spinning cluster sequence 13',
+                'Echo harvest trigger fragment looping gleam sequence 14',
+                'Echo harvest trigger fragment vibrant cycle sequence 15',
+                'Echo harvest trigger fragment wandering orchard sequence 16',
+                'Echo harvest trigger fragment braided echo sequence 17',
+                'Echo harvest trigger fragment singing harvest sequence 18',
+                'Echo harvest trigger fragment humming resonance sequence 19',
+                'Echo harvest trigger fragment simmering gather sequence 20',
+                'Echo harvest trigger fragment glittering cluster sequence 21',
+                'Echo harvest trigger fragment flowing gleam sequence 22',
+                'Echo harvest trigger fragment spinning cycle sequence 23',
+                'Echo harvest trigger fragment looping orchard sequence 24',
+                'Echo harvest trigger fragment vibrant echo sequence 25',
+            ];
+            const moods = [
+                'Echo harvest trigger mood dawn echo sequence 1',
+                'Echo harvest trigger mood twilight harvest sequence 2',
+                'Echo harvest trigger mood echo resonance sequence 3',
+                'Echo harvest trigger mood glow gather sequence 4',
+                'Echo harvest trigger mood spark cluster sequence 5',
+                'Echo harvest trigger mood tide gleam sequence 6',
+                'Echo harvest trigger mood whisper cycle sequence 7',
+                'Echo harvest trigger mood hum orchard sequence 8',
+                'Echo harvest trigger mood pulse echo sequence 9',
+                'Echo harvest trigger mood chorus harvest sequence 10',
+                'Echo harvest trigger mood dawn resonance sequence 11',
+                'Echo harvest trigger mood twilight gather sequence 12',
+                'Echo harvest trigger mood echo cluster sequence 13',
+                'Echo harvest trigger mood glow gleam sequence 14',
+                'Echo harvest trigger mood spark cycle sequence 15',
+                'Echo harvest trigger mood tide orchard sequence 16',
+                'Echo harvest trigger mood whisper echo sequence 17',
+                'Echo harvest trigger mood hum harvest sequence 18',
+                'Echo harvest trigger mood pulse resonance sequence 19',
+                'Echo harvest trigger mood chorus gather sequence 20',
+                'Echo harvest trigger mood dawn cluster sequence 21',
+                'Echo harvest trigger mood twilight gleam sequence 22',
+                'Echo harvest trigger mood echo cycle sequence 23',
+                'Echo harvest trigger mood glow orchard sequence 24',
+                'Echo harvest trigger mood spark echo sequence 25',
+            ];
+            const connectors = [
+                'Echo harvest trigger connector weaving echo sequence 1',
+                'Echo harvest trigger connector braiding harvest sequence 2',
+                'Echo harvest trigger connector linking resonance sequence 3',
+                'Echo harvest trigger connector stitching gather sequence 4',
+                'Echo harvest trigger connector guiding cluster sequence 5',
+                'Echo harvest trigger connector threading gleam sequence 6',
+                'Echo harvest trigger connector folding cycle sequence 7',
+                'Echo harvest trigger connector mapping orchard sequence 8',
+                'Echo harvest trigger connector casting echo sequence 9',
+                'Echo harvest trigger connector painting harvest sequence 10',
+                'Echo harvest trigger connector weaving resonance sequence 11',
+                'Echo harvest trigger connector braiding gather sequence 12',
+                'Echo harvest trigger connector linking cluster sequence 13',
+                'Echo harvest trigger connector stitching gleam sequence 14',
+                'Echo harvest trigger connector guiding cycle sequence 15',
+                'Echo harvest trigger connector threading orchard sequence 16',
+                'Echo harvest trigger connector folding echo sequence 17',
+                'Echo harvest trigger connector mapping harvest sequence 18',
+                'Echo harvest trigger connector casting resonance sequence 19',
+                'Echo harvest trigger connector painting gather sequence 20',
+                'Echo harvest trigger connector weaving cluster sequence 21',
+                'Echo harvest trigger connector braiding gleam sequence 22',
+                'Echo harvest trigger connector linking cycle sequence 23',
+                'Echo harvest trigger connector stitching orchard sequence 24',
+                'Echo harvest trigger connector guiding echo sequence 25',
+            ];
+            const details = [
+                'Echo harvest trigger detail over valleys echo sequence 1',
+                'Echo harvest trigger detail within galleries harvest sequence 2',
+                'Echo harvest trigger detail across skylines resonance sequence 3',
+                'Echo harvest trigger detail through spirals gather sequence 4',
+                'Echo harvest trigger detail inside lanterns cluster sequence 5',
+                'Echo harvest trigger detail beyond harbors gleam sequence 6',
+                'Echo harvest trigger detail beneath constellations cycle sequence 7',
+                'Echo harvest trigger detail among terraces orchard sequence 8',
+                'Echo harvest trigger detail into archives echo sequence 9',
+                'Echo harvest trigger detail around rivers harvest sequence 10',
+                'Echo harvest trigger detail over valleys resonance sequence 11',
+                'Echo harvest trigger detail within galleries gather sequence 12',
+                'Echo harvest trigger detail across skylines cluster sequence 13',
+                'Echo harvest trigger detail through spirals gleam sequence 14',
+                'Echo harvest trigger detail inside lanterns cycle sequence 15',
+                'Echo harvest trigger detail beyond harbors orchard sequence 16',
+                'Echo harvest trigger detail beneath constellations echo sequence 17',
+                'Echo harvest trigger detail among terraces harvest sequence 18',
+                'Echo harvest trigger detail into archives resonance sequence 19',
+                'Echo harvest trigger detail around rivers gather sequence 20',
+                'Echo harvest trigger detail over valleys cluster sequence 21',
+                'Echo harvest trigger detail within galleries gleam sequence 22',
+                'Echo harvest trigger detail across skylines cycle sequence 23',
+                'Echo harvest trigger detail through spirals orchard sequence 24',
+                'Echo harvest trigger detail inside lanterns echo sequence 25',
+            ];
+            const compositions = [];
+            for (let cycle = 0; cycle < loops; cycle++) {
+                for (let index = 0; index < fragments.length; index++) {
+                    const fragment = fragments[index];
+                    const mood = moods[(index + cycle) % moods.length];
+                    const connector = connectors[(index + tempo + cycle) % connectors.length];
+                    const detail = details[(index + loops + cycle) % details.length];
+                    const amplitude = ((index + 1) % (tempo + 1)) + cycle;
+                    compositions.push({
+                        fragment,
+                        mood,
+                        connector,
+                        detail,
+                        cycle: cycle + 1,
+                        beat: index + 1,
+                        amplitude,
+                        intensity
+                    });
+                }
+            }
+            const curatedLines = [];
+            compositions.forEach((item, index) => {
+                const emphasiser = index % 2 === 0 ? '>' : '~';
+                const descriptor = `${label} | cycle ${item.cycle} | beat ${item.beat} | ${item.fragment} | ${item.mood} | ${item.connector} | ${item.detail} | amplitude ${item.amplitude} | intensity ${item.intensity}`;
+                curatedLines.push(`${emphasiser} ${descriptor}`);
+                if ((index + 1) % tempo === 0) {
+                    curatedLines.push(`tempo-marker ${tempo} :: segment ${index + 1}`);
+                }
+                if (index % 3 === 0) {
+                    curatedLines.push(`echo ${index + 1} :: ${label} weaving ${item.connector}`);
+                }
+            });
+            const layered = [];
+            for (let index = 0; index < curatedLines.length; index++) {
+                const focus = curatedLines[index];
+                layered.push(`${label} swirl ${index + 1} => ${focus}`);
+                if (index % 4 === 0) {
+                    layered.push(`${label} harmonic ${index + 1} tempo ${tempo}`);
+                }
+            }
+            const ensemble = layered.concat(curatedLines);
+            const deduplicated = [];
+            const seen = new Set();
+            ensemble.forEach((item) => {
+                if (!seen.has(item)) {
+                    deduplicated.push(item);
+                    seen.add(item);
+                }
+            });
+            const trimmedBase = basePayload.trim();
+            if (includeBase && trimmedBase) {
+                deduplicated.unshift(`base-payload :: ${trimmedBase}`);
+            }
+            const numbered = deduplicated.map((line, index) => `${index + 1}. ${line}`);
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_trigger_echo_harvest';
+            clone.vars[`${safeKey}_intensity`] = intensity;
+            clone.vars[`${safeKey}_compositions`] = compositions.length;
+            clone.vars[`${safeKey}_label`] = label;
+            clone.vars[`${safeKey}_entries`] = numbered.length;
+            clone.payload = numbered.join(newlineChar);
+            clone.logs.push('Echo harvest trigger emitted echo harvest chart sequences.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-trigger-mist-signal',
+        category: 'trigger',
+        name: 'Mist signal trigger',
+        description: 'Emit new flows when morning mist sketches novel silhouettes.',
+        icon: 'cloud',
+        accent: '#60a5fa',
+        tags: ['trigger', 'mist', 'signal', 'fantasy'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { intensity: 'medium', loops: 1, tempo: 2, includeBase: true, label: 'Mist signal atlas' },
+        form: [
+            {
+                key: 'intensity',
+                label: 'Intensity',
+                type: 'select',
+                options: [
+                    { value: 'calm', label: 'Calm' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'bold', label: 'Bold' }
+                ]
+            },
+            { key: 'loops', label: 'Loops', type: 'number', min: 1, max: 9 },
+            { key: 'tempo', label: 'Tempo', type: 'number', min: 1, max: 12 },
+            { key: 'includeBase', label: 'Include base payload', type: 'checkbox' },
+            { key: 'label', label: 'Label', type: 'text', placeholder: 'Mist signal atlas' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const intensity = String(config?.intensity || 'medium').toLowerCase();
+            const loops = Math.max(1, parseInt(config?.loops, 10) || 1);
+            const tempo = Math.max(1, parseInt(config?.tempo, 10) || 1);
+            const includeBase = config?.includeBase !== false;
+            const label = (config?.label || 'Mist signal atlas').trim() || 'Mist signal atlas';
+            const fragments = [
+                'Mist signal trigger fragment glittering mist sequence 1',
+                'Mist signal trigger fragment flowing signal sequence 2',
+                'Mist signal trigger fragment spinning haze sequence 3',
+                'Mist signal trigger fragment looping silhouette sequence 4',
+                'Mist signal trigger fragment vibrant dew sequence 5',
+                'Mist signal trigger fragment wandering drift sequence 6',
+                'Mist signal trigger fragment braided lantern sequence 7',
+                'Mist signal trigger fragment singing mellow sequence 8',
+                'Mist signal trigger fragment humming mist sequence 9',
+                'Mist signal trigger fragment simmering signal sequence 10',
+                'Mist signal trigger fragment glittering haze sequence 11',
+                'Mist signal trigger fragment flowing silhouette sequence 12',
+                'Mist signal trigger fragment spinning dew sequence 13',
+                'Mist signal trigger fragment looping drift sequence 14',
+                'Mist signal trigger fragment vibrant lantern sequence 15',
+                'Mist signal trigger fragment wandering mellow sequence 16',
+                'Mist signal trigger fragment braided mist sequence 17',
+                'Mist signal trigger fragment singing signal sequence 18',
+                'Mist signal trigger fragment humming haze sequence 19',
+                'Mist signal trigger fragment simmering silhouette sequence 20',
+                'Mist signal trigger fragment glittering dew sequence 21',
+                'Mist signal trigger fragment flowing drift sequence 22',
+                'Mist signal trigger fragment spinning lantern sequence 23',
+                'Mist signal trigger fragment looping mellow sequence 24',
+                'Mist signal trigger fragment vibrant mist sequence 25',
+            ];
+            const moods = [
+                'Mist signal trigger mood dawn mist sequence 1',
+                'Mist signal trigger mood twilight signal sequence 2',
+                'Mist signal trigger mood echo haze sequence 3',
+                'Mist signal trigger mood glow silhouette sequence 4',
+                'Mist signal trigger mood spark dew sequence 5',
+                'Mist signal trigger mood tide drift sequence 6',
+                'Mist signal trigger mood whisper lantern sequence 7',
+                'Mist signal trigger mood hum mellow sequence 8',
+                'Mist signal trigger mood pulse mist sequence 9',
+                'Mist signal trigger mood chorus signal sequence 10',
+                'Mist signal trigger mood dawn haze sequence 11',
+                'Mist signal trigger mood twilight silhouette sequence 12',
+                'Mist signal trigger mood echo dew sequence 13',
+                'Mist signal trigger mood glow drift sequence 14',
+                'Mist signal trigger mood spark lantern sequence 15',
+                'Mist signal trigger mood tide mellow sequence 16',
+                'Mist signal trigger mood whisper mist sequence 17',
+                'Mist signal trigger mood hum signal sequence 18',
+                'Mist signal trigger mood pulse haze sequence 19',
+                'Mist signal trigger mood chorus silhouette sequence 20',
+                'Mist signal trigger mood dawn dew sequence 21',
+                'Mist signal trigger mood twilight drift sequence 22',
+                'Mist signal trigger mood echo lantern sequence 23',
+                'Mist signal trigger mood glow mellow sequence 24',
+                'Mist signal trigger mood spark mist sequence 25',
+            ];
+            const connectors = [
+                'Mist signal trigger connector weaving mist sequence 1',
+                'Mist signal trigger connector braiding signal sequence 2',
+                'Mist signal trigger connector linking haze sequence 3',
+                'Mist signal trigger connector stitching silhouette sequence 4',
+                'Mist signal trigger connector guiding dew sequence 5',
+                'Mist signal trigger connector threading drift sequence 6',
+                'Mist signal trigger connector folding lantern sequence 7',
+                'Mist signal trigger connector mapping mellow sequence 8',
+                'Mist signal trigger connector casting mist sequence 9',
+                'Mist signal trigger connector painting signal sequence 10',
+                'Mist signal trigger connector weaving haze sequence 11',
+                'Mist signal trigger connector braiding silhouette sequence 12',
+                'Mist signal trigger connector linking dew sequence 13',
+                'Mist signal trigger connector stitching drift sequence 14',
+                'Mist signal trigger connector guiding lantern sequence 15',
+                'Mist signal trigger connector threading mellow sequence 16',
+                'Mist signal trigger connector folding mist sequence 17',
+                'Mist signal trigger connector mapping signal sequence 18',
+                'Mist signal trigger connector casting haze sequence 19',
+                'Mist signal trigger connector painting silhouette sequence 20',
+                'Mist signal trigger connector weaving dew sequence 21',
+                'Mist signal trigger connector braiding drift sequence 22',
+                'Mist signal trigger connector linking lantern sequence 23',
+                'Mist signal trigger connector stitching mellow sequence 24',
+                'Mist signal trigger connector guiding mist sequence 25',
+            ];
+            const details = [
+                'Mist signal trigger detail over valleys mist sequence 1',
+                'Mist signal trigger detail within galleries signal sequence 2',
+                'Mist signal trigger detail across skylines haze sequence 3',
+                'Mist signal trigger detail through spirals silhouette sequence 4',
+                'Mist signal trigger detail inside lanterns dew sequence 5',
+                'Mist signal trigger detail beyond harbors drift sequence 6',
+                'Mist signal trigger detail beneath constellations lantern sequence 7',
+                'Mist signal trigger detail among terraces mellow sequence 8',
+                'Mist signal trigger detail into archives mist sequence 9',
+                'Mist signal trigger detail around rivers signal sequence 10',
+                'Mist signal trigger detail over valleys haze sequence 11',
+                'Mist signal trigger detail within galleries silhouette sequence 12',
+                'Mist signal trigger detail across skylines dew sequence 13',
+                'Mist signal trigger detail through spirals drift sequence 14',
+                'Mist signal trigger detail inside lanterns lantern sequence 15',
+                'Mist signal trigger detail beyond harbors mellow sequence 16',
+                'Mist signal trigger detail beneath constellations mist sequence 17',
+                'Mist signal trigger detail among terraces signal sequence 18',
+                'Mist signal trigger detail into archives haze sequence 19',
+                'Mist signal trigger detail around rivers silhouette sequence 20',
+                'Mist signal trigger detail over valleys dew sequence 21',
+                'Mist signal trigger detail within galleries drift sequence 22',
+                'Mist signal trigger detail across skylines lantern sequence 23',
+                'Mist signal trigger detail through spirals mellow sequence 24',
+                'Mist signal trigger detail inside lanterns mist sequence 25',
+            ];
+            const compositions = [];
+            for (let cycle = 0; cycle < loops; cycle++) {
+                for (let index = 0; index < fragments.length; index++) {
+                    const fragment = fragments[index];
+                    const mood = moods[(index + cycle) % moods.length];
+                    const connector = connectors[(index + tempo + cycle) % connectors.length];
+                    const detail = details[(index + loops + cycle) % details.length];
+                    const amplitude = ((index + 1) % (tempo + 1)) + cycle;
+                    compositions.push({
+                        fragment,
+                        mood,
+                        connector,
+                        detail,
+                        cycle: cycle + 1,
+                        beat: index + 1,
+                        amplitude,
+                        intensity
+                    });
+                }
+            }
+            const curatedLines = [];
+            compositions.forEach((item, index) => {
+                const emphasiser = index % 2 === 0 ? '>' : '~';
+                const descriptor = `${label} | cycle ${item.cycle} | beat ${item.beat} | ${item.fragment} | ${item.mood} | ${item.connector} | ${item.detail} | amplitude ${item.amplitude} | intensity ${item.intensity}`;
+                curatedLines.push(`${emphasiser} ${descriptor}`);
+                if ((index + 1) % tempo === 0) {
+                    curatedLines.push(`tempo-marker ${tempo} :: segment ${index + 1}`);
+                }
+                if (index % 3 === 0) {
+                    curatedLines.push(`echo ${index + 1} :: ${label} weaving ${item.connector}`);
+                }
+            });
+            const layered = [];
+            for (let index = 0; index < curatedLines.length; index++) {
+                const focus = curatedLines[index];
+                layered.push(`${label} swirl ${index + 1} => ${focus}`);
+                if (index % 4 === 0) {
+                    layered.push(`${label} harmonic ${index + 1} tempo ${tempo}`);
+                }
+            }
+            const ensemble = layered.concat(curatedLines);
+            const deduplicated = [];
+            const seen = new Set();
+            ensemble.forEach((item) => {
+                if (!seen.has(item)) {
+                    deduplicated.push(item);
+                    seen.add(item);
+                }
+            });
+            const trimmedBase = basePayload.trim();
+            if (includeBase && trimmedBase) {
+                deduplicated.unshift(`base-payload :: ${trimmedBase}`);
+            }
+            const numbered = deduplicated.map((line, index) => `${index + 1}. ${line}`);
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_trigger_mist_signal';
+            clone.vars[`${safeKey}_intensity`] = intensity;
+            clone.vars[`${safeKey}_compositions`] = compositions.length;
+            clone.vars[`${safeKey}_label`] = label;
+            clone.vars[`${safeKey}_entries`] = numbered.length;
+            clone.payload = numbered.join(newlineChar);
+            clone.logs.push('Mist signal trigger emitted mist signal atlas sequences.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-trigger-thunder-braid',
+        category: 'trigger',
+        name: 'Thunder braid trigger',
+        description: 'Kick off bursts when rolling thunder braids with bright ideas.',
+        icon: 'zap',
+        accent: '#f97316',
+        tags: ['trigger', 'thunder', 'braid', 'fantasy'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { intensity: 'medium', loops: 1, tempo: 2, includeBase: true, label: 'Thunder braid ledger' },
+        form: [
+            {
+                key: 'intensity',
+                label: 'Intensity',
+                type: 'select',
+                options: [
+                    { value: 'calm', label: 'Calm' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'bold', label: 'Bold' }
+                ]
+            },
+            { key: 'loops', label: 'Loops', type: 'number', min: 1, max: 9 },
+            { key: 'tempo', label: 'Tempo', type: 'number', min: 1, max: 12 },
+            { key: 'includeBase', label: 'Include base payload', type: 'checkbox' },
+            { key: 'label', label: 'Label', type: 'text', placeholder: 'Thunder braid ledger' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const intensity = String(config?.intensity || 'medium').toLowerCase();
+            const loops = Math.max(1, parseInt(config?.loops, 10) || 1);
+            const tempo = Math.max(1, parseInt(config?.tempo, 10) || 1);
+            const includeBase = config?.includeBase !== false;
+            const label = (config?.label || 'Thunder braid ledger').trim() || 'Thunder braid ledger';
+            const fragments = [
+                'Thunder braid trigger fragment glittering thunder sequence 1',
+                'Thunder braid trigger fragment flowing braid sequence 2',
+                'Thunder braid trigger fragment spinning rumble sequence 3',
+                'Thunder braid trigger fragment looping spark sequence 4',
+                'Thunder braid trigger fragment vibrant storm sequence 5',
+                'Thunder braid trigger fragment wandering arc sequence 6',
+                'Thunder braid trigger fragment braided plait sequence 7',
+                'Thunder braid trigger fragment singing charge sequence 8',
+                'Thunder braid trigger fragment humming thunder sequence 9',
+                'Thunder braid trigger fragment simmering braid sequence 10',
+                'Thunder braid trigger fragment glittering rumble sequence 11',
+                'Thunder braid trigger fragment flowing spark sequence 12',
+                'Thunder braid trigger fragment spinning storm sequence 13',
+                'Thunder braid trigger fragment looping arc sequence 14',
+                'Thunder braid trigger fragment vibrant plait sequence 15',
+                'Thunder braid trigger fragment wandering charge sequence 16',
+                'Thunder braid trigger fragment braided thunder sequence 17',
+                'Thunder braid trigger fragment singing braid sequence 18',
+                'Thunder braid trigger fragment humming rumble sequence 19',
+                'Thunder braid trigger fragment simmering spark sequence 20',
+                'Thunder braid trigger fragment glittering storm sequence 21',
+                'Thunder braid trigger fragment flowing arc sequence 22',
+                'Thunder braid trigger fragment spinning plait sequence 23',
+                'Thunder braid trigger fragment looping charge sequence 24',
+                'Thunder braid trigger fragment vibrant thunder sequence 25',
+            ];
+            const moods = [
+                'Thunder braid trigger mood dawn thunder sequence 1',
+                'Thunder braid trigger mood twilight braid sequence 2',
+                'Thunder braid trigger mood echo rumble sequence 3',
+                'Thunder braid trigger mood glow spark sequence 4',
+                'Thunder braid trigger mood spark storm sequence 5',
+                'Thunder braid trigger mood tide arc sequence 6',
+                'Thunder braid trigger mood whisper plait sequence 7',
+                'Thunder braid trigger mood hum charge sequence 8',
+                'Thunder braid trigger mood pulse thunder sequence 9',
+                'Thunder braid trigger mood chorus braid sequence 10',
+                'Thunder braid trigger mood dawn rumble sequence 11',
+                'Thunder braid trigger mood twilight spark sequence 12',
+                'Thunder braid trigger mood echo storm sequence 13',
+                'Thunder braid trigger mood glow arc sequence 14',
+                'Thunder braid trigger mood spark plait sequence 15',
+                'Thunder braid trigger mood tide charge sequence 16',
+                'Thunder braid trigger mood whisper thunder sequence 17',
+                'Thunder braid trigger mood hum braid sequence 18',
+                'Thunder braid trigger mood pulse rumble sequence 19',
+                'Thunder braid trigger mood chorus spark sequence 20',
+                'Thunder braid trigger mood dawn storm sequence 21',
+                'Thunder braid trigger mood twilight arc sequence 22',
+                'Thunder braid trigger mood echo plait sequence 23',
+                'Thunder braid trigger mood glow charge sequence 24',
+                'Thunder braid trigger mood spark thunder sequence 25',
+            ];
+            const connectors = [
+                'Thunder braid trigger connector weaving thunder sequence 1',
+                'Thunder braid trigger connector braiding braid sequence 2',
+                'Thunder braid trigger connector linking rumble sequence 3',
+                'Thunder braid trigger connector stitching spark sequence 4',
+                'Thunder braid trigger connector guiding storm sequence 5',
+                'Thunder braid trigger connector threading arc sequence 6',
+                'Thunder braid trigger connector folding plait sequence 7',
+                'Thunder braid trigger connector mapping charge sequence 8',
+                'Thunder braid trigger connector casting thunder sequence 9',
+                'Thunder braid trigger connector painting braid sequence 10',
+                'Thunder braid trigger connector weaving rumble sequence 11',
+                'Thunder braid trigger connector braiding spark sequence 12',
+                'Thunder braid trigger connector linking storm sequence 13',
+                'Thunder braid trigger connector stitching arc sequence 14',
+                'Thunder braid trigger connector guiding plait sequence 15',
+                'Thunder braid trigger connector threading charge sequence 16',
+                'Thunder braid trigger connector folding thunder sequence 17',
+                'Thunder braid trigger connector mapping braid sequence 18',
+                'Thunder braid trigger connector casting rumble sequence 19',
+                'Thunder braid trigger connector painting spark sequence 20',
+                'Thunder braid trigger connector weaving storm sequence 21',
+                'Thunder braid trigger connector braiding arc sequence 22',
+                'Thunder braid trigger connector linking plait sequence 23',
+                'Thunder braid trigger connector stitching charge sequence 24',
+                'Thunder braid trigger connector guiding thunder sequence 25',
+            ];
+            const details = [
+                'Thunder braid trigger detail over valleys thunder sequence 1',
+                'Thunder braid trigger detail within galleries braid sequence 2',
+                'Thunder braid trigger detail across skylines rumble sequence 3',
+                'Thunder braid trigger detail through spirals spark sequence 4',
+                'Thunder braid trigger detail inside lanterns storm sequence 5',
+                'Thunder braid trigger detail beyond harbors arc sequence 6',
+                'Thunder braid trigger detail beneath constellations plait sequence 7',
+                'Thunder braid trigger detail among terraces charge sequence 8',
+                'Thunder braid trigger detail into archives thunder sequence 9',
+                'Thunder braid trigger detail around rivers braid sequence 10',
+                'Thunder braid trigger detail over valleys rumble sequence 11',
+                'Thunder braid trigger detail within galleries spark sequence 12',
+                'Thunder braid trigger detail across skylines storm sequence 13',
+                'Thunder braid trigger detail through spirals arc sequence 14',
+                'Thunder braid trigger detail inside lanterns plait sequence 15',
+                'Thunder braid trigger detail beyond harbors charge sequence 16',
+                'Thunder braid trigger detail beneath constellations thunder sequence 17',
+                'Thunder braid trigger detail among terraces braid sequence 18',
+                'Thunder braid trigger detail into archives rumble sequence 19',
+                'Thunder braid trigger detail around rivers spark sequence 20',
+                'Thunder braid trigger detail over valleys storm sequence 21',
+                'Thunder braid trigger detail within galleries arc sequence 22',
+                'Thunder braid trigger detail across skylines plait sequence 23',
+                'Thunder braid trigger detail through spirals charge sequence 24',
+                'Thunder braid trigger detail inside lanterns thunder sequence 25',
+            ];
+            const compositions = [];
+            for (let cycle = 0; cycle < loops; cycle++) {
+                for (let index = 0; index < fragments.length; index++) {
+                    const fragment = fragments[index];
+                    const mood = moods[(index + cycle) % moods.length];
+                    const connector = connectors[(index + tempo + cycle) % connectors.length];
+                    const detail = details[(index + loops + cycle) % details.length];
+                    const amplitude = ((index + 1) % (tempo + 1)) + cycle;
+                    compositions.push({
+                        fragment,
+                        mood,
+                        connector,
+                        detail,
+                        cycle: cycle + 1,
+                        beat: index + 1,
+                        amplitude,
+                        intensity
+                    });
+                }
+            }
+            const curatedLines = [];
+            compositions.forEach((item, index) => {
+                const emphasiser = index % 2 === 0 ? '>' : '~';
+                const descriptor = `${label} | cycle ${item.cycle} | beat ${item.beat} | ${item.fragment} | ${item.mood} | ${item.connector} | ${item.detail} | amplitude ${item.amplitude} | intensity ${item.intensity}`;
+                curatedLines.push(`${emphasiser} ${descriptor}`);
+                if ((index + 1) % tempo === 0) {
+                    curatedLines.push(`tempo-marker ${tempo} :: segment ${index + 1}`);
+                }
+                if (index % 3 === 0) {
+                    curatedLines.push(`echo ${index + 1} :: ${label} weaving ${item.connector}`);
+                }
+            });
+            const layered = [];
+            for (let index = 0; index < curatedLines.length; index++) {
+                const focus = curatedLines[index];
+                layered.push(`${label} swirl ${index + 1} => ${focus}`);
+                if (index % 4 === 0) {
+                    layered.push(`${label} harmonic ${index + 1} tempo ${tempo}`);
+                }
+            }
+            const ensemble = layered.concat(curatedLines);
+            const deduplicated = [];
+            const seen = new Set();
+            ensemble.forEach((item) => {
+                if (!seen.has(item)) {
+                    deduplicated.push(item);
+                    seen.add(item);
+                }
+            });
+            const trimmedBase = basePayload.trim();
+            if (includeBase && trimmedBase) {
+                deduplicated.unshift(`base-payload :: ${trimmedBase}`);
+            }
+            const numbered = deduplicated.map((line, index) => `${index + 1}. ${line}`);
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_trigger_thunder_braid';
+            clone.vars[`${safeKey}_intensity`] = intensity;
+            clone.vars[`${safeKey}_compositions`] = compositions.length;
+            clone.vars[`${safeKey}_label`] = label;
+            clone.vars[`${safeKey}_entries`] = numbered.length;
+            clone.payload = numbered.join(newlineChar);
+            clone.logs.push('Thunder braid trigger emitted thunder braid ledger sequences.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-trigger-river-rhythm',
+        category: 'trigger',
+        name: 'River rhythm trigger',
+        description: 'Launch waves when river rhythms line up with curious notes.',
+        icon: 'activity',
+        accent: '#34d399',
+        tags: ['trigger', 'river', 'rhythm', 'fantasy'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { intensity: 'medium', loops: 1, tempo: 2, includeBase: true, label: 'River rhythm script' },
+        form: [
+            {
+                key: 'intensity',
+                label: 'Intensity',
+                type: 'select',
+                options: [
+                    { value: 'calm', label: 'Calm' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'bold', label: 'Bold' }
+                ]
+            },
+            { key: 'loops', label: 'Loops', type: 'number', min: 1, max: 9 },
+            { key: 'tempo', label: 'Tempo', type: 'number', min: 1, max: 12 },
+            { key: 'includeBase', label: 'Include base payload', type: 'checkbox' },
+            { key: 'label', label: 'Label', type: 'text', placeholder: 'River rhythm script' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const intensity = String(config?.intensity || 'medium').toLowerCase();
+            const loops = Math.max(1, parseInt(config?.loops, 10) || 1);
+            const tempo = Math.max(1, parseInt(config?.tempo, 10) || 1);
+            const includeBase = config?.includeBase !== false;
+            const label = (config?.label || 'River rhythm script').trim() || 'River rhythm script';
+            const fragments = [
+                'River rhythm trigger fragment glittering river sequence 1',
+                'River rhythm trigger fragment flowing rhythm sequence 2',
+                'River rhythm trigger fragment spinning current sequence 3',
+                'River rhythm trigger fragment looping stone sequence 4',
+                'River rhythm trigger fragment vibrant eddy sequence 5',
+                'River rhythm trigger fragment wandering cascade sequence 6',
+                'River rhythm trigger fragment braided tide sequence 7',
+                'River rhythm trigger fragment singing song sequence 8',
+                'River rhythm trigger fragment humming river sequence 9',
+                'River rhythm trigger fragment simmering rhythm sequence 10',
+                'River rhythm trigger fragment glittering current sequence 11',
+                'River rhythm trigger fragment flowing stone sequence 12',
+                'River rhythm trigger fragment spinning eddy sequence 13',
+                'River rhythm trigger fragment looping cascade sequence 14',
+                'River rhythm trigger fragment vibrant tide sequence 15',
+                'River rhythm trigger fragment wandering song sequence 16',
+                'River rhythm trigger fragment braided river sequence 17',
+                'River rhythm trigger fragment singing rhythm sequence 18',
+                'River rhythm trigger fragment humming current sequence 19',
+                'River rhythm trigger fragment simmering stone sequence 20',
+                'River rhythm trigger fragment glittering eddy sequence 21',
+                'River rhythm trigger fragment flowing cascade sequence 22',
+                'River rhythm trigger fragment spinning tide sequence 23',
+                'River rhythm trigger fragment looping song sequence 24',
+                'River rhythm trigger fragment vibrant river sequence 25',
+            ];
+            const moods = [
+                'River rhythm trigger mood dawn river sequence 1',
+                'River rhythm trigger mood twilight rhythm sequence 2',
+                'River rhythm trigger mood echo current sequence 3',
+                'River rhythm trigger mood glow stone sequence 4',
+                'River rhythm trigger mood spark eddy sequence 5',
+                'River rhythm trigger mood tide cascade sequence 6',
+                'River rhythm trigger mood whisper tide sequence 7',
+                'River rhythm trigger mood hum song sequence 8',
+                'River rhythm trigger mood pulse river sequence 9',
+                'River rhythm trigger mood chorus rhythm sequence 10',
+                'River rhythm trigger mood dawn current sequence 11',
+                'River rhythm trigger mood twilight stone sequence 12',
+                'River rhythm trigger mood echo eddy sequence 13',
+                'River rhythm trigger mood glow cascade sequence 14',
+                'River rhythm trigger mood spark tide sequence 15',
+                'River rhythm trigger mood tide song sequence 16',
+                'River rhythm trigger mood whisper river sequence 17',
+                'River rhythm trigger mood hum rhythm sequence 18',
+                'River rhythm trigger mood pulse current sequence 19',
+                'River rhythm trigger mood chorus stone sequence 20',
+                'River rhythm trigger mood dawn eddy sequence 21',
+                'River rhythm trigger mood twilight cascade sequence 22',
+                'River rhythm trigger mood echo tide sequence 23',
+                'River rhythm trigger mood glow song sequence 24',
+                'River rhythm trigger mood spark river sequence 25',
+            ];
+            const connectors = [
+                'River rhythm trigger connector weaving river sequence 1',
+                'River rhythm trigger connector braiding rhythm sequence 2',
+                'River rhythm trigger connector linking current sequence 3',
+                'River rhythm trigger connector stitching stone sequence 4',
+                'River rhythm trigger connector guiding eddy sequence 5',
+                'River rhythm trigger connector threading cascade sequence 6',
+                'River rhythm trigger connector folding tide sequence 7',
+                'River rhythm trigger connector mapping song sequence 8',
+                'River rhythm trigger connector casting river sequence 9',
+                'River rhythm trigger connector painting rhythm sequence 10',
+                'River rhythm trigger connector weaving current sequence 11',
+                'River rhythm trigger connector braiding stone sequence 12',
+                'River rhythm trigger connector linking eddy sequence 13',
+                'River rhythm trigger connector stitching cascade sequence 14',
+                'River rhythm trigger connector guiding tide sequence 15',
+                'River rhythm trigger connector threading song sequence 16',
+                'River rhythm trigger connector folding river sequence 17',
+                'River rhythm trigger connector mapping rhythm sequence 18',
+                'River rhythm trigger connector casting current sequence 19',
+                'River rhythm trigger connector painting stone sequence 20',
+                'River rhythm trigger connector weaving eddy sequence 21',
+                'River rhythm trigger connector braiding cascade sequence 22',
+                'River rhythm trigger connector linking tide sequence 23',
+                'River rhythm trigger connector stitching song sequence 24',
+                'River rhythm trigger connector guiding river sequence 25',
+            ];
+            const details = [
+                'River rhythm trigger detail over valleys river sequence 1',
+                'River rhythm trigger detail within galleries rhythm sequence 2',
+                'River rhythm trigger detail across skylines current sequence 3',
+                'River rhythm trigger detail through spirals stone sequence 4',
+                'River rhythm trigger detail inside lanterns eddy sequence 5',
+                'River rhythm trigger detail beyond harbors cascade sequence 6',
+                'River rhythm trigger detail beneath constellations tide sequence 7',
+                'River rhythm trigger detail among terraces song sequence 8',
+                'River rhythm trigger detail into archives river sequence 9',
+                'River rhythm trigger detail around rivers rhythm sequence 10',
+                'River rhythm trigger detail over valleys current sequence 11',
+                'River rhythm trigger detail within galleries stone sequence 12',
+                'River rhythm trigger detail across skylines eddy sequence 13',
+                'River rhythm trigger detail through spirals cascade sequence 14',
+                'River rhythm trigger detail inside lanterns tide sequence 15',
+                'River rhythm trigger detail beyond harbors song sequence 16',
+                'River rhythm trigger detail beneath constellations river sequence 17',
+                'River rhythm trigger detail among terraces rhythm sequence 18',
+                'River rhythm trigger detail into archives current sequence 19',
+                'River rhythm trigger detail around rivers stone sequence 20',
+                'River rhythm trigger detail over valleys eddy sequence 21',
+                'River rhythm trigger detail within galleries cascade sequence 22',
+                'River rhythm trigger detail across skylines tide sequence 23',
+                'River rhythm trigger detail through spirals song sequence 24',
+                'River rhythm trigger detail inside lanterns river sequence 25',
+            ];
+            const compositions = [];
+            for (let cycle = 0; cycle < loops; cycle++) {
+                for (let index = 0; index < fragments.length; index++) {
+                    const fragment = fragments[index];
+                    const mood = moods[(index + cycle) % moods.length];
+                    const connector = connectors[(index + tempo + cycle) % connectors.length];
+                    const detail = details[(index + loops + cycle) % details.length];
+                    const amplitude = ((index + 1) % (tempo + 1)) + cycle;
+                    compositions.push({
+                        fragment,
+                        mood,
+                        connector,
+                        detail,
+                        cycle: cycle + 1,
+                        beat: index + 1,
+                        amplitude,
+                        intensity
+                    });
+                }
+            }
+            const curatedLines = [];
+            compositions.forEach((item, index) => {
+                const emphasiser = index % 2 === 0 ? '>' : '~';
+                const descriptor = `${label} | cycle ${item.cycle} | beat ${item.beat} | ${item.fragment} | ${item.mood} | ${item.connector} | ${item.detail} | amplitude ${item.amplitude} | intensity ${item.intensity}`;
+                curatedLines.push(`${emphasiser} ${descriptor}`);
+                if ((index + 1) % tempo === 0) {
+                    curatedLines.push(`tempo-marker ${tempo} :: segment ${index + 1}`);
+                }
+                if (index % 3 === 0) {
+                    curatedLines.push(`echo ${index + 1} :: ${label} weaving ${item.connector}`);
+                }
+            });
+            const layered = [];
+            for (let index = 0; index < curatedLines.length; index++) {
+                const focus = curatedLines[index];
+                layered.push(`${label} swirl ${index + 1} => ${focus}`);
+                if (index % 4 === 0) {
+                    layered.push(`${label} harmonic ${index + 1} tempo ${tempo}`);
+                }
+            }
+            const ensemble = layered.concat(curatedLines);
+            const deduplicated = [];
+            const seen = new Set();
+            ensemble.forEach((item) => {
+                if (!seen.has(item)) {
+                    deduplicated.push(item);
+                    seen.add(item);
+                }
+            });
+            const trimmedBase = basePayload.trim();
+            if (includeBase && trimmedBase) {
+                deduplicated.unshift(`base-payload :: ${trimmedBase}`);
+            }
+            const numbered = deduplicated.map((line, index) => `${index + 1}. ${line}`);
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_trigger_river_rhythm';
+            clone.vars[`${safeKey}_intensity`] = intensity;
+            clone.vars[`${safeKey}_compositions`] = compositions.length;
+            clone.vars[`${safeKey}_label`] = label;
+            clone.vars[`${safeKey}_entries`] = numbered.length;
+            clone.payload = numbered.join(newlineChar);
+            clone.logs.push('River rhythm trigger emitted river rhythm script sequences.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-trigger-nebula-spark',
+        category: 'trigger',
+        name: 'Nebula spark trigger',
+        description: 'Ignite flows when nebula sparks scatter across imagination.',
+        icon: 'star',
+        accent: '#facc15',
+        tags: ['trigger', 'nebula', 'spark', 'fantasy'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { intensity: 'medium', loops: 1, tempo: 2, includeBase: true, label: 'Nebula spark ledger' },
+        form: [
+            {
+                key: 'intensity',
+                label: 'Intensity',
+                type: 'select',
+                options: [
+                    { value: 'calm', label: 'Calm' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'bold', label: 'Bold' }
+                ]
+            },
+            { key: 'loops', label: 'Loops', type: 'number', min: 1, max: 9 },
+            { key: 'tempo', label: 'Tempo', type: 'number', min: 1, max: 12 },
+            { key: 'includeBase', label: 'Include base payload', type: 'checkbox' },
+            { key: 'label', label: 'Label', type: 'text', placeholder: 'Nebula spark ledger' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const intensity = String(config?.intensity || 'medium').toLowerCase();
+            const loops = Math.max(1, parseInt(config?.loops, 10) || 1);
+            const tempo = Math.max(1, parseInt(config?.tempo, 10) || 1);
+            const includeBase = config?.includeBase !== false;
+            const label = (config?.label || 'Nebula spark ledger').trim() || 'Nebula spark ledger';
+            const fragments = [
+                'Nebula spark trigger fragment glittering nebula sequence 1',
+                'Nebula spark trigger fragment flowing spark sequence 2',
+                'Nebula spark trigger fragment spinning plasma sequence 3',
+                'Nebula spark trigger fragment looping nova sequence 4',
+                'Nebula spark trigger fragment vibrant spiral sequence 5',
+                'Nebula spark trigger fragment wandering cosmic sequence 6',
+                'Nebula spark trigger fragment braided glimmer sequence 7',
+                'Nebula spark trigger fragment singing swirl sequence 8',
+                'Nebula spark trigger fragment humming nebula sequence 9',
+                'Nebula spark trigger fragment simmering spark sequence 10',
+                'Nebula spark trigger fragment glittering plasma sequence 11',
+                'Nebula spark trigger fragment flowing nova sequence 12',
+                'Nebula spark trigger fragment spinning spiral sequence 13',
+                'Nebula spark trigger fragment looping cosmic sequence 14',
+                'Nebula spark trigger fragment vibrant glimmer sequence 15',
+                'Nebula spark trigger fragment wandering swirl sequence 16',
+                'Nebula spark trigger fragment braided nebula sequence 17',
+                'Nebula spark trigger fragment singing spark sequence 18',
+                'Nebula spark trigger fragment humming plasma sequence 19',
+                'Nebula spark trigger fragment simmering nova sequence 20',
+                'Nebula spark trigger fragment glittering spiral sequence 21',
+                'Nebula spark trigger fragment flowing cosmic sequence 22',
+                'Nebula spark trigger fragment spinning glimmer sequence 23',
+                'Nebula spark trigger fragment looping swirl sequence 24',
+                'Nebula spark trigger fragment vibrant nebula sequence 25',
+            ];
+            const moods = [
+                'Nebula spark trigger mood dawn nebula sequence 1',
+                'Nebula spark trigger mood twilight spark sequence 2',
+                'Nebula spark trigger mood echo plasma sequence 3',
+                'Nebula spark trigger mood glow nova sequence 4',
+                'Nebula spark trigger mood spark spiral sequence 5',
+                'Nebula spark trigger mood tide cosmic sequence 6',
+                'Nebula spark trigger mood whisper glimmer sequence 7',
+                'Nebula spark trigger mood hum swirl sequence 8',
+                'Nebula spark trigger mood pulse nebula sequence 9',
+                'Nebula spark trigger mood chorus spark sequence 10',
+                'Nebula spark trigger mood dawn plasma sequence 11',
+                'Nebula spark trigger mood twilight nova sequence 12',
+                'Nebula spark trigger mood echo spiral sequence 13',
+                'Nebula spark trigger mood glow cosmic sequence 14',
+                'Nebula spark trigger mood spark glimmer sequence 15',
+                'Nebula spark trigger mood tide swirl sequence 16',
+                'Nebula spark trigger mood whisper nebula sequence 17',
+                'Nebula spark trigger mood hum spark sequence 18',
+                'Nebula spark trigger mood pulse plasma sequence 19',
+                'Nebula spark trigger mood chorus nova sequence 20',
+                'Nebula spark trigger mood dawn spiral sequence 21',
+                'Nebula spark trigger mood twilight cosmic sequence 22',
+                'Nebula spark trigger mood echo glimmer sequence 23',
+                'Nebula spark trigger mood glow swirl sequence 24',
+                'Nebula spark trigger mood spark nebula sequence 25',
+            ];
+            const connectors = [
+                'Nebula spark trigger connector weaving nebula sequence 1',
+                'Nebula spark trigger connector braiding spark sequence 2',
+                'Nebula spark trigger connector linking plasma sequence 3',
+                'Nebula spark trigger connector stitching nova sequence 4',
+                'Nebula spark trigger connector guiding spiral sequence 5',
+                'Nebula spark trigger connector threading cosmic sequence 6',
+                'Nebula spark trigger connector folding glimmer sequence 7',
+                'Nebula spark trigger connector mapping swirl sequence 8',
+                'Nebula spark trigger connector casting nebula sequence 9',
+                'Nebula spark trigger connector painting spark sequence 10',
+                'Nebula spark trigger connector weaving plasma sequence 11',
+                'Nebula spark trigger connector braiding nova sequence 12',
+                'Nebula spark trigger connector linking spiral sequence 13',
+                'Nebula spark trigger connector stitching cosmic sequence 14',
+                'Nebula spark trigger connector guiding glimmer sequence 15',
+                'Nebula spark trigger connector threading swirl sequence 16',
+                'Nebula spark trigger connector folding nebula sequence 17',
+                'Nebula spark trigger connector mapping spark sequence 18',
+                'Nebula spark trigger connector casting plasma sequence 19',
+                'Nebula spark trigger connector painting nova sequence 20',
+                'Nebula spark trigger connector weaving spiral sequence 21',
+                'Nebula spark trigger connector braiding cosmic sequence 22',
+                'Nebula spark trigger connector linking glimmer sequence 23',
+                'Nebula spark trigger connector stitching swirl sequence 24',
+                'Nebula spark trigger connector guiding nebula sequence 25',
+            ];
+            const details = [
+                'Nebula spark trigger detail over valleys nebula sequence 1',
+                'Nebula spark trigger detail within galleries spark sequence 2',
+                'Nebula spark trigger detail across skylines plasma sequence 3',
+                'Nebula spark trigger detail through spirals nova sequence 4',
+                'Nebula spark trigger detail inside lanterns spiral sequence 5',
+                'Nebula spark trigger detail beyond harbors cosmic sequence 6',
+                'Nebula spark trigger detail beneath constellations glimmer sequence 7',
+                'Nebula spark trigger detail among terraces swirl sequence 8',
+                'Nebula spark trigger detail into archives nebula sequence 9',
+                'Nebula spark trigger detail around rivers spark sequence 10',
+                'Nebula spark trigger detail over valleys plasma sequence 11',
+                'Nebula spark trigger detail within galleries nova sequence 12',
+                'Nebula spark trigger detail across skylines spiral sequence 13',
+                'Nebula spark trigger detail through spirals cosmic sequence 14',
+                'Nebula spark trigger detail inside lanterns glimmer sequence 15',
+                'Nebula spark trigger detail beyond harbors swirl sequence 16',
+                'Nebula spark trigger detail beneath constellations nebula sequence 17',
+                'Nebula spark trigger detail among terraces spark sequence 18',
+                'Nebula spark trigger detail into archives plasma sequence 19',
+                'Nebula spark trigger detail around rivers nova sequence 20',
+                'Nebula spark trigger detail over valleys spiral sequence 21',
+                'Nebula spark trigger detail within galleries cosmic sequence 22',
+                'Nebula spark trigger detail across skylines glimmer sequence 23',
+                'Nebula spark trigger detail through spirals swirl sequence 24',
+                'Nebula spark trigger detail inside lanterns nebula sequence 25',
+            ];
+            const compositions = [];
+            for (let cycle = 0; cycle < loops; cycle++) {
+                for (let index = 0; index < fragments.length; index++) {
+                    const fragment = fragments[index];
+                    const mood = moods[(index + cycle) % moods.length];
+                    const connector = connectors[(index + tempo + cycle) % connectors.length];
+                    const detail = details[(index + loops + cycle) % details.length];
+                    const amplitude = ((index + 1) % (tempo + 1)) + cycle;
+                    compositions.push({
+                        fragment,
+                        mood,
+                        connector,
+                        detail,
+                        cycle: cycle + 1,
+                        beat: index + 1,
+                        amplitude,
+                        intensity
+                    });
+                }
+            }
+            const curatedLines = [];
+            compositions.forEach((item, index) => {
+                const emphasiser = index % 2 === 0 ? '>' : '~';
+                const descriptor = `${label} | cycle ${item.cycle} | beat ${item.beat} | ${item.fragment} | ${item.mood} | ${item.connector} | ${item.detail} | amplitude ${item.amplitude} | intensity ${item.intensity}`;
+                curatedLines.push(`${emphasiser} ${descriptor}`);
+                if ((index + 1) % tempo === 0) {
+                    curatedLines.push(`tempo-marker ${tempo} :: segment ${index + 1}`);
+                }
+                if (index % 3 === 0) {
+                    curatedLines.push(`echo ${index + 1} :: ${label} weaving ${item.connector}`);
+                }
+            });
+            const layered = [];
+            for (let index = 0; index < curatedLines.length; index++) {
+                const focus = curatedLines[index];
+                layered.push(`${label} swirl ${index + 1} => ${focus}`);
+                if (index % 4 === 0) {
+                    layered.push(`${label} harmonic ${index + 1} tempo ${tempo}`);
+                }
+            }
+            const ensemble = layered.concat(curatedLines);
+            const deduplicated = [];
+            const seen = new Set();
+            ensemble.forEach((item) => {
+                if (!seen.has(item)) {
+                    deduplicated.push(item);
+                    seen.add(item);
+                }
+            });
+            const trimmedBase = basePayload.trim();
+            if (includeBase && trimmedBase) {
+                deduplicated.unshift(`base-payload :: ${trimmedBase}`);
+            }
+            const numbered = deduplicated.map((line, index) => `${index + 1}. ${line}`);
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_trigger_nebula_spark';
+            clone.vars[`${safeKey}_intensity`] = intensity;
+            clone.vars[`${safeKey}_compositions`] = compositions.length;
+            clone.vars[`${safeKey}_label`] = label;
+            clone.vars[`${safeKey}_entries`] = numbered.length;
+            clone.payload = numbered.join(newlineChar);
+            clone.logs.push('Nebula spark trigger emitted nebula spark ledger sequences.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-trigger-ember-scout',
+        category: 'trigger',
+        name: 'Ember scout trigger',
+        description: 'Rally routines when wandering embers scout new directions.',
+        icon: 'compass',
+        accent: '#fb7185',
+        tags: ['trigger', 'ember', 'scout', 'fantasy'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { intensity: 'medium', loops: 1, tempo: 2, includeBase: true, label: 'Ember scout ledger' },
+        form: [
+            {
+                key: 'intensity',
+                label: 'Intensity',
+                type: 'select',
+                options: [
+                    { value: 'calm', label: 'Calm' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'bold', label: 'Bold' }
+                ]
+            },
+            { key: 'loops', label: 'Loops', type: 'number', min: 1, max: 9 },
+            { key: 'tempo', label: 'Tempo', type: 'number', min: 1, max: 12 },
+            { key: 'includeBase', label: 'Include base payload', type: 'checkbox' },
+            { key: 'label', label: 'Label', type: 'text', placeholder: 'Ember scout ledger' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const intensity = String(config?.intensity || 'medium').toLowerCase();
+            const loops = Math.max(1, parseInt(config?.loops, 10) || 1);
+            const tempo = Math.max(1, parseInt(config?.tempo, 10) || 1);
+            const includeBase = config?.includeBase !== false;
+            const label = (config?.label || 'Ember scout ledger').trim() || 'Ember scout ledger';
+            const fragments = [
+                'Ember scout trigger fragment glittering ember sequence 1',
+                'Ember scout trigger fragment flowing scout sequence 2',
+                'Ember scout trigger fragment spinning trail sequence 3',
+                'Ember scout trigger fragment looping emberlight sequence 4',
+                'Ember scout trigger fragment vibrant glow sequence 5',
+                'Ember scout trigger fragment wandering path sequence 6',
+                'Ember scout trigger fragment braided sparkle sequence 7',
+                'Ember scout trigger fragment singing track sequence 8',
+                'Ember scout trigger fragment humming ember sequence 9',
+                'Ember scout trigger fragment simmering scout sequence 10',
+                'Ember scout trigger fragment glittering trail sequence 11',
+                'Ember scout trigger fragment flowing emberlight sequence 12',
+                'Ember scout trigger fragment spinning glow sequence 13',
+                'Ember scout trigger fragment looping path sequence 14',
+                'Ember scout trigger fragment vibrant sparkle sequence 15',
+                'Ember scout trigger fragment wandering track sequence 16',
+                'Ember scout trigger fragment braided ember sequence 17',
+                'Ember scout trigger fragment singing scout sequence 18',
+                'Ember scout trigger fragment humming trail sequence 19',
+                'Ember scout trigger fragment simmering emberlight sequence 20',
+                'Ember scout trigger fragment glittering glow sequence 21',
+                'Ember scout trigger fragment flowing path sequence 22',
+                'Ember scout trigger fragment spinning sparkle sequence 23',
+                'Ember scout trigger fragment looping track sequence 24',
+                'Ember scout trigger fragment vibrant ember sequence 25',
+            ];
+            const moods = [
+                'Ember scout trigger mood dawn ember sequence 1',
+                'Ember scout trigger mood twilight scout sequence 2',
+                'Ember scout trigger mood echo trail sequence 3',
+                'Ember scout trigger mood glow emberlight sequence 4',
+                'Ember scout trigger mood spark glow sequence 5',
+                'Ember scout trigger mood tide path sequence 6',
+                'Ember scout trigger mood whisper sparkle sequence 7',
+                'Ember scout trigger mood hum track sequence 8',
+                'Ember scout trigger mood pulse ember sequence 9',
+                'Ember scout trigger mood chorus scout sequence 10',
+                'Ember scout trigger mood dawn trail sequence 11',
+                'Ember scout trigger mood twilight emberlight sequence 12',
+                'Ember scout trigger mood echo glow sequence 13',
+                'Ember scout trigger mood glow path sequence 14',
+                'Ember scout trigger mood spark sparkle sequence 15',
+                'Ember scout trigger mood tide track sequence 16',
+                'Ember scout trigger mood whisper ember sequence 17',
+                'Ember scout trigger mood hum scout sequence 18',
+                'Ember scout trigger mood pulse trail sequence 19',
+                'Ember scout trigger mood chorus emberlight sequence 20',
+                'Ember scout trigger mood dawn glow sequence 21',
+                'Ember scout trigger mood twilight path sequence 22',
+                'Ember scout trigger mood echo sparkle sequence 23',
+                'Ember scout trigger mood glow track sequence 24',
+                'Ember scout trigger mood spark ember sequence 25',
+            ];
+            const connectors = [
+                'Ember scout trigger connector weaving ember sequence 1',
+                'Ember scout trigger connector braiding scout sequence 2',
+                'Ember scout trigger connector linking trail sequence 3',
+                'Ember scout trigger connector stitching emberlight sequence 4',
+                'Ember scout trigger connector guiding glow sequence 5',
+                'Ember scout trigger connector threading path sequence 6',
+                'Ember scout trigger connector folding sparkle sequence 7',
+                'Ember scout trigger connector mapping track sequence 8',
+                'Ember scout trigger connector casting ember sequence 9',
+                'Ember scout trigger connector painting scout sequence 10',
+                'Ember scout trigger connector weaving trail sequence 11',
+                'Ember scout trigger connector braiding emberlight sequence 12',
+                'Ember scout trigger connector linking glow sequence 13',
+                'Ember scout trigger connector stitching path sequence 14',
+                'Ember scout trigger connector guiding sparkle sequence 15',
+                'Ember scout trigger connector threading track sequence 16',
+                'Ember scout trigger connector folding ember sequence 17',
+                'Ember scout trigger connector mapping scout sequence 18',
+                'Ember scout trigger connector casting trail sequence 19',
+                'Ember scout trigger connector painting emberlight sequence 20',
+                'Ember scout trigger connector weaving glow sequence 21',
+                'Ember scout trigger connector braiding path sequence 22',
+                'Ember scout trigger connector linking sparkle sequence 23',
+                'Ember scout trigger connector stitching track sequence 24',
+                'Ember scout trigger connector guiding ember sequence 25',
+            ];
+            const details = [
+                'Ember scout trigger detail over valleys ember sequence 1',
+                'Ember scout trigger detail within galleries scout sequence 2',
+                'Ember scout trigger detail across skylines trail sequence 3',
+                'Ember scout trigger detail through spirals emberlight sequence 4',
+                'Ember scout trigger detail inside lanterns glow sequence 5',
+                'Ember scout trigger detail beyond harbors path sequence 6',
+                'Ember scout trigger detail beneath constellations sparkle sequence 7',
+                'Ember scout trigger detail among terraces track sequence 8',
+                'Ember scout trigger detail into archives ember sequence 9',
+                'Ember scout trigger detail around rivers scout sequence 10',
+                'Ember scout trigger detail over valleys trail sequence 11',
+                'Ember scout trigger detail within galleries emberlight sequence 12',
+                'Ember scout trigger detail across skylines glow sequence 13',
+                'Ember scout trigger detail through spirals path sequence 14',
+                'Ember scout trigger detail inside lanterns sparkle sequence 15',
+                'Ember scout trigger detail beyond harbors track sequence 16',
+                'Ember scout trigger detail beneath constellations ember sequence 17',
+                'Ember scout trigger detail among terraces scout sequence 18',
+                'Ember scout trigger detail into archives trail sequence 19',
+                'Ember scout trigger detail around rivers emberlight sequence 20',
+                'Ember scout trigger detail over valleys glow sequence 21',
+                'Ember scout trigger detail within galleries path sequence 22',
+                'Ember scout trigger detail across skylines sparkle sequence 23',
+                'Ember scout trigger detail through spirals track sequence 24',
+                'Ember scout trigger detail inside lanterns ember sequence 25',
+            ];
+            const compositions = [];
+            for (let cycle = 0; cycle < loops; cycle++) {
+                for (let index = 0; index < fragments.length; index++) {
+                    const fragment = fragments[index];
+                    const mood = moods[(index + cycle) % moods.length];
+                    const connector = connectors[(index + tempo + cycle) % connectors.length];
+                    const detail = details[(index + loops + cycle) % details.length];
+                    const amplitude = ((index + 1) % (tempo + 1)) + cycle;
+                    compositions.push({
+                        fragment,
+                        mood,
+                        connector,
+                        detail,
+                        cycle: cycle + 1,
+                        beat: index + 1,
+                        amplitude,
+                        intensity
+                    });
+                }
+            }
+            const curatedLines = [];
+            compositions.forEach((item, index) => {
+                const emphasiser = index % 2 === 0 ? '>' : '~';
+                const descriptor = `${label} | cycle ${item.cycle} | beat ${item.beat} | ${item.fragment} | ${item.mood} | ${item.connector} | ${item.detail} | amplitude ${item.amplitude} | intensity ${item.intensity}`;
+                curatedLines.push(`${emphasiser} ${descriptor}`);
+                if ((index + 1) % tempo === 0) {
+                    curatedLines.push(`tempo-marker ${tempo} :: segment ${index + 1}`);
+                }
+                if (index % 3 === 0) {
+                    curatedLines.push(`echo ${index + 1} :: ${label} weaving ${item.connector}`);
+                }
+            });
+            const layered = [];
+            for (let index = 0; index < curatedLines.length; index++) {
+                const focus = curatedLines[index];
+                layered.push(`${label} swirl ${index + 1} => ${focus}`);
+                if (index % 4 === 0) {
+                    layered.push(`${label} harmonic ${index + 1} tempo ${tempo}`);
+                }
+            }
+            const ensemble = layered.concat(curatedLines);
+            const deduplicated = [];
+            const seen = new Set();
+            ensemble.forEach((item) => {
+                if (!seen.has(item)) {
+                    deduplicated.push(item);
+                    seen.add(item);
+                }
+            });
+            const trimmedBase = basePayload.trim();
+            if (includeBase && trimmedBase) {
+                deduplicated.unshift(`base-payload :: ${trimmedBase}`);
+            }
+            const numbered = deduplicated.map((line, index) => `${index + 1}. ${line}`);
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_trigger_ember_scout';
+            clone.vars[`${safeKey}_intensity`] = intensity;
+            clone.vars[`${safeKey}_compositions`] = compositions.length;
+            clone.vars[`${safeKey}_label`] = label;
+            clone.vars[`${safeKey}_entries`] = numbered.length;
+            clone.payload = numbered.join(newlineChar);
+            clone.logs.push('Ember scout trigger emitted ember scout ledger sequences.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-trigger-petal-chime',
+        category: 'trigger',
+        name: 'Petal chime trigger',
+        description: 'Ring sequences when petals chime against the afternoon breeze.',
+        icon: 'feather',
+        accent: '#fb923c',
+        tags: ['trigger', 'petal', 'chime', 'fantasy'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { intensity: 'medium', loops: 1, tempo: 2, includeBase: true, label: 'Petal chime calendar' },
+        form: [
+            {
+                key: 'intensity',
+                label: 'Intensity',
+                type: 'select',
+                options: [
+                    { value: 'calm', label: 'Calm' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'bold', label: 'Bold' }
+                ]
+            },
+            { key: 'loops', label: 'Loops', type: 'number', min: 1, max: 9 },
+            { key: 'tempo', label: 'Tempo', type: 'number', min: 1, max: 12 },
+            { key: 'includeBase', label: 'Include base payload', type: 'checkbox' },
+            { key: 'label', label: 'Label', type: 'text', placeholder: 'Petal chime calendar' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const intensity = String(config?.intensity || 'medium').toLowerCase();
+            const loops = Math.max(1, parseInt(config?.loops, 10) || 1);
+            const tempo = Math.max(1, parseInt(config?.tempo, 10) || 1);
+            const includeBase = config?.includeBase !== false;
+            const label = (config?.label || 'Petal chime calendar').trim() || 'Petal chime calendar';
+            const fragments = [
+                'Petal chime trigger fragment glittering petal sequence 1',
+                'Petal chime trigger fragment flowing chime sequence 2',
+                'Petal chime trigger fragment spinning bloom sequence 3',
+                'Petal chime trigger fragment looping breeze sequence 4',
+                'Petal chime trigger fragment vibrant garden sequence 5',
+                'Petal chime trigger fragment wandering perfume sequence 6',
+                'Petal chime trigger fragment braided petric sequence 7',
+                'Petal chime trigger fragment singing tangle sequence 8',
+                'Petal chime trigger fragment humming petal sequence 9',
+                'Petal chime trigger fragment simmering chime sequence 10',
+                'Petal chime trigger fragment glittering bloom sequence 11',
+                'Petal chime trigger fragment flowing breeze sequence 12',
+                'Petal chime trigger fragment spinning garden sequence 13',
+                'Petal chime trigger fragment looping perfume sequence 14',
+                'Petal chime trigger fragment vibrant petric sequence 15',
+                'Petal chime trigger fragment wandering tangle sequence 16',
+                'Petal chime trigger fragment braided petal sequence 17',
+                'Petal chime trigger fragment singing chime sequence 18',
+                'Petal chime trigger fragment humming bloom sequence 19',
+                'Petal chime trigger fragment simmering breeze sequence 20',
+                'Petal chime trigger fragment glittering garden sequence 21',
+                'Petal chime trigger fragment flowing perfume sequence 22',
+                'Petal chime trigger fragment spinning petric sequence 23',
+                'Petal chime trigger fragment looping tangle sequence 24',
+                'Petal chime trigger fragment vibrant petal sequence 25',
+            ];
+            const moods = [
+                'Petal chime trigger mood dawn petal sequence 1',
+                'Petal chime trigger mood twilight chime sequence 2',
+                'Petal chime trigger mood echo bloom sequence 3',
+                'Petal chime trigger mood glow breeze sequence 4',
+                'Petal chime trigger mood spark garden sequence 5',
+                'Petal chime trigger mood tide perfume sequence 6',
+                'Petal chime trigger mood whisper petric sequence 7',
+                'Petal chime trigger mood hum tangle sequence 8',
+                'Petal chime trigger mood pulse petal sequence 9',
+                'Petal chime trigger mood chorus chime sequence 10',
+                'Petal chime trigger mood dawn bloom sequence 11',
+                'Petal chime trigger mood twilight breeze sequence 12',
+                'Petal chime trigger mood echo garden sequence 13',
+                'Petal chime trigger mood glow perfume sequence 14',
+                'Petal chime trigger mood spark petric sequence 15',
+                'Petal chime trigger mood tide tangle sequence 16',
+                'Petal chime trigger mood whisper petal sequence 17',
+                'Petal chime trigger mood hum chime sequence 18',
+                'Petal chime trigger mood pulse bloom sequence 19',
+                'Petal chime trigger mood chorus breeze sequence 20',
+                'Petal chime trigger mood dawn garden sequence 21',
+                'Petal chime trigger mood twilight perfume sequence 22',
+                'Petal chime trigger mood echo petric sequence 23',
+                'Petal chime trigger mood glow tangle sequence 24',
+                'Petal chime trigger mood spark petal sequence 25',
+            ];
+            const connectors = [
+                'Petal chime trigger connector weaving petal sequence 1',
+                'Petal chime trigger connector braiding chime sequence 2',
+                'Petal chime trigger connector linking bloom sequence 3',
+                'Petal chime trigger connector stitching breeze sequence 4',
+                'Petal chime trigger connector guiding garden sequence 5',
+                'Petal chime trigger connector threading perfume sequence 6',
+                'Petal chime trigger connector folding petric sequence 7',
+                'Petal chime trigger connector mapping tangle sequence 8',
+                'Petal chime trigger connector casting petal sequence 9',
+                'Petal chime trigger connector painting chime sequence 10',
+                'Petal chime trigger connector weaving bloom sequence 11',
+                'Petal chime trigger connector braiding breeze sequence 12',
+                'Petal chime trigger connector linking garden sequence 13',
+                'Petal chime trigger connector stitching perfume sequence 14',
+                'Petal chime trigger connector guiding petric sequence 15',
+                'Petal chime trigger connector threading tangle sequence 16',
+                'Petal chime trigger connector folding petal sequence 17',
+                'Petal chime trigger connector mapping chime sequence 18',
+                'Petal chime trigger connector casting bloom sequence 19',
+                'Petal chime trigger connector painting breeze sequence 20',
+                'Petal chime trigger connector weaving garden sequence 21',
+                'Petal chime trigger connector braiding perfume sequence 22',
+                'Petal chime trigger connector linking petric sequence 23',
+                'Petal chime trigger connector stitching tangle sequence 24',
+                'Petal chime trigger connector guiding petal sequence 25',
+            ];
+            const details = [
+                'Petal chime trigger detail over valleys petal sequence 1',
+                'Petal chime trigger detail within galleries chime sequence 2',
+                'Petal chime trigger detail across skylines bloom sequence 3',
+                'Petal chime trigger detail through spirals breeze sequence 4',
+                'Petal chime trigger detail inside lanterns garden sequence 5',
+                'Petal chime trigger detail beyond harbors perfume sequence 6',
+                'Petal chime trigger detail beneath constellations petric sequence 7',
+                'Petal chime trigger detail among terraces tangle sequence 8',
+                'Petal chime trigger detail into archives petal sequence 9',
+                'Petal chime trigger detail around rivers chime sequence 10',
+                'Petal chime trigger detail over valleys bloom sequence 11',
+                'Petal chime trigger detail within galleries breeze sequence 12',
+                'Petal chime trigger detail across skylines garden sequence 13',
+                'Petal chime trigger detail through spirals perfume sequence 14',
+                'Petal chime trigger detail inside lanterns petric sequence 15',
+                'Petal chime trigger detail beyond harbors tangle sequence 16',
+                'Petal chime trigger detail beneath constellations petal sequence 17',
+                'Petal chime trigger detail among terraces chime sequence 18',
+                'Petal chime trigger detail into archives bloom sequence 19',
+                'Petal chime trigger detail around rivers breeze sequence 20',
+                'Petal chime trigger detail over valleys garden sequence 21',
+                'Petal chime trigger detail within galleries perfume sequence 22',
+                'Petal chime trigger detail across skylines petric sequence 23',
+                'Petal chime trigger detail through spirals tangle sequence 24',
+                'Petal chime trigger detail inside lanterns petal sequence 25',
+            ];
+            const compositions = [];
+            for (let cycle = 0; cycle < loops; cycle++) {
+                for (let index = 0; index < fragments.length; index++) {
+                    const fragment = fragments[index];
+                    const mood = moods[(index + cycle) % moods.length];
+                    const connector = connectors[(index + tempo + cycle) % connectors.length];
+                    const detail = details[(index + loops + cycle) % details.length];
+                    const amplitude = ((index + 1) % (tempo + 1)) + cycle;
+                    compositions.push({
+                        fragment,
+                        mood,
+                        connector,
+                        detail,
+                        cycle: cycle + 1,
+                        beat: index + 1,
+                        amplitude,
+                        intensity
+                    });
+                }
+            }
+            const curatedLines = [];
+            compositions.forEach((item, index) => {
+                const emphasiser = index % 2 === 0 ? '>' : '~';
+                const descriptor = `${label} | cycle ${item.cycle} | beat ${item.beat} | ${item.fragment} | ${item.mood} | ${item.connector} | ${item.detail} | amplitude ${item.amplitude} | intensity ${item.intensity}`;
+                curatedLines.push(`${emphasiser} ${descriptor}`);
+                if ((index + 1) % tempo === 0) {
+                    curatedLines.push(`tempo-marker ${tempo} :: segment ${index + 1}`);
+                }
+                if (index % 3 === 0) {
+                    curatedLines.push(`echo ${index + 1} :: ${label} weaving ${item.connector}`);
+                }
+            });
+            const layered = [];
+            for (let index = 0; index < curatedLines.length; index++) {
+                const focus = curatedLines[index];
+                layered.push(`${label} swirl ${index + 1} => ${focus}`);
+                if (index % 4 === 0) {
+                    layered.push(`${label} harmonic ${index + 1} tempo ${tempo}`);
+                }
+            }
+            const ensemble = layered.concat(curatedLines);
+            const deduplicated = [];
+            const seen = new Set();
+            ensemble.forEach((item) => {
+                if (!seen.has(item)) {
+                    deduplicated.push(item);
+                    seen.add(item);
+                }
+            });
+            const trimmedBase = basePayload.trim();
+            if (includeBase && trimmedBase) {
+                deduplicated.unshift(`base-payload :: ${trimmedBase}`);
+            }
+            const numbered = deduplicated.map((line, index) => `${index + 1}. ${line}`);
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_trigger_petal_chime';
+            clone.vars[`${safeKey}_intensity`] = intensity;
+            clone.vars[`${safeKey}_compositions`] = compositions.length;
+            clone.vars[`${safeKey}_label`] = label;
+            clone.vars[`${safeKey}_entries`] = numbered.length;
+            clone.payload = numbered.join(newlineChar);
+            clone.logs.push('Petal chime trigger emitted petal chime calendar sequences.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-trigger-horizon-beat',
+        category: 'trigger',
+        name: 'Horizon beat trigger',
+        description: 'Introduce loops when horizon beats align with quiet sparks.',
+        icon: 'sliders',
+        accent: '#38bdf8',
+        tags: ['trigger', 'horizon', 'beat', 'fantasy'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { intensity: 'medium', loops: 1, tempo: 2, includeBase: true, label: 'Horizon beat journal' },
+        form: [
+            {
+                key: 'intensity',
+                label: 'Intensity',
+                type: 'select',
+                options: [
+                    { value: 'calm', label: 'Calm' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'bold', label: 'Bold' }
+                ]
+            },
+            { key: 'loops', label: 'Loops', type: 'number', min: 1, max: 9 },
+            { key: 'tempo', label: 'Tempo', type: 'number', min: 1, max: 12 },
+            { key: 'includeBase', label: 'Include base payload', type: 'checkbox' },
+            { key: 'label', label: 'Label', type: 'text', placeholder: 'Horizon beat journal' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const intensity = String(config?.intensity || 'medium').toLowerCase();
+            const loops = Math.max(1, parseInt(config?.loops, 10) || 1);
+            const tempo = Math.max(1, parseInt(config?.tempo, 10) || 1);
+            const includeBase = config?.includeBase !== false;
+            const label = (config?.label || 'Horizon beat journal').trim() || 'Horizon beat journal';
+            const fragments = [
+                'Horizon beat trigger fragment glittering horizon sequence 1',
+                'Horizon beat trigger fragment flowing beat sequence 2',
+                'Horizon beat trigger fragment spinning sunset sequence 3',
+                'Horizon beat trigger fragment looping glimmer sequence 4',
+                'Horizon beat trigger fragment vibrant glow sequence 5',
+                'Horizon beat trigger fragment wandering line sequence 6',
+                'Horizon beat trigger fragment braided pulse sequence 7',
+                'Horizon beat trigger fragment singing crest sequence 8',
+                'Horizon beat trigger fragment humming horizon sequence 9',
+                'Horizon beat trigger fragment simmering beat sequence 10',
+                'Horizon beat trigger fragment glittering sunset sequence 11',
+                'Horizon beat trigger fragment flowing glimmer sequence 12',
+                'Horizon beat trigger fragment spinning glow sequence 13',
+                'Horizon beat trigger fragment looping line sequence 14',
+                'Horizon beat trigger fragment vibrant pulse sequence 15',
+                'Horizon beat trigger fragment wandering crest sequence 16',
+                'Horizon beat trigger fragment braided horizon sequence 17',
+                'Horizon beat trigger fragment singing beat sequence 18',
+                'Horizon beat trigger fragment humming sunset sequence 19',
+                'Horizon beat trigger fragment simmering glimmer sequence 20',
+                'Horizon beat trigger fragment glittering glow sequence 21',
+                'Horizon beat trigger fragment flowing line sequence 22',
+                'Horizon beat trigger fragment spinning pulse sequence 23',
+                'Horizon beat trigger fragment looping crest sequence 24',
+                'Horizon beat trigger fragment vibrant horizon sequence 25',
+            ];
+            const moods = [
+                'Horizon beat trigger mood dawn horizon sequence 1',
+                'Horizon beat trigger mood twilight beat sequence 2',
+                'Horizon beat trigger mood echo sunset sequence 3',
+                'Horizon beat trigger mood glow glimmer sequence 4',
+                'Horizon beat trigger mood spark glow sequence 5',
+                'Horizon beat trigger mood tide line sequence 6',
+                'Horizon beat trigger mood whisper pulse sequence 7',
+                'Horizon beat trigger mood hum crest sequence 8',
+                'Horizon beat trigger mood pulse horizon sequence 9',
+                'Horizon beat trigger mood chorus beat sequence 10',
+                'Horizon beat trigger mood dawn sunset sequence 11',
+                'Horizon beat trigger mood twilight glimmer sequence 12',
+                'Horizon beat trigger mood echo glow sequence 13',
+                'Horizon beat trigger mood glow line sequence 14',
+                'Horizon beat trigger mood spark pulse sequence 15',
+                'Horizon beat trigger mood tide crest sequence 16',
+                'Horizon beat trigger mood whisper horizon sequence 17',
+                'Horizon beat trigger mood hum beat sequence 18',
+                'Horizon beat trigger mood pulse sunset sequence 19',
+                'Horizon beat trigger mood chorus glimmer sequence 20',
+                'Horizon beat trigger mood dawn glow sequence 21',
+                'Horizon beat trigger mood twilight line sequence 22',
+                'Horizon beat trigger mood echo pulse sequence 23',
+                'Horizon beat trigger mood glow crest sequence 24',
+                'Horizon beat trigger mood spark horizon sequence 25',
+            ];
+            const connectors = [
+                'Horizon beat trigger connector weaving horizon sequence 1',
+                'Horizon beat trigger connector braiding beat sequence 2',
+                'Horizon beat trigger connector linking sunset sequence 3',
+                'Horizon beat trigger connector stitching glimmer sequence 4',
+                'Horizon beat trigger connector guiding glow sequence 5',
+                'Horizon beat trigger connector threading line sequence 6',
+                'Horizon beat trigger connector folding pulse sequence 7',
+                'Horizon beat trigger connector mapping crest sequence 8',
+                'Horizon beat trigger connector casting horizon sequence 9',
+                'Horizon beat trigger connector painting beat sequence 10',
+                'Horizon beat trigger connector weaving sunset sequence 11',
+                'Horizon beat trigger connector braiding glimmer sequence 12',
+                'Horizon beat trigger connector linking glow sequence 13',
+                'Horizon beat trigger connector stitching line sequence 14',
+                'Horizon beat trigger connector guiding pulse sequence 15',
+                'Horizon beat trigger connector threading crest sequence 16',
+                'Horizon beat trigger connector folding horizon sequence 17',
+                'Horizon beat trigger connector mapping beat sequence 18',
+                'Horizon beat trigger connector casting sunset sequence 19',
+                'Horizon beat trigger connector painting glimmer sequence 20',
+                'Horizon beat trigger connector weaving glow sequence 21',
+                'Horizon beat trigger connector braiding line sequence 22',
+                'Horizon beat trigger connector linking pulse sequence 23',
+                'Horizon beat trigger connector stitching crest sequence 24',
+                'Horizon beat trigger connector guiding horizon sequence 25',
+            ];
+            const details = [
+                'Horizon beat trigger detail over valleys horizon sequence 1',
+                'Horizon beat trigger detail within galleries beat sequence 2',
+                'Horizon beat trigger detail across skylines sunset sequence 3',
+                'Horizon beat trigger detail through spirals glimmer sequence 4',
+                'Horizon beat trigger detail inside lanterns glow sequence 5',
+                'Horizon beat trigger detail beyond harbors line sequence 6',
+                'Horizon beat trigger detail beneath constellations pulse sequence 7',
+                'Horizon beat trigger detail among terraces crest sequence 8',
+                'Horizon beat trigger detail into archives horizon sequence 9',
+                'Horizon beat trigger detail around rivers beat sequence 10',
+                'Horizon beat trigger detail over valleys sunset sequence 11',
+                'Horizon beat trigger detail within galleries glimmer sequence 12',
+                'Horizon beat trigger detail across skylines glow sequence 13',
+                'Horizon beat trigger detail through spirals line sequence 14',
+                'Horizon beat trigger detail inside lanterns pulse sequence 15',
+                'Horizon beat trigger detail beyond harbors crest sequence 16',
+                'Horizon beat trigger detail beneath constellations horizon sequence 17',
+                'Horizon beat trigger detail among terraces beat sequence 18',
+                'Horizon beat trigger detail into archives sunset sequence 19',
+                'Horizon beat trigger detail around rivers glimmer sequence 20',
+                'Horizon beat trigger detail over valleys glow sequence 21',
+                'Horizon beat trigger detail within galleries line sequence 22',
+                'Horizon beat trigger detail across skylines pulse sequence 23',
+                'Horizon beat trigger detail through spirals crest sequence 24',
+                'Horizon beat trigger detail inside lanterns horizon sequence 25',
+            ];
+            const compositions = [];
+            for (let cycle = 0; cycle < loops; cycle++) {
+                for (let index = 0; index < fragments.length; index++) {
+                    const fragment = fragments[index];
+                    const mood = moods[(index + cycle) % moods.length];
+                    const connector = connectors[(index + tempo + cycle) % connectors.length];
+                    const detail = details[(index + loops + cycle) % details.length];
+                    const amplitude = ((index + 1) % (tempo + 1)) + cycle;
+                    compositions.push({
+                        fragment,
+                        mood,
+                        connector,
+                        detail,
+                        cycle: cycle + 1,
+                        beat: index + 1,
+                        amplitude,
+                        intensity
+                    });
+                }
+            }
+            const curatedLines = [];
+            compositions.forEach((item, index) => {
+                const emphasiser = index % 2 === 0 ? '>' : '~';
+                const descriptor = `${label} | cycle ${item.cycle} | beat ${item.beat} | ${item.fragment} | ${item.mood} | ${item.connector} | ${item.detail} | amplitude ${item.amplitude} | intensity ${item.intensity}`;
+                curatedLines.push(`${emphasiser} ${descriptor}`);
+                if ((index + 1) % tempo === 0) {
+                    curatedLines.push(`tempo-marker ${tempo} :: segment ${index + 1}`);
+                }
+                if (index % 3 === 0) {
+                    curatedLines.push(`echo ${index + 1} :: ${label} weaving ${item.connector}`);
+                }
+            });
+            const layered = [];
+            for (let index = 0; index < curatedLines.length; index++) {
+                const focus = curatedLines[index];
+                layered.push(`${label} swirl ${index + 1} => ${focus}`);
+                if (index % 4 === 0) {
+                    layered.push(`${label} harmonic ${index + 1} tempo ${tempo}`);
+                }
+            }
+            const ensemble = layered.concat(curatedLines);
+            const deduplicated = [];
+            const seen = new Set();
+            ensemble.forEach((item) => {
+                if (!seen.has(item)) {
+                    deduplicated.push(item);
+                    seen.add(item);
+                }
+            });
+            const trimmedBase = basePayload.trim();
+            if (includeBase && trimmedBase) {
+                deduplicated.unshift(`base-payload :: ${trimmedBase}`);
+            }
+            const numbered = deduplicated.map((line, index) => `${index + 1}. ${line}`);
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_trigger_horizon_beat';
+            clone.vars[`${safeKey}_intensity`] = intensity;
+            clone.vars[`${safeKey}_compositions`] = compositions.length;
+            clone.vars[`${safeKey}_label`] = label;
+            clone.vars[`${safeKey}_entries`] = numbered.length;
+            clone.payload = numbered.join(newlineChar);
+            clone.logs.push('Horizon beat trigger emitted horizon beat journal sequences.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-trigger-cinder-skip',
+        category: 'trigger',
+        name: 'Cinder skip trigger',
+        description: 'Leap ahead when playful cinders skip across the canvas.',
+        icon: 'skip-forward',
+        accent: '#14b8a6',
+        tags: ['trigger', 'cinder', 'skip', 'fantasy'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { intensity: 'medium', loops: 1, tempo: 2, includeBase: true, label: 'Cinder skip log' },
+        form: [
+            {
+                key: 'intensity',
+                label: 'Intensity',
+                type: 'select',
+                options: [
+                    { value: 'calm', label: 'Calm' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'bold', label: 'Bold' }
+                ]
+            },
+            { key: 'loops', label: 'Loops', type: 'number', min: 1, max: 9 },
+            { key: 'tempo', label: 'Tempo', type: 'number', min: 1, max: 12 },
+            { key: 'includeBase', label: 'Include base payload', type: 'checkbox' },
+            { key: 'label', label: 'Label', type: 'text', placeholder: 'Cinder skip log' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const intensity = String(config?.intensity || 'medium').toLowerCase();
+            const loops = Math.max(1, parseInt(config?.loops, 10) || 1);
+            const tempo = Math.max(1, parseInt(config?.tempo, 10) || 1);
+            const includeBase = config?.includeBase !== false;
+            const label = (config?.label || 'Cinder skip log').trim() || 'Cinder skip log';
+            const fragments = [
+                'Cinder skip trigger fragment glittering cinder sequence 1',
+                'Cinder skip trigger fragment flowing skip sequence 2',
+                'Cinder skip trigger fragment spinning spark sequence 3',
+                'Cinder skip trigger fragment looping ash sequence 4',
+                'Cinder skip trigger fragment vibrant ember sequence 5',
+                'Cinder skip trigger fragment wandering loop sequence 6',
+                'Cinder skip trigger fragment braided twirl sequence 7',
+                'Cinder skip trigger fragment singing flare sequence 8',
+                'Cinder skip trigger fragment humming cinder sequence 9',
+                'Cinder skip trigger fragment simmering skip sequence 10',
+                'Cinder skip trigger fragment glittering spark sequence 11',
+                'Cinder skip trigger fragment flowing ash sequence 12',
+                'Cinder skip trigger fragment spinning ember sequence 13',
+                'Cinder skip trigger fragment looping loop sequence 14',
+                'Cinder skip trigger fragment vibrant twirl sequence 15',
+                'Cinder skip trigger fragment wandering flare sequence 16',
+                'Cinder skip trigger fragment braided cinder sequence 17',
+                'Cinder skip trigger fragment singing skip sequence 18',
+                'Cinder skip trigger fragment humming spark sequence 19',
+                'Cinder skip trigger fragment simmering ash sequence 20',
+                'Cinder skip trigger fragment glittering ember sequence 21',
+                'Cinder skip trigger fragment flowing loop sequence 22',
+                'Cinder skip trigger fragment spinning twirl sequence 23',
+                'Cinder skip trigger fragment looping flare sequence 24',
+                'Cinder skip trigger fragment vibrant cinder sequence 25',
+            ];
+            const moods = [
+                'Cinder skip trigger mood dawn cinder sequence 1',
+                'Cinder skip trigger mood twilight skip sequence 2',
+                'Cinder skip trigger mood echo spark sequence 3',
+                'Cinder skip trigger mood glow ash sequence 4',
+                'Cinder skip trigger mood spark ember sequence 5',
+                'Cinder skip trigger mood tide loop sequence 6',
+                'Cinder skip trigger mood whisper twirl sequence 7',
+                'Cinder skip trigger mood hum flare sequence 8',
+                'Cinder skip trigger mood pulse cinder sequence 9',
+                'Cinder skip trigger mood chorus skip sequence 10',
+                'Cinder skip trigger mood dawn spark sequence 11',
+                'Cinder skip trigger mood twilight ash sequence 12',
+                'Cinder skip trigger mood echo ember sequence 13',
+                'Cinder skip trigger mood glow loop sequence 14',
+                'Cinder skip trigger mood spark twirl sequence 15',
+                'Cinder skip trigger mood tide flare sequence 16',
+                'Cinder skip trigger mood whisper cinder sequence 17',
+                'Cinder skip trigger mood hum skip sequence 18',
+                'Cinder skip trigger mood pulse spark sequence 19',
+                'Cinder skip trigger mood chorus ash sequence 20',
+                'Cinder skip trigger mood dawn ember sequence 21',
+                'Cinder skip trigger mood twilight loop sequence 22',
+                'Cinder skip trigger mood echo twirl sequence 23',
+                'Cinder skip trigger mood glow flare sequence 24',
+                'Cinder skip trigger mood spark cinder sequence 25',
+            ];
+            const connectors = [
+                'Cinder skip trigger connector weaving cinder sequence 1',
+                'Cinder skip trigger connector braiding skip sequence 2',
+                'Cinder skip trigger connector linking spark sequence 3',
+                'Cinder skip trigger connector stitching ash sequence 4',
+                'Cinder skip trigger connector guiding ember sequence 5',
+                'Cinder skip trigger connector threading loop sequence 6',
+                'Cinder skip trigger connector folding twirl sequence 7',
+                'Cinder skip trigger connector mapping flare sequence 8',
+                'Cinder skip trigger connector casting cinder sequence 9',
+                'Cinder skip trigger connector painting skip sequence 10',
+                'Cinder skip trigger connector weaving spark sequence 11',
+                'Cinder skip trigger connector braiding ash sequence 12',
+                'Cinder skip trigger connector linking ember sequence 13',
+                'Cinder skip trigger connector stitching loop sequence 14',
+                'Cinder skip trigger connector guiding twirl sequence 15',
+                'Cinder skip trigger connector threading flare sequence 16',
+                'Cinder skip trigger connector folding cinder sequence 17',
+                'Cinder skip trigger connector mapping skip sequence 18',
+                'Cinder skip trigger connector casting spark sequence 19',
+                'Cinder skip trigger connector painting ash sequence 20',
+                'Cinder skip trigger connector weaving ember sequence 21',
+                'Cinder skip trigger connector braiding loop sequence 22',
+                'Cinder skip trigger connector linking twirl sequence 23',
+                'Cinder skip trigger connector stitching flare sequence 24',
+                'Cinder skip trigger connector guiding cinder sequence 25',
+            ];
+            const details = [
+                'Cinder skip trigger detail over valleys cinder sequence 1',
+                'Cinder skip trigger detail within galleries skip sequence 2',
+                'Cinder skip trigger detail across skylines spark sequence 3',
+                'Cinder skip trigger detail through spirals ash sequence 4',
+                'Cinder skip trigger detail inside lanterns ember sequence 5',
+                'Cinder skip trigger detail beyond harbors loop sequence 6',
+                'Cinder skip trigger detail beneath constellations twirl sequence 7',
+                'Cinder skip trigger detail among terraces flare sequence 8',
+                'Cinder skip trigger detail into archives cinder sequence 9',
+                'Cinder skip trigger detail around rivers skip sequence 10',
+                'Cinder skip trigger detail over valleys spark sequence 11',
+                'Cinder skip trigger detail within galleries ash sequence 12',
+                'Cinder skip trigger detail across skylines ember sequence 13',
+                'Cinder skip trigger detail through spirals loop sequence 14',
+                'Cinder skip trigger detail inside lanterns twirl sequence 15',
+                'Cinder skip trigger detail beyond harbors flare sequence 16',
+                'Cinder skip trigger detail beneath constellations cinder sequence 17',
+                'Cinder skip trigger detail among terraces skip sequence 18',
+                'Cinder skip trigger detail into archives spark sequence 19',
+                'Cinder skip trigger detail around rivers ash sequence 20',
+                'Cinder skip trigger detail over valleys ember sequence 21',
+                'Cinder skip trigger detail within galleries loop sequence 22',
+                'Cinder skip trigger detail across skylines twirl sequence 23',
+                'Cinder skip trigger detail through spirals flare sequence 24',
+                'Cinder skip trigger detail inside lanterns cinder sequence 25',
+            ];
+            const compositions = [];
+            for (let cycle = 0; cycle < loops; cycle++) {
+                for (let index = 0; index < fragments.length; index++) {
+                    const fragment = fragments[index];
+                    const mood = moods[(index + cycle) % moods.length];
+                    const connector = connectors[(index + tempo + cycle) % connectors.length];
+                    const detail = details[(index + loops + cycle) % details.length];
+                    const amplitude = ((index + 1) % (tempo + 1)) + cycle;
+                    compositions.push({
+                        fragment,
+                        mood,
+                        connector,
+                        detail,
+                        cycle: cycle + 1,
+                        beat: index + 1,
+                        amplitude,
+                        intensity
+                    });
+                }
+            }
+            const curatedLines = [];
+            compositions.forEach((item, index) => {
+                const emphasiser = index % 2 === 0 ? '>' : '~';
+                const descriptor = `${label} | cycle ${item.cycle} | beat ${item.beat} | ${item.fragment} | ${item.mood} | ${item.connector} | ${item.detail} | amplitude ${item.amplitude} | intensity ${item.intensity}`;
+                curatedLines.push(`${emphasiser} ${descriptor}`);
+                if ((index + 1) % tempo === 0) {
+                    curatedLines.push(`tempo-marker ${tempo} :: segment ${index + 1}`);
+                }
+                if (index % 3 === 0) {
+                    curatedLines.push(`echo ${index + 1} :: ${label} weaving ${item.connector}`);
+                }
+            });
+            const layered = [];
+            for (let index = 0; index < curatedLines.length; index++) {
+                const focus = curatedLines[index];
+                layered.push(`${label} swirl ${index + 1} => ${focus}`);
+                if (index % 4 === 0) {
+                    layered.push(`${label} harmonic ${index + 1} tempo ${tempo}`);
+                }
+            }
+            const ensemble = layered.concat(curatedLines);
+            const deduplicated = [];
+            const seen = new Set();
+            ensemble.forEach((item) => {
+                if (!seen.has(item)) {
+                    deduplicated.push(item);
+                    seen.add(item);
+                }
+            });
+            const trimmedBase = basePayload.trim();
+            if (includeBase && trimmedBase) {
+                deduplicated.unshift(`base-payload :: ${trimmedBase}`);
+            }
+            const numbered = deduplicated.map((line, index) => `${index + 1}. ${line}`);
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_trigger_cinder_skip';
+            clone.vars[`${safeKey}_intensity`] = intensity;
+            clone.vars[`${safeKey}_compositions`] = compositions.length;
+            clone.vars[`${safeKey}_label`] = label;
+            clone.vars[`${safeKey}_entries`] = numbered.length;
+            clone.payload = numbered.join(newlineChar);
+            clone.logs.push('Cinder skip trigger emitted cinder skip log sequences.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-trigger-quartz-hum',
+        category: 'trigger',
+        name: 'Quartz hum trigger',
+        description: 'Breathe life when quartz harmonies hum beneath the desk.',
+        icon: 'music',
+        accent: '#a3e635',
+        tags: ['trigger', 'quartz', 'hum', 'fantasy'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { intensity: 'medium', loops: 1, tempo: 2, includeBase: true, label: 'Quartz hum notebook' },
+        form: [
+            {
+                key: 'intensity',
+                label: 'Intensity',
+                type: 'select',
+                options: [
+                    { value: 'calm', label: 'Calm' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'bold', label: 'Bold' }
+                ]
+            },
+            { key: 'loops', label: 'Loops', type: 'number', min: 1, max: 9 },
+            { key: 'tempo', label: 'Tempo', type: 'number', min: 1, max: 12 },
+            { key: 'includeBase', label: 'Include base payload', type: 'checkbox' },
+            { key: 'label', label: 'Label', type: 'text', placeholder: 'Quartz hum notebook' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const intensity = String(config?.intensity || 'medium').toLowerCase();
+            const loops = Math.max(1, parseInt(config?.loops, 10) || 1);
+            const tempo = Math.max(1, parseInt(config?.tempo, 10) || 1);
+            const includeBase = config?.includeBase !== false;
+            const label = (config?.label || 'Quartz hum notebook').trim() || 'Quartz hum notebook';
+            const fragments = [
+                'Quartz hum trigger fragment glittering quartz sequence 1',
+                'Quartz hum trigger fragment flowing hum sequence 2',
+                'Quartz hum trigger fragment spinning crystal sequence 3',
+                'Quartz hum trigger fragment looping shine sequence 4',
+                'Quartz hum trigger fragment vibrant humble sequence 5',
+                'Quartz hum trigger fragment wandering tone sequence 6',
+                'Quartz hum trigger fragment braided ring sequence 7',
+                'Quartz hum trigger fragment singing spark sequence 8',
+                'Quartz hum trigger fragment humming quartz sequence 9',
+                'Quartz hum trigger fragment simmering hum sequence 10',
+                'Quartz hum trigger fragment glittering crystal sequence 11',
+                'Quartz hum trigger fragment flowing shine sequence 12',
+                'Quartz hum trigger fragment spinning humble sequence 13',
+                'Quartz hum trigger fragment looping tone sequence 14',
+                'Quartz hum trigger fragment vibrant ring sequence 15',
+                'Quartz hum trigger fragment wandering spark sequence 16',
+                'Quartz hum trigger fragment braided quartz sequence 17',
+                'Quartz hum trigger fragment singing hum sequence 18',
+                'Quartz hum trigger fragment humming crystal sequence 19',
+                'Quartz hum trigger fragment simmering shine sequence 20',
+                'Quartz hum trigger fragment glittering humble sequence 21',
+                'Quartz hum trigger fragment flowing tone sequence 22',
+                'Quartz hum trigger fragment spinning ring sequence 23',
+                'Quartz hum trigger fragment looping spark sequence 24',
+                'Quartz hum trigger fragment vibrant quartz sequence 25',
+            ];
+            const moods = [
+                'Quartz hum trigger mood dawn quartz sequence 1',
+                'Quartz hum trigger mood twilight hum sequence 2',
+                'Quartz hum trigger mood echo crystal sequence 3',
+                'Quartz hum trigger mood glow shine sequence 4',
+                'Quartz hum trigger mood spark humble sequence 5',
+                'Quartz hum trigger mood tide tone sequence 6',
+                'Quartz hum trigger mood whisper ring sequence 7',
+                'Quartz hum trigger mood hum spark sequence 8',
+                'Quartz hum trigger mood pulse quartz sequence 9',
+                'Quartz hum trigger mood chorus hum sequence 10',
+                'Quartz hum trigger mood dawn crystal sequence 11',
+                'Quartz hum trigger mood twilight shine sequence 12',
+                'Quartz hum trigger mood echo humble sequence 13',
+                'Quartz hum trigger mood glow tone sequence 14',
+                'Quartz hum trigger mood spark ring sequence 15',
+                'Quartz hum trigger mood tide spark sequence 16',
+                'Quartz hum trigger mood whisper quartz sequence 17',
+                'Quartz hum trigger mood hum hum sequence 18',
+                'Quartz hum trigger mood pulse crystal sequence 19',
+                'Quartz hum trigger mood chorus shine sequence 20',
+                'Quartz hum trigger mood dawn humble sequence 21',
+                'Quartz hum trigger mood twilight tone sequence 22',
+                'Quartz hum trigger mood echo ring sequence 23',
+                'Quartz hum trigger mood glow spark sequence 24',
+                'Quartz hum trigger mood spark quartz sequence 25',
+            ];
+            const connectors = [
+                'Quartz hum trigger connector weaving quartz sequence 1',
+                'Quartz hum trigger connector braiding hum sequence 2',
+                'Quartz hum trigger connector linking crystal sequence 3',
+                'Quartz hum trigger connector stitching shine sequence 4',
+                'Quartz hum trigger connector guiding humble sequence 5',
+                'Quartz hum trigger connector threading tone sequence 6',
+                'Quartz hum trigger connector folding ring sequence 7',
+                'Quartz hum trigger connector mapping spark sequence 8',
+                'Quartz hum trigger connector casting quartz sequence 9',
+                'Quartz hum trigger connector painting hum sequence 10',
+                'Quartz hum trigger connector weaving crystal sequence 11',
+                'Quartz hum trigger connector braiding shine sequence 12',
+                'Quartz hum trigger connector linking humble sequence 13',
+                'Quartz hum trigger connector stitching tone sequence 14',
+                'Quartz hum trigger connector guiding ring sequence 15',
+                'Quartz hum trigger connector threading spark sequence 16',
+                'Quartz hum trigger connector folding quartz sequence 17',
+                'Quartz hum trigger connector mapping hum sequence 18',
+                'Quartz hum trigger connector casting crystal sequence 19',
+                'Quartz hum trigger connector painting shine sequence 20',
+                'Quartz hum trigger connector weaving humble sequence 21',
+                'Quartz hum trigger connector braiding tone sequence 22',
+                'Quartz hum trigger connector linking ring sequence 23',
+                'Quartz hum trigger connector stitching spark sequence 24',
+                'Quartz hum trigger connector guiding quartz sequence 25',
+            ];
+            const details = [
+                'Quartz hum trigger detail over valleys quartz sequence 1',
+                'Quartz hum trigger detail within galleries hum sequence 2',
+                'Quartz hum trigger detail across skylines crystal sequence 3',
+                'Quartz hum trigger detail through spirals shine sequence 4',
+                'Quartz hum trigger detail inside lanterns humble sequence 5',
+                'Quartz hum trigger detail beyond harbors tone sequence 6',
+                'Quartz hum trigger detail beneath constellations ring sequence 7',
+                'Quartz hum trigger detail among terraces spark sequence 8',
+                'Quartz hum trigger detail into archives quartz sequence 9',
+                'Quartz hum trigger detail around rivers hum sequence 10',
+                'Quartz hum trigger detail over valleys crystal sequence 11',
+                'Quartz hum trigger detail within galleries shine sequence 12',
+                'Quartz hum trigger detail across skylines humble sequence 13',
+                'Quartz hum trigger detail through spirals tone sequence 14',
+                'Quartz hum trigger detail inside lanterns ring sequence 15',
+                'Quartz hum trigger detail beyond harbors spark sequence 16',
+                'Quartz hum trigger detail beneath constellations quartz sequence 17',
+                'Quartz hum trigger detail among terraces hum sequence 18',
+                'Quartz hum trigger detail into archives crystal sequence 19',
+                'Quartz hum trigger detail around rivers shine sequence 20',
+                'Quartz hum trigger detail over valleys humble sequence 21',
+                'Quartz hum trigger detail within galleries tone sequence 22',
+                'Quartz hum trigger detail across skylines ring sequence 23',
+                'Quartz hum trigger detail through spirals spark sequence 24',
+                'Quartz hum trigger detail inside lanterns quartz sequence 25',
+            ];
+            const compositions = [];
+            for (let cycle = 0; cycle < loops; cycle++) {
+                for (let index = 0; index < fragments.length; index++) {
+                    const fragment = fragments[index];
+                    const mood = moods[(index + cycle) % moods.length];
+                    const connector = connectors[(index + tempo + cycle) % connectors.length];
+                    const detail = details[(index + loops + cycle) % details.length];
+                    const amplitude = ((index + 1) % (tempo + 1)) + cycle;
+                    compositions.push({
+                        fragment,
+                        mood,
+                        connector,
+                        detail,
+                        cycle: cycle + 1,
+                        beat: index + 1,
+                        amplitude,
+                        intensity
+                    });
+                }
+            }
+            const curatedLines = [];
+            compositions.forEach((item, index) => {
+                const emphasiser = index % 2 === 0 ? '>' : '~';
+                const descriptor = `${label} | cycle ${item.cycle} | beat ${item.beat} | ${item.fragment} | ${item.mood} | ${item.connector} | ${item.detail} | amplitude ${item.amplitude} | intensity ${item.intensity}`;
+                curatedLines.push(`${emphasiser} ${descriptor}`);
+                if ((index + 1) % tempo === 0) {
+                    curatedLines.push(`tempo-marker ${tempo} :: segment ${index + 1}`);
+                }
+                if (index % 3 === 0) {
+                    curatedLines.push(`echo ${index + 1} :: ${label} weaving ${item.connector}`);
+                }
+            });
+            const layered = [];
+            for (let index = 0; index < curatedLines.length; index++) {
+                const focus = curatedLines[index];
+                layered.push(`${label} swirl ${index + 1} => ${focus}`);
+                if (index % 4 === 0) {
+                    layered.push(`${label} harmonic ${index + 1} tempo ${tempo}`);
+                }
+            }
+            const ensemble = layered.concat(curatedLines);
+            const deduplicated = [];
+            const seen = new Set();
+            ensemble.forEach((item) => {
+                if (!seen.has(item)) {
+                    deduplicated.push(item);
+                    seen.add(item);
+                }
+            });
+            const trimmedBase = basePayload.trim();
+            if (includeBase && trimmedBase) {
+                deduplicated.unshift(`base-payload :: ${trimmedBase}`);
+            }
+            const numbered = deduplicated.map((line, index) => `${index + 1}. ${line}`);
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_trigger_quartz_hum';
+            clone.vars[`${safeKey}_intensity`] = intensity;
+            clone.vars[`${safeKey}_compositions`] = compositions.length;
+            clone.vars[`${safeKey}_label`] = label;
+            clone.vars[`${safeKey}_entries`] = numbered.length;
+            clone.payload = numbered.join(newlineChar);
+            clone.logs.push('Quartz hum trigger emitted quartz hum notebook sequences.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-trigger-lantern-signal',
+        category: 'trigger',
+        name: 'Lantern signal trigger',
+        description: 'Illuminates flows when distant lanterns signal in chorus.',
+        icon: 'alert-circle',
+        accent: '#fbbf24',
+        tags: ['trigger', 'lantern', 'signal', 'fantasy'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { intensity: 'medium', loops: 1, tempo: 2, includeBase: true, label: 'Lantern signal board' },
+        form: [
+            {
+                key: 'intensity',
+                label: 'Intensity',
+                type: 'select',
+                options: [
+                    { value: 'calm', label: 'Calm' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'bold', label: 'Bold' }
+                ]
+            },
+            { key: 'loops', label: 'Loops', type: 'number', min: 1, max: 9 },
+            { key: 'tempo', label: 'Tempo', type: 'number', min: 1, max: 12 },
+            { key: 'includeBase', label: 'Include base payload', type: 'checkbox' },
+            { key: 'label', label: 'Label', type: 'text', placeholder: 'Lantern signal board' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const intensity = String(config?.intensity || 'medium').toLowerCase();
+            const loops = Math.max(1, parseInt(config?.loops, 10) || 1);
+            const tempo = Math.max(1, parseInt(config?.tempo, 10) || 1);
+            const includeBase = config?.includeBase !== false;
+            const label = (config?.label || 'Lantern signal board').trim() || 'Lantern signal board';
+            const fragments = [
+                'Lantern signal trigger fragment glittering lantern sequence 1',
+                'Lantern signal trigger fragment flowing signal sequence 2',
+                'Lantern signal trigger fragment spinning glow sequence 3',
+                'Lantern signal trigger fragment looping path sequence 4',
+                'Lantern signal trigger fragment vibrant guiding sequence 5',
+                'Lantern signal trigger fragment wandering twinkle sequence 6',
+                'Lantern signal trigger fragment braided evening sequence 7',
+                'Lantern signal trigger fragment singing trail sequence 8',
+                'Lantern signal trigger fragment humming lantern sequence 9',
+                'Lantern signal trigger fragment simmering signal sequence 10',
+                'Lantern signal trigger fragment glittering glow sequence 11',
+                'Lantern signal trigger fragment flowing path sequence 12',
+                'Lantern signal trigger fragment spinning guiding sequence 13',
+                'Lantern signal trigger fragment looping twinkle sequence 14',
+                'Lantern signal trigger fragment vibrant evening sequence 15',
+                'Lantern signal trigger fragment wandering trail sequence 16',
+                'Lantern signal trigger fragment braided lantern sequence 17',
+                'Lantern signal trigger fragment singing signal sequence 18',
+                'Lantern signal trigger fragment humming glow sequence 19',
+                'Lantern signal trigger fragment simmering path sequence 20',
+                'Lantern signal trigger fragment glittering guiding sequence 21',
+                'Lantern signal trigger fragment flowing twinkle sequence 22',
+                'Lantern signal trigger fragment spinning evening sequence 23',
+                'Lantern signal trigger fragment looping trail sequence 24',
+                'Lantern signal trigger fragment vibrant lantern sequence 25',
+            ];
+            const moods = [
+                'Lantern signal trigger mood dawn lantern sequence 1',
+                'Lantern signal trigger mood twilight signal sequence 2',
+                'Lantern signal trigger mood echo glow sequence 3',
+                'Lantern signal trigger mood glow path sequence 4',
+                'Lantern signal trigger mood spark guiding sequence 5',
+                'Lantern signal trigger mood tide twinkle sequence 6',
+                'Lantern signal trigger mood whisper evening sequence 7',
+                'Lantern signal trigger mood hum trail sequence 8',
+                'Lantern signal trigger mood pulse lantern sequence 9',
+                'Lantern signal trigger mood chorus signal sequence 10',
+                'Lantern signal trigger mood dawn glow sequence 11',
+                'Lantern signal trigger mood twilight path sequence 12',
+                'Lantern signal trigger mood echo guiding sequence 13',
+                'Lantern signal trigger mood glow twinkle sequence 14',
+                'Lantern signal trigger mood spark evening sequence 15',
+                'Lantern signal trigger mood tide trail sequence 16',
+                'Lantern signal trigger mood whisper lantern sequence 17',
+                'Lantern signal trigger mood hum signal sequence 18',
+                'Lantern signal trigger mood pulse glow sequence 19',
+                'Lantern signal trigger mood chorus path sequence 20',
+                'Lantern signal trigger mood dawn guiding sequence 21',
+                'Lantern signal trigger mood twilight twinkle sequence 22',
+                'Lantern signal trigger mood echo evening sequence 23',
+                'Lantern signal trigger mood glow trail sequence 24',
+                'Lantern signal trigger mood spark lantern sequence 25',
+            ];
+            const connectors = [
+                'Lantern signal trigger connector weaving lantern sequence 1',
+                'Lantern signal trigger connector braiding signal sequence 2',
+                'Lantern signal trigger connector linking glow sequence 3',
+                'Lantern signal trigger connector stitching path sequence 4',
+                'Lantern signal trigger connector guiding guiding sequence 5',
+                'Lantern signal trigger connector threading twinkle sequence 6',
+                'Lantern signal trigger connector folding evening sequence 7',
+                'Lantern signal trigger connector mapping trail sequence 8',
+                'Lantern signal trigger connector casting lantern sequence 9',
+                'Lantern signal trigger connector painting signal sequence 10',
+                'Lantern signal trigger connector weaving glow sequence 11',
+                'Lantern signal trigger connector braiding path sequence 12',
+                'Lantern signal trigger connector linking guiding sequence 13',
+                'Lantern signal trigger connector stitching twinkle sequence 14',
+                'Lantern signal trigger connector guiding evening sequence 15',
+                'Lantern signal trigger connector threading trail sequence 16',
+                'Lantern signal trigger connector folding lantern sequence 17',
+                'Lantern signal trigger connector mapping signal sequence 18',
+                'Lantern signal trigger connector casting glow sequence 19',
+                'Lantern signal trigger connector painting path sequence 20',
+                'Lantern signal trigger connector weaving guiding sequence 21',
+                'Lantern signal trigger connector braiding twinkle sequence 22',
+                'Lantern signal trigger connector linking evening sequence 23',
+                'Lantern signal trigger connector stitching trail sequence 24',
+                'Lantern signal trigger connector guiding lantern sequence 25',
+            ];
+            const details = [
+                'Lantern signal trigger detail over valleys lantern sequence 1',
+                'Lantern signal trigger detail within galleries signal sequence 2',
+                'Lantern signal trigger detail across skylines glow sequence 3',
+                'Lantern signal trigger detail through spirals path sequence 4',
+                'Lantern signal trigger detail inside lanterns guiding sequence 5',
+                'Lantern signal trigger detail beyond harbors twinkle sequence 6',
+                'Lantern signal trigger detail beneath constellations evening sequence 7',
+                'Lantern signal trigger detail among terraces trail sequence 8',
+                'Lantern signal trigger detail into archives lantern sequence 9',
+                'Lantern signal trigger detail around rivers signal sequence 10',
+                'Lantern signal trigger detail over valleys glow sequence 11',
+                'Lantern signal trigger detail within galleries path sequence 12',
+                'Lantern signal trigger detail across skylines guiding sequence 13',
+                'Lantern signal trigger detail through spirals twinkle sequence 14',
+                'Lantern signal trigger detail inside lanterns evening sequence 15',
+                'Lantern signal trigger detail beyond harbors trail sequence 16',
+                'Lantern signal trigger detail beneath constellations lantern sequence 17',
+                'Lantern signal trigger detail among terraces signal sequence 18',
+                'Lantern signal trigger detail into archives glow sequence 19',
+                'Lantern signal trigger detail around rivers path sequence 20',
+                'Lantern signal trigger detail over valleys guiding sequence 21',
+                'Lantern signal trigger detail within galleries twinkle sequence 22',
+                'Lantern signal trigger detail across skylines evening sequence 23',
+                'Lantern signal trigger detail through spirals trail sequence 24',
+                'Lantern signal trigger detail inside lanterns lantern sequence 25',
+            ];
+            const compositions = [];
+            for (let cycle = 0; cycle < loops; cycle++) {
+                for (let index = 0; index < fragments.length; index++) {
+                    const fragment = fragments[index];
+                    const mood = moods[(index + cycle) % moods.length];
+                    const connector = connectors[(index + tempo + cycle) % connectors.length];
+                    const detail = details[(index + loops + cycle) % details.length];
+                    const amplitude = ((index + 1) % (tempo + 1)) + cycle;
+                    compositions.push({
+                        fragment,
+                        mood,
+                        connector,
+                        detail,
+                        cycle: cycle + 1,
+                        beat: index + 1,
+                        amplitude,
+                        intensity
+                    });
+                }
+            }
+            const curatedLines = [];
+            compositions.forEach((item, index) => {
+                const emphasiser = index % 2 === 0 ? '>' : '~';
+                const descriptor = `${label} | cycle ${item.cycle} | beat ${item.beat} | ${item.fragment} | ${item.mood} | ${item.connector} | ${item.detail} | amplitude ${item.amplitude} | intensity ${item.intensity}`;
+                curatedLines.push(`${emphasiser} ${descriptor}`);
+                if ((index + 1) % tempo === 0) {
+                    curatedLines.push(`tempo-marker ${tempo} :: segment ${index + 1}`);
+                }
+                if (index % 3 === 0) {
+                    curatedLines.push(`echo ${index + 1} :: ${label} weaving ${item.connector}`);
+                }
+            });
+            const layered = [];
+            for (let index = 0; index < curatedLines.length; index++) {
+                const focus = curatedLines[index];
+                layered.push(`${label} swirl ${index + 1} => ${focus}`);
+                if (index % 4 === 0) {
+                    layered.push(`${label} harmonic ${index + 1} tempo ${tempo}`);
+                }
+            }
+            const ensemble = layered.concat(curatedLines);
+            const deduplicated = [];
+            const seen = new Set();
+            ensemble.forEach((item) => {
+                if (!seen.has(item)) {
+                    deduplicated.push(item);
+                    seen.add(item);
+                }
+            });
+            const trimmedBase = basePayload.trim();
+            if (includeBase && trimmedBase) {
+                deduplicated.unshift(`base-payload :: ${trimmedBase}`);
+            }
+            const numbered = deduplicated.map((line, index) => `${index + 1}. ${line}`);
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_trigger_lantern_signal';
+            clone.vars[`${safeKey}_intensity`] = intensity;
+            clone.vars[`${safeKey}_compositions`] = compositions.length;
+            clone.vars[`${safeKey}_label`] = label;
+            clone.vars[`${safeKey}_entries`] = numbered.length;
+            clone.payload = numbered.join(newlineChar);
+            clone.logs.push('Lantern signal trigger emitted lantern signal board sequences.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-trigger-rain-kaleidoscope',
+        category: 'trigger',
+        name: 'Rain kaleidoscope trigger',
+        description: 'Spin flows when raindrops kaleidoscope upon every window.',
+        icon: 'droplet',
+        accent: '#0ea5e9',
+        tags: ['trigger', 'rain', 'kaleidoscope', 'fantasy'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { intensity: 'medium', loops: 1, tempo: 2, includeBase: true, label: 'Rain kaleidoscope register' },
+        form: [
+            {
+                key: 'intensity',
+                label: 'Intensity',
+                type: 'select',
+                options: [
+                    { value: 'calm', label: 'Calm' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'bold', label: 'Bold' }
+                ]
+            },
+            { key: 'loops', label: 'Loops', type: 'number', min: 1, max: 9 },
+            { key: 'tempo', label: 'Tempo', type: 'number', min: 1, max: 12 },
+            { key: 'includeBase', label: 'Include base payload', type: 'checkbox' },
+            { key: 'label', label: 'Label', type: 'text', placeholder: 'Rain kaleidoscope register' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const intensity = String(config?.intensity || 'medium').toLowerCase();
+            const loops = Math.max(1, parseInt(config?.loops, 10) || 1);
+            const tempo = Math.max(1, parseInt(config?.tempo, 10) || 1);
+            const includeBase = config?.includeBase !== false;
+            const label = (config?.label || 'Rain kaleidoscope register').trim() || 'Rain kaleidoscope register';
+            const fragments = [
+                'Rain kaleidoscope trigger fragment glittering rain sequence 1',
+                'Rain kaleidoscope trigger fragment flowing kaleidoscope sequence 2',
+                'Rain kaleidoscope trigger fragment spinning drop sequence 3',
+                'Rain kaleidoscope trigger fragment looping splash sequence 4',
+                'Rain kaleidoscope trigger fragment vibrant ripple sequence 5',
+                'Rain kaleidoscope trigger fragment wandering mirror sequence 6',
+                'Rain kaleidoscope trigger fragment braided glisten sequence 7',
+                'Rain kaleidoscope trigger fragment singing pattern sequence 8',
+                'Rain kaleidoscope trigger fragment humming rain sequence 9',
+                'Rain kaleidoscope trigger fragment simmering kaleidoscope sequence 10',
+                'Rain kaleidoscope trigger fragment glittering drop sequence 11',
+                'Rain kaleidoscope trigger fragment flowing splash sequence 12',
+                'Rain kaleidoscope trigger fragment spinning ripple sequence 13',
+                'Rain kaleidoscope trigger fragment looping mirror sequence 14',
+                'Rain kaleidoscope trigger fragment vibrant glisten sequence 15',
+                'Rain kaleidoscope trigger fragment wandering pattern sequence 16',
+                'Rain kaleidoscope trigger fragment braided rain sequence 17',
+                'Rain kaleidoscope trigger fragment singing kaleidoscope sequence 18',
+                'Rain kaleidoscope trigger fragment humming drop sequence 19',
+                'Rain kaleidoscope trigger fragment simmering splash sequence 20',
+                'Rain kaleidoscope trigger fragment glittering ripple sequence 21',
+                'Rain kaleidoscope trigger fragment flowing mirror sequence 22',
+                'Rain kaleidoscope trigger fragment spinning glisten sequence 23',
+                'Rain kaleidoscope trigger fragment looping pattern sequence 24',
+                'Rain kaleidoscope trigger fragment vibrant rain sequence 25',
+            ];
+            const moods = [
+                'Rain kaleidoscope trigger mood dawn rain sequence 1',
+                'Rain kaleidoscope trigger mood twilight kaleidoscope sequence 2',
+                'Rain kaleidoscope trigger mood echo drop sequence 3',
+                'Rain kaleidoscope trigger mood glow splash sequence 4',
+                'Rain kaleidoscope trigger mood spark ripple sequence 5',
+                'Rain kaleidoscope trigger mood tide mirror sequence 6',
+                'Rain kaleidoscope trigger mood whisper glisten sequence 7',
+                'Rain kaleidoscope trigger mood hum pattern sequence 8',
+                'Rain kaleidoscope trigger mood pulse rain sequence 9',
+                'Rain kaleidoscope trigger mood chorus kaleidoscope sequence 10',
+                'Rain kaleidoscope trigger mood dawn drop sequence 11',
+                'Rain kaleidoscope trigger mood twilight splash sequence 12',
+                'Rain kaleidoscope trigger mood echo ripple sequence 13',
+                'Rain kaleidoscope trigger mood glow mirror sequence 14',
+                'Rain kaleidoscope trigger mood spark glisten sequence 15',
+                'Rain kaleidoscope trigger mood tide pattern sequence 16',
+                'Rain kaleidoscope trigger mood whisper rain sequence 17',
+                'Rain kaleidoscope trigger mood hum kaleidoscope sequence 18',
+                'Rain kaleidoscope trigger mood pulse drop sequence 19',
+                'Rain kaleidoscope trigger mood chorus splash sequence 20',
+                'Rain kaleidoscope trigger mood dawn ripple sequence 21',
+                'Rain kaleidoscope trigger mood twilight mirror sequence 22',
+                'Rain kaleidoscope trigger mood echo glisten sequence 23',
+                'Rain kaleidoscope trigger mood glow pattern sequence 24',
+                'Rain kaleidoscope trigger mood spark rain sequence 25',
+            ];
+            const connectors = [
+                'Rain kaleidoscope trigger connector weaving rain sequence 1',
+                'Rain kaleidoscope trigger connector braiding kaleidoscope sequence 2',
+                'Rain kaleidoscope trigger connector linking drop sequence 3',
+                'Rain kaleidoscope trigger connector stitching splash sequence 4',
+                'Rain kaleidoscope trigger connector guiding ripple sequence 5',
+                'Rain kaleidoscope trigger connector threading mirror sequence 6',
+                'Rain kaleidoscope trigger connector folding glisten sequence 7',
+                'Rain kaleidoscope trigger connector mapping pattern sequence 8',
+                'Rain kaleidoscope trigger connector casting rain sequence 9',
+                'Rain kaleidoscope trigger connector painting kaleidoscope sequence 10',
+                'Rain kaleidoscope trigger connector weaving drop sequence 11',
+                'Rain kaleidoscope trigger connector braiding splash sequence 12',
+                'Rain kaleidoscope trigger connector linking ripple sequence 13',
+                'Rain kaleidoscope trigger connector stitching mirror sequence 14',
+                'Rain kaleidoscope trigger connector guiding glisten sequence 15',
+                'Rain kaleidoscope trigger connector threading pattern sequence 16',
+                'Rain kaleidoscope trigger connector folding rain sequence 17',
+                'Rain kaleidoscope trigger connector mapping kaleidoscope sequence 18',
+                'Rain kaleidoscope trigger connector casting drop sequence 19',
+                'Rain kaleidoscope trigger connector painting splash sequence 20',
+                'Rain kaleidoscope trigger connector weaving ripple sequence 21',
+                'Rain kaleidoscope trigger connector braiding mirror sequence 22',
+                'Rain kaleidoscope trigger connector linking glisten sequence 23',
+                'Rain kaleidoscope trigger connector stitching pattern sequence 24',
+                'Rain kaleidoscope trigger connector guiding rain sequence 25',
+            ];
+            const details = [
+                'Rain kaleidoscope trigger detail over valleys rain sequence 1',
+                'Rain kaleidoscope trigger detail within galleries kaleidoscope sequence 2',
+                'Rain kaleidoscope trigger detail across skylines drop sequence 3',
+                'Rain kaleidoscope trigger detail through spirals splash sequence 4',
+                'Rain kaleidoscope trigger detail inside lanterns ripple sequence 5',
+                'Rain kaleidoscope trigger detail beyond harbors mirror sequence 6',
+                'Rain kaleidoscope trigger detail beneath constellations glisten sequence 7',
+                'Rain kaleidoscope trigger detail among terraces pattern sequence 8',
+                'Rain kaleidoscope trigger detail into archives rain sequence 9',
+                'Rain kaleidoscope trigger detail around rivers kaleidoscope sequence 10',
+                'Rain kaleidoscope trigger detail over valleys drop sequence 11',
+                'Rain kaleidoscope trigger detail within galleries splash sequence 12',
+                'Rain kaleidoscope trigger detail across skylines ripple sequence 13',
+                'Rain kaleidoscope trigger detail through spirals mirror sequence 14',
+                'Rain kaleidoscope trigger detail inside lanterns glisten sequence 15',
+                'Rain kaleidoscope trigger detail beyond harbors pattern sequence 16',
+                'Rain kaleidoscope trigger detail beneath constellations rain sequence 17',
+                'Rain kaleidoscope trigger detail among terraces kaleidoscope sequence 18',
+                'Rain kaleidoscope trigger detail into archives drop sequence 19',
+                'Rain kaleidoscope trigger detail around rivers splash sequence 20',
+                'Rain kaleidoscope trigger detail over valleys ripple sequence 21',
+                'Rain kaleidoscope trigger detail within galleries mirror sequence 22',
+                'Rain kaleidoscope trigger detail across skylines glisten sequence 23',
+                'Rain kaleidoscope trigger detail through spirals pattern sequence 24',
+                'Rain kaleidoscope trigger detail inside lanterns rain sequence 25',
+            ];
+            const compositions = [];
+            for (let cycle = 0; cycle < loops; cycle++) {
+                for (let index = 0; index < fragments.length; index++) {
+                    const fragment = fragments[index];
+                    const mood = moods[(index + cycle) % moods.length];
+                    const connector = connectors[(index + tempo + cycle) % connectors.length];
+                    const detail = details[(index + loops + cycle) % details.length];
+                    const amplitude = ((index + 1) % (tempo + 1)) + cycle;
+                    compositions.push({
+                        fragment,
+                        mood,
+                        connector,
+                        detail,
+                        cycle: cycle + 1,
+                        beat: index + 1,
+                        amplitude,
+                        intensity
+                    });
+                }
+            }
+            const curatedLines = [];
+            compositions.forEach((item, index) => {
+                const emphasiser = index % 2 === 0 ? '>' : '~';
+                const descriptor = `${label} | cycle ${item.cycle} | beat ${item.beat} | ${item.fragment} | ${item.mood} | ${item.connector} | ${item.detail} | amplitude ${item.amplitude} | intensity ${item.intensity}`;
+                curatedLines.push(`${emphasiser} ${descriptor}`);
+                if ((index + 1) % tempo === 0) {
+                    curatedLines.push(`tempo-marker ${tempo} :: segment ${index + 1}`);
+                }
+                if (index % 3 === 0) {
+                    curatedLines.push(`echo ${index + 1} :: ${label} weaving ${item.connector}`);
+                }
+            });
+            const layered = [];
+            for (let index = 0; index < curatedLines.length; index++) {
+                const focus = curatedLines[index];
+                layered.push(`${label} swirl ${index + 1} => ${focus}`);
+                if (index % 4 === 0) {
+                    layered.push(`${label} harmonic ${index + 1} tempo ${tempo}`);
+                }
+            }
+            const ensemble = layered.concat(curatedLines);
+            const deduplicated = [];
+            const seen = new Set();
+            ensemble.forEach((item) => {
+                if (!seen.has(item)) {
+                    deduplicated.push(item);
+                    seen.add(item);
+                }
+            });
+            const trimmedBase = basePayload.trim();
+            if (includeBase && trimmedBase) {
+                deduplicated.unshift(`base-payload :: ${trimmedBase}`);
+            }
+            const numbered = deduplicated.map((line, index) => `${index + 1}. ${line}`);
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_trigger_rain_kaleidoscope';
+            clone.vars[`${safeKey}_intensity`] = intensity;
+            clone.vars[`${safeKey}_compositions`] = compositions.length;
+            clone.vars[`${safeKey}_label`] = label;
+            clone.vars[`${safeKey}_entries`] = numbered.length;
+            clone.payload = numbered.join(newlineChar);
+            clone.logs.push('Rain kaleidoscope trigger emitted rain kaleidoscope register sequences.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-prismatic-quilt',
+        category: 'action',
+        name: 'Prismatic quilt action',
+        description: 'Stitch payloads into layered prismatic quilts of text.',
+        icon: 'grid',
+        accent: '#8b5cf6',
+        tags: ['action', 'prismatic', 'quilt', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Prismatic quilt', variations: 3, lighten: false, anchor: 'Central loom', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Prismatic quilt' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Central loom' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Prismatic quilt').trim() || 'Prismatic quilt';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Central loom').trim() || 'Central loom';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Prismatic quilt action reference shimmer quilt sequence 1',
+                'Prismatic quilt action reference glyph prism sequence 2',
+                'Prismatic quilt action reference ribbon patch sequence 3',
+                'Prismatic quilt action reference arc loom sequence 4',
+                'Prismatic quilt action reference petal thread sequence 5',
+                'Prismatic quilt action reference beam stitch sequence 6',
+                'Prismatic quilt action reference facet pattern sequence 7',
+                'Prismatic quilt action reference chorus fabric sequence 8',
+                'Prismatic quilt action reference lattice quilt sequence 9',
+                'Prismatic quilt action reference lyric prism sequence 10',
+                'Prismatic quilt action reference shimmer patch sequence 11',
+                'Prismatic quilt action reference glyph loom sequence 12',
+                'Prismatic quilt action reference ribbon thread sequence 13',
+                'Prismatic quilt action reference arc stitch sequence 14',
+                'Prismatic quilt action reference petal pattern sequence 15',
+                'Prismatic quilt action reference beam fabric sequence 16',
+                'Prismatic quilt action reference facet quilt sequence 17',
+                'Prismatic quilt action reference chorus prism sequence 18',
+                'Prismatic quilt action reference lattice patch sequence 19',
+                'Prismatic quilt action reference lyric loom sequence 20',
+                'Prismatic quilt action reference shimmer thread sequence 21',
+                'Prismatic quilt action reference glyph stitch sequence 22',
+                'Prismatic quilt action reference ribbon pattern sequence 23',
+                'Prismatic quilt action reference arc fabric sequence 24',
+                'Prismatic quilt action reference petal quilt sequence 25',
+            ];
+            const palettes = [
+                'Prismatic quilt action palette amber quilt sequence 1',
+                'Prismatic quilt action palette azure prism sequence 2',
+                'Prismatic quilt action palette violet patch sequence 3',
+                'Prismatic quilt action palette scarlet loom sequence 4',
+                'Prismatic quilt action palette emerald thread sequence 5',
+                'Prismatic quilt action palette indigo stitch sequence 6',
+                'Prismatic quilt action palette cobalt pattern sequence 7',
+                'Prismatic quilt action palette vermilion fabric sequence 8',
+                'Prismatic quilt action palette sepia quilt sequence 9',
+                'Prismatic quilt action palette silver prism sequence 10',
+                'Prismatic quilt action palette amber patch sequence 11',
+                'Prismatic quilt action palette azure loom sequence 12',
+                'Prismatic quilt action palette violet thread sequence 13',
+                'Prismatic quilt action palette scarlet stitch sequence 14',
+                'Prismatic quilt action palette emerald pattern sequence 15',
+                'Prismatic quilt action palette indigo fabric sequence 16',
+                'Prismatic quilt action palette cobalt quilt sequence 17',
+                'Prismatic quilt action palette vermilion prism sequence 18',
+                'Prismatic quilt action palette sepia patch sequence 19',
+                'Prismatic quilt action palette silver loom sequence 20',
+                'Prismatic quilt action palette amber thread sequence 21',
+                'Prismatic quilt action palette azure stitch sequence 22',
+                'Prismatic quilt action palette violet pattern sequence 23',
+                'Prismatic quilt action palette scarlet fabric sequence 24',
+                'Prismatic quilt action palette emerald quilt sequence 25',
+            ];
+            const pathways = [
+                'Prismatic quilt action pathway causeway quilt sequence 1',
+                'Prismatic quilt action pathway stair prism sequence 2',
+                'Prismatic quilt action pathway balcony patch sequence 3',
+                'Prismatic quilt action pathway bridge loom sequence 4',
+                'Prismatic quilt action pathway promenade thread sequence 5',
+                'Prismatic quilt action pathway corridor stitch sequence 6',
+                'Prismatic quilt action pathway gate pattern sequence 7',
+                'Prismatic quilt action pathway atrium fabric sequence 8',
+                'Prismatic quilt action pathway garden quilt sequence 9',
+                'Prismatic quilt action pathway lantern prism sequence 10',
+                'Prismatic quilt action pathway causeway patch sequence 11',
+                'Prismatic quilt action pathway stair loom sequence 12',
+                'Prismatic quilt action pathway balcony thread sequence 13',
+                'Prismatic quilt action pathway bridge stitch sequence 14',
+                'Prismatic quilt action pathway promenade pattern sequence 15',
+                'Prismatic quilt action pathway corridor fabric sequence 16',
+                'Prismatic quilt action pathway gate quilt sequence 17',
+                'Prismatic quilt action pathway atrium prism sequence 18',
+                'Prismatic quilt action pathway garden patch sequence 19',
+                'Prismatic quilt action pathway lantern loom sequence 20',
+                'Prismatic quilt action pathway causeway thread sequence 21',
+                'Prismatic quilt action pathway stair stitch sequence 22',
+                'Prismatic quilt action pathway balcony pattern sequence 23',
+                'Prismatic quilt action pathway bridge fabric sequence 24',
+                'Prismatic quilt action pathway promenade quilt sequence 25',
+            ];
+            const moments = [
+                'Prismatic quilt action moment moment quilt sequence 1',
+                'Prismatic quilt action moment glimmer prism sequence 2',
+                'Prismatic quilt action moment spark patch sequence 3',
+                'Prismatic quilt action moment pulse loom sequence 4',
+                'Prismatic quilt action moment beat thread sequence 5',
+                'Prismatic quilt action moment echo stitch sequence 6',
+                'Prismatic quilt action moment note pattern sequence 7',
+                'Prismatic quilt action moment breath fabric sequence 8',
+                'Prismatic quilt action moment pause quilt sequence 9',
+                'Prismatic quilt action moment crescendo prism sequence 10',
+                'Prismatic quilt action moment moment patch sequence 11',
+                'Prismatic quilt action moment glimmer loom sequence 12',
+                'Prismatic quilt action moment spark thread sequence 13',
+                'Prismatic quilt action moment pulse stitch sequence 14',
+                'Prismatic quilt action moment beat pattern sequence 15',
+                'Prismatic quilt action moment echo fabric sequence 16',
+                'Prismatic quilt action moment note quilt sequence 17',
+                'Prismatic quilt action moment breath prism sequence 18',
+                'Prismatic quilt action moment pause patch sequence 19',
+                'Prismatic quilt action moment crescendo loom sequence 20',
+                'Prismatic quilt action moment moment thread sequence 21',
+                'Prismatic quilt action moment glimmer stitch sequence 22',
+                'Prismatic quilt action moment spark pattern sequence 23',
+                'Prismatic quilt action moment pulse fabric sequence 24',
+                'Prismatic quilt action moment beat quilt sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_prismatic_quilt';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Prismatic quilt action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-lantern-cascade',
+        category: 'action',
+        name: 'Lantern cascade action',
+        description: 'Arrange new lines like lantern cascades over scenic bridges.',
+        icon: 'layers',
+        accent: '#f97316',
+        tags: ['action', 'lantern', 'cascade', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Lantern cascade', variations: 3, lighten: false, anchor: 'Suspended lights', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Lantern cascade' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Suspended lights' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Lantern cascade').trim() || 'Lantern cascade';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Suspended lights').trim() || 'Suspended lights';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Lantern cascade action reference shimmer lantern sequence 1',
+                'Lantern cascade action reference glyph cascade sequence 2',
+                'Lantern cascade action reference ribbon bridge sequence 3',
+                'Lantern cascade action reference arc string sequence 4',
+                'Lantern cascade action reference petal spark sequence 5',
+                'Lantern cascade action reference beam fall sequence 6',
+                'Lantern cascade action reference facet golden sequence 7',
+                'Lantern cascade action reference chorus gleam sequence 8',
+                'Lantern cascade action reference lattice lantern sequence 9',
+                'Lantern cascade action reference lyric cascade sequence 10',
+                'Lantern cascade action reference shimmer bridge sequence 11',
+                'Lantern cascade action reference glyph string sequence 12',
+                'Lantern cascade action reference ribbon spark sequence 13',
+                'Lantern cascade action reference arc fall sequence 14',
+                'Lantern cascade action reference petal golden sequence 15',
+                'Lantern cascade action reference beam gleam sequence 16',
+                'Lantern cascade action reference facet lantern sequence 17',
+                'Lantern cascade action reference chorus cascade sequence 18',
+                'Lantern cascade action reference lattice bridge sequence 19',
+                'Lantern cascade action reference lyric string sequence 20',
+                'Lantern cascade action reference shimmer spark sequence 21',
+                'Lantern cascade action reference glyph fall sequence 22',
+                'Lantern cascade action reference ribbon golden sequence 23',
+                'Lantern cascade action reference arc gleam sequence 24',
+                'Lantern cascade action reference petal lantern sequence 25',
+            ];
+            const palettes = [
+                'Lantern cascade action palette amber lantern sequence 1',
+                'Lantern cascade action palette azure cascade sequence 2',
+                'Lantern cascade action palette violet bridge sequence 3',
+                'Lantern cascade action palette scarlet string sequence 4',
+                'Lantern cascade action palette emerald spark sequence 5',
+                'Lantern cascade action palette indigo fall sequence 6',
+                'Lantern cascade action palette cobalt golden sequence 7',
+                'Lantern cascade action palette vermilion gleam sequence 8',
+                'Lantern cascade action palette sepia lantern sequence 9',
+                'Lantern cascade action palette silver cascade sequence 10',
+                'Lantern cascade action palette amber bridge sequence 11',
+                'Lantern cascade action palette azure string sequence 12',
+                'Lantern cascade action palette violet spark sequence 13',
+                'Lantern cascade action palette scarlet fall sequence 14',
+                'Lantern cascade action palette emerald golden sequence 15',
+                'Lantern cascade action palette indigo gleam sequence 16',
+                'Lantern cascade action palette cobalt lantern sequence 17',
+                'Lantern cascade action palette vermilion cascade sequence 18',
+                'Lantern cascade action palette sepia bridge sequence 19',
+                'Lantern cascade action palette silver string sequence 20',
+                'Lantern cascade action palette amber spark sequence 21',
+                'Lantern cascade action palette azure fall sequence 22',
+                'Lantern cascade action palette violet golden sequence 23',
+                'Lantern cascade action palette scarlet gleam sequence 24',
+                'Lantern cascade action palette emerald lantern sequence 25',
+            ];
+            const pathways = [
+                'Lantern cascade action pathway causeway lantern sequence 1',
+                'Lantern cascade action pathway stair cascade sequence 2',
+                'Lantern cascade action pathway balcony bridge sequence 3',
+                'Lantern cascade action pathway bridge string sequence 4',
+                'Lantern cascade action pathway promenade spark sequence 5',
+                'Lantern cascade action pathway corridor fall sequence 6',
+                'Lantern cascade action pathway gate golden sequence 7',
+                'Lantern cascade action pathway atrium gleam sequence 8',
+                'Lantern cascade action pathway garden lantern sequence 9',
+                'Lantern cascade action pathway lantern cascade sequence 10',
+                'Lantern cascade action pathway causeway bridge sequence 11',
+                'Lantern cascade action pathway stair string sequence 12',
+                'Lantern cascade action pathway balcony spark sequence 13',
+                'Lantern cascade action pathway bridge fall sequence 14',
+                'Lantern cascade action pathway promenade golden sequence 15',
+                'Lantern cascade action pathway corridor gleam sequence 16',
+                'Lantern cascade action pathway gate lantern sequence 17',
+                'Lantern cascade action pathway atrium cascade sequence 18',
+                'Lantern cascade action pathway garden bridge sequence 19',
+                'Lantern cascade action pathway lantern string sequence 20',
+                'Lantern cascade action pathway causeway spark sequence 21',
+                'Lantern cascade action pathway stair fall sequence 22',
+                'Lantern cascade action pathway balcony golden sequence 23',
+                'Lantern cascade action pathway bridge gleam sequence 24',
+                'Lantern cascade action pathway promenade lantern sequence 25',
+            ];
+            const moments = [
+                'Lantern cascade action moment moment lantern sequence 1',
+                'Lantern cascade action moment glimmer cascade sequence 2',
+                'Lantern cascade action moment spark bridge sequence 3',
+                'Lantern cascade action moment pulse string sequence 4',
+                'Lantern cascade action moment beat spark sequence 5',
+                'Lantern cascade action moment echo fall sequence 6',
+                'Lantern cascade action moment note golden sequence 7',
+                'Lantern cascade action moment breath gleam sequence 8',
+                'Lantern cascade action moment pause lantern sequence 9',
+                'Lantern cascade action moment crescendo cascade sequence 10',
+                'Lantern cascade action moment moment bridge sequence 11',
+                'Lantern cascade action moment glimmer string sequence 12',
+                'Lantern cascade action moment spark spark sequence 13',
+                'Lantern cascade action moment pulse fall sequence 14',
+                'Lantern cascade action moment beat golden sequence 15',
+                'Lantern cascade action moment echo gleam sequence 16',
+                'Lantern cascade action moment note lantern sequence 17',
+                'Lantern cascade action moment breath cascade sequence 18',
+                'Lantern cascade action moment pause bridge sequence 19',
+                'Lantern cascade action moment crescendo string sequence 20',
+                'Lantern cascade action moment moment spark sequence 21',
+                'Lantern cascade action moment glimmer fall sequence 22',
+                'Lantern cascade action moment spark golden sequence 23',
+                'Lantern cascade action moment pulse gleam sequence 24',
+                'Lantern cascade action moment beat lantern sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_lantern_cascade';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Lantern cascade action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-harmonic-mosaic',
+        category: 'action',
+        name: 'Harmonic mosaic action',
+        description: 'Compose payload echoes into harmonic mosaic panels.',
+        icon: 'slack',
+        accent: '#22c55e',
+        tags: ['action', 'harmonic', 'mosaic', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Harmonic mosaic', variations: 3, lighten: false, anchor: 'Atrium compass', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Harmonic mosaic' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Atrium compass' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Harmonic mosaic').trim() || 'Harmonic mosaic';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Atrium compass').trim() || 'Atrium compass';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Harmonic mosaic action reference shimmer harmonic sequence 1',
+                'Harmonic mosaic action reference glyph mosaic sequence 2',
+                'Harmonic mosaic action reference ribbon tile sequence 3',
+                'Harmonic mosaic action reference arc tone sequence 4',
+                'Harmonic mosaic action reference petal glass sequence 5',
+                'Harmonic mosaic action reference beam color sequence 6',
+                'Harmonic mosaic action reference facet shine sequence 7',
+                'Harmonic mosaic action reference chorus form sequence 8',
+                'Harmonic mosaic action reference lattice harmonic sequence 9',
+                'Harmonic mosaic action reference lyric mosaic sequence 10',
+                'Harmonic mosaic action reference shimmer tile sequence 11',
+                'Harmonic mosaic action reference glyph tone sequence 12',
+                'Harmonic mosaic action reference ribbon glass sequence 13',
+                'Harmonic mosaic action reference arc color sequence 14',
+                'Harmonic mosaic action reference petal shine sequence 15',
+                'Harmonic mosaic action reference beam form sequence 16',
+                'Harmonic mosaic action reference facet harmonic sequence 17',
+                'Harmonic mosaic action reference chorus mosaic sequence 18',
+                'Harmonic mosaic action reference lattice tile sequence 19',
+                'Harmonic mosaic action reference lyric tone sequence 20',
+                'Harmonic mosaic action reference shimmer glass sequence 21',
+                'Harmonic mosaic action reference glyph color sequence 22',
+                'Harmonic mosaic action reference ribbon shine sequence 23',
+                'Harmonic mosaic action reference arc form sequence 24',
+                'Harmonic mosaic action reference petal harmonic sequence 25',
+            ];
+            const palettes = [
+                'Harmonic mosaic action palette amber harmonic sequence 1',
+                'Harmonic mosaic action palette azure mosaic sequence 2',
+                'Harmonic mosaic action palette violet tile sequence 3',
+                'Harmonic mosaic action palette scarlet tone sequence 4',
+                'Harmonic mosaic action palette emerald glass sequence 5',
+                'Harmonic mosaic action palette indigo color sequence 6',
+                'Harmonic mosaic action palette cobalt shine sequence 7',
+                'Harmonic mosaic action palette vermilion form sequence 8',
+                'Harmonic mosaic action palette sepia harmonic sequence 9',
+                'Harmonic mosaic action palette silver mosaic sequence 10',
+                'Harmonic mosaic action palette amber tile sequence 11',
+                'Harmonic mosaic action palette azure tone sequence 12',
+                'Harmonic mosaic action palette violet glass sequence 13',
+                'Harmonic mosaic action palette scarlet color sequence 14',
+                'Harmonic mosaic action palette emerald shine sequence 15',
+                'Harmonic mosaic action palette indigo form sequence 16',
+                'Harmonic mosaic action palette cobalt harmonic sequence 17',
+                'Harmonic mosaic action palette vermilion mosaic sequence 18',
+                'Harmonic mosaic action palette sepia tile sequence 19',
+                'Harmonic mosaic action palette silver tone sequence 20',
+                'Harmonic mosaic action palette amber glass sequence 21',
+                'Harmonic mosaic action palette azure color sequence 22',
+                'Harmonic mosaic action palette violet shine sequence 23',
+                'Harmonic mosaic action palette scarlet form sequence 24',
+                'Harmonic mosaic action palette emerald harmonic sequence 25',
+            ];
+            const pathways = [
+                'Harmonic mosaic action pathway causeway harmonic sequence 1',
+                'Harmonic mosaic action pathway stair mosaic sequence 2',
+                'Harmonic mosaic action pathway balcony tile sequence 3',
+                'Harmonic mosaic action pathway bridge tone sequence 4',
+                'Harmonic mosaic action pathway promenade glass sequence 5',
+                'Harmonic mosaic action pathway corridor color sequence 6',
+                'Harmonic mosaic action pathway gate shine sequence 7',
+                'Harmonic mosaic action pathway atrium form sequence 8',
+                'Harmonic mosaic action pathway garden harmonic sequence 9',
+                'Harmonic mosaic action pathway lantern mosaic sequence 10',
+                'Harmonic mosaic action pathway causeway tile sequence 11',
+                'Harmonic mosaic action pathway stair tone sequence 12',
+                'Harmonic mosaic action pathway balcony glass sequence 13',
+                'Harmonic mosaic action pathway bridge color sequence 14',
+                'Harmonic mosaic action pathway promenade shine sequence 15',
+                'Harmonic mosaic action pathway corridor form sequence 16',
+                'Harmonic mosaic action pathway gate harmonic sequence 17',
+                'Harmonic mosaic action pathway atrium mosaic sequence 18',
+                'Harmonic mosaic action pathway garden tile sequence 19',
+                'Harmonic mosaic action pathway lantern tone sequence 20',
+                'Harmonic mosaic action pathway causeway glass sequence 21',
+                'Harmonic mosaic action pathway stair color sequence 22',
+                'Harmonic mosaic action pathway balcony shine sequence 23',
+                'Harmonic mosaic action pathway bridge form sequence 24',
+                'Harmonic mosaic action pathway promenade harmonic sequence 25',
+            ];
+            const moments = [
+                'Harmonic mosaic action moment moment harmonic sequence 1',
+                'Harmonic mosaic action moment glimmer mosaic sequence 2',
+                'Harmonic mosaic action moment spark tile sequence 3',
+                'Harmonic mosaic action moment pulse tone sequence 4',
+                'Harmonic mosaic action moment beat glass sequence 5',
+                'Harmonic mosaic action moment echo color sequence 6',
+                'Harmonic mosaic action moment note shine sequence 7',
+                'Harmonic mosaic action moment breath form sequence 8',
+                'Harmonic mosaic action moment pause harmonic sequence 9',
+                'Harmonic mosaic action moment crescendo mosaic sequence 10',
+                'Harmonic mosaic action moment moment tile sequence 11',
+                'Harmonic mosaic action moment glimmer tone sequence 12',
+                'Harmonic mosaic action moment spark glass sequence 13',
+                'Harmonic mosaic action moment pulse color sequence 14',
+                'Harmonic mosaic action moment beat shine sequence 15',
+                'Harmonic mosaic action moment echo form sequence 16',
+                'Harmonic mosaic action moment note harmonic sequence 17',
+                'Harmonic mosaic action moment breath mosaic sequence 18',
+                'Harmonic mosaic action moment pause tile sequence 19',
+                'Harmonic mosaic action moment crescendo tone sequence 20',
+                'Harmonic mosaic action moment moment glass sequence 21',
+                'Harmonic mosaic action moment glimmer color sequence 22',
+                'Harmonic mosaic action moment spark shine sequence 23',
+                'Harmonic mosaic action moment pulse form sequence 24',
+                'Harmonic mosaic action moment beat harmonic sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_harmonic_mosaic';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Harmonic mosaic action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-ink-ribbon',
+        category: 'action',
+        name: 'Ink ribbon action',
+        description: 'Spool storylines like endless ink ribbons of imagination.',
+        icon: 'edit',
+        accent: '#f472b6',
+        tags: ['action', 'ink', 'ribbon', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Ink ribbon', variations: 3, lighten: false, anchor: 'Scriptorium', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Ink ribbon' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Scriptorium' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Ink ribbon').trim() || 'Ink ribbon';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Scriptorium').trim() || 'Scriptorium';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Ink ribbon action reference shimmer ink sequence 1',
+                'Ink ribbon action reference glyph ribbon sequence 2',
+                'Ink ribbon action reference ribbon script sequence 3',
+                'Ink ribbon action reference arc glyph sequence 4',
+                'Ink ribbon action reference petal story sequence 5',
+                'Ink ribbon action reference beam tale sequence 6',
+                'Ink ribbon action reference facet scroll sequence 7',
+                'Ink ribbon action reference chorus trace sequence 8',
+                'Ink ribbon action reference lattice ink sequence 9',
+                'Ink ribbon action reference lyric ribbon sequence 10',
+                'Ink ribbon action reference shimmer script sequence 11',
+                'Ink ribbon action reference glyph glyph sequence 12',
+                'Ink ribbon action reference ribbon story sequence 13',
+                'Ink ribbon action reference arc tale sequence 14',
+                'Ink ribbon action reference petal scroll sequence 15',
+                'Ink ribbon action reference beam trace sequence 16',
+                'Ink ribbon action reference facet ink sequence 17',
+                'Ink ribbon action reference chorus ribbon sequence 18',
+                'Ink ribbon action reference lattice script sequence 19',
+                'Ink ribbon action reference lyric glyph sequence 20',
+                'Ink ribbon action reference shimmer story sequence 21',
+                'Ink ribbon action reference glyph tale sequence 22',
+                'Ink ribbon action reference ribbon scroll sequence 23',
+                'Ink ribbon action reference arc trace sequence 24',
+                'Ink ribbon action reference petal ink sequence 25',
+            ];
+            const palettes = [
+                'Ink ribbon action palette amber ink sequence 1',
+                'Ink ribbon action palette azure ribbon sequence 2',
+                'Ink ribbon action palette violet script sequence 3',
+                'Ink ribbon action palette scarlet glyph sequence 4',
+                'Ink ribbon action palette emerald story sequence 5',
+                'Ink ribbon action palette indigo tale sequence 6',
+                'Ink ribbon action palette cobalt scroll sequence 7',
+                'Ink ribbon action palette vermilion trace sequence 8',
+                'Ink ribbon action palette sepia ink sequence 9',
+                'Ink ribbon action palette silver ribbon sequence 10',
+                'Ink ribbon action palette amber script sequence 11',
+                'Ink ribbon action palette azure glyph sequence 12',
+                'Ink ribbon action palette violet story sequence 13',
+                'Ink ribbon action palette scarlet tale sequence 14',
+                'Ink ribbon action palette emerald scroll sequence 15',
+                'Ink ribbon action palette indigo trace sequence 16',
+                'Ink ribbon action palette cobalt ink sequence 17',
+                'Ink ribbon action palette vermilion ribbon sequence 18',
+                'Ink ribbon action palette sepia script sequence 19',
+                'Ink ribbon action palette silver glyph sequence 20',
+                'Ink ribbon action palette amber story sequence 21',
+                'Ink ribbon action palette azure tale sequence 22',
+                'Ink ribbon action palette violet scroll sequence 23',
+                'Ink ribbon action palette scarlet trace sequence 24',
+                'Ink ribbon action palette emerald ink sequence 25',
+            ];
+            const pathways = [
+                'Ink ribbon action pathway causeway ink sequence 1',
+                'Ink ribbon action pathway stair ribbon sequence 2',
+                'Ink ribbon action pathway balcony script sequence 3',
+                'Ink ribbon action pathway bridge glyph sequence 4',
+                'Ink ribbon action pathway promenade story sequence 5',
+                'Ink ribbon action pathway corridor tale sequence 6',
+                'Ink ribbon action pathway gate scroll sequence 7',
+                'Ink ribbon action pathway atrium trace sequence 8',
+                'Ink ribbon action pathway garden ink sequence 9',
+                'Ink ribbon action pathway lantern ribbon sequence 10',
+                'Ink ribbon action pathway causeway script sequence 11',
+                'Ink ribbon action pathway stair glyph sequence 12',
+                'Ink ribbon action pathway balcony story sequence 13',
+                'Ink ribbon action pathway bridge tale sequence 14',
+                'Ink ribbon action pathway promenade scroll sequence 15',
+                'Ink ribbon action pathway corridor trace sequence 16',
+                'Ink ribbon action pathway gate ink sequence 17',
+                'Ink ribbon action pathway atrium ribbon sequence 18',
+                'Ink ribbon action pathway garden script sequence 19',
+                'Ink ribbon action pathway lantern glyph sequence 20',
+                'Ink ribbon action pathway causeway story sequence 21',
+                'Ink ribbon action pathway stair tale sequence 22',
+                'Ink ribbon action pathway balcony scroll sequence 23',
+                'Ink ribbon action pathway bridge trace sequence 24',
+                'Ink ribbon action pathway promenade ink sequence 25',
+            ];
+            const moments = [
+                'Ink ribbon action moment moment ink sequence 1',
+                'Ink ribbon action moment glimmer ribbon sequence 2',
+                'Ink ribbon action moment spark script sequence 3',
+                'Ink ribbon action moment pulse glyph sequence 4',
+                'Ink ribbon action moment beat story sequence 5',
+                'Ink ribbon action moment echo tale sequence 6',
+                'Ink ribbon action moment note scroll sequence 7',
+                'Ink ribbon action moment breath trace sequence 8',
+                'Ink ribbon action moment pause ink sequence 9',
+                'Ink ribbon action moment crescendo ribbon sequence 10',
+                'Ink ribbon action moment moment script sequence 11',
+                'Ink ribbon action moment glimmer glyph sequence 12',
+                'Ink ribbon action moment spark story sequence 13',
+                'Ink ribbon action moment pulse tale sequence 14',
+                'Ink ribbon action moment beat scroll sequence 15',
+                'Ink ribbon action moment echo trace sequence 16',
+                'Ink ribbon action moment note ink sequence 17',
+                'Ink ribbon action moment breath ribbon sequence 18',
+                'Ink ribbon action moment pause script sequence 19',
+                'Ink ribbon action moment crescendo glyph sequence 20',
+                'Ink ribbon action moment moment story sequence 21',
+                'Ink ribbon action moment glimmer tale sequence 22',
+                'Ink ribbon action moment spark scroll sequence 23',
+                'Ink ribbon action moment pulse trace sequence 24',
+                'Ink ribbon action moment beat ink sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_ink_ribbon';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Ink ribbon action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-celestial-bloom',
+        category: 'action',
+        name: 'Celestial bloom action',
+        description: 'Bloom payload whispers into celestial blossoms of detail.',
+        icon: 'aperture',
+        accent: '#ec4899',
+        tags: ['action', 'celestial', 'bloom', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Celestial bloom', variations: 3, lighten: false, anchor: 'Orbit garden', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Celestial bloom' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Orbit garden' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Celestial bloom').trim() || 'Celestial bloom';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Orbit garden').trim() || 'Orbit garden';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Celestial bloom action reference shimmer celestial sequence 1',
+                'Celestial bloom action reference glyph bloom sequence 2',
+                'Celestial bloom action reference ribbon stellar sequence 3',
+                'Celestial bloom action reference arc flower sequence 4',
+                'Celestial bloom action reference petal petal sequence 5',
+                'Celestial bloom action reference beam galaxy sequence 6',
+                'Celestial bloom action reference facet beam sequence 7',
+                'Celestial bloom action reference chorus halo sequence 8',
+                'Celestial bloom action reference lattice celestial sequence 9',
+                'Celestial bloom action reference lyric bloom sequence 10',
+                'Celestial bloom action reference shimmer stellar sequence 11',
+                'Celestial bloom action reference glyph flower sequence 12',
+                'Celestial bloom action reference ribbon petal sequence 13',
+                'Celestial bloom action reference arc galaxy sequence 14',
+                'Celestial bloom action reference petal beam sequence 15',
+                'Celestial bloom action reference beam halo sequence 16',
+                'Celestial bloom action reference facet celestial sequence 17',
+                'Celestial bloom action reference chorus bloom sequence 18',
+                'Celestial bloom action reference lattice stellar sequence 19',
+                'Celestial bloom action reference lyric flower sequence 20',
+                'Celestial bloom action reference shimmer petal sequence 21',
+                'Celestial bloom action reference glyph galaxy sequence 22',
+                'Celestial bloom action reference ribbon beam sequence 23',
+                'Celestial bloom action reference arc halo sequence 24',
+                'Celestial bloom action reference petal celestial sequence 25',
+            ];
+            const palettes = [
+                'Celestial bloom action palette amber celestial sequence 1',
+                'Celestial bloom action palette azure bloom sequence 2',
+                'Celestial bloom action palette violet stellar sequence 3',
+                'Celestial bloom action palette scarlet flower sequence 4',
+                'Celestial bloom action palette emerald petal sequence 5',
+                'Celestial bloom action palette indigo galaxy sequence 6',
+                'Celestial bloom action palette cobalt beam sequence 7',
+                'Celestial bloom action palette vermilion halo sequence 8',
+                'Celestial bloom action palette sepia celestial sequence 9',
+                'Celestial bloom action palette silver bloom sequence 10',
+                'Celestial bloom action palette amber stellar sequence 11',
+                'Celestial bloom action palette azure flower sequence 12',
+                'Celestial bloom action palette violet petal sequence 13',
+                'Celestial bloom action palette scarlet galaxy sequence 14',
+                'Celestial bloom action palette emerald beam sequence 15',
+                'Celestial bloom action palette indigo halo sequence 16',
+                'Celestial bloom action palette cobalt celestial sequence 17',
+                'Celestial bloom action palette vermilion bloom sequence 18',
+                'Celestial bloom action palette sepia stellar sequence 19',
+                'Celestial bloom action palette silver flower sequence 20',
+                'Celestial bloom action palette amber petal sequence 21',
+                'Celestial bloom action palette azure galaxy sequence 22',
+                'Celestial bloom action palette violet beam sequence 23',
+                'Celestial bloom action palette scarlet halo sequence 24',
+                'Celestial bloom action palette emerald celestial sequence 25',
+            ];
+            const pathways = [
+                'Celestial bloom action pathway causeway celestial sequence 1',
+                'Celestial bloom action pathway stair bloom sequence 2',
+                'Celestial bloom action pathway balcony stellar sequence 3',
+                'Celestial bloom action pathway bridge flower sequence 4',
+                'Celestial bloom action pathway promenade petal sequence 5',
+                'Celestial bloom action pathway corridor galaxy sequence 6',
+                'Celestial bloom action pathway gate beam sequence 7',
+                'Celestial bloom action pathway atrium halo sequence 8',
+                'Celestial bloom action pathway garden celestial sequence 9',
+                'Celestial bloom action pathway lantern bloom sequence 10',
+                'Celestial bloom action pathway causeway stellar sequence 11',
+                'Celestial bloom action pathway stair flower sequence 12',
+                'Celestial bloom action pathway balcony petal sequence 13',
+                'Celestial bloom action pathway bridge galaxy sequence 14',
+                'Celestial bloom action pathway promenade beam sequence 15',
+                'Celestial bloom action pathway corridor halo sequence 16',
+                'Celestial bloom action pathway gate celestial sequence 17',
+                'Celestial bloom action pathway atrium bloom sequence 18',
+                'Celestial bloom action pathway garden stellar sequence 19',
+                'Celestial bloom action pathway lantern flower sequence 20',
+                'Celestial bloom action pathway causeway petal sequence 21',
+                'Celestial bloom action pathway stair galaxy sequence 22',
+                'Celestial bloom action pathway balcony beam sequence 23',
+                'Celestial bloom action pathway bridge halo sequence 24',
+                'Celestial bloom action pathway promenade celestial sequence 25',
+            ];
+            const moments = [
+                'Celestial bloom action moment moment celestial sequence 1',
+                'Celestial bloom action moment glimmer bloom sequence 2',
+                'Celestial bloom action moment spark stellar sequence 3',
+                'Celestial bloom action moment pulse flower sequence 4',
+                'Celestial bloom action moment beat petal sequence 5',
+                'Celestial bloom action moment echo galaxy sequence 6',
+                'Celestial bloom action moment note beam sequence 7',
+                'Celestial bloom action moment breath halo sequence 8',
+                'Celestial bloom action moment pause celestial sequence 9',
+                'Celestial bloom action moment crescendo bloom sequence 10',
+                'Celestial bloom action moment moment stellar sequence 11',
+                'Celestial bloom action moment glimmer flower sequence 12',
+                'Celestial bloom action moment spark petal sequence 13',
+                'Celestial bloom action moment pulse galaxy sequence 14',
+                'Celestial bloom action moment beat beam sequence 15',
+                'Celestial bloom action moment echo halo sequence 16',
+                'Celestial bloom action moment note celestial sequence 17',
+                'Celestial bloom action moment breath bloom sequence 18',
+                'Celestial bloom action moment pause stellar sequence 19',
+                'Celestial bloom action moment crescendo flower sequence 20',
+                'Celestial bloom action moment moment petal sequence 21',
+                'Celestial bloom action moment glimmer galaxy sequence 22',
+                'Celestial bloom action moment spark beam sequence 23',
+                'Celestial bloom action moment pulse halo sequence 24',
+                'Celestial bloom action moment beat celestial sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_celestial_bloom';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Celestial bloom action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-sapphire-bridge',
+        category: 'action',
+        name: 'Sapphire bridge action',
+        description: 'Bridge ideas in sapphire arcs over mirrored ponds.',
+        icon: 'briefcase',
+        accent: '#38bdf8',
+        tags: ['action', 'sapphire', 'bridge', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Sapphire bridge', variations: 3, lighten: false, anchor: 'Reflection hall', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Sapphire bridge' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Reflection hall' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Sapphire bridge').trim() || 'Sapphire bridge';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Reflection hall').trim() || 'Reflection hall';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Sapphire bridge action reference shimmer sapphire sequence 1',
+                'Sapphire bridge action reference glyph bridge sequence 2',
+                'Sapphire bridge action reference ribbon arch sequence 3',
+                'Sapphire bridge action reference arc reflection sequence 4',
+                'Sapphire bridge action reference petal current sequence 5',
+                'Sapphire bridge action reference beam span sequence 6',
+                'Sapphire bridge action reference facet loop sequence 7',
+                'Sapphire bridge action reference chorus gleam sequence 8',
+                'Sapphire bridge action reference lattice sapphire sequence 9',
+                'Sapphire bridge action reference lyric bridge sequence 10',
+                'Sapphire bridge action reference shimmer arch sequence 11',
+                'Sapphire bridge action reference glyph reflection sequence 12',
+                'Sapphire bridge action reference ribbon current sequence 13',
+                'Sapphire bridge action reference arc span sequence 14',
+                'Sapphire bridge action reference petal loop sequence 15',
+                'Sapphire bridge action reference beam gleam sequence 16',
+                'Sapphire bridge action reference facet sapphire sequence 17',
+                'Sapphire bridge action reference chorus bridge sequence 18',
+                'Sapphire bridge action reference lattice arch sequence 19',
+                'Sapphire bridge action reference lyric reflection sequence 20',
+                'Sapphire bridge action reference shimmer current sequence 21',
+                'Sapphire bridge action reference glyph span sequence 22',
+                'Sapphire bridge action reference ribbon loop sequence 23',
+                'Sapphire bridge action reference arc gleam sequence 24',
+                'Sapphire bridge action reference petal sapphire sequence 25',
+            ];
+            const palettes = [
+                'Sapphire bridge action palette amber sapphire sequence 1',
+                'Sapphire bridge action palette azure bridge sequence 2',
+                'Sapphire bridge action palette violet arch sequence 3',
+                'Sapphire bridge action palette scarlet reflection sequence 4',
+                'Sapphire bridge action palette emerald current sequence 5',
+                'Sapphire bridge action palette indigo span sequence 6',
+                'Sapphire bridge action palette cobalt loop sequence 7',
+                'Sapphire bridge action palette vermilion gleam sequence 8',
+                'Sapphire bridge action palette sepia sapphire sequence 9',
+                'Sapphire bridge action palette silver bridge sequence 10',
+                'Sapphire bridge action palette amber arch sequence 11',
+                'Sapphire bridge action palette azure reflection sequence 12',
+                'Sapphire bridge action palette violet current sequence 13',
+                'Sapphire bridge action palette scarlet span sequence 14',
+                'Sapphire bridge action palette emerald loop sequence 15',
+                'Sapphire bridge action palette indigo gleam sequence 16',
+                'Sapphire bridge action palette cobalt sapphire sequence 17',
+                'Sapphire bridge action palette vermilion bridge sequence 18',
+                'Sapphire bridge action palette sepia arch sequence 19',
+                'Sapphire bridge action palette silver reflection sequence 20',
+                'Sapphire bridge action palette amber current sequence 21',
+                'Sapphire bridge action palette azure span sequence 22',
+                'Sapphire bridge action palette violet loop sequence 23',
+                'Sapphire bridge action palette scarlet gleam sequence 24',
+                'Sapphire bridge action palette emerald sapphire sequence 25',
+            ];
+            const pathways = [
+                'Sapphire bridge action pathway causeway sapphire sequence 1',
+                'Sapphire bridge action pathway stair bridge sequence 2',
+                'Sapphire bridge action pathway balcony arch sequence 3',
+                'Sapphire bridge action pathway bridge reflection sequence 4',
+                'Sapphire bridge action pathway promenade current sequence 5',
+                'Sapphire bridge action pathway corridor span sequence 6',
+                'Sapphire bridge action pathway gate loop sequence 7',
+                'Sapphire bridge action pathway atrium gleam sequence 8',
+                'Sapphire bridge action pathway garden sapphire sequence 9',
+                'Sapphire bridge action pathway lantern bridge sequence 10',
+                'Sapphire bridge action pathway causeway arch sequence 11',
+                'Sapphire bridge action pathway stair reflection sequence 12',
+                'Sapphire bridge action pathway balcony current sequence 13',
+                'Sapphire bridge action pathway bridge span sequence 14',
+                'Sapphire bridge action pathway promenade loop sequence 15',
+                'Sapphire bridge action pathway corridor gleam sequence 16',
+                'Sapphire bridge action pathway gate sapphire sequence 17',
+                'Sapphire bridge action pathway atrium bridge sequence 18',
+                'Sapphire bridge action pathway garden arch sequence 19',
+                'Sapphire bridge action pathway lantern reflection sequence 20',
+                'Sapphire bridge action pathway causeway current sequence 21',
+                'Sapphire bridge action pathway stair span sequence 22',
+                'Sapphire bridge action pathway balcony loop sequence 23',
+                'Sapphire bridge action pathway bridge gleam sequence 24',
+                'Sapphire bridge action pathway promenade sapphire sequence 25',
+            ];
+            const moments = [
+                'Sapphire bridge action moment moment sapphire sequence 1',
+                'Sapphire bridge action moment glimmer bridge sequence 2',
+                'Sapphire bridge action moment spark arch sequence 3',
+                'Sapphire bridge action moment pulse reflection sequence 4',
+                'Sapphire bridge action moment beat current sequence 5',
+                'Sapphire bridge action moment echo span sequence 6',
+                'Sapphire bridge action moment note loop sequence 7',
+                'Sapphire bridge action moment breath gleam sequence 8',
+                'Sapphire bridge action moment pause sapphire sequence 9',
+                'Sapphire bridge action moment crescendo bridge sequence 10',
+                'Sapphire bridge action moment moment arch sequence 11',
+                'Sapphire bridge action moment glimmer reflection sequence 12',
+                'Sapphire bridge action moment spark current sequence 13',
+                'Sapphire bridge action moment pulse span sequence 14',
+                'Sapphire bridge action moment beat loop sequence 15',
+                'Sapphire bridge action moment echo gleam sequence 16',
+                'Sapphire bridge action moment note sapphire sequence 17',
+                'Sapphire bridge action moment breath bridge sequence 18',
+                'Sapphire bridge action moment pause arch sequence 19',
+                'Sapphire bridge action moment crescendo reflection sequence 20',
+                'Sapphire bridge action moment moment current sequence 21',
+                'Sapphire bridge action moment glimmer span sequence 22',
+                'Sapphire bridge action moment spark loop sequence 23',
+                'Sapphire bridge action moment pulse gleam sequence 24',
+                'Sapphire bridge action moment beat sapphire sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_sapphire_bridge';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Sapphire bridge action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-voyager-lattice',
+        category: 'action',
+        name: 'Voyager lattice action',
+        description: 'Arrange data into voyager lattices with nested corridors.',
+        icon: 'share-2',
+        accent: '#0ea5e9',
+        tags: ['action', 'voyager', 'lattice', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Voyager lattice', variations: 3, lighten: false, anchor: 'Navigator atrium', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Voyager lattice' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Navigator atrium' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Voyager lattice').trim() || 'Voyager lattice';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Navigator atrium').trim() || 'Navigator atrium';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Voyager lattice action reference shimmer voyager sequence 1',
+                'Voyager lattice action reference glyph lattice sequence 2',
+                'Voyager lattice action reference ribbon corridor sequence 3',
+                'Voyager lattice action reference arc gate sequence 4',
+                'Voyager lattice action reference petal trail sequence 5',
+                'Voyager lattice action reference beam map sequence 6',
+                'Voyager lattice action reference facet node sequence 7',
+                'Voyager lattice action reference chorus thread sequence 8',
+                'Voyager lattice action reference lattice voyager sequence 9',
+                'Voyager lattice action reference lyric lattice sequence 10',
+                'Voyager lattice action reference shimmer corridor sequence 11',
+                'Voyager lattice action reference glyph gate sequence 12',
+                'Voyager lattice action reference ribbon trail sequence 13',
+                'Voyager lattice action reference arc map sequence 14',
+                'Voyager lattice action reference petal node sequence 15',
+                'Voyager lattice action reference beam thread sequence 16',
+                'Voyager lattice action reference facet voyager sequence 17',
+                'Voyager lattice action reference chorus lattice sequence 18',
+                'Voyager lattice action reference lattice corridor sequence 19',
+                'Voyager lattice action reference lyric gate sequence 20',
+                'Voyager lattice action reference shimmer trail sequence 21',
+                'Voyager lattice action reference glyph map sequence 22',
+                'Voyager lattice action reference ribbon node sequence 23',
+                'Voyager lattice action reference arc thread sequence 24',
+                'Voyager lattice action reference petal voyager sequence 25',
+            ];
+            const palettes = [
+                'Voyager lattice action palette amber voyager sequence 1',
+                'Voyager lattice action palette azure lattice sequence 2',
+                'Voyager lattice action palette violet corridor sequence 3',
+                'Voyager lattice action palette scarlet gate sequence 4',
+                'Voyager lattice action palette emerald trail sequence 5',
+                'Voyager lattice action palette indigo map sequence 6',
+                'Voyager lattice action palette cobalt node sequence 7',
+                'Voyager lattice action palette vermilion thread sequence 8',
+                'Voyager lattice action palette sepia voyager sequence 9',
+                'Voyager lattice action palette silver lattice sequence 10',
+                'Voyager lattice action palette amber corridor sequence 11',
+                'Voyager lattice action palette azure gate sequence 12',
+                'Voyager lattice action palette violet trail sequence 13',
+                'Voyager lattice action palette scarlet map sequence 14',
+                'Voyager lattice action palette emerald node sequence 15',
+                'Voyager lattice action palette indigo thread sequence 16',
+                'Voyager lattice action palette cobalt voyager sequence 17',
+                'Voyager lattice action palette vermilion lattice sequence 18',
+                'Voyager lattice action palette sepia corridor sequence 19',
+                'Voyager lattice action palette silver gate sequence 20',
+                'Voyager lattice action palette amber trail sequence 21',
+                'Voyager lattice action palette azure map sequence 22',
+                'Voyager lattice action palette violet node sequence 23',
+                'Voyager lattice action palette scarlet thread sequence 24',
+                'Voyager lattice action palette emerald voyager sequence 25',
+            ];
+            const pathways = [
+                'Voyager lattice action pathway causeway voyager sequence 1',
+                'Voyager lattice action pathway stair lattice sequence 2',
+                'Voyager lattice action pathway balcony corridor sequence 3',
+                'Voyager lattice action pathway bridge gate sequence 4',
+                'Voyager lattice action pathway promenade trail sequence 5',
+                'Voyager lattice action pathway corridor map sequence 6',
+                'Voyager lattice action pathway gate node sequence 7',
+                'Voyager lattice action pathway atrium thread sequence 8',
+                'Voyager lattice action pathway garden voyager sequence 9',
+                'Voyager lattice action pathway lantern lattice sequence 10',
+                'Voyager lattice action pathway causeway corridor sequence 11',
+                'Voyager lattice action pathway stair gate sequence 12',
+                'Voyager lattice action pathway balcony trail sequence 13',
+                'Voyager lattice action pathway bridge map sequence 14',
+                'Voyager lattice action pathway promenade node sequence 15',
+                'Voyager lattice action pathway corridor thread sequence 16',
+                'Voyager lattice action pathway gate voyager sequence 17',
+                'Voyager lattice action pathway atrium lattice sequence 18',
+                'Voyager lattice action pathway garden corridor sequence 19',
+                'Voyager lattice action pathway lantern gate sequence 20',
+                'Voyager lattice action pathway causeway trail sequence 21',
+                'Voyager lattice action pathway stair map sequence 22',
+                'Voyager lattice action pathway balcony node sequence 23',
+                'Voyager lattice action pathway bridge thread sequence 24',
+                'Voyager lattice action pathway promenade voyager sequence 25',
+            ];
+            const moments = [
+                'Voyager lattice action moment moment voyager sequence 1',
+                'Voyager lattice action moment glimmer lattice sequence 2',
+                'Voyager lattice action moment spark corridor sequence 3',
+                'Voyager lattice action moment pulse gate sequence 4',
+                'Voyager lattice action moment beat trail sequence 5',
+                'Voyager lattice action moment echo map sequence 6',
+                'Voyager lattice action moment note node sequence 7',
+                'Voyager lattice action moment breath thread sequence 8',
+                'Voyager lattice action moment pause voyager sequence 9',
+                'Voyager lattice action moment crescendo lattice sequence 10',
+                'Voyager lattice action moment moment corridor sequence 11',
+                'Voyager lattice action moment glimmer gate sequence 12',
+                'Voyager lattice action moment spark trail sequence 13',
+                'Voyager lattice action moment pulse map sequence 14',
+                'Voyager lattice action moment beat node sequence 15',
+                'Voyager lattice action moment echo thread sequence 16',
+                'Voyager lattice action moment note voyager sequence 17',
+                'Voyager lattice action moment breath lattice sequence 18',
+                'Voyager lattice action moment pause corridor sequence 19',
+                'Voyager lattice action moment crescendo gate sequence 20',
+                'Voyager lattice action moment moment trail sequence 21',
+                'Voyager lattice action moment glimmer map sequence 22',
+                'Voyager lattice action moment spark node sequence 23',
+                'Voyager lattice action moment pulse thread sequence 24',
+                'Voyager lattice action moment beat voyager sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_voyager_lattice';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Voyager lattice action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-meridian-scribe',
+        category: 'action',
+        name: 'Meridian scribe action',
+        description: 'Script passages along meridian lines and luminous grids.',
+        icon: 'pen-tool',
+        accent: '#f59e0b',
+        tags: ['action', 'meridian', 'scribe', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Meridian scribe', variations: 3, lighten: false, anchor: 'Longitude table', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Meridian scribe' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Longitude table' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Meridian scribe').trim() || 'Meridian scribe';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Longitude table').trim() || 'Longitude table';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Meridian scribe action reference shimmer meridian sequence 1',
+                'Meridian scribe action reference glyph scribe sequence 2',
+                'Meridian scribe action reference ribbon longitude sequence 3',
+                'Meridian scribe action reference arc scribe sequence 4',
+                'Meridian scribe action reference petal chart sequence 5',
+                'Meridian scribe action reference beam ink sequence 6',
+                'Meridian scribe action reference facet plot sequence 7',
+                'Meridian scribe action reference chorus trace sequence 8',
+                'Meridian scribe action reference lattice meridian sequence 9',
+                'Meridian scribe action reference lyric scribe sequence 10',
+                'Meridian scribe action reference shimmer longitude sequence 11',
+                'Meridian scribe action reference glyph scribe sequence 12',
+                'Meridian scribe action reference ribbon chart sequence 13',
+                'Meridian scribe action reference arc ink sequence 14',
+                'Meridian scribe action reference petal plot sequence 15',
+                'Meridian scribe action reference beam trace sequence 16',
+                'Meridian scribe action reference facet meridian sequence 17',
+                'Meridian scribe action reference chorus scribe sequence 18',
+                'Meridian scribe action reference lattice longitude sequence 19',
+                'Meridian scribe action reference lyric scribe sequence 20',
+                'Meridian scribe action reference shimmer chart sequence 21',
+                'Meridian scribe action reference glyph ink sequence 22',
+                'Meridian scribe action reference ribbon plot sequence 23',
+                'Meridian scribe action reference arc trace sequence 24',
+                'Meridian scribe action reference petal meridian sequence 25',
+            ];
+            const palettes = [
+                'Meridian scribe action palette amber meridian sequence 1',
+                'Meridian scribe action palette azure scribe sequence 2',
+                'Meridian scribe action palette violet longitude sequence 3',
+                'Meridian scribe action palette scarlet scribe sequence 4',
+                'Meridian scribe action palette emerald chart sequence 5',
+                'Meridian scribe action palette indigo ink sequence 6',
+                'Meridian scribe action palette cobalt plot sequence 7',
+                'Meridian scribe action palette vermilion trace sequence 8',
+                'Meridian scribe action palette sepia meridian sequence 9',
+                'Meridian scribe action palette silver scribe sequence 10',
+                'Meridian scribe action palette amber longitude sequence 11',
+                'Meridian scribe action palette azure scribe sequence 12',
+                'Meridian scribe action palette violet chart sequence 13',
+                'Meridian scribe action palette scarlet ink sequence 14',
+                'Meridian scribe action palette emerald plot sequence 15',
+                'Meridian scribe action palette indigo trace sequence 16',
+                'Meridian scribe action palette cobalt meridian sequence 17',
+                'Meridian scribe action palette vermilion scribe sequence 18',
+                'Meridian scribe action palette sepia longitude sequence 19',
+                'Meridian scribe action palette silver scribe sequence 20',
+                'Meridian scribe action palette amber chart sequence 21',
+                'Meridian scribe action palette azure ink sequence 22',
+                'Meridian scribe action palette violet plot sequence 23',
+                'Meridian scribe action palette scarlet trace sequence 24',
+                'Meridian scribe action palette emerald meridian sequence 25',
+            ];
+            const pathways = [
+                'Meridian scribe action pathway causeway meridian sequence 1',
+                'Meridian scribe action pathway stair scribe sequence 2',
+                'Meridian scribe action pathway balcony longitude sequence 3',
+                'Meridian scribe action pathway bridge scribe sequence 4',
+                'Meridian scribe action pathway promenade chart sequence 5',
+                'Meridian scribe action pathway corridor ink sequence 6',
+                'Meridian scribe action pathway gate plot sequence 7',
+                'Meridian scribe action pathway atrium trace sequence 8',
+                'Meridian scribe action pathway garden meridian sequence 9',
+                'Meridian scribe action pathway lantern scribe sequence 10',
+                'Meridian scribe action pathway causeway longitude sequence 11',
+                'Meridian scribe action pathway stair scribe sequence 12',
+                'Meridian scribe action pathway balcony chart sequence 13',
+                'Meridian scribe action pathway bridge ink sequence 14',
+                'Meridian scribe action pathway promenade plot sequence 15',
+                'Meridian scribe action pathway corridor trace sequence 16',
+                'Meridian scribe action pathway gate meridian sequence 17',
+                'Meridian scribe action pathway atrium scribe sequence 18',
+                'Meridian scribe action pathway garden longitude sequence 19',
+                'Meridian scribe action pathway lantern scribe sequence 20',
+                'Meridian scribe action pathway causeway chart sequence 21',
+                'Meridian scribe action pathway stair ink sequence 22',
+                'Meridian scribe action pathway balcony plot sequence 23',
+                'Meridian scribe action pathway bridge trace sequence 24',
+                'Meridian scribe action pathway promenade meridian sequence 25',
+            ];
+            const moments = [
+                'Meridian scribe action moment moment meridian sequence 1',
+                'Meridian scribe action moment glimmer scribe sequence 2',
+                'Meridian scribe action moment spark longitude sequence 3',
+                'Meridian scribe action moment pulse scribe sequence 4',
+                'Meridian scribe action moment beat chart sequence 5',
+                'Meridian scribe action moment echo ink sequence 6',
+                'Meridian scribe action moment note plot sequence 7',
+                'Meridian scribe action moment breath trace sequence 8',
+                'Meridian scribe action moment pause meridian sequence 9',
+                'Meridian scribe action moment crescendo scribe sequence 10',
+                'Meridian scribe action moment moment longitude sequence 11',
+                'Meridian scribe action moment glimmer scribe sequence 12',
+                'Meridian scribe action moment spark chart sequence 13',
+                'Meridian scribe action moment pulse ink sequence 14',
+                'Meridian scribe action moment beat plot sequence 15',
+                'Meridian scribe action moment echo trace sequence 16',
+                'Meridian scribe action moment note meridian sequence 17',
+                'Meridian scribe action moment breath scribe sequence 18',
+                'Meridian scribe action moment pause longitude sequence 19',
+                'Meridian scribe action moment crescendo scribe sequence 20',
+                'Meridian scribe action moment moment chart sequence 21',
+                'Meridian scribe action moment glimmer ink sequence 22',
+                'Meridian scribe action moment spark plot sequence 23',
+                'Meridian scribe action moment pulse trace sequence 24',
+                'Meridian scribe action moment beat meridian sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_meridian_scribe';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Meridian scribe action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-orchid-weave',
+        category: 'action',
+        name: 'Orchid weave action',
+        description: 'Weave payload into orchid tapestries of shimmering logic.',
+        icon: 'wind',
+        accent: '#10b981',
+        tags: ['action', 'orchid', 'weave', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Orchid weave', variations: 3, lighten: false, anchor: 'Botanical loom', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Orchid weave' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Botanical loom' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Orchid weave').trim() || 'Orchid weave';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Botanical loom').trim() || 'Botanical loom';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Orchid weave action reference shimmer orchid sequence 1',
+                'Orchid weave action reference glyph weave sequence 2',
+                'Orchid weave action reference ribbon vine sequence 3',
+                'Orchid weave action reference arc petal sequence 4',
+                'Orchid weave action reference petal lace sequence 5',
+                'Orchid weave action reference beam garden sequence 6',
+                'Orchid weave action reference facet pattern sequence 7',
+                'Orchid weave action reference chorus stem sequence 8',
+                'Orchid weave action reference lattice orchid sequence 9',
+                'Orchid weave action reference lyric weave sequence 10',
+                'Orchid weave action reference shimmer vine sequence 11',
+                'Orchid weave action reference glyph petal sequence 12',
+                'Orchid weave action reference ribbon lace sequence 13',
+                'Orchid weave action reference arc garden sequence 14',
+                'Orchid weave action reference petal pattern sequence 15',
+                'Orchid weave action reference beam stem sequence 16',
+                'Orchid weave action reference facet orchid sequence 17',
+                'Orchid weave action reference chorus weave sequence 18',
+                'Orchid weave action reference lattice vine sequence 19',
+                'Orchid weave action reference lyric petal sequence 20',
+                'Orchid weave action reference shimmer lace sequence 21',
+                'Orchid weave action reference glyph garden sequence 22',
+                'Orchid weave action reference ribbon pattern sequence 23',
+                'Orchid weave action reference arc stem sequence 24',
+                'Orchid weave action reference petal orchid sequence 25',
+            ];
+            const palettes = [
+                'Orchid weave action palette amber orchid sequence 1',
+                'Orchid weave action palette azure weave sequence 2',
+                'Orchid weave action palette violet vine sequence 3',
+                'Orchid weave action palette scarlet petal sequence 4',
+                'Orchid weave action palette emerald lace sequence 5',
+                'Orchid weave action palette indigo garden sequence 6',
+                'Orchid weave action palette cobalt pattern sequence 7',
+                'Orchid weave action palette vermilion stem sequence 8',
+                'Orchid weave action palette sepia orchid sequence 9',
+                'Orchid weave action palette silver weave sequence 10',
+                'Orchid weave action palette amber vine sequence 11',
+                'Orchid weave action palette azure petal sequence 12',
+                'Orchid weave action palette violet lace sequence 13',
+                'Orchid weave action palette scarlet garden sequence 14',
+                'Orchid weave action palette emerald pattern sequence 15',
+                'Orchid weave action palette indigo stem sequence 16',
+                'Orchid weave action palette cobalt orchid sequence 17',
+                'Orchid weave action palette vermilion weave sequence 18',
+                'Orchid weave action palette sepia vine sequence 19',
+                'Orchid weave action palette silver petal sequence 20',
+                'Orchid weave action palette amber lace sequence 21',
+                'Orchid weave action palette azure garden sequence 22',
+                'Orchid weave action palette violet pattern sequence 23',
+                'Orchid weave action palette scarlet stem sequence 24',
+                'Orchid weave action palette emerald orchid sequence 25',
+            ];
+            const pathways = [
+                'Orchid weave action pathway causeway orchid sequence 1',
+                'Orchid weave action pathway stair weave sequence 2',
+                'Orchid weave action pathway balcony vine sequence 3',
+                'Orchid weave action pathway bridge petal sequence 4',
+                'Orchid weave action pathway promenade lace sequence 5',
+                'Orchid weave action pathway corridor garden sequence 6',
+                'Orchid weave action pathway gate pattern sequence 7',
+                'Orchid weave action pathway atrium stem sequence 8',
+                'Orchid weave action pathway garden orchid sequence 9',
+                'Orchid weave action pathway lantern weave sequence 10',
+                'Orchid weave action pathway causeway vine sequence 11',
+                'Orchid weave action pathway stair petal sequence 12',
+                'Orchid weave action pathway balcony lace sequence 13',
+                'Orchid weave action pathway bridge garden sequence 14',
+                'Orchid weave action pathway promenade pattern sequence 15',
+                'Orchid weave action pathway corridor stem sequence 16',
+                'Orchid weave action pathway gate orchid sequence 17',
+                'Orchid weave action pathway atrium weave sequence 18',
+                'Orchid weave action pathway garden vine sequence 19',
+                'Orchid weave action pathway lantern petal sequence 20',
+                'Orchid weave action pathway causeway lace sequence 21',
+                'Orchid weave action pathway stair garden sequence 22',
+                'Orchid weave action pathway balcony pattern sequence 23',
+                'Orchid weave action pathway bridge stem sequence 24',
+                'Orchid weave action pathway promenade orchid sequence 25',
+            ];
+            const moments = [
+                'Orchid weave action moment moment orchid sequence 1',
+                'Orchid weave action moment glimmer weave sequence 2',
+                'Orchid weave action moment spark vine sequence 3',
+                'Orchid weave action moment pulse petal sequence 4',
+                'Orchid weave action moment beat lace sequence 5',
+                'Orchid weave action moment echo garden sequence 6',
+                'Orchid weave action moment note pattern sequence 7',
+                'Orchid weave action moment breath stem sequence 8',
+                'Orchid weave action moment pause orchid sequence 9',
+                'Orchid weave action moment crescendo weave sequence 10',
+                'Orchid weave action moment moment vine sequence 11',
+                'Orchid weave action moment glimmer petal sequence 12',
+                'Orchid weave action moment spark lace sequence 13',
+                'Orchid weave action moment pulse garden sequence 14',
+                'Orchid weave action moment beat pattern sequence 15',
+                'Orchid weave action moment echo stem sequence 16',
+                'Orchid weave action moment note orchid sequence 17',
+                'Orchid weave action moment breath weave sequence 18',
+                'Orchid weave action moment pause vine sequence 19',
+                'Orchid weave action moment crescendo petal sequence 20',
+                'Orchid weave action moment moment lace sequence 21',
+                'Orchid weave action moment glimmer garden sequence 22',
+                'Orchid weave action moment spark pattern sequence 23',
+                'Orchid weave action moment pulse stem sequence 24',
+                'Orchid weave action moment beat orchid sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_orchid_weave';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Orchid weave action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-cinder-parade',
+        category: 'action',
+        name: 'Cinder parade action',
+        description: 'Parade vibrant cinders through structured story boulevards.',
+        icon: 'sun',
+        accent: '#fb7185',
+        tags: ['action', 'cinder', 'parade', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Cinder parade', variations: 3, lighten: false, anchor: 'Festival lane', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Cinder parade' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Festival lane' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Cinder parade').trim() || 'Cinder parade';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Festival lane').trim() || 'Festival lane';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Cinder parade action reference shimmer cinder sequence 1',
+                'Cinder parade action reference glyph parade sequence 2',
+                'Cinder parade action reference ribbon boulevard sequence 3',
+                'Cinder parade action reference arc march sequence 4',
+                'Cinder parade action reference petal flare sequence 5',
+                'Cinder parade action reference beam spark sequence 6',
+                'Cinder parade action reference facet celebrate sequence 7',
+                'Cinder parade action reference chorus banner sequence 8',
+                'Cinder parade action reference lattice cinder sequence 9',
+                'Cinder parade action reference lyric parade sequence 10',
+                'Cinder parade action reference shimmer boulevard sequence 11',
+                'Cinder parade action reference glyph march sequence 12',
+                'Cinder parade action reference ribbon flare sequence 13',
+                'Cinder parade action reference arc spark sequence 14',
+                'Cinder parade action reference petal celebrate sequence 15',
+                'Cinder parade action reference beam banner sequence 16',
+                'Cinder parade action reference facet cinder sequence 17',
+                'Cinder parade action reference chorus parade sequence 18',
+                'Cinder parade action reference lattice boulevard sequence 19',
+                'Cinder parade action reference lyric march sequence 20',
+                'Cinder parade action reference shimmer flare sequence 21',
+                'Cinder parade action reference glyph spark sequence 22',
+                'Cinder parade action reference ribbon celebrate sequence 23',
+                'Cinder parade action reference arc banner sequence 24',
+                'Cinder parade action reference petal cinder sequence 25',
+            ];
+            const palettes = [
+                'Cinder parade action palette amber cinder sequence 1',
+                'Cinder parade action palette azure parade sequence 2',
+                'Cinder parade action palette violet boulevard sequence 3',
+                'Cinder parade action palette scarlet march sequence 4',
+                'Cinder parade action palette emerald flare sequence 5',
+                'Cinder parade action palette indigo spark sequence 6',
+                'Cinder parade action palette cobalt celebrate sequence 7',
+                'Cinder parade action palette vermilion banner sequence 8',
+                'Cinder parade action palette sepia cinder sequence 9',
+                'Cinder parade action palette silver parade sequence 10',
+                'Cinder parade action palette amber boulevard sequence 11',
+                'Cinder parade action palette azure march sequence 12',
+                'Cinder parade action palette violet flare sequence 13',
+                'Cinder parade action palette scarlet spark sequence 14',
+                'Cinder parade action palette emerald celebrate sequence 15',
+                'Cinder parade action palette indigo banner sequence 16',
+                'Cinder parade action palette cobalt cinder sequence 17',
+                'Cinder parade action palette vermilion parade sequence 18',
+                'Cinder parade action palette sepia boulevard sequence 19',
+                'Cinder parade action palette silver march sequence 20',
+                'Cinder parade action palette amber flare sequence 21',
+                'Cinder parade action palette azure spark sequence 22',
+                'Cinder parade action palette violet celebrate sequence 23',
+                'Cinder parade action palette scarlet banner sequence 24',
+                'Cinder parade action palette emerald cinder sequence 25',
+            ];
+            const pathways = [
+                'Cinder parade action pathway causeway cinder sequence 1',
+                'Cinder parade action pathway stair parade sequence 2',
+                'Cinder parade action pathway balcony boulevard sequence 3',
+                'Cinder parade action pathway bridge march sequence 4',
+                'Cinder parade action pathway promenade flare sequence 5',
+                'Cinder parade action pathway corridor spark sequence 6',
+                'Cinder parade action pathway gate celebrate sequence 7',
+                'Cinder parade action pathway atrium banner sequence 8',
+                'Cinder parade action pathway garden cinder sequence 9',
+                'Cinder parade action pathway lantern parade sequence 10',
+                'Cinder parade action pathway causeway boulevard sequence 11',
+                'Cinder parade action pathway stair march sequence 12',
+                'Cinder parade action pathway balcony flare sequence 13',
+                'Cinder parade action pathway bridge spark sequence 14',
+                'Cinder parade action pathway promenade celebrate sequence 15',
+                'Cinder parade action pathway corridor banner sequence 16',
+                'Cinder parade action pathway gate cinder sequence 17',
+                'Cinder parade action pathway atrium parade sequence 18',
+                'Cinder parade action pathway garden boulevard sequence 19',
+                'Cinder parade action pathway lantern march sequence 20',
+                'Cinder parade action pathway causeway flare sequence 21',
+                'Cinder parade action pathway stair spark sequence 22',
+                'Cinder parade action pathway balcony celebrate sequence 23',
+                'Cinder parade action pathway bridge banner sequence 24',
+                'Cinder parade action pathway promenade cinder sequence 25',
+            ];
+            const moments = [
+                'Cinder parade action moment moment cinder sequence 1',
+                'Cinder parade action moment glimmer parade sequence 2',
+                'Cinder parade action moment spark boulevard sequence 3',
+                'Cinder parade action moment pulse march sequence 4',
+                'Cinder parade action moment beat flare sequence 5',
+                'Cinder parade action moment echo spark sequence 6',
+                'Cinder parade action moment note celebrate sequence 7',
+                'Cinder parade action moment breath banner sequence 8',
+                'Cinder parade action moment pause cinder sequence 9',
+                'Cinder parade action moment crescendo parade sequence 10',
+                'Cinder parade action moment moment boulevard sequence 11',
+                'Cinder parade action moment glimmer march sequence 12',
+                'Cinder parade action moment spark flare sequence 13',
+                'Cinder parade action moment pulse spark sequence 14',
+                'Cinder parade action moment beat celebrate sequence 15',
+                'Cinder parade action moment echo banner sequence 16',
+                'Cinder parade action moment note cinder sequence 17',
+                'Cinder parade action moment breath parade sequence 18',
+                'Cinder parade action moment pause boulevard sequence 19',
+                'Cinder parade action moment crescendo march sequence 20',
+                'Cinder parade action moment moment flare sequence 21',
+                'Cinder parade action moment glimmer spark sequence 22',
+                'Cinder parade action moment spark celebrate sequence 23',
+                'Cinder parade action moment pulse banner sequence 24',
+                'Cinder parade action moment beat cinder sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_cinder_parade';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Cinder parade action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-skyline-echo',
+        category: 'action',
+        name: 'Skyline echo action',
+        description: 'Reshape payload to echo skylines and mirrored rooftops.',
+        icon: 'sunrise',
+        accent: '#3b82f6',
+        tags: ['action', 'skyline', 'echo', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Skyline echo', variations: 3, lighten: false, anchor: 'City observatory', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Skyline echo' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'City observatory' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Skyline echo').trim() || 'Skyline echo';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'City observatory').trim() || 'City observatory';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Skyline echo action reference shimmer skyline sequence 1',
+                'Skyline echo action reference glyph echo sequence 2',
+                'Skyline echo action reference ribbon tower sequence 3',
+                'Skyline echo action reference arc glass sequence 4',
+                'Skyline echo action reference petal ridge sequence 5',
+                'Skyline echo action reference beam cloud sequence 6',
+                'Skyline echo action reference facet horizon sequence 7',
+                'Skyline echo action reference chorus spire sequence 8',
+                'Skyline echo action reference lattice skyline sequence 9',
+                'Skyline echo action reference lyric echo sequence 10',
+                'Skyline echo action reference shimmer tower sequence 11',
+                'Skyline echo action reference glyph glass sequence 12',
+                'Skyline echo action reference ribbon ridge sequence 13',
+                'Skyline echo action reference arc cloud sequence 14',
+                'Skyline echo action reference petal horizon sequence 15',
+                'Skyline echo action reference beam spire sequence 16',
+                'Skyline echo action reference facet skyline sequence 17',
+                'Skyline echo action reference chorus echo sequence 18',
+                'Skyline echo action reference lattice tower sequence 19',
+                'Skyline echo action reference lyric glass sequence 20',
+                'Skyline echo action reference shimmer ridge sequence 21',
+                'Skyline echo action reference glyph cloud sequence 22',
+                'Skyline echo action reference ribbon horizon sequence 23',
+                'Skyline echo action reference arc spire sequence 24',
+                'Skyline echo action reference petal skyline sequence 25',
+            ];
+            const palettes = [
+                'Skyline echo action palette amber skyline sequence 1',
+                'Skyline echo action palette azure echo sequence 2',
+                'Skyline echo action palette violet tower sequence 3',
+                'Skyline echo action palette scarlet glass sequence 4',
+                'Skyline echo action palette emerald ridge sequence 5',
+                'Skyline echo action palette indigo cloud sequence 6',
+                'Skyline echo action palette cobalt horizon sequence 7',
+                'Skyline echo action palette vermilion spire sequence 8',
+                'Skyline echo action palette sepia skyline sequence 9',
+                'Skyline echo action palette silver echo sequence 10',
+                'Skyline echo action palette amber tower sequence 11',
+                'Skyline echo action palette azure glass sequence 12',
+                'Skyline echo action palette violet ridge sequence 13',
+                'Skyline echo action palette scarlet cloud sequence 14',
+                'Skyline echo action palette emerald horizon sequence 15',
+                'Skyline echo action palette indigo spire sequence 16',
+                'Skyline echo action palette cobalt skyline sequence 17',
+                'Skyline echo action palette vermilion echo sequence 18',
+                'Skyline echo action palette sepia tower sequence 19',
+                'Skyline echo action palette silver glass sequence 20',
+                'Skyline echo action palette amber ridge sequence 21',
+                'Skyline echo action palette azure cloud sequence 22',
+                'Skyline echo action palette violet horizon sequence 23',
+                'Skyline echo action palette scarlet spire sequence 24',
+                'Skyline echo action palette emerald skyline sequence 25',
+            ];
+            const pathways = [
+                'Skyline echo action pathway causeway skyline sequence 1',
+                'Skyline echo action pathway stair echo sequence 2',
+                'Skyline echo action pathway balcony tower sequence 3',
+                'Skyline echo action pathway bridge glass sequence 4',
+                'Skyline echo action pathway promenade ridge sequence 5',
+                'Skyline echo action pathway corridor cloud sequence 6',
+                'Skyline echo action pathway gate horizon sequence 7',
+                'Skyline echo action pathway atrium spire sequence 8',
+                'Skyline echo action pathway garden skyline sequence 9',
+                'Skyline echo action pathway lantern echo sequence 10',
+                'Skyline echo action pathway causeway tower sequence 11',
+                'Skyline echo action pathway stair glass sequence 12',
+                'Skyline echo action pathway balcony ridge sequence 13',
+                'Skyline echo action pathway bridge cloud sequence 14',
+                'Skyline echo action pathway promenade horizon sequence 15',
+                'Skyline echo action pathway corridor spire sequence 16',
+                'Skyline echo action pathway gate skyline sequence 17',
+                'Skyline echo action pathway atrium echo sequence 18',
+                'Skyline echo action pathway garden tower sequence 19',
+                'Skyline echo action pathway lantern glass sequence 20',
+                'Skyline echo action pathway causeway ridge sequence 21',
+                'Skyline echo action pathway stair cloud sequence 22',
+                'Skyline echo action pathway balcony horizon sequence 23',
+                'Skyline echo action pathway bridge spire sequence 24',
+                'Skyline echo action pathway promenade skyline sequence 25',
+            ];
+            const moments = [
+                'Skyline echo action moment moment skyline sequence 1',
+                'Skyline echo action moment glimmer echo sequence 2',
+                'Skyline echo action moment spark tower sequence 3',
+                'Skyline echo action moment pulse glass sequence 4',
+                'Skyline echo action moment beat ridge sequence 5',
+                'Skyline echo action moment echo cloud sequence 6',
+                'Skyline echo action moment note horizon sequence 7',
+                'Skyline echo action moment breath spire sequence 8',
+                'Skyline echo action moment pause skyline sequence 9',
+                'Skyline echo action moment crescendo echo sequence 10',
+                'Skyline echo action moment moment tower sequence 11',
+                'Skyline echo action moment glimmer glass sequence 12',
+                'Skyline echo action moment spark ridge sequence 13',
+                'Skyline echo action moment pulse cloud sequence 14',
+                'Skyline echo action moment beat horizon sequence 15',
+                'Skyline echo action moment echo spire sequence 16',
+                'Skyline echo action moment note skyline sequence 17',
+                'Skyline echo action moment breath echo sequence 18',
+                'Skyline echo action moment pause tower sequence 19',
+                'Skyline echo action moment crescendo glass sequence 20',
+                'Skyline echo action moment moment ridge sequence 21',
+                'Skyline echo action moment glimmer cloud sequence 22',
+                'Skyline echo action moment spark horizon sequence 23',
+                'Skyline echo action moment pulse spire sequence 24',
+                'Skyline echo action moment beat skyline sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_skyline_echo';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Skyline echo action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-ember-story',
+        category: 'action',
+        name: 'Ember story action',
+        description: 'Grow ember stories into layered narrative lanterns.',
+        icon: 'book-open',
+        accent: '#f87171',
+        tags: ['action', 'ember', 'story', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Ember story', variations: 3, lighten: false, anchor: 'Story hearth', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Ember story' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Story hearth' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Ember story').trim() || 'Ember story';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Story hearth').trim() || 'Story hearth';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Ember story action reference shimmer ember sequence 1',
+                'Ember story action reference glyph story sequence 2',
+                'Ember story action reference ribbon tale sequence 3',
+                'Ember story action reference arc emberlight sequence 4',
+                'Ember story action reference petal lore sequence 5',
+                'Ember story action reference beam whisper sequence 6',
+                'Ember story action reference facet emberline sequence 7',
+                'Ember story action reference chorus glow sequence 8',
+                'Ember story action reference lattice ember sequence 9',
+                'Ember story action reference lyric story sequence 10',
+                'Ember story action reference shimmer tale sequence 11',
+                'Ember story action reference glyph emberlight sequence 12',
+                'Ember story action reference ribbon lore sequence 13',
+                'Ember story action reference arc whisper sequence 14',
+                'Ember story action reference petal emberline sequence 15',
+                'Ember story action reference beam glow sequence 16',
+                'Ember story action reference facet ember sequence 17',
+                'Ember story action reference chorus story sequence 18',
+                'Ember story action reference lattice tale sequence 19',
+                'Ember story action reference lyric emberlight sequence 20',
+                'Ember story action reference shimmer lore sequence 21',
+                'Ember story action reference glyph whisper sequence 22',
+                'Ember story action reference ribbon emberline sequence 23',
+                'Ember story action reference arc glow sequence 24',
+                'Ember story action reference petal ember sequence 25',
+            ];
+            const palettes = [
+                'Ember story action palette amber ember sequence 1',
+                'Ember story action palette azure story sequence 2',
+                'Ember story action palette violet tale sequence 3',
+                'Ember story action palette scarlet emberlight sequence 4',
+                'Ember story action palette emerald lore sequence 5',
+                'Ember story action palette indigo whisper sequence 6',
+                'Ember story action palette cobalt emberline sequence 7',
+                'Ember story action palette vermilion glow sequence 8',
+                'Ember story action palette sepia ember sequence 9',
+                'Ember story action palette silver story sequence 10',
+                'Ember story action palette amber tale sequence 11',
+                'Ember story action palette azure emberlight sequence 12',
+                'Ember story action palette violet lore sequence 13',
+                'Ember story action palette scarlet whisper sequence 14',
+                'Ember story action palette emerald emberline sequence 15',
+                'Ember story action palette indigo glow sequence 16',
+                'Ember story action palette cobalt ember sequence 17',
+                'Ember story action palette vermilion story sequence 18',
+                'Ember story action palette sepia tale sequence 19',
+                'Ember story action palette silver emberlight sequence 20',
+                'Ember story action palette amber lore sequence 21',
+                'Ember story action palette azure whisper sequence 22',
+                'Ember story action palette violet emberline sequence 23',
+                'Ember story action palette scarlet glow sequence 24',
+                'Ember story action palette emerald ember sequence 25',
+            ];
+            const pathways = [
+                'Ember story action pathway causeway ember sequence 1',
+                'Ember story action pathway stair story sequence 2',
+                'Ember story action pathway balcony tale sequence 3',
+                'Ember story action pathway bridge emberlight sequence 4',
+                'Ember story action pathway promenade lore sequence 5',
+                'Ember story action pathway corridor whisper sequence 6',
+                'Ember story action pathway gate emberline sequence 7',
+                'Ember story action pathway atrium glow sequence 8',
+                'Ember story action pathway garden ember sequence 9',
+                'Ember story action pathway lantern story sequence 10',
+                'Ember story action pathway causeway tale sequence 11',
+                'Ember story action pathway stair emberlight sequence 12',
+                'Ember story action pathway balcony lore sequence 13',
+                'Ember story action pathway bridge whisper sequence 14',
+                'Ember story action pathway promenade emberline sequence 15',
+                'Ember story action pathway corridor glow sequence 16',
+                'Ember story action pathway gate ember sequence 17',
+                'Ember story action pathway atrium story sequence 18',
+                'Ember story action pathway garden tale sequence 19',
+                'Ember story action pathway lantern emberlight sequence 20',
+                'Ember story action pathway causeway lore sequence 21',
+                'Ember story action pathway stair whisper sequence 22',
+                'Ember story action pathway balcony emberline sequence 23',
+                'Ember story action pathway bridge glow sequence 24',
+                'Ember story action pathway promenade ember sequence 25',
+            ];
+            const moments = [
+                'Ember story action moment moment ember sequence 1',
+                'Ember story action moment glimmer story sequence 2',
+                'Ember story action moment spark tale sequence 3',
+                'Ember story action moment pulse emberlight sequence 4',
+                'Ember story action moment beat lore sequence 5',
+                'Ember story action moment echo whisper sequence 6',
+                'Ember story action moment note emberline sequence 7',
+                'Ember story action moment breath glow sequence 8',
+                'Ember story action moment pause ember sequence 9',
+                'Ember story action moment crescendo story sequence 10',
+                'Ember story action moment moment tale sequence 11',
+                'Ember story action moment glimmer emberlight sequence 12',
+                'Ember story action moment spark lore sequence 13',
+                'Ember story action moment pulse whisper sequence 14',
+                'Ember story action moment beat emberline sequence 15',
+                'Ember story action moment echo glow sequence 16',
+                'Ember story action moment note ember sequence 17',
+                'Ember story action moment breath story sequence 18',
+                'Ember story action moment pause tale sequence 19',
+                'Ember story action moment crescendo emberlight sequence 20',
+                'Ember story action moment moment lore sequence 21',
+                'Ember story action moment glimmer whisper sequence 22',
+                'Ember story action moment spark emberline sequence 23',
+                'Ember story action moment pulse glow sequence 24',
+                'Ember story action moment beat ember sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_ember_story';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Ember story action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-crystal-chart',
+        category: 'action',
+        name: 'Crystal chart action',
+        description: 'Facet payload shards into luminous crystal charts.',
+        icon: 'pie-chart',
+        accent: '#22d3ee',
+        tags: ['action', 'crystal', 'chart', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Crystal chart', variations: 3, lighten: false, anchor: 'Facet atrium', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Crystal chart' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Facet atrium' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Crystal chart').trim() || 'Crystal chart';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Facet atrium').trim() || 'Facet atrium';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Crystal chart action reference shimmer crystal sequence 1',
+                'Crystal chart action reference glyph chart sequence 2',
+                'Crystal chart action reference ribbon facet sequence 3',
+                'Crystal chart action reference arc beam sequence 4',
+                'Crystal chart action reference petal spark sequence 5',
+                'Crystal chart action reference beam geometry sequence 6',
+                'Crystal chart action reference facet diagram sequence 7',
+                'Crystal chart action reference chorus shine sequence 8',
+                'Crystal chart action reference lattice crystal sequence 9',
+                'Crystal chart action reference lyric chart sequence 10',
+                'Crystal chart action reference shimmer facet sequence 11',
+                'Crystal chart action reference glyph beam sequence 12',
+                'Crystal chart action reference ribbon spark sequence 13',
+                'Crystal chart action reference arc geometry sequence 14',
+                'Crystal chart action reference petal diagram sequence 15',
+                'Crystal chart action reference beam shine sequence 16',
+                'Crystal chart action reference facet crystal sequence 17',
+                'Crystal chart action reference chorus chart sequence 18',
+                'Crystal chart action reference lattice facet sequence 19',
+                'Crystal chart action reference lyric beam sequence 20',
+                'Crystal chart action reference shimmer spark sequence 21',
+                'Crystal chart action reference glyph geometry sequence 22',
+                'Crystal chart action reference ribbon diagram sequence 23',
+                'Crystal chart action reference arc shine sequence 24',
+                'Crystal chart action reference petal crystal sequence 25',
+            ];
+            const palettes = [
+                'Crystal chart action palette amber crystal sequence 1',
+                'Crystal chart action palette azure chart sequence 2',
+                'Crystal chart action palette violet facet sequence 3',
+                'Crystal chart action palette scarlet beam sequence 4',
+                'Crystal chart action palette emerald spark sequence 5',
+                'Crystal chart action palette indigo geometry sequence 6',
+                'Crystal chart action palette cobalt diagram sequence 7',
+                'Crystal chart action palette vermilion shine sequence 8',
+                'Crystal chart action palette sepia crystal sequence 9',
+                'Crystal chart action palette silver chart sequence 10',
+                'Crystal chart action palette amber facet sequence 11',
+                'Crystal chart action palette azure beam sequence 12',
+                'Crystal chart action palette violet spark sequence 13',
+                'Crystal chart action palette scarlet geometry sequence 14',
+                'Crystal chart action palette emerald diagram sequence 15',
+                'Crystal chart action palette indigo shine sequence 16',
+                'Crystal chart action palette cobalt crystal sequence 17',
+                'Crystal chart action palette vermilion chart sequence 18',
+                'Crystal chart action palette sepia facet sequence 19',
+                'Crystal chart action palette silver beam sequence 20',
+                'Crystal chart action palette amber spark sequence 21',
+                'Crystal chart action palette azure geometry sequence 22',
+                'Crystal chart action palette violet diagram sequence 23',
+                'Crystal chart action palette scarlet shine sequence 24',
+                'Crystal chart action palette emerald crystal sequence 25',
+            ];
+            const pathways = [
+                'Crystal chart action pathway causeway crystal sequence 1',
+                'Crystal chart action pathway stair chart sequence 2',
+                'Crystal chart action pathway balcony facet sequence 3',
+                'Crystal chart action pathway bridge beam sequence 4',
+                'Crystal chart action pathway promenade spark sequence 5',
+                'Crystal chart action pathway corridor geometry sequence 6',
+                'Crystal chart action pathway gate diagram sequence 7',
+                'Crystal chart action pathway atrium shine sequence 8',
+                'Crystal chart action pathway garden crystal sequence 9',
+                'Crystal chart action pathway lantern chart sequence 10',
+                'Crystal chart action pathway causeway facet sequence 11',
+                'Crystal chart action pathway stair beam sequence 12',
+                'Crystal chart action pathway balcony spark sequence 13',
+                'Crystal chart action pathway bridge geometry sequence 14',
+                'Crystal chart action pathway promenade diagram sequence 15',
+                'Crystal chart action pathway corridor shine sequence 16',
+                'Crystal chart action pathway gate crystal sequence 17',
+                'Crystal chart action pathway atrium chart sequence 18',
+                'Crystal chart action pathway garden facet sequence 19',
+                'Crystal chart action pathway lantern beam sequence 20',
+                'Crystal chart action pathway causeway spark sequence 21',
+                'Crystal chart action pathway stair geometry sequence 22',
+                'Crystal chart action pathway balcony diagram sequence 23',
+                'Crystal chart action pathway bridge shine sequence 24',
+                'Crystal chart action pathway promenade crystal sequence 25',
+            ];
+            const moments = [
+                'Crystal chart action moment moment crystal sequence 1',
+                'Crystal chart action moment glimmer chart sequence 2',
+                'Crystal chart action moment spark facet sequence 3',
+                'Crystal chart action moment pulse beam sequence 4',
+                'Crystal chart action moment beat spark sequence 5',
+                'Crystal chart action moment echo geometry sequence 6',
+                'Crystal chart action moment note diagram sequence 7',
+                'Crystal chart action moment breath shine sequence 8',
+                'Crystal chart action moment pause crystal sequence 9',
+                'Crystal chart action moment crescendo chart sequence 10',
+                'Crystal chart action moment moment facet sequence 11',
+                'Crystal chart action moment glimmer beam sequence 12',
+                'Crystal chart action moment spark spark sequence 13',
+                'Crystal chart action moment pulse geometry sequence 14',
+                'Crystal chart action moment beat diagram sequence 15',
+                'Crystal chart action moment echo shine sequence 16',
+                'Crystal chart action moment note crystal sequence 17',
+                'Crystal chart action moment breath chart sequence 18',
+                'Crystal chart action moment pause facet sequence 19',
+                'Crystal chart action moment crescendo beam sequence 20',
+                'Crystal chart action moment moment spark sequence 21',
+                'Crystal chart action moment glimmer geometry sequence 22',
+                'Crystal chart action moment spark diagram sequence 23',
+                'Crystal chart action moment pulse shine sequence 24',
+                'Crystal chart action moment beat crystal sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_crystal_chart';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Crystal chart action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-grove-cadence',
+        category: 'action',
+        name: 'Grove cadence action',
+        description: 'Layer grove cadences through gentle narrative rings.',
+        icon: 'disc',
+        accent: '#4ade80',
+        tags: ['action', 'grove', 'cadence', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Grove cadence', variations: 3, lighten: false, anchor: 'Verdant gallery', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Grove cadence' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Verdant gallery' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Grove cadence').trim() || 'Grove cadence';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Verdant gallery').trim() || 'Verdant gallery';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Grove cadence action reference shimmer grove sequence 1',
+                'Grove cadence action reference glyph cadence sequence 2',
+                'Grove cadence action reference ribbon ring sequence 3',
+                'Grove cadence action reference arc leaf sequence 4',
+                'Grove cadence action reference petal branch sequence 5',
+                'Grove cadence action reference beam forest sequence 6',
+                'Grove cadence action reference facet pulse sequence 7',
+                'Grove cadence action reference chorus song sequence 8',
+                'Grove cadence action reference lattice grove sequence 9',
+                'Grove cadence action reference lyric cadence sequence 10',
+                'Grove cadence action reference shimmer ring sequence 11',
+                'Grove cadence action reference glyph leaf sequence 12',
+                'Grove cadence action reference ribbon branch sequence 13',
+                'Grove cadence action reference arc forest sequence 14',
+                'Grove cadence action reference petal pulse sequence 15',
+                'Grove cadence action reference beam song sequence 16',
+                'Grove cadence action reference facet grove sequence 17',
+                'Grove cadence action reference chorus cadence sequence 18',
+                'Grove cadence action reference lattice ring sequence 19',
+                'Grove cadence action reference lyric leaf sequence 20',
+                'Grove cadence action reference shimmer branch sequence 21',
+                'Grove cadence action reference glyph forest sequence 22',
+                'Grove cadence action reference ribbon pulse sequence 23',
+                'Grove cadence action reference arc song sequence 24',
+                'Grove cadence action reference petal grove sequence 25',
+            ];
+            const palettes = [
+                'Grove cadence action palette amber grove sequence 1',
+                'Grove cadence action palette azure cadence sequence 2',
+                'Grove cadence action palette violet ring sequence 3',
+                'Grove cadence action palette scarlet leaf sequence 4',
+                'Grove cadence action palette emerald branch sequence 5',
+                'Grove cadence action palette indigo forest sequence 6',
+                'Grove cadence action palette cobalt pulse sequence 7',
+                'Grove cadence action palette vermilion song sequence 8',
+                'Grove cadence action palette sepia grove sequence 9',
+                'Grove cadence action palette silver cadence sequence 10',
+                'Grove cadence action palette amber ring sequence 11',
+                'Grove cadence action palette azure leaf sequence 12',
+                'Grove cadence action palette violet branch sequence 13',
+                'Grove cadence action palette scarlet forest sequence 14',
+                'Grove cadence action palette emerald pulse sequence 15',
+                'Grove cadence action palette indigo song sequence 16',
+                'Grove cadence action palette cobalt grove sequence 17',
+                'Grove cadence action palette vermilion cadence sequence 18',
+                'Grove cadence action palette sepia ring sequence 19',
+                'Grove cadence action palette silver leaf sequence 20',
+                'Grove cadence action palette amber branch sequence 21',
+                'Grove cadence action palette azure forest sequence 22',
+                'Grove cadence action palette violet pulse sequence 23',
+                'Grove cadence action palette scarlet song sequence 24',
+                'Grove cadence action palette emerald grove sequence 25',
+            ];
+            const pathways = [
+                'Grove cadence action pathway causeway grove sequence 1',
+                'Grove cadence action pathway stair cadence sequence 2',
+                'Grove cadence action pathway balcony ring sequence 3',
+                'Grove cadence action pathway bridge leaf sequence 4',
+                'Grove cadence action pathway promenade branch sequence 5',
+                'Grove cadence action pathway corridor forest sequence 6',
+                'Grove cadence action pathway gate pulse sequence 7',
+                'Grove cadence action pathway atrium song sequence 8',
+                'Grove cadence action pathway garden grove sequence 9',
+                'Grove cadence action pathway lantern cadence sequence 10',
+                'Grove cadence action pathway causeway ring sequence 11',
+                'Grove cadence action pathway stair leaf sequence 12',
+                'Grove cadence action pathway balcony branch sequence 13',
+                'Grove cadence action pathway bridge forest sequence 14',
+                'Grove cadence action pathway promenade pulse sequence 15',
+                'Grove cadence action pathway corridor song sequence 16',
+                'Grove cadence action pathway gate grove sequence 17',
+                'Grove cadence action pathway atrium cadence sequence 18',
+                'Grove cadence action pathway garden ring sequence 19',
+                'Grove cadence action pathway lantern leaf sequence 20',
+                'Grove cadence action pathway causeway branch sequence 21',
+                'Grove cadence action pathway stair forest sequence 22',
+                'Grove cadence action pathway balcony pulse sequence 23',
+                'Grove cadence action pathway bridge song sequence 24',
+                'Grove cadence action pathway promenade grove sequence 25',
+            ];
+            const moments = [
+                'Grove cadence action moment moment grove sequence 1',
+                'Grove cadence action moment glimmer cadence sequence 2',
+                'Grove cadence action moment spark ring sequence 3',
+                'Grove cadence action moment pulse leaf sequence 4',
+                'Grove cadence action moment beat branch sequence 5',
+                'Grove cadence action moment echo forest sequence 6',
+                'Grove cadence action moment note pulse sequence 7',
+                'Grove cadence action moment breath song sequence 8',
+                'Grove cadence action moment pause grove sequence 9',
+                'Grove cadence action moment crescendo cadence sequence 10',
+                'Grove cadence action moment moment ring sequence 11',
+                'Grove cadence action moment glimmer leaf sequence 12',
+                'Grove cadence action moment spark branch sequence 13',
+                'Grove cadence action moment pulse forest sequence 14',
+                'Grove cadence action moment beat pulse sequence 15',
+                'Grove cadence action moment echo song sequence 16',
+                'Grove cadence action moment note grove sequence 17',
+                'Grove cadence action moment breath cadence sequence 18',
+                'Grove cadence action moment pause ring sequence 19',
+                'Grove cadence action moment crescendo leaf sequence 20',
+                'Grove cadence action moment moment branch sequence 21',
+                'Grove cadence action moment glimmer forest sequence 22',
+                'Grove cadence action moment spark pulse sequence 23',
+                'Grove cadence action moment pulse song sequence 24',
+                'Grove cadence action moment beat grove sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_grove_cadence';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Grove cadence action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-tide-scroll',
+        category: 'action',
+        name: 'Tide scroll action',
+        description: 'Scroll payload currents like tidal illuminated manuscripts.',
+        icon: 'align-left',
+        accent: '#0ea5e9',
+        tags: ['action', 'tide', 'scroll', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Tide scroll', variations: 3, lighten: false, anchor: 'Harbor scriptorium', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Tide scroll' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Harbor scriptorium' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Tide scroll').trim() || 'Tide scroll';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Harbor scriptorium').trim() || 'Harbor scriptorium';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Tide scroll action reference shimmer tide sequence 1',
+                'Tide scroll action reference glyph scroll sequence 2',
+                'Tide scroll action reference ribbon wave sequence 3',
+                'Tide scroll action reference arc foam sequence 4',
+                'Tide scroll action reference petal sand sequence 5',
+                'Tide scroll action reference beam shell sequence 6',
+                'Tide scroll action reference facet shore sequence 7',
+                'Tide scroll action reference chorus song sequence 8',
+                'Tide scroll action reference lattice tide sequence 9',
+                'Tide scroll action reference lyric scroll sequence 10',
+                'Tide scroll action reference shimmer wave sequence 11',
+                'Tide scroll action reference glyph foam sequence 12',
+                'Tide scroll action reference ribbon sand sequence 13',
+                'Tide scroll action reference arc shell sequence 14',
+                'Tide scroll action reference petal shore sequence 15',
+                'Tide scroll action reference beam song sequence 16',
+                'Tide scroll action reference facet tide sequence 17',
+                'Tide scroll action reference chorus scroll sequence 18',
+                'Tide scroll action reference lattice wave sequence 19',
+                'Tide scroll action reference lyric foam sequence 20',
+                'Tide scroll action reference shimmer sand sequence 21',
+                'Tide scroll action reference glyph shell sequence 22',
+                'Tide scroll action reference ribbon shore sequence 23',
+                'Tide scroll action reference arc song sequence 24',
+                'Tide scroll action reference petal tide sequence 25',
+            ];
+            const palettes = [
+                'Tide scroll action palette amber tide sequence 1',
+                'Tide scroll action palette azure scroll sequence 2',
+                'Tide scroll action palette violet wave sequence 3',
+                'Tide scroll action palette scarlet foam sequence 4',
+                'Tide scroll action palette emerald sand sequence 5',
+                'Tide scroll action palette indigo shell sequence 6',
+                'Tide scroll action palette cobalt shore sequence 7',
+                'Tide scroll action palette vermilion song sequence 8',
+                'Tide scroll action palette sepia tide sequence 9',
+                'Tide scroll action palette silver scroll sequence 10',
+                'Tide scroll action palette amber wave sequence 11',
+                'Tide scroll action palette azure foam sequence 12',
+                'Tide scroll action palette violet sand sequence 13',
+                'Tide scroll action palette scarlet shell sequence 14',
+                'Tide scroll action palette emerald shore sequence 15',
+                'Tide scroll action palette indigo song sequence 16',
+                'Tide scroll action palette cobalt tide sequence 17',
+                'Tide scroll action palette vermilion scroll sequence 18',
+                'Tide scroll action palette sepia wave sequence 19',
+                'Tide scroll action palette silver foam sequence 20',
+                'Tide scroll action palette amber sand sequence 21',
+                'Tide scroll action palette azure shell sequence 22',
+                'Tide scroll action palette violet shore sequence 23',
+                'Tide scroll action palette scarlet song sequence 24',
+                'Tide scroll action palette emerald tide sequence 25',
+            ];
+            const pathways = [
+                'Tide scroll action pathway causeway tide sequence 1',
+                'Tide scroll action pathway stair scroll sequence 2',
+                'Tide scroll action pathway balcony wave sequence 3',
+                'Tide scroll action pathway bridge foam sequence 4',
+                'Tide scroll action pathway promenade sand sequence 5',
+                'Tide scroll action pathway corridor shell sequence 6',
+                'Tide scroll action pathway gate shore sequence 7',
+                'Tide scroll action pathway atrium song sequence 8',
+                'Tide scroll action pathway garden tide sequence 9',
+                'Tide scroll action pathway lantern scroll sequence 10',
+                'Tide scroll action pathway causeway wave sequence 11',
+                'Tide scroll action pathway stair foam sequence 12',
+                'Tide scroll action pathway balcony sand sequence 13',
+                'Tide scroll action pathway bridge shell sequence 14',
+                'Tide scroll action pathway promenade shore sequence 15',
+                'Tide scroll action pathway corridor song sequence 16',
+                'Tide scroll action pathway gate tide sequence 17',
+                'Tide scroll action pathway atrium scroll sequence 18',
+                'Tide scroll action pathway garden wave sequence 19',
+                'Tide scroll action pathway lantern foam sequence 20',
+                'Tide scroll action pathway causeway sand sequence 21',
+                'Tide scroll action pathway stair shell sequence 22',
+                'Tide scroll action pathway balcony shore sequence 23',
+                'Tide scroll action pathway bridge song sequence 24',
+                'Tide scroll action pathway promenade tide sequence 25',
+            ];
+            const moments = [
+                'Tide scroll action moment moment tide sequence 1',
+                'Tide scroll action moment glimmer scroll sequence 2',
+                'Tide scroll action moment spark wave sequence 3',
+                'Tide scroll action moment pulse foam sequence 4',
+                'Tide scroll action moment beat sand sequence 5',
+                'Tide scroll action moment echo shell sequence 6',
+                'Tide scroll action moment note shore sequence 7',
+                'Tide scroll action moment breath song sequence 8',
+                'Tide scroll action moment pause tide sequence 9',
+                'Tide scroll action moment crescendo scroll sequence 10',
+                'Tide scroll action moment moment wave sequence 11',
+                'Tide scroll action moment glimmer foam sequence 12',
+                'Tide scroll action moment spark sand sequence 13',
+                'Tide scroll action moment pulse shell sequence 14',
+                'Tide scroll action moment beat shore sequence 15',
+                'Tide scroll action moment echo song sequence 16',
+                'Tide scroll action moment note tide sequence 17',
+                'Tide scroll action moment breath scroll sequence 18',
+                'Tide scroll action moment pause wave sequence 19',
+                'Tide scroll action moment crescendo foam sequence 20',
+                'Tide scroll action moment moment sand sequence 21',
+                'Tide scroll action moment glimmer shell sequence 22',
+                'Tide scroll action moment spark shore sequence 23',
+                'Tide scroll action moment pulse song sequence 24',
+                'Tide scroll action moment beat tide sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_tide_scroll';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Tide scroll action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-ridge-signal',
+        category: 'action',
+        name: 'Ridge signal action',
+        description: 'Signal payload peaks along ridgeway luminous beacons.',
+        icon: 'triangle',
+        accent: '#fbbf24',
+        tags: ['action', 'ridge', 'signal', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Ridge signal', variations: 3, lighten: false, anchor: 'Summit observatory', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Ridge signal' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Summit observatory' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Ridge signal').trim() || 'Ridge signal';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Summit observatory').trim() || 'Summit observatory';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Ridge signal action reference shimmer ridge sequence 1',
+                'Ridge signal action reference glyph signal sequence 2',
+                'Ridge signal action reference ribbon summit sequence 3',
+                'Ridge signal action reference arc peak sequence 4',
+                'Ridge signal action reference petal banner sequence 5',
+                'Ridge signal action reference beam ridgeway sequence 6',
+                'Ridge signal action reference facet flash sequence 7',
+                'Ridge signal action reference chorus spire sequence 8',
+                'Ridge signal action reference lattice ridge sequence 9',
+                'Ridge signal action reference lyric signal sequence 10',
+                'Ridge signal action reference shimmer summit sequence 11',
+                'Ridge signal action reference glyph peak sequence 12',
+                'Ridge signal action reference ribbon banner sequence 13',
+                'Ridge signal action reference arc ridgeway sequence 14',
+                'Ridge signal action reference petal flash sequence 15',
+                'Ridge signal action reference beam spire sequence 16',
+                'Ridge signal action reference facet ridge sequence 17',
+                'Ridge signal action reference chorus signal sequence 18',
+                'Ridge signal action reference lattice summit sequence 19',
+                'Ridge signal action reference lyric peak sequence 20',
+                'Ridge signal action reference shimmer banner sequence 21',
+                'Ridge signal action reference glyph ridgeway sequence 22',
+                'Ridge signal action reference ribbon flash sequence 23',
+                'Ridge signal action reference arc spire sequence 24',
+                'Ridge signal action reference petal ridge sequence 25',
+            ];
+            const palettes = [
+                'Ridge signal action palette amber ridge sequence 1',
+                'Ridge signal action palette azure signal sequence 2',
+                'Ridge signal action palette violet summit sequence 3',
+                'Ridge signal action palette scarlet peak sequence 4',
+                'Ridge signal action palette emerald banner sequence 5',
+                'Ridge signal action palette indigo ridgeway sequence 6',
+                'Ridge signal action palette cobalt flash sequence 7',
+                'Ridge signal action palette vermilion spire sequence 8',
+                'Ridge signal action palette sepia ridge sequence 9',
+                'Ridge signal action palette silver signal sequence 10',
+                'Ridge signal action palette amber summit sequence 11',
+                'Ridge signal action palette azure peak sequence 12',
+                'Ridge signal action palette violet banner sequence 13',
+                'Ridge signal action palette scarlet ridgeway sequence 14',
+                'Ridge signal action palette emerald flash sequence 15',
+                'Ridge signal action palette indigo spire sequence 16',
+                'Ridge signal action palette cobalt ridge sequence 17',
+                'Ridge signal action palette vermilion signal sequence 18',
+                'Ridge signal action palette sepia summit sequence 19',
+                'Ridge signal action palette silver peak sequence 20',
+                'Ridge signal action palette amber banner sequence 21',
+                'Ridge signal action palette azure ridgeway sequence 22',
+                'Ridge signal action palette violet flash sequence 23',
+                'Ridge signal action palette scarlet spire sequence 24',
+                'Ridge signal action palette emerald ridge sequence 25',
+            ];
+            const pathways = [
+                'Ridge signal action pathway causeway ridge sequence 1',
+                'Ridge signal action pathway stair signal sequence 2',
+                'Ridge signal action pathway balcony summit sequence 3',
+                'Ridge signal action pathway bridge peak sequence 4',
+                'Ridge signal action pathway promenade banner sequence 5',
+                'Ridge signal action pathway corridor ridgeway sequence 6',
+                'Ridge signal action pathway gate flash sequence 7',
+                'Ridge signal action pathway atrium spire sequence 8',
+                'Ridge signal action pathway garden ridge sequence 9',
+                'Ridge signal action pathway lantern signal sequence 10',
+                'Ridge signal action pathway causeway summit sequence 11',
+                'Ridge signal action pathway stair peak sequence 12',
+                'Ridge signal action pathway balcony banner sequence 13',
+                'Ridge signal action pathway bridge ridgeway sequence 14',
+                'Ridge signal action pathway promenade flash sequence 15',
+                'Ridge signal action pathway corridor spire sequence 16',
+                'Ridge signal action pathway gate ridge sequence 17',
+                'Ridge signal action pathway atrium signal sequence 18',
+                'Ridge signal action pathway garden summit sequence 19',
+                'Ridge signal action pathway lantern peak sequence 20',
+                'Ridge signal action pathway causeway banner sequence 21',
+                'Ridge signal action pathway stair ridgeway sequence 22',
+                'Ridge signal action pathway balcony flash sequence 23',
+                'Ridge signal action pathway bridge spire sequence 24',
+                'Ridge signal action pathway promenade ridge sequence 25',
+            ];
+            const moments = [
+                'Ridge signal action moment moment ridge sequence 1',
+                'Ridge signal action moment glimmer signal sequence 2',
+                'Ridge signal action moment spark summit sequence 3',
+                'Ridge signal action moment pulse peak sequence 4',
+                'Ridge signal action moment beat banner sequence 5',
+                'Ridge signal action moment echo ridgeway sequence 6',
+                'Ridge signal action moment note flash sequence 7',
+                'Ridge signal action moment breath spire sequence 8',
+                'Ridge signal action moment pause ridge sequence 9',
+                'Ridge signal action moment crescendo signal sequence 10',
+                'Ridge signal action moment moment summit sequence 11',
+                'Ridge signal action moment glimmer peak sequence 12',
+                'Ridge signal action moment spark banner sequence 13',
+                'Ridge signal action moment pulse ridgeway sequence 14',
+                'Ridge signal action moment beat flash sequence 15',
+                'Ridge signal action moment echo spire sequence 16',
+                'Ridge signal action moment note ridge sequence 17',
+                'Ridge signal action moment breath signal sequence 18',
+                'Ridge signal action moment pause summit sequence 19',
+                'Ridge signal action moment crescendo peak sequence 20',
+                'Ridge signal action moment moment banner sequence 21',
+                'Ridge signal action moment glimmer ridgeway sequence 22',
+                'Ridge signal action moment spark flash sequence 23',
+                'Ridge signal action moment pulse spire sequence 24',
+                'Ridge signal action moment beat ridge sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_ridge_signal';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Ridge signal action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-coral-drift',
+        category: 'action',
+        name: 'Coral drift action',
+        description: 'Guide payload into coral drifts and shimmering reefs.',
+        icon: 'anchor',
+        accent: '#22c55e',
+        tags: ['action', 'coral', 'drift', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Coral drift', variations: 3, lighten: false, anchor: 'Reef balcony', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Coral drift' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Reef balcony' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Coral drift').trim() || 'Coral drift';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Reef balcony').trim() || 'Reef balcony';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Coral drift action reference shimmer coral sequence 1',
+                'Coral drift action reference glyph drift sequence 2',
+                'Coral drift action reference ribbon reef sequence 3',
+                'Coral drift action reference arc lagoon sequence 4',
+                'Coral drift action reference petal tide sequence 5',
+                'Coral drift action reference beam shell sequence 6',
+                'Coral drift action reference facet glisten sequence 7',
+                'Coral drift action reference chorus bubble sequence 8',
+                'Coral drift action reference lattice coral sequence 9',
+                'Coral drift action reference lyric drift sequence 10',
+                'Coral drift action reference shimmer reef sequence 11',
+                'Coral drift action reference glyph lagoon sequence 12',
+                'Coral drift action reference ribbon tide sequence 13',
+                'Coral drift action reference arc shell sequence 14',
+                'Coral drift action reference petal glisten sequence 15',
+                'Coral drift action reference beam bubble sequence 16',
+                'Coral drift action reference facet coral sequence 17',
+                'Coral drift action reference chorus drift sequence 18',
+                'Coral drift action reference lattice reef sequence 19',
+                'Coral drift action reference lyric lagoon sequence 20',
+                'Coral drift action reference shimmer tide sequence 21',
+                'Coral drift action reference glyph shell sequence 22',
+                'Coral drift action reference ribbon glisten sequence 23',
+                'Coral drift action reference arc bubble sequence 24',
+                'Coral drift action reference petal coral sequence 25',
+            ];
+            const palettes = [
+                'Coral drift action palette amber coral sequence 1',
+                'Coral drift action palette azure drift sequence 2',
+                'Coral drift action palette violet reef sequence 3',
+                'Coral drift action palette scarlet lagoon sequence 4',
+                'Coral drift action palette emerald tide sequence 5',
+                'Coral drift action palette indigo shell sequence 6',
+                'Coral drift action palette cobalt glisten sequence 7',
+                'Coral drift action palette vermilion bubble sequence 8',
+                'Coral drift action palette sepia coral sequence 9',
+                'Coral drift action palette silver drift sequence 10',
+                'Coral drift action palette amber reef sequence 11',
+                'Coral drift action palette azure lagoon sequence 12',
+                'Coral drift action palette violet tide sequence 13',
+                'Coral drift action palette scarlet shell sequence 14',
+                'Coral drift action palette emerald glisten sequence 15',
+                'Coral drift action palette indigo bubble sequence 16',
+                'Coral drift action palette cobalt coral sequence 17',
+                'Coral drift action palette vermilion drift sequence 18',
+                'Coral drift action palette sepia reef sequence 19',
+                'Coral drift action palette silver lagoon sequence 20',
+                'Coral drift action palette amber tide sequence 21',
+                'Coral drift action palette azure shell sequence 22',
+                'Coral drift action palette violet glisten sequence 23',
+                'Coral drift action palette scarlet bubble sequence 24',
+                'Coral drift action palette emerald coral sequence 25',
+            ];
+            const pathways = [
+                'Coral drift action pathway causeway coral sequence 1',
+                'Coral drift action pathway stair drift sequence 2',
+                'Coral drift action pathway balcony reef sequence 3',
+                'Coral drift action pathway bridge lagoon sequence 4',
+                'Coral drift action pathway promenade tide sequence 5',
+                'Coral drift action pathway corridor shell sequence 6',
+                'Coral drift action pathway gate glisten sequence 7',
+                'Coral drift action pathway atrium bubble sequence 8',
+                'Coral drift action pathway garden coral sequence 9',
+                'Coral drift action pathway lantern drift sequence 10',
+                'Coral drift action pathway causeway reef sequence 11',
+                'Coral drift action pathway stair lagoon sequence 12',
+                'Coral drift action pathway balcony tide sequence 13',
+                'Coral drift action pathway bridge shell sequence 14',
+                'Coral drift action pathway promenade glisten sequence 15',
+                'Coral drift action pathway corridor bubble sequence 16',
+                'Coral drift action pathway gate coral sequence 17',
+                'Coral drift action pathway atrium drift sequence 18',
+                'Coral drift action pathway garden reef sequence 19',
+                'Coral drift action pathway lantern lagoon sequence 20',
+                'Coral drift action pathway causeway tide sequence 21',
+                'Coral drift action pathway stair shell sequence 22',
+                'Coral drift action pathway balcony glisten sequence 23',
+                'Coral drift action pathway bridge bubble sequence 24',
+                'Coral drift action pathway promenade coral sequence 25',
+            ];
+            const moments = [
+                'Coral drift action moment moment coral sequence 1',
+                'Coral drift action moment glimmer drift sequence 2',
+                'Coral drift action moment spark reef sequence 3',
+                'Coral drift action moment pulse lagoon sequence 4',
+                'Coral drift action moment beat tide sequence 5',
+                'Coral drift action moment echo shell sequence 6',
+                'Coral drift action moment note glisten sequence 7',
+                'Coral drift action moment breath bubble sequence 8',
+                'Coral drift action moment pause coral sequence 9',
+                'Coral drift action moment crescendo drift sequence 10',
+                'Coral drift action moment moment reef sequence 11',
+                'Coral drift action moment glimmer lagoon sequence 12',
+                'Coral drift action moment spark tide sequence 13',
+                'Coral drift action moment pulse shell sequence 14',
+                'Coral drift action moment beat glisten sequence 15',
+                'Coral drift action moment echo bubble sequence 16',
+                'Coral drift action moment note coral sequence 17',
+                'Coral drift action moment breath drift sequence 18',
+                'Coral drift action moment pause reef sequence 19',
+                'Coral drift action moment crescendo lagoon sequence 20',
+                'Coral drift action moment moment tide sequence 21',
+                'Coral drift action moment glimmer shell sequence 22',
+                'Coral drift action moment spark glisten sequence 23',
+                'Coral drift action moment pulse bubble sequence 24',
+                'Coral drift action moment beat coral sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_coral_drift';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Coral drift action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-moonlit-paragraph',
+        category: 'action',
+        name: 'Moonlit paragraph action',
+        description: 'Bathe paragraphs in moonlit gradients and silver rhythms.',
+        icon: 'moon',
+        accent: '#6366f1',
+        tags: ['action', 'moonlit', 'paragraph', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Moonlit paragraph', variations: 3, lighten: false, anchor: 'Lunar balcony', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Moonlit paragraph' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Lunar balcony' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Moonlit paragraph').trim() || 'Moonlit paragraph';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Lunar balcony').trim() || 'Lunar balcony';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Moonlit paragraph action reference shimmer moon sequence 1',
+                'Moonlit paragraph action reference glyph silver sequence 2',
+                'Moonlit paragraph action reference ribbon night sequence 3',
+                'Moonlit paragraph action reference arc lunar sequence 4',
+                'Moonlit paragraph action reference petal glow sequence 5',
+                'Moonlit paragraph action reference beam soft sequence 6',
+                'Moonlit paragraph action reference facet beam sequence 7',
+                'Moonlit paragraph action reference chorus mist sequence 8',
+                'Moonlit paragraph action reference lattice moon sequence 9',
+                'Moonlit paragraph action reference lyric silver sequence 10',
+                'Moonlit paragraph action reference shimmer night sequence 11',
+                'Moonlit paragraph action reference glyph lunar sequence 12',
+                'Moonlit paragraph action reference ribbon glow sequence 13',
+                'Moonlit paragraph action reference arc soft sequence 14',
+                'Moonlit paragraph action reference petal beam sequence 15',
+                'Moonlit paragraph action reference beam mist sequence 16',
+                'Moonlit paragraph action reference facet moon sequence 17',
+                'Moonlit paragraph action reference chorus silver sequence 18',
+                'Moonlit paragraph action reference lattice night sequence 19',
+                'Moonlit paragraph action reference lyric lunar sequence 20',
+                'Moonlit paragraph action reference shimmer glow sequence 21',
+                'Moonlit paragraph action reference glyph soft sequence 22',
+                'Moonlit paragraph action reference ribbon beam sequence 23',
+                'Moonlit paragraph action reference arc mist sequence 24',
+                'Moonlit paragraph action reference petal moon sequence 25',
+            ];
+            const palettes = [
+                'Moonlit paragraph action palette amber moon sequence 1',
+                'Moonlit paragraph action palette azure silver sequence 2',
+                'Moonlit paragraph action palette violet night sequence 3',
+                'Moonlit paragraph action palette scarlet lunar sequence 4',
+                'Moonlit paragraph action palette emerald glow sequence 5',
+                'Moonlit paragraph action palette indigo soft sequence 6',
+                'Moonlit paragraph action palette cobalt beam sequence 7',
+                'Moonlit paragraph action palette vermilion mist sequence 8',
+                'Moonlit paragraph action palette sepia moon sequence 9',
+                'Moonlit paragraph action palette silver silver sequence 10',
+                'Moonlit paragraph action palette amber night sequence 11',
+                'Moonlit paragraph action palette azure lunar sequence 12',
+                'Moonlit paragraph action palette violet glow sequence 13',
+                'Moonlit paragraph action palette scarlet soft sequence 14',
+                'Moonlit paragraph action palette emerald beam sequence 15',
+                'Moonlit paragraph action palette indigo mist sequence 16',
+                'Moonlit paragraph action palette cobalt moon sequence 17',
+                'Moonlit paragraph action palette vermilion silver sequence 18',
+                'Moonlit paragraph action palette sepia night sequence 19',
+                'Moonlit paragraph action palette silver lunar sequence 20',
+                'Moonlit paragraph action palette amber glow sequence 21',
+                'Moonlit paragraph action palette azure soft sequence 22',
+                'Moonlit paragraph action palette violet beam sequence 23',
+                'Moonlit paragraph action palette scarlet mist sequence 24',
+                'Moonlit paragraph action palette emerald moon sequence 25',
+            ];
+            const pathways = [
+                'Moonlit paragraph action pathway causeway moon sequence 1',
+                'Moonlit paragraph action pathway stair silver sequence 2',
+                'Moonlit paragraph action pathway balcony night sequence 3',
+                'Moonlit paragraph action pathway bridge lunar sequence 4',
+                'Moonlit paragraph action pathway promenade glow sequence 5',
+                'Moonlit paragraph action pathway corridor soft sequence 6',
+                'Moonlit paragraph action pathway gate beam sequence 7',
+                'Moonlit paragraph action pathway atrium mist sequence 8',
+                'Moonlit paragraph action pathway garden moon sequence 9',
+                'Moonlit paragraph action pathway lantern silver sequence 10',
+                'Moonlit paragraph action pathway causeway night sequence 11',
+                'Moonlit paragraph action pathway stair lunar sequence 12',
+                'Moonlit paragraph action pathway balcony glow sequence 13',
+                'Moonlit paragraph action pathway bridge soft sequence 14',
+                'Moonlit paragraph action pathway promenade beam sequence 15',
+                'Moonlit paragraph action pathway corridor mist sequence 16',
+                'Moonlit paragraph action pathway gate moon sequence 17',
+                'Moonlit paragraph action pathway atrium silver sequence 18',
+                'Moonlit paragraph action pathway garden night sequence 19',
+                'Moonlit paragraph action pathway lantern lunar sequence 20',
+                'Moonlit paragraph action pathway causeway glow sequence 21',
+                'Moonlit paragraph action pathway stair soft sequence 22',
+                'Moonlit paragraph action pathway balcony beam sequence 23',
+                'Moonlit paragraph action pathway bridge mist sequence 24',
+                'Moonlit paragraph action pathway promenade moon sequence 25',
+            ];
+            const moments = [
+                'Moonlit paragraph action moment moment moon sequence 1',
+                'Moonlit paragraph action moment glimmer silver sequence 2',
+                'Moonlit paragraph action moment spark night sequence 3',
+                'Moonlit paragraph action moment pulse lunar sequence 4',
+                'Moonlit paragraph action moment beat glow sequence 5',
+                'Moonlit paragraph action moment echo soft sequence 6',
+                'Moonlit paragraph action moment note beam sequence 7',
+                'Moonlit paragraph action moment breath mist sequence 8',
+                'Moonlit paragraph action moment pause moon sequence 9',
+                'Moonlit paragraph action moment crescendo silver sequence 10',
+                'Moonlit paragraph action moment moment night sequence 11',
+                'Moonlit paragraph action moment glimmer lunar sequence 12',
+                'Moonlit paragraph action moment spark glow sequence 13',
+                'Moonlit paragraph action moment pulse soft sequence 14',
+                'Moonlit paragraph action moment beat beam sequence 15',
+                'Moonlit paragraph action moment echo mist sequence 16',
+                'Moonlit paragraph action moment note moon sequence 17',
+                'Moonlit paragraph action moment breath silver sequence 18',
+                'Moonlit paragraph action moment pause night sequence 19',
+                'Moonlit paragraph action moment crescendo lunar sequence 20',
+                'Moonlit paragraph action moment moment glow sequence 21',
+                'Moonlit paragraph action moment glimmer soft sequence 22',
+                'Moonlit paragraph action moment spark beam sequence 23',
+                'Moonlit paragraph action moment pulse mist sequence 24',
+                'Moonlit paragraph action moment beat moon sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_moonlit_paragraph';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Moonlit paragraph action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-ember-grove',
+        category: 'action',
+        name: 'Ember grove action',
+        description: 'Mix ember sparks with grove breezes and glowing branches.',
+        icon: 'flame',
+        accent: '#f97316',
+        tags: ['action', 'ember', 'grove', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Ember grove', variations: 3, lighten: false, anchor: 'Ashen clearing', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Ember grove' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Ashen clearing' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Ember grove').trim() || 'Ember grove';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Ashen clearing').trim() || 'Ashen clearing';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Ember grove action reference shimmer ember sequence 1',
+                'Ember grove action reference glyph grove sequence 2',
+                'Ember grove action reference ribbon branch sequence 3',
+                'Ember grove action reference arc spark sequence 4',
+                'Ember grove action reference petal root sequence 5',
+                'Ember grove action reference beam ash sequence 6',
+                'Ember grove action reference facet emberline sequence 7',
+                'Ember grove action reference chorus bloom sequence 8',
+                'Ember grove action reference lattice ember sequence 9',
+                'Ember grove action reference lyric grove sequence 10',
+                'Ember grove action reference shimmer branch sequence 11',
+                'Ember grove action reference glyph spark sequence 12',
+                'Ember grove action reference ribbon root sequence 13',
+                'Ember grove action reference arc ash sequence 14',
+                'Ember grove action reference petal emberline sequence 15',
+                'Ember grove action reference beam bloom sequence 16',
+                'Ember grove action reference facet ember sequence 17',
+                'Ember grove action reference chorus grove sequence 18',
+                'Ember grove action reference lattice branch sequence 19',
+                'Ember grove action reference lyric spark sequence 20',
+                'Ember grove action reference shimmer root sequence 21',
+                'Ember grove action reference glyph ash sequence 22',
+                'Ember grove action reference ribbon emberline sequence 23',
+                'Ember grove action reference arc bloom sequence 24',
+                'Ember grove action reference petal ember sequence 25',
+            ];
+            const palettes = [
+                'Ember grove action palette amber ember sequence 1',
+                'Ember grove action palette azure grove sequence 2',
+                'Ember grove action palette violet branch sequence 3',
+                'Ember grove action palette scarlet spark sequence 4',
+                'Ember grove action palette emerald root sequence 5',
+                'Ember grove action palette indigo ash sequence 6',
+                'Ember grove action palette cobalt emberline sequence 7',
+                'Ember grove action palette vermilion bloom sequence 8',
+                'Ember grove action palette sepia ember sequence 9',
+                'Ember grove action palette silver grove sequence 10',
+                'Ember grove action palette amber branch sequence 11',
+                'Ember grove action palette azure spark sequence 12',
+                'Ember grove action palette violet root sequence 13',
+                'Ember grove action palette scarlet ash sequence 14',
+                'Ember grove action palette emerald emberline sequence 15',
+                'Ember grove action palette indigo bloom sequence 16',
+                'Ember grove action palette cobalt ember sequence 17',
+                'Ember grove action palette vermilion grove sequence 18',
+                'Ember grove action palette sepia branch sequence 19',
+                'Ember grove action palette silver spark sequence 20',
+                'Ember grove action palette amber root sequence 21',
+                'Ember grove action palette azure ash sequence 22',
+                'Ember grove action palette violet emberline sequence 23',
+                'Ember grove action palette scarlet bloom sequence 24',
+                'Ember grove action palette emerald ember sequence 25',
+            ];
+            const pathways = [
+                'Ember grove action pathway causeway ember sequence 1',
+                'Ember grove action pathway stair grove sequence 2',
+                'Ember grove action pathway balcony branch sequence 3',
+                'Ember grove action pathway bridge spark sequence 4',
+                'Ember grove action pathway promenade root sequence 5',
+                'Ember grove action pathway corridor ash sequence 6',
+                'Ember grove action pathway gate emberline sequence 7',
+                'Ember grove action pathway atrium bloom sequence 8',
+                'Ember grove action pathway garden ember sequence 9',
+                'Ember grove action pathway lantern grove sequence 10',
+                'Ember grove action pathway causeway branch sequence 11',
+                'Ember grove action pathway stair spark sequence 12',
+                'Ember grove action pathway balcony root sequence 13',
+                'Ember grove action pathway bridge ash sequence 14',
+                'Ember grove action pathway promenade emberline sequence 15',
+                'Ember grove action pathway corridor bloom sequence 16',
+                'Ember grove action pathway gate ember sequence 17',
+                'Ember grove action pathway atrium grove sequence 18',
+                'Ember grove action pathway garden branch sequence 19',
+                'Ember grove action pathway lantern spark sequence 20',
+                'Ember grove action pathway causeway root sequence 21',
+                'Ember grove action pathway stair ash sequence 22',
+                'Ember grove action pathway balcony emberline sequence 23',
+                'Ember grove action pathway bridge bloom sequence 24',
+                'Ember grove action pathway promenade ember sequence 25',
+            ];
+            const moments = [
+                'Ember grove action moment moment ember sequence 1',
+                'Ember grove action moment glimmer grove sequence 2',
+                'Ember grove action moment spark branch sequence 3',
+                'Ember grove action moment pulse spark sequence 4',
+                'Ember grove action moment beat root sequence 5',
+                'Ember grove action moment echo ash sequence 6',
+                'Ember grove action moment note emberline sequence 7',
+                'Ember grove action moment breath bloom sequence 8',
+                'Ember grove action moment pause ember sequence 9',
+                'Ember grove action moment crescendo grove sequence 10',
+                'Ember grove action moment moment branch sequence 11',
+                'Ember grove action moment glimmer spark sequence 12',
+                'Ember grove action moment spark root sequence 13',
+                'Ember grove action moment pulse ash sequence 14',
+                'Ember grove action moment beat emberline sequence 15',
+                'Ember grove action moment echo bloom sequence 16',
+                'Ember grove action moment note ember sequence 17',
+                'Ember grove action moment breath grove sequence 18',
+                'Ember grove action moment pause branch sequence 19',
+                'Ember grove action moment crescendo spark sequence 20',
+                'Ember grove action moment moment root sequence 21',
+                'Ember grove action moment glimmer ash sequence 22',
+                'Ember grove action moment spark emberline sequence 23',
+                'Ember grove action moment pulse bloom sequence 24',
+                'Ember grove action moment beat ember sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_ember_grove';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Ember grove action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-orbit-script',
+        category: 'action',
+        name: 'Orbit script action',
+        description: 'Orbital scripts spin payload fragments into constellations.',
+        icon: 'rotate-cw',
+        accent: '#2563eb',
+        tags: ['action', 'orbit', 'script', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Orbit script', variations: 3, lighten: false, anchor: 'Celestial chamber', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Orbit script' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Celestial chamber' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Orbit script').trim() || 'Orbit script';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Celestial chamber').trim() || 'Celestial chamber';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Orbit script action reference shimmer orbit sequence 1',
+                'Orbit script action reference glyph script sequence 2',
+                'Orbit script action reference ribbon constellation sequence 3',
+                'Orbit script action reference arc loop sequence 4',
+                'Orbit script action reference petal planet sequence 5',
+                'Orbit script action reference beam trajectory sequence 6',
+                'Orbit script action reference facet halo sequence 7',
+                'Orbit script action reference chorus ring sequence 8',
+                'Orbit script action reference lattice orbit sequence 9',
+                'Orbit script action reference lyric script sequence 10',
+                'Orbit script action reference shimmer constellation sequence 11',
+                'Orbit script action reference glyph loop sequence 12',
+                'Orbit script action reference ribbon planet sequence 13',
+                'Orbit script action reference arc trajectory sequence 14',
+                'Orbit script action reference petal halo sequence 15',
+                'Orbit script action reference beam ring sequence 16',
+                'Orbit script action reference facet orbit sequence 17',
+                'Orbit script action reference chorus script sequence 18',
+                'Orbit script action reference lattice constellation sequence 19',
+                'Orbit script action reference lyric loop sequence 20',
+                'Orbit script action reference shimmer planet sequence 21',
+                'Orbit script action reference glyph trajectory sequence 22',
+                'Orbit script action reference ribbon halo sequence 23',
+                'Orbit script action reference arc ring sequence 24',
+                'Orbit script action reference petal orbit sequence 25',
+            ];
+            const palettes = [
+                'Orbit script action palette amber orbit sequence 1',
+                'Orbit script action palette azure script sequence 2',
+                'Orbit script action palette violet constellation sequence 3',
+                'Orbit script action palette scarlet loop sequence 4',
+                'Orbit script action palette emerald planet sequence 5',
+                'Orbit script action palette indigo trajectory sequence 6',
+                'Orbit script action palette cobalt halo sequence 7',
+                'Orbit script action palette vermilion ring sequence 8',
+                'Orbit script action palette sepia orbit sequence 9',
+                'Orbit script action palette silver script sequence 10',
+                'Orbit script action palette amber constellation sequence 11',
+                'Orbit script action palette azure loop sequence 12',
+                'Orbit script action palette violet planet sequence 13',
+                'Orbit script action palette scarlet trajectory sequence 14',
+                'Orbit script action palette emerald halo sequence 15',
+                'Orbit script action palette indigo ring sequence 16',
+                'Orbit script action palette cobalt orbit sequence 17',
+                'Orbit script action palette vermilion script sequence 18',
+                'Orbit script action palette sepia constellation sequence 19',
+                'Orbit script action palette silver loop sequence 20',
+                'Orbit script action palette amber planet sequence 21',
+                'Orbit script action palette azure trajectory sequence 22',
+                'Orbit script action palette violet halo sequence 23',
+                'Orbit script action palette scarlet ring sequence 24',
+                'Orbit script action palette emerald orbit sequence 25',
+            ];
+            const pathways = [
+                'Orbit script action pathway causeway orbit sequence 1',
+                'Orbit script action pathway stair script sequence 2',
+                'Orbit script action pathway balcony constellation sequence 3',
+                'Orbit script action pathway bridge loop sequence 4',
+                'Orbit script action pathway promenade planet sequence 5',
+                'Orbit script action pathway corridor trajectory sequence 6',
+                'Orbit script action pathway gate halo sequence 7',
+                'Orbit script action pathway atrium ring sequence 8',
+                'Orbit script action pathway garden orbit sequence 9',
+                'Orbit script action pathway lantern script sequence 10',
+                'Orbit script action pathway causeway constellation sequence 11',
+                'Orbit script action pathway stair loop sequence 12',
+                'Orbit script action pathway balcony planet sequence 13',
+                'Orbit script action pathway bridge trajectory sequence 14',
+                'Orbit script action pathway promenade halo sequence 15',
+                'Orbit script action pathway corridor ring sequence 16',
+                'Orbit script action pathway gate orbit sequence 17',
+                'Orbit script action pathway atrium script sequence 18',
+                'Orbit script action pathway garden constellation sequence 19',
+                'Orbit script action pathway lantern loop sequence 20',
+                'Orbit script action pathway causeway planet sequence 21',
+                'Orbit script action pathway stair trajectory sequence 22',
+                'Orbit script action pathway balcony halo sequence 23',
+                'Orbit script action pathway bridge ring sequence 24',
+                'Orbit script action pathway promenade orbit sequence 25',
+            ];
+            const moments = [
+                'Orbit script action moment moment orbit sequence 1',
+                'Orbit script action moment glimmer script sequence 2',
+                'Orbit script action moment spark constellation sequence 3',
+                'Orbit script action moment pulse loop sequence 4',
+                'Orbit script action moment beat planet sequence 5',
+                'Orbit script action moment echo trajectory sequence 6',
+                'Orbit script action moment note halo sequence 7',
+                'Orbit script action moment breath ring sequence 8',
+                'Orbit script action moment pause orbit sequence 9',
+                'Orbit script action moment crescendo script sequence 10',
+                'Orbit script action moment moment constellation sequence 11',
+                'Orbit script action moment glimmer loop sequence 12',
+                'Orbit script action moment spark planet sequence 13',
+                'Orbit script action moment pulse trajectory sequence 14',
+                'Orbit script action moment beat halo sequence 15',
+                'Orbit script action moment echo ring sequence 16',
+                'Orbit script action moment note orbit sequence 17',
+                'Orbit script action moment breath script sequence 18',
+                'Orbit script action moment pause constellation sequence 19',
+                'Orbit script action moment crescendo loop sequence 20',
+                'Orbit script action moment moment planet sequence 21',
+                'Orbit script action moment glimmer trajectory sequence 22',
+                'Orbit script action moment spark halo sequence 23',
+                'Orbit script action moment pulse ring sequence 24',
+                'Orbit script action moment beat orbit sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_orbit_script';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Orbit script action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-action-velvet-path',
+        category: 'action',
+        name: 'Velvet path action',
+        description: 'Lay payload along velvet paths illuminated by dew.',
+        icon: 'toggle-right',
+        accent: '#ec4899',
+        tags: ['action', 'velvet', 'path', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { style: 'Velvet path', variations: 3, lighten: false, anchor: 'Velvet promenade', includeTimestamp: false },
+        form: [
+            { key: 'style', label: 'Style', type: 'text', placeholder: 'Velvet path' },
+            { key: 'variations', label: 'Variations', type: 'number', min: 1, max: 12 },
+            { key: 'lighten', label: 'Lighten palette', type: 'checkbox' },
+            { key: 'anchor', label: 'Anchor', type: 'text', placeholder: 'Velvet promenade' },
+            { key: 'includeTimestamp', label: 'Include timestamp', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const style = (config?.style || 'Velvet path').trim() || 'Velvet path';
+            const variations = Math.max(1, parseInt(config?.variations, 10) || 1);
+            const lighten = Boolean(config?.lighten);
+            const anchor = (config?.anchor || 'Velvet promenade').trim() || 'Velvet promenade';
+            const includeTimestamp = Boolean(config?.includeTimestamp);
+            const references = [
+                'Velvet path action reference shimmer velvet sequence 1',
+                'Velvet path action reference glyph path sequence 2',
+                'Velvet path action reference ribbon trail sequence 3',
+                'Velvet path action reference arc soft sequence 4',
+                'Velvet path action reference petal glow sequence 5',
+                'Velvet path action reference beam petal sequence 6',
+                'Velvet path action reference facet twilight sequence 7',
+                'Velvet path action reference chorus bloom sequence 8',
+                'Velvet path action reference lattice velvet sequence 9',
+                'Velvet path action reference lyric path sequence 10',
+                'Velvet path action reference shimmer trail sequence 11',
+                'Velvet path action reference glyph soft sequence 12',
+                'Velvet path action reference ribbon glow sequence 13',
+                'Velvet path action reference arc petal sequence 14',
+                'Velvet path action reference petal twilight sequence 15',
+                'Velvet path action reference beam bloom sequence 16',
+                'Velvet path action reference facet velvet sequence 17',
+                'Velvet path action reference chorus path sequence 18',
+                'Velvet path action reference lattice trail sequence 19',
+                'Velvet path action reference lyric soft sequence 20',
+                'Velvet path action reference shimmer glow sequence 21',
+                'Velvet path action reference glyph petal sequence 22',
+                'Velvet path action reference ribbon twilight sequence 23',
+                'Velvet path action reference arc bloom sequence 24',
+                'Velvet path action reference petal velvet sequence 25',
+            ];
+            const palettes = [
+                'Velvet path action palette amber velvet sequence 1',
+                'Velvet path action palette azure path sequence 2',
+                'Velvet path action palette violet trail sequence 3',
+                'Velvet path action palette scarlet soft sequence 4',
+                'Velvet path action palette emerald glow sequence 5',
+                'Velvet path action palette indigo petal sequence 6',
+                'Velvet path action palette cobalt twilight sequence 7',
+                'Velvet path action palette vermilion bloom sequence 8',
+                'Velvet path action palette sepia velvet sequence 9',
+                'Velvet path action palette silver path sequence 10',
+                'Velvet path action palette amber trail sequence 11',
+                'Velvet path action palette azure soft sequence 12',
+                'Velvet path action palette violet glow sequence 13',
+                'Velvet path action palette scarlet petal sequence 14',
+                'Velvet path action palette emerald twilight sequence 15',
+                'Velvet path action palette indigo bloom sequence 16',
+                'Velvet path action palette cobalt velvet sequence 17',
+                'Velvet path action palette vermilion path sequence 18',
+                'Velvet path action palette sepia trail sequence 19',
+                'Velvet path action palette silver soft sequence 20',
+                'Velvet path action palette amber glow sequence 21',
+                'Velvet path action palette azure petal sequence 22',
+                'Velvet path action palette violet twilight sequence 23',
+                'Velvet path action palette scarlet bloom sequence 24',
+                'Velvet path action palette emerald velvet sequence 25',
+            ];
+            const pathways = [
+                'Velvet path action pathway causeway velvet sequence 1',
+                'Velvet path action pathway stair path sequence 2',
+                'Velvet path action pathway balcony trail sequence 3',
+                'Velvet path action pathway bridge soft sequence 4',
+                'Velvet path action pathway promenade glow sequence 5',
+                'Velvet path action pathway corridor petal sequence 6',
+                'Velvet path action pathway gate twilight sequence 7',
+                'Velvet path action pathway atrium bloom sequence 8',
+                'Velvet path action pathway garden velvet sequence 9',
+                'Velvet path action pathway lantern path sequence 10',
+                'Velvet path action pathway causeway trail sequence 11',
+                'Velvet path action pathway stair soft sequence 12',
+                'Velvet path action pathway balcony glow sequence 13',
+                'Velvet path action pathway bridge petal sequence 14',
+                'Velvet path action pathway promenade twilight sequence 15',
+                'Velvet path action pathway corridor bloom sequence 16',
+                'Velvet path action pathway gate velvet sequence 17',
+                'Velvet path action pathway atrium path sequence 18',
+                'Velvet path action pathway garden trail sequence 19',
+                'Velvet path action pathway lantern soft sequence 20',
+                'Velvet path action pathway causeway glow sequence 21',
+                'Velvet path action pathway stair petal sequence 22',
+                'Velvet path action pathway balcony twilight sequence 23',
+                'Velvet path action pathway bridge bloom sequence 24',
+                'Velvet path action pathway promenade velvet sequence 25',
+            ];
+            const moments = [
+                'Velvet path action moment moment velvet sequence 1',
+                'Velvet path action moment glimmer path sequence 2',
+                'Velvet path action moment spark trail sequence 3',
+                'Velvet path action moment pulse soft sequence 4',
+                'Velvet path action moment beat glow sequence 5',
+                'Velvet path action moment echo petal sequence 6',
+                'Velvet path action moment note twilight sequence 7',
+                'Velvet path action moment breath bloom sequence 8',
+                'Velvet path action moment pause velvet sequence 9',
+                'Velvet path action moment crescendo path sequence 10',
+                'Velvet path action moment moment trail sequence 11',
+                'Velvet path action moment glimmer soft sequence 12',
+                'Velvet path action moment spark glow sequence 13',
+                'Velvet path action moment pulse petal sequence 14',
+                'Velvet path action moment beat twilight sequence 15',
+                'Velvet path action moment echo bloom sequence 16',
+                'Velvet path action moment note velvet sequence 17',
+                'Velvet path action moment breath path sequence 18',
+                'Velvet path action moment pause trail sequence 19',
+                'Velvet path action moment crescendo soft sequence 20',
+                'Velvet path action moment moment glow sequence 21',
+                'Velvet path action moment glimmer petal sequence 22',
+                'Velvet path action moment spark twilight sequence 23',
+                'Velvet path action moment pulse bloom sequence 24',
+                'Velvet path action moment beat velvet sequence 25',
+            ];
+            const renderings = [];
+            for (let round = 0; round < variations; round++) {
+                for (let index = 0; index < references.length; index++) {
+                    const reference = references[index];
+                    const palette = palettes[(index + round) % palettes.length];
+                    const pathway = pathways[(index + round * 2) % pathways.length];
+                    const moment = moments[(index + round * 3) % moments.length];
+                    const timestamp = includeTimestamp ? ` @${new Date().toISOString()}` : '';
+                    renderings.push(`${style} | ${anchor} | ${reference} | ${palette} | ${pathway} | ${moment}${timestamp}`);
+                }
+            }
+            const luminous = [];
+            renderings.forEach((entry, index) => {
+                const accentuated = lighten ? entry.toUpperCase() : entry;
+                luminous.push(`${index + 1} :: ${accentuated}`);
+                if (index % 2 === 0) {
+                    luminous.push(`bridge ${index + 1} :: ${anchor}`);
+                }
+                if (index % 5 === 0) {
+                    luminous.push(`style ${style} ripple ${index + 1}`);
+                }
+            });
+            const spool = [];
+            const spoolSet = new Set();
+            luminous.forEach((item) => {
+                if (!spoolSet.has(item)) {
+                    spool.push(item);
+                    spoolSet.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                spool.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_action_velvet_path';
+            clone.vars[`${safeKey}_style`] = style;
+            clone.vars[`${safeKey}_renderCount`] = renderings.length;
+            clone.vars[`${safeKey}_anchor`] = anchor;
+            clone.payload = spool.join(newlineChar);
+            clone.logs.push('Velvet path action arranged luminous passages.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-archive-garden',
+        category: 'utility',
+        name: 'Archive garden utility',
+        description: 'Organise payload into archive garden terraces and rows.',
+        icon: 'archive',
+        accent: '#22c55e',
+        tags: ['utility', 'archive', 'garden', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Archive gardening', sections: 4, emphasise: true, prefix: 'Archive garden', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Archive gardening' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Archive garden' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Archive gardening').trim() || 'Archive gardening';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Archive garden').trim() || 'Archive garden';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Archive garden utility scaffold terrace archive sequence 1',
+                'Archive garden utility scaffold stack garden sequence 2',
+                'Archive garden utility scaffold ledger terrace sequence 3',
+                'Archive garden utility scaffold panel seed sequence 4',
+                'Archive garden utility scaffold canvas path sequence 5',
+                'Archive garden utility scaffold folio hedge sequence 6',
+                'Archive garden utility scaffold compartment catalog sequence 7',
+                'Archive garden utility scaffold parcel sprout sequence 8',
+                'Archive garden utility scaffold balustrade archive sequence 9',
+                'Archive garden utility scaffold grid garden sequence 10',
+                'Archive garden utility scaffold terrace terrace sequence 11',
+                'Archive garden utility scaffold stack seed sequence 12',
+                'Archive garden utility scaffold ledger path sequence 13',
+                'Archive garden utility scaffold panel hedge sequence 14',
+                'Archive garden utility scaffold canvas catalog sequence 15',
+                'Archive garden utility scaffold folio sprout sequence 16',
+                'Archive garden utility scaffold compartment archive sequence 17',
+                'Archive garden utility scaffold parcel garden sequence 18',
+                'Archive garden utility scaffold balustrade terrace sequence 19',
+                'Archive garden utility scaffold grid seed sequence 20',
+                'Archive garden utility scaffold terrace path sequence 21',
+                'Archive garden utility scaffold stack hedge sequence 22',
+                'Archive garden utility scaffold ledger catalog sequence 23',
+                'Archive garden utility scaffold panel sprout sequence 24',
+                'Archive garden utility scaffold canvas archive sequence 25',
+            ];
+            const structures = [
+                'Archive garden utility structure arch archive sequence 1',
+                'Archive garden utility structure grove garden sequence 2',
+                'Archive garden utility structure harbor terrace sequence 3',
+                'Archive garden utility structure vault seed sequence 4',
+                'Archive garden utility structure arcade path sequence 5',
+                'Archive garden utility structure meadow hedge sequence 6',
+                'Archive garden utility structure spire catalog sequence 7',
+                'Archive garden utility structure tunnel sprout sequence 8',
+                'Archive garden utility structure causeway archive sequence 9',
+                'Archive garden utility structure hall garden sequence 10',
+                'Archive garden utility structure arch terrace sequence 11',
+                'Archive garden utility structure grove seed sequence 12',
+                'Archive garden utility structure harbor path sequence 13',
+                'Archive garden utility structure vault hedge sequence 14',
+                'Archive garden utility structure arcade catalog sequence 15',
+                'Archive garden utility structure meadow sprout sequence 16',
+                'Archive garden utility structure spire archive sequence 17',
+                'Archive garden utility structure tunnel garden sequence 18',
+                'Archive garden utility structure causeway terrace sequence 19',
+                'Archive garden utility structure hall seed sequence 20',
+                'Archive garden utility structure arch path sequence 21',
+                'Archive garden utility structure grove hedge sequence 22',
+                'Archive garden utility structure harbor catalog sequence 23',
+                'Archive garden utility structure vault sprout sequence 24',
+                'Archive garden utility structure arcade archive sequence 25',
+            ];
+            const signals = [
+                'Archive garden utility signal beacon archive sequence 1',
+                'Archive garden utility signal spark garden sequence 2',
+                'Archive garden utility signal signal terrace sequence 3',
+                'Archive garden utility signal marker seed sequence 4',
+                'Archive garden utility signal glyph path sequence 5',
+                'Archive garden utility signal echo hedge sequence 6',
+                'Archive garden utility signal whisper catalog sequence 7',
+                'Archive garden utility signal song sprout sequence 8',
+                'Archive garden utility signal trail archive sequence 9',
+                'Archive garden utility signal gleam garden sequence 10',
+                'Archive garden utility signal beacon terrace sequence 11',
+                'Archive garden utility signal spark seed sequence 12',
+                'Archive garden utility signal signal path sequence 13',
+                'Archive garden utility signal marker hedge sequence 14',
+                'Archive garden utility signal glyph catalog sequence 15',
+                'Archive garden utility signal echo sprout sequence 16',
+                'Archive garden utility signal whisper archive sequence 17',
+                'Archive garden utility signal song garden sequence 18',
+                'Archive garden utility signal trail terrace sequence 19',
+                'Archive garden utility signal gleam seed sequence 20',
+                'Archive garden utility signal beacon path sequence 21',
+                'Archive garden utility signal spark hedge sequence 22',
+                'Archive garden utility signal signal catalog sequence 23',
+                'Archive garden utility signal marker sprout sequence 24',
+                'Archive garden utility signal glyph archive sequence 25',
+            ];
+            const adornments = [
+                'Archive garden utility adornment lantern archive sequence 1',
+                'Archive garden utility adornment rune garden sequence 2',
+                'Archive garden utility adornment ribbon terrace sequence 3',
+                'Archive garden utility adornment petal seed sequence 4',
+                'Archive garden utility adornment feather path sequence 5',
+                'Archive garden utility adornment stone hedge sequence 6',
+                'Archive garden utility adornment dew catalog sequence 7',
+                'Archive garden utility adornment light sprout sequence 8',
+                'Archive garden utility adornment mirror archive sequence 9',
+                'Archive garden utility adornment glow garden sequence 10',
+                'Archive garden utility adornment lantern terrace sequence 11',
+                'Archive garden utility adornment rune seed sequence 12',
+                'Archive garden utility adornment ribbon path sequence 13',
+                'Archive garden utility adornment petal hedge sequence 14',
+                'Archive garden utility adornment feather catalog sequence 15',
+                'Archive garden utility adornment stone sprout sequence 16',
+                'Archive garden utility adornment dew archive sequence 17',
+                'Archive garden utility adornment light garden sequence 18',
+                'Archive garden utility adornment mirror terrace sequence 19',
+                'Archive garden utility adornment glow seed sequence 20',
+                'Archive garden utility adornment lantern path sequence 21',
+                'Archive garden utility adornment rune hedge sequence 22',
+                'Archive garden utility adornment ribbon catalog sequence 23',
+                'Archive garden utility adornment petal sprout sequence 24',
+                'Archive garden utility adornment feather archive sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_archive_garden';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Archive garden utility organised payload terraces.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-constellation-ledger',
+        category: 'utility',
+        name: 'Constellation ledger utility',
+        description: 'Ledger payload constellations across nightly registers.',
+        icon: 'star',
+        accent: '#38bdf8',
+        tags: ['utility', 'constellation', 'ledger', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Constellation ledgering', sections: 4, emphasise: true, prefix: 'Constellation ledger', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Constellation ledgering' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Constellation ledger' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Constellation ledgering').trim() || 'Constellation ledgering';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Constellation ledger').trim() || 'Constellation ledger';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Constellation ledger utility scaffold terrace constellation sequence 1',
+                'Constellation ledger utility scaffold stack ledger sequence 2',
+                'Constellation ledger utility scaffold ledger night sequence 3',
+                'Constellation ledger utility scaffold panel chart sequence 4',
+                'Constellation ledger utility scaffold canvas orbit sequence 5',
+                'Constellation ledger utility scaffold folio spark sequence 6',
+                'Constellation ledger utility scaffold compartment cluster sequence 7',
+                'Constellation ledger utility scaffold parcel line sequence 8',
+                'Constellation ledger utility scaffold balustrade constellation sequence 9',
+                'Constellation ledger utility scaffold grid ledger sequence 10',
+                'Constellation ledger utility scaffold terrace night sequence 11',
+                'Constellation ledger utility scaffold stack chart sequence 12',
+                'Constellation ledger utility scaffold ledger orbit sequence 13',
+                'Constellation ledger utility scaffold panel spark sequence 14',
+                'Constellation ledger utility scaffold canvas cluster sequence 15',
+                'Constellation ledger utility scaffold folio line sequence 16',
+                'Constellation ledger utility scaffold compartment constellation sequence 17',
+                'Constellation ledger utility scaffold parcel ledger sequence 18',
+                'Constellation ledger utility scaffold balustrade night sequence 19',
+                'Constellation ledger utility scaffold grid chart sequence 20',
+                'Constellation ledger utility scaffold terrace orbit sequence 21',
+                'Constellation ledger utility scaffold stack spark sequence 22',
+                'Constellation ledger utility scaffold ledger cluster sequence 23',
+                'Constellation ledger utility scaffold panel line sequence 24',
+                'Constellation ledger utility scaffold canvas constellation sequence 25',
+            ];
+            const structures = [
+                'Constellation ledger utility structure arch constellation sequence 1',
+                'Constellation ledger utility structure grove ledger sequence 2',
+                'Constellation ledger utility structure harbor night sequence 3',
+                'Constellation ledger utility structure vault chart sequence 4',
+                'Constellation ledger utility structure arcade orbit sequence 5',
+                'Constellation ledger utility structure meadow spark sequence 6',
+                'Constellation ledger utility structure spire cluster sequence 7',
+                'Constellation ledger utility structure tunnel line sequence 8',
+                'Constellation ledger utility structure causeway constellation sequence 9',
+                'Constellation ledger utility structure hall ledger sequence 10',
+                'Constellation ledger utility structure arch night sequence 11',
+                'Constellation ledger utility structure grove chart sequence 12',
+                'Constellation ledger utility structure harbor orbit sequence 13',
+                'Constellation ledger utility structure vault spark sequence 14',
+                'Constellation ledger utility structure arcade cluster sequence 15',
+                'Constellation ledger utility structure meadow line sequence 16',
+                'Constellation ledger utility structure spire constellation sequence 17',
+                'Constellation ledger utility structure tunnel ledger sequence 18',
+                'Constellation ledger utility structure causeway night sequence 19',
+                'Constellation ledger utility structure hall chart sequence 20',
+                'Constellation ledger utility structure arch orbit sequence 21',
+                'Constellation ledger utility structure grove spark sequence 22',
+                'Constellation ledger utility structure harbor cluster sequence 23',
+                'Constellation ledger utility structure vault line sequence 24',
+                'Constellation ledger utility structure arcade constellation sequence 25',
+            ];
+            const signals = [
+                'Constellation ledger utility signal beacon constellation sequence 1',
+                'Constellation ledger utility signal spark ledger sequence 2',
+                'Constellation ledger utility signal signal night sequence 3',
+                'Constellation ledger utility signal marker chart sequence 4',
+                'Constellation ledger utility signal glyph orbit sequence 5',
+                'Constellation ledger utility signal echo spark sequence 6',
+                'Constellation ledger utility signal whisper cluster sequence 7',
+                'Constellation ledger utility signal song line sequence 8',
+                'Constellation ledger utility signal trail constellation sequence 9',
+                'Constellation ledger utility signal gleam ledger sequence 10',
+                'Constellation ledger utility signal beacon night sequence 11',
+                'Constellation ledger utility signal spark chart sequence 12',
+                'Constellation ledger utility signal signal orbit sequence 13',
+                'Constellation ledger utility signal marker spark sequence 14',
+                'Constellation ledger utility signal glyph cluster sequence 15',
+                'Constellation ledger utility signal echo line sequence 16',
+                'Constellation ledger utility signal whisper constellation sequence 17',
+                'Constellation ledger utility signal song ledger sequence 18',
+                'Constellation ledger utility signal trail night sequence 19',
+                'Constellation ledger utility signal gleam chart sequence 20',
+                'Constellation ledger utility signal beacon orbit sequence 21',
+                'Constellation ledger utility signal spark spark sequence 22',
+                'Constellation ledger utility signal signal cluster sequence 23',
+                'Constellation ledger utility signal marker line sequence 24',
+                'Constellation ledger utility signal glyph constellation sequence 25',
+            ];
+            const adornments = [
+                'Constellation ledger utility adornment lantern constellation sequence 1',
+                'Constellation ledger utility adornment rune ledger sequence 2',
+                'Constellation ledger utility adornment ribbon night sequence 3',
+                'Constellation ledger utility adornment petal chart sequence 4',
+                'Constellation ledger utility adornment feather orbit sequence 5',
+                'Constellation ledger utility adornment stone spark sequence 6',
+                'Constellation ledger utility adornment dew cluster sequence 7',
+                'Constellation ledger utility adornment light line sequence 8',
+                'Constellation ledger utility adornment mirror constellation sequence 9',
+                'Constellation ledger utility adornment glow ledger sequence 10',
+                'Constellation ledger utility adornment lantern night sequence 11',
+                'Constellation ledger utility adornment rune chart sequence 12',
+                'Constellation ledger utility adornment ribbon orbit sequence 13',
+                'Constellation ledger utility adornment petal spark sequence 14',
+                'Constellation ledger utility adornment feather cluster sequence 15',
+                'Constellation ledger utility adornment stone line sequence 16',
+                'Constellation ledger utility adornment dew constellation sequence 17',
+                'Constellation ledger utility adornment light ledger sequence 18',
+                'Constellation ledger utility adornment mirror night sequence 19',
+                'Constellation ledger utility adornment glow chart sequence 20',
+                'Constellation ledger utility adornment lantern orbit sequence 21',
+                'Constellation ledger utility adornment rune spark sequence 22',
+                'Constellation ledger utility adornment ribbon cluster sequence 23',
+                'Constellation ledger utility adornment petal line sequence 24',
+                'Constellation ledger utility adornment feather constellation sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_constellation_ledger';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Constellation ledger utility organised payload terraces.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-rhythm-index',
+        category: 'utility',
+        name: 'Rhythm index utility',
+        description: 'Index payload beats into rhythm sections and stanzas.',
+        icon: 'list',
+        accent: '#f59e0b',
+        tags: ['utility', 'rhythm', 'index', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Rhythm indexing', sections: 4, emphasise: true, prefix: 'Rhythm index', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Rhythm indexing' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Rhythm index' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Rhythm indexing').trim() || 'Rhythm indexing';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Rhythm index').trim() || 'Rhythm index';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Rhythm index utility scaffold terrace rhythm sequence 1',
+                'Rhythm index utility scaffold stack index sequence 2',
+                'Rhythm index utility scaffold ledger beat sequence 3',
+                'Rhythm index utility scaffold panel meter sequence 4',
+                'Rhythm index utility scaffold canvas stanza sequence 5',
+                'Rhythm index utility scaffold folio cadence sequence 6',
+                'Rhythm index utility scaffold compartment tempo sequence 7',
+                'Rhythm index utility scaffold parcel chart sequence 8',
+                'Rhythm index utility scaffold balustrade rhythm sequence 9',
+                'Rhythm index utility scaffold grid index sequence 10',
+                'Rhythm index utility scaffold terrace beat sequence 11',
+                'Rhythm index utility scaffold stack meter sequence 12',
+                'Rhythm index utility scaffold ledger stanza sequence 13',
+                'Rhythm index utility scaffold panel cadence sequence 14',
+                'Rhythm index utility scaffold canvas tempo sequence 15',
+                'Rhythm index utility scaffold folio chart sequence 16',
+                'Rhythm index utility scaffold compartment rhythm sequence 17',
+                'Rhythm index utility scaffold parcel index sequence 18',
+                'Rhythm index utility scaffold balustrade beat sequence 19',
+                'Rhythm index utility scaffold grid meter sequence 20',
+                'Rhythm index utility scaffold terrace stanza sequence 21',
+                'Rhythm index utility scaffold stack cadence sequence 22',
+                'Rhythm index utility scaffold ledger tempo sequence 23',
+                'Rhythm index utility scaffold panel chart sequence 24',
+                'Rhythm index utility scaffold canvas rhythm sequence 25',
+            ];
+            const structures = [
+                'Rhythm index utility structure arch rhythm sequence 1',
+                'Rhythm index utility structure grove index sequence 2',
+                'Rhythm index utility structure harbor beat sequence 3',
+                'Rhythm index utility structure vault meter sequence 4',
+                'Rhythm index utility structure arcade stanza sequence 5',
+                'Rhythm index utility structure meadow cadence sequence 6',
+                'Rhythm index utility structure spire tempo sequence 7',
+                'Rhythm index utility structure tunnel chart sequence 8',
+                'Rhythm index utility structure causeway rhythm sequence 9',
+                'Rhythm index utility structure hall index sequence 10',
+                'Rhythm index utility structure arch beat sequence 11',
+                'Rhythm index utility structure grove meter sequence 12',
+                'Rhythm index utility structure harbor stanza sequence 13',
+                'Rhythm index utility structure vault cadence sequence 14',
+                'Rhythm index utility structure arcade tempo sequence 15',
+                'Rhythm index utility structure meadow chart sequence 16',
+                'Rhythm index utility structure spire rhythm sequence 17',
+                'Rhythm index utility structure tunnel index sequence 18',
+                'Rhythm index utility structure causeway beat sequence 19',
+                'Rhythm index utility structure hall meter sequence 20',
+                'Rhythm index utility structure arch stanza sequence 21',
+                'Rhythm index utility structure grove cadence sequence 22',
+                'Rhythm index utility structure harbor tempo sequence 23',
+                'Rhythm index utility structure vault chart sequence 24',
+                'Rhythm index utility structure arcade rhythm sequence 25',
+            ];
+            const signals = [
+                'Rhythm index utility signal beacon rhythm sequence 1',
+                'Rhythm index utility signal spark index sequence 2',
+                'Rhythm index utility signal signal beat sequence 3',
+                'Rhythm index utility signal marker meter sequence 4',
+                'Rhythm index utility signal glyph stanza sequence 5',
+                'Rhythm index utility signal echo cadence sequence 6',
+                'Rhythm index utility signal whisper tempo sequence 7',
+                'Rhythm index utility signal song chart sequence 8',
+                'Rhythm index utility signal trail rhythm sequence 9',
+                'Rhythm index utility signal gleam index sequence 10',
+                'Rhythm index utility signal beacon beat sequence 11',
+                'Rhythm index utility signal spark meter sequence 12',
+                'Rhythm index utility signal signal stanza sequence 13',
+                'Rhythm index utility signal marker cadence sequence 14',
+                'Rhythm index utility signal glyph tempo sequence 15',
+                'Rhythm index utility signal echo chart sequence 16',
+                'Rhythm index utility signal whisper rhythm sequence 17',
+                'Rhythm index utility signal song index sequence 18',
+                'Rhythm index utility signal trail beat sequence 19',
+                'Rhythm index utility signal gleam meter sequence 20',
+                'Rhythm index utility signal beacon stanza sequence 21',
+                'Rhythm index utility signal spark cadence sequence 22',
+                'Rhythm index utility signal signal tempo sequence 23',
+                'Rhythm index utility signal marker chart sequence 24',
+                'Rhythm index utility signal glyph rhythm sequence 25',
+            ];
+            const adornments = [
+                'Rhythm index utility adornment lantern rhythm sequence 1',
+                'Rhythm index utility adornment rune index sequence 2',
+                'Rhythm index utility adornment ribbon beat sequence 3',
+                'Rhythm index utility adornment petal meter sequence 4',
+                'Rhythm index utility adornment feather stanza sequence 5',
+                'Rhythm index utility adornment stone cadence sequence 6',
+                'Rhythm index utility adornment dew tempo sequence 7',
+                'Rhythm index utility adornment light chart sequence 8',
+                'Rhythm index utility adornment mirror rhythm sequence 9',
+                'Rhythm index utility adornment glow index sequence 10',
+                'Rhythm index utility adornment lantern beat sequence 11',
+                'Rhythm index utility adornment rune meter sequence 12',
+                'Rhythm index utility adornment ribbon stanza sequence 13',
+                'Rhythm index utility adornment petal cadence sequence 14',
+                'Rhythm index utility adornment feather tempo sequence 15',
+                'Rhythm index utility adornment stone chart sequence 16',
+                'Rhythm index utility adornment dew rhythm sequence 17',
+                'Rhythm index utility adornment light index sequence 18',
+                'Rhythm index utility adornment mirror beat sequence 19',
+                'Rhythm index utility adornment glow meter sequence 20',
+                'Rhythm index utility adornment lantern stanza sequence 21',
+                'Rhythm index utility adornment rune cadence sequence 22',
+                'Rhythm index utility adornment ribbon tempo sequence 23',
+                'Rhythm index utility adornment petal chart sequence 24',
+                'Rhythm index utility adornment feather rhythm sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_rhythm_index';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Rhythm index utility organised payload terraces.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-harbor-folio',
+        category: 'utility',
+        name: 'Harbor folio utility',
+        description: 'Arrange harbor folios with moored paragraphs and notes.',
+        icon: 'folder',
+        accent: '#3b82f6',
+        tags: ['utility', 'harbor', 'folio', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Harbor folio', sections: 4, emphasise: true, prefix: 'Harbor folio', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Harbor folio' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Harbor folio' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Harbor folio').trim() || 'Harbor folio';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Harbor folio').trim() || 'Harbor folio';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Harbor folio utility scaffold terrace harbor sequence 1',
+                'Harbor folio utility scaffold stack folio sequence 2',
+                'Harbor folio utility scaffold ledger dock sequence 3',
+                'Harbor folio utility scaffold panel sail sequence 4',
+                'Harbor folio utility scaffold canvas rope sequence 5',
+                'Harbor folio utility scaffold folio ledger sequence 6',
+                'Harbor folio utility scaffold compartment cargo sequence 7',
+                'Harbor folio utility scaffold parcel lantern sequence 8',
+                'Harbor folio utility scaffold balustrade harbor sequence 9',
+                'Harbor folio utility scaffold grid folio sequence 10',
+                'Harbor folio utility scaffold terrace dock sequence 11',
+                'Harbor folio utility scaffold stack sail sequence 12',
+                'Harbor folio utility scaffold ledger rope sequence 13',
+                'Harbor folio utility scaffold panel ledger sequence 14',
+                'Harbor folio utility scaffold canvas cargo sequence 15',
+                'Harbor folio utility scaffold folio lantern sequence 16',
+                'Harbor folio utility scaffold compartment harbor sequence 17',
+                'Harbor folio utility scaffold parcel folio sequence 18',
+                'Harbor folio utility scaffold balustrade dock sequence 19',
+                'Harbor folio utility scaffold grid sail sequence 20',
+                'Harbor folio utility scaffold terrace rope sequence 21',
+                'Harbor folio utility scaffold stack ledger sequence 22',
+                'Harbor folio utility scaffold ledger cargo sequence 23',
+                'Harbor folio utility scaffold panel lantern sequence 24',
+                'Harbor folio utility scaffold canvas harbor sequence 25',
+            ];
+            const structures = [
+                'Harbor folio utility structure arch harbor sequence 1',
+                'Harbor folio utility structure grove folio sequence 2',
+                'Harbor folio utility structure harbor dock sequence 3',
+                'Harbor folio utility structure vault sail sequence 4',
+                'Harbor folio utility structure arcade rope sequence 5',
+                'Harbor folio utility structure meadow ledger sequence 6',
+                'Harbor folio utility structure spire cargo sequence 7',
+                'Harbor folio utility structure tunnel lantern sequence 8',
+                'Harbor folio utility structure causeway harbor sequence 9',
+                'Harbor folio utility structure hall folio sequence 10',
+                'Harbor folio utility structure arch dock sequence 11',
+                'Harbor folio utility structure grove sail sequence 12',
+                'Harbor folio utility structure harbor rope sequence 13',
+                'Harbor folio utility structure vault ledger sequence 14',
+                'Harbor folio utility structure arcade cargo sequence 15',
+                'Harbor folio utility structure meadow lantern sequence 16',
+                'Harbor folio utility structure spire harbor sequence 17',
+                'Harbor folio utility structure tunnel folio sequence 18',
+                'Harbor folio utility structure causeway dock sequence 19',
+                'Harbor folio utility structure hall sail sequence 20',
+                'Harbor folio utility structure arch rope sequence 21',
+                'Harbor folio utility structure grove ledger sequence 22',
+                'Harbor folio utility structure harbor cargo sequence 23',
+                'Harbor folio utility structure vault lantern sequence 24',
+                'Harbor folio utility structure arcade harbor sequence 25',
+            ];
+            const signals = [
+                'Harbor folio utility signal beacon harbor sequence 1',
+                'Harbor folio utility signal spark folio sequence 2',
+                'Harbor folio utility signal signal dock sequence 3',
+                'Harbor folio utility signal marker sail sequence 4',
+                'Harbor folio utility signal glyph rope sequence 5',
+                'Harbor folio utility signal echo ledger sequence 6',
+                'Harbor folio utility signal whisper cargo sequence 7',
+                'Harbor folio utility signal song lantern sequence 8',
+                'Harbor folio utility signal trail harbor sequence 9',
+                'Harbor folio utility signal gleam folio sequence 10',
+                'Harbor folio utility signal beacon dock sequence 11',
+                'Harbor folio utility signal spark sail sequence 12',
+                'Harbor folio utility signal signal rope sequence 13',
+                'Harbor folio utility signal marker ledger sequence 14',
+                'Harbor folio utility signal glyph cargo sequence 15',
+                'Harbor folio utility signal echo lantern sequence 16',
+                'Harbor folio utility signal whisper harbor sequence 17',
+                'Harbor folio utility signal song folio sequence 18',
+                'Harbor folio utility signal trail dock sequence 19',
+                'Harbor folio utility signal gleam sail sequence 20',
+                'Harbor folio utility signal beacon rope sequence 21',
+                'Harbor folio utility signal spark ledger sequence 22',
+                'Harbor folio utility signal signal cargo sequence 23',
+                'Harbor folio utility signal marker lantern sequence 24',
+                'Harbor folio utility signal glyph harbor sequence 25',
+            ];
+            const adornments = [
+                'Harbor folio utility adornment lantern harbor sequence 1',
+                'Harbor folio utility adornment rune folio sequence 2',
+                'Harbor folio utility adornment ribbon dock sequence 3',
+                'Harbor folio utility adornment petal sail sequence 4',
+                'Harbor folio utility adornment feather rope sequence 5',
+                'Harbor folio utility adornment stone ledger sequence 6',
+                'Harbor folio utility adornment dew cargo sequence 7',
+                'Harbor folio utility adornment light lantern sequence 8',
+                'Harbor folio utility adornment mirror harbor sequence 9',
+                'Harbor folio utility adornment glow folio sequence 10',
+                'Harbor folio utility adornment lantern dock sequence 11',
+                'Harbor folio utility adornment rune sail sequence 12',
+                'Harbor folio utility adornment ribbon rope sequence 13',
+                'Harbor folio utility adornment petal ledger sequence 14',
+                'Harbor folio utility adornment feather cargo sequence 15',
+                'Harbor folio utility adornment stone lantern sequence 16',
+                'Harbor folio utility adornment dew harbor sequence 17',
+                'Harbor folio utility adornment light folio sequence 18',
+                'Harbor folio utility adornment mirror dock sequence 19',
+                'Harbor folio utility adornment glow sail sequence 20',
+                'Harbor folio utility adornment lantern rope sequence 21',
+                'Harbor folio utility adornment rune ledger sequence 22',
+                'Harbor folio utility adornment ribbon cargo sequence 23',
+                'Harbor folio utility adornment petal lantern sequence 24',
+                'Harbor folio utility adornment feather harbor sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_harbor_folio';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Harbor folio utility organised payload terraces.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-meadow-sampler',
+        category: 'utility',
+        name: 'Meadow sampler utility',
+        description: 'Sample payload meadows into curated botanical trays.',
+        icon: 'layout',
+        accent: '#86efac',
+        tags: ['utility', 'meadow', 'sampler', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Meadow sampling', sections: 4, emphasise: true, prefix: 'Meadow sampler', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Meadow sampling' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Meadow sampler' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Meadow sampling').trim() || 'Meadow sampling';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Meadow sampler').trim() || 'Meadow sampler';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Meadow sampler utility scaffold terrace meadow sequence 1',
+                'Meadow sampler utility scaffold stack sampler sequence 2',
+                'Meadow sampler utility scaffold ledger bloom sequence 3',
+                'Meadow sampler utility scaffold panel trail sequence 4',
+                'Meadow sampler utility scaffold canvas dew sequence 5',
+                'Meadow sampler utility scaffold folio wind sequence 6',
+                'Meadow sampler utility scaffold compartment petal sequence 7',
+                'Meadow sampler utility scaffold parcel skylark sequence 8',
+                'Meadow sampler utility scaffold balustrade meadow sequence 9',
+                'Meadow sampler utility scaffold grid sampler sequence 10',
+                'Meadow sampler utility scaffold terrace bloom sequence 11',
+                'Meadow sampler utility scaffold stack trail sequence 12',
+                'Meadow sampler utility scaffold ledger dew sequence 13',
+                'Meadow sampler utility scaffold panel wind sequence 14',
+                'Meadow sampler utility scaffold canvas petal sequence 15',
+                'Meadow sampler utility scaffold folio skylark sequence 16',
+                'Meadow sampler utility scaffold compartment meadow sequence 17',
+                'Meadow sampler utility scaffold parcel sampler sequence 18',
+                'Meadow sampler utility scaffold balustrade bloom sequence 19',
+                'Meadow sampler utility scaffold grid trail sequence 20',
+                'Meadow sampler utility scaffold terrace dew sequence 21',
+                'Meadow sampler utility scaffold stack wind sequence 22',
+                'Meadow sampler utility scaffold ledger petal sequence 23',
+                'Meadow sampler utility scaffold panel skylark sequence 24',
+                'Meadow sampler utility scaffold canvas meadow sequence 25',
+            ];
+            const structures = [
+                'Meadow sampler utility structure arch meadow sequence 1',
+                'Meadow sampler utility structure grove sampler sequence 2',
+                'Meadow sampler utility structure harbor bloom sequence 3',
+                'Meadow sampler utility structure vault trail sequence 4',
+                'Meadow sampler utility structure arcade dew sequence 5',
+                'Meadow sampler utility structure meadow wind sequence 6',
+                'Meadow sampler utility structure spire petal sequence 7',
+                'Meadow sampler utility structure tunnel skylark sequence 8',
+                'Meadow sampler utility structure causeway meadow sequence 9',
+                'Meadow sampler utility structure hall sampler sequence 10',
+                'Meadow sampler utility structure arch bloom sequence 11',
+                'Meadow sampler utility structure grove trail sequence 12',
+                'Meadow sampler utility structure harbor dew sequence 13',
+                'Meadow sampler utility structure vault wind sequence 14',
+                'Meadow sampler utility structure arcade petal sequence 15',
+                'Meadow sampler utility structure meadow skylark sequence 16',
+                'Meadow sampler utility structure spire meadow sequence 17',
+                'Meadow sampler utility structure tunnel sampler sequence 18',
+                'Meadow sampler utility structure causeway bloom sequence 19',
+                'Meadow sampler utility structure hall trail sequence 20',
+                'Meadow sampler utility structure arch dew sequence 21',
+                'Meadow sampler utility structure grove wind sequence 22',
+                'Meadow sampler utility structure harbor petal sequence 23',
+                'Meadow sampler utility structure vault skylark sequence 24',
+                'Meadow sampler utility structure arcade meadow sequence 25',
+            ];
+            const signals = [
+                'Meadow sampler utility signal beacon meadow sequence 1',
+                'Meadow sampler utility signal spark sampler sequence 2',
+                'Meadow sampler utility signal signal bloom sequence 3',
+                'Meadow sampler utility signal marker trail sequence 4',
+                'Meadow sampler utility signal glyph dew sequence 5',
+                'Meadow sampler utility signal echo wind sequence 6',
+                'Meadow sampler utility signal whisper petal sequence 7',
+                'Meadow sampler utility signal song skylark sequence 8',
+                'Meadow sampler utility signal trail meadow sequence 9',
+                'Meadow sampler utility signal gleam sampler sequence 10',
+                'Meadow sampler utility signal beacon bloom sequence 11',
+                'Meadow sampler utility signal spark trail sequence 12',
+                'Meadow sampler utility signal signal dew sequence 13',
+                'Meadow sampler utility signal marker wind sequence 14',
+                'Meadow sampler utility signal glyph petal sequence 15',
+                'Meadow sampler utility signal echo skylark sequence 16',
+                'Meadow sampler utility signal whisper meadow sequence 17',
+                'Meadow sampler utility signal song sampler sequence 18',
+                'Meadow sampler utility signal trail bloom sequence 19',
+                'Meadow sampler utility signal gleam trail sequence 20',
+                'Meadow sampler utility signal beacon dew sequence 21',
+                'Meadow sampler utility signal spark wind sequence 22',
+                'Meadow sampler utility signal signal petal sequence 23',
+                'Meadow sampler utility signal marker skylark sequence 24',
+                'Meadow sampler utility signal glyph meadow sequence 25',
+            ];
+            const adornments = [
+                'Meadow sampler utility adornment lantern meadow sequence 1',
+                'Meadow sampler utility adornment rune sampler sequence 2',
+                'Meadow sampler utility adornment ribbon bloom sequence 3',
+                'Meadow sampler utility adornment petal trail sequence 4',
+                'Meadow sampler utility adornment feather dew sequence 5',
+                'Meadow sampler utility adornment stone wind sequence 6',
+                'Meadow sampler utility adornment dew petal sequence 7',
+                'Meadow sampler utility adornment light skylark sequence 8',
+                'Meadow sampler utility adornment mirror meadow sequence 9',
+                'Meadow sampler utility adornment glow sampler sequence 10',
+                'Meadow sampler utility adornment lantern bloom sequence 11',
+                'Meadow sampler utility adornment rune trail sequence 12',
+                'Meadow sampler utility adornment ribbon dew sequence 13',
+                'Meadow sampler utility adornment petal wind sequence 14',
+                'Meadow sampler utility adornment feather petal sequence 15',
+                'Meadow sampler utility adornment stone skylark sequence 16',
+                'Meadow sampler utility adornment dew meadow sequence 17',
+                'Meadow sampler utility adornment light sampler sequence 18',
+                'Meadow sampler utility adornment mirror bloom sequence 19',
+                'Meadow sampler utility adornment glow trail sequence 20',
+                'Meadow sampler utility adornment lantern dew sequence 21',
+                'Meadow sampler utility adornment rune wind sequence 22',
+                'Meadow sampler utility adornment ribbon petal sequence 23',
+                'Meadow sampler utility adornment petal skylark sequence 24',
+                'Meadow sampler utility adornment feather meadow sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_meadow_sampler';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Meadow sampler utility organised payload terraces.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-scriptorium-keeper',
+        category: 'utility',
+        name: 'Scriptorium keeper utility',
+        description: 'Keep scriptoria tidy with vaulted annotations and cues.',
+        icon: 'file-text',
+        accent: '#f87171',
+        tags: ['utility', 'scriptorium', 'keeper', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Scriptorium keeping', sections: 4, emphasise: true, prefix: 'Scriptorium keeper', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Scriptorium keeping' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Scriptorium keeper' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Scriptorium keeping').trim() || 'Scriptorium keeping';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Scriptorium keeper').trim() || 'Scriptorium keeper';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Scriptorium keeper utility scaffold terrace scriptorium sequence 1',
+                'Scriptorium keeper utility scaffold stack keeper sequence 2',
+                'Scriptorium keeper utility scaffold ledger ink sequence 3',
+                'Scriptorium keeper utility scaffold panel glyph sequence 4',
+                'Scriptorium keeper utility scaffold canvas margins sequence 5',
+                'Scriptorium keeper utility scaffold folio scroll sequence 6',
+                'Scriptorium keeper utility scaffold compartment bookmark sequence 7',
+                'Scriptorium keeper utility scaffold parcel folio sequence 8',
+                'Scriptorium keeper utility scaffold balustrade scriptorium sequence 9',
+                'Scriptorium keeper utility scaffold grid keeper sequence 10',
+                'Scriptorium keeper utility scaffold terrace ink sequence 11',
+                'Scriptorium keeper utility scaffold stack glyph sequence 12',
+                'Scriptorium keeper utility scaffold ledger margins sequence 13',
+                'Scriptorium keeper utility scaffold panel scroll sequence 14',
+                'Scriptorium keeper utility scaffold canvas bookmark sequence 15',
+                'Scriptorium keeper utility scaffold folio folio sequence 16',
+                'Scriptorium keeper utility scaffold compartment scriptorium sequence 17',
+                'Scriptorium keeper utility scaffold parcel keeper sequence 18',
+                'Scriptorium keeper utility scaffold balustrade ink sequence 19',
+                'Scriptorium keeper utility scaffold grid glyph sequence 20',
+                'Scriptorium keeper utility scaffold terrace margins sequence 21',
+                'Scriptorium keeper utility scaffold stack scroll sequence 22',
+                'Scriptorium keeper utility scaffold ledger bookmark sequence 23',
+                'Scriptorium keeper utility scaffold panel folio sequence 24',
+                'Scriptorium keeper utility scaffold canvas scriptorium sequence 25',
+            ];
+            const structures = [
+                'Scriptorium keeper utility structure arch scriptorium sequence 1',
+                'Scriptorium keeper utility structure grove keeper sequence 2',
+                'Scriptorium keeper utility structure harbor ink sequence 3',
+                'Scriptorium keeper utility structure vault glyph sequence 4',
+                'Scriptorium keeper utility structure arcade margins sequence 5',
+                'Scriptorium keeper utility structure meadow scroll sequence 6',
+                'Scriptorium keeper utility structure spire bookmark sequence 7',
+                'Scriptorium keeper utility structure tunnel folio sequence 8',
+                'Scriptorium keeper utility structure causeway scriptorium sequence 9',
+                'Scriptorium keeper utility structure hall keeper sequence 10',
+                'Scriptorium keeper utility structure arch ink sequence 11',
+                'Scriptorium keeper utility structure grove glyph sequence 12',
+                'Scriptorium keeper utility structure harbor margins sequence 13',
+                'Scriptorium keeper utility structure vault scroll sequence 14',
+                'Scriptorium keeper utility structure arcade bookmark sequence 15',
+                'Scriptorium keeper utility structure meadow folio sequence 16',
+                'Scriptorium keeper utility structure spire scriptorium sequence 17',
+                'Scriptorium keeper utility structure tunnel keeper sequence 18',
+                'Scriptorium keeper utility structure causeway ink sequence 19',
+                'Scriptorium keeper utility structure hall glyph sequence 20',
+                'Scriptorium keeper utility structure arch margins sequence 21',
+                'Scriptorium keeper utility structure grove scroll sequence 22',
+                'Scriptorium keeper utility structure harbor bookmark sequence 23',
+                'Scriptorium keeper utility structure vault folio sequence 24',
+                'Scriptorium keeper utility structure arcade scriptorium sequence 25',
+            ];
+            const signals = [
+                'Scriptorium keeper utility signal beacon scriptorium sequence 1',
+                'Scriptorium keeper utility signal spark keeper sequence 2',
+                'Scriptorium keeper utility signal signal ink sequence 3',
+                'Scriptorium keeper utility signal marker glyph sequence 4',
+                'Scriptorium keeper utility signal glyph margins sequence 5',
+                'Scriptorium keeper utility signal echo scroll sequence 6',
+                'Scriptorium keeper utility signal whisper bookmark sequence 7',
+                'Scriptorium keeper utility signal song folio sequence 8',
+                'Scriptorium keeper utility signal trail scriptorium sequence 9',
+                'Scriptorium keeper utility signal gleam keeper sequence 10',
+                'Scriptorium keeper utility signal beacon ink sequence 11',
+                'Scriptorium keeper utility signal spark glyph sequence 12',
+                'Scriptorium keeper utility signal signal margins sequence 13',
+                'Scriptorium keeper utility signal marker scroll sequence 14',
+                'Scriptorium keeper utility signal glyph bookmark sequence 15',
+                'Scriptorium keeper utility signal echo folio sequence 16',
+                'Scriptorium keeper utility signal whisper scriptorium sequence 17',
+                'Scriptorium keeper utility signal song keeper sequence 18',
+                'Scriptorium keeper utility signal trail ink sequence 19',
+                'Scriptorium keeper utility signal gleam glyph sequence 20',
+                'Scriptorium keeper utility signal beacon margins sequence 21',
+                'Scriptorium keeper utility signal spark scroll sequence 22',
+                'Scriptorium keeper utility signal signal bookmark sequence 23',
+                'Scriptorium keeper utility signal marker folio sequence 24',
+                'Scriptorium keeper utility signal glyph scriptorium sequence 25',
+            ];
+            const adornments = [
+                'Scriptorium keeper utility adornment lantern scriptorium sequence 1',
+                'Scriptorium keeper utility adornment rune keeper sequence 2',
+                'Scriptorium keeper utility adornment ribbon ink sequence 3',
+                'Scriptorium keeper utility adornment petal glyph sequence 4',
+                'Scriptorium keeper utility adornment feather margins sequence 5',
+                'Scriptorium keeper utility adornment stone scroll sequence 6',
+                'Scriptorium keeper utility adornment dew bookmark sequence 7',
+                'Scriptorium keeper utility adornment light folio sequence 8',
+                'Scriptorium keeper utility adornment mirror scriptorium sequence 9',
+                'Scriptorium keeper utility adornment glow keeper sequence 10',
+                'Scriptorium keeper utility adornment lantern ink sequence 11',
+                'Scriptorium keeper utility adornment rune glyph sequence 12',
+                'Scriptorium keeper utility adornment ribbon margins sequence 13',
+                'Scriptorium keeper utility adornment petal scroll sequence 14',
+                'Scriptorium keeper utility adornment feather bookmark sequence 15',
+                'Scriptorium keeper utility adornment stone folio sequence 16',
+                'Scriptorium keeper utility adornment dew scriptorium sequence 17',
+                'Scriptorium keeper utility adornment light keeper sequence 18',
+                'Scriptorium keeper utility adornment mirror ink sequence 19',
+                'Scriptorium keeper utility adornment glow glyph sequence 20',
+                'Scriptorium keeper utility adornment lantern margins sequence 21',
+                'Scriptorium keeper utility adornment rune scroll sequence 22',
+                'Scriptorium keeper utility adornment ribbon bookmark sequence 23',
+                'Scriptorium keeper utility adornment petal folio sequence 24',
+                'Scriptorium keeper utility adornment feather scriptorium sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_scriptorium_keeper';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Scriptorium keeper utility organised payload terraces.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-ember-ledger',
+        category: 'utility',
+        name: 'Ember ledger utility',
+        description: 'Log ember sparks into ledger columns and warm stacks.',
+        icon: 'bar-chart',
+        accent: '#fb7185',
+        tags: ['utility', 'ember', 'ledger', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Ember ledgering', sections: 4, emphasise: true, prefix: 'Ember ledger', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Ember ledgering' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Ember ledger' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Ember ledgering').trim() || 'Ember ledgering';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Ember ledger').trim() || 'Ember ledger';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Ember ledger utility scaffold terrace ember sequence 1',
+                'Ember ledger utility scaffold stack ledger sequence 2',
+                'Ember ledger utility scaffold ledger spark sequence 3',
+                'Ember ledger utility scaffold panel column sequence 4',
+                'Ember ledger utility scaffold canvas cinder sequence 5',
+                'Ember ledger utility scaffold folio record sequence 6',
+                'Ember ledger utility scaffold compartment emberline sequence 7',
+                'Ember ledger utility scaffold parcel glow sequence 8',
+                'Ember ledger utility scaffold balustrade ember sequence 9',
+                'Ember ledger utility scaffold grid ledger sequence 10',
+                'Ember ledger utility scaffold terrace spark sequence 11',
+                'Ember ledger utility scaffold stack column sequence 12',
+                'Ember ledger utility scaffold ledger cinder sequence 13',
+                'Ember ledger utility scaffold panel record sequence 14',
+                'Ember ledger utility scaffold canvas emberline sequence 15',
+                'Ember ledger utility scaffold folio glow sequence 16',
+                'Ember ledger utility scaffold compartment ember sequence 17',
+                'Ember ledger utility scaffold parcel ledger sequence 18',
+                'Ember ledger utility scaffold balustrade spark sequence 19',
+                'Ember ledger utility scaffold grid column sequence 20',
+                'Ember ledger utility scaffold terrace cinder sequence 21',
+                'Ember ledger utility scaffold stack record sequence 22',
+                'Ember ledger utility scaffold ledger emberline sequence 23',
+                'Ember ledger utility scaffold panel glow sequence 24',
+                'Ember ledger utility scaffold canvas ember sequence 25',
+            ];
+            const structures = [
+                'Ember ledger utility structure arch ember sequence 1',
+                'Ember ledger utility structure grove ledger sequence 2',
+                'Ember ledger utility structure harbor spark sequence 3',
+                'Ember ledger utility structure vault column sequence 4',
+                'Ember ledger utility structure arcade cinder sequence 5',
+                'Ember ledger utility structure meadow record sequence 6',
+                'Ember ledger utility structure spire emberline sequence 7',
+                'Ember ledger utility structure tunnel glow sequence 8',
+                'Ember ledger utility structure causeway ember sequence 9',
+                'Ember ledger utility structure hall ledger sequence 10',
+                'Ember ledger utility structure arch spark sequence 11',
+                'Ember ledger utility structure grove column sequence 12',
+                'Ember ledger utility structure harbor cinder sequence 13',
+                'Ember ledger utility structure vault record sequence 14',
+                'Ember ledger utility structure arcade emberline sequence 15',
+                'Ember ledger utility structure meadow glow sequence 16',
+                'Ember ledger utility structure spire ember sequence 17',
+                'Ember ledger utility structure tunnel ledger sequence 18',
+                'Ember ledger utility structure causeway spark sequence 19',
+                'Ember ledger utility structure hall column sequence 20',
+                'Ember ledger utility structure arch cinder sequence 21',
+                'Ember ledger utility structure grove record sequence 22',
+                'Ember ledger utility structure harbor emberline sequence 23',
+                'Ember ledger utility structure vault glow sequence 24',
+                'Ember ledger utility structure arcade ember sequence 25',
+            ];
+            const signals = [
+                'Ember ledger utility signal beacon ember sequence 1',
+                'Ember ledger utility signal spark ledger sequence 2',
+                'Ember ledger utility signal signal spark sequence 3',
+                'Ember ledger utility signal marker column sequence 4',
+                'Ember ledger utility signal glyph cinder sequence 5',
+                'Ember ledger utility signal echo record sequence 6',
+                'Ember ledger utility signal whisper emberline sequence 7',
+                'Ember ledger utility signal song glow sequence 8',
+                'Ember ledger utility signal trail ember sequence 9',
+                'Ember ledger utility signal gleam ledger sequence 10',
+                'Ember ledger utility signal beacon spark sequence 11',
+                'Ember ledger utility signal spark column sequence 12',
+                'Ember ledger utility signal signal cinder sequence 13',
+                'Ember ledger utility signal marker record sequence 14',
+                'Ember ledger utility signal glyph emberline sequence 15',
+                'Ember ledger utility signal echo glow sequence 16',
+                'Ember ledger utility signal whisper ember sequence 17',
+                'Ember ledger utility signal song ledger sequence 18',
+                'Ember ledger utility signal trail spark sequence 19',
+                'Ember ledger utility signal gleam column sequence 20',
+                'Ember ledger utility signal beacon cinder sequence 21',
+                'Ember ledger utility signal spark record sequence 22',
+                'Ember ledger utility signal signal emberline sequence 23',
+                'Ember ledger utility signal marker glow sequence 24',
+                'Ember ledger utility signal glyph ember sequence 25',
+            ];
+            const adornments = [
+                'Ember ledger utility adornment lantern ember sequence 1',
+                'Ember ledger utility adornment rune ledger sequence 2',
+                'Ember ledger utility adornment ribbon spark sequence 3',
+                'Ember ledger utility adornment petal column sequence 4',
+                'Ember ledger utility adornment feather cinder sequence 5',
+                'Ember ledger utility adornment stone record sequence 6',
+                'Ember ledger utility adornment dew emberline sequence 7',
+                'Ember ledger utility adornment light glow sequence 8',
+                'Ember ledger utility adornment mirror ember sequence 9',
+                'Ember ledger utility adornment glow ledger sequence 10',
+                'Ember ledger utility adornment lantern spark sequence 11',
+                'Ember ledger utility adornment rune column sequence 12',
+                'Ember ledger utility adornment ribbon cinder sequence 13',
+                'Ember ledger utility adornment petal record sequence 14',
+                'Ember ledger utility adornment feather emberline sequence 15',
+                'Ember ledger utility adornment stone glow sequence 16',
+                'Ember ledger utility adornment dew ember sequence 17',
+                'Ember ledger utility adornment light ledger sequence 18',
+                'Ember ledger utility adornment mirror spark sequence 19',
+                'Ember ledger utility adornment glow column sequence 20',
+                'Ember ledger utility adornment lantern cinder sequence 21',
+                'Ember ledger utility adornment rune record sequence 22',
+                'Ember ledger utility adornment ribbon emberline sequence 23',
+                'Ember ledger utility adornment petal glow sequence 24',
+                'Ember ledger utility adornment feather ember sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_ember_ledger';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Ember ledger utility organised payload terraces.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-voyage-scheduler',
+        category: 'utility',
+        name: 'Voyage scheduler utility',
+        description: 'Schedule voyages through payload harbors and ports.',
+        icon: 'calendar',
+        accent: '#22d3ee',
+        tags: ['utility', 'voyage', 'scheduler', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Voyage scheduling', sections: 4, emphasise: true, prefix: 'Voyage scheduler', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Voyage scheduling' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Voyage scheduler' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Voyage scheduling').trim() || 'Voyage scheduling';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Voyage scheduler').trim() || 'Voyage scheduler';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Voyage scheduler utility scaffold terrace voyage sequence 1',
+                'Voyage scheduler utility scaffold stack scheduler sequence 2',
+                'Voyage scheduler utility scaffold ledger route sequence 3',
+                'Voyage scheduler utility scaffold panel chart sequence 4',
+                'Voyage scheduler utility scaffold canvas current sequence 5',
+                'Voyage scheduler utility scaffold folio logbook sequence 6',
+                'Voyage scheduler utility scaffold compartment star sequence 7',
+                'Voyage scheduler utility scaffold parcel helm sequence 8',
+                'Voyage scheduler utility scaffold balustrade voyage sequence 9',
+                'Voyage scheduler utility scaffold grid scheduler sequence 10',
+                'Voyage scheduler utility scaffold terrace route sequence 11',
+                'Voyage scheduler utility scaffold stack chart sequence 12',
+                'Voyage scheduler utility scaffold ledger current sequence 13',
+                'Voyage scheduler utility scaffold panel logbook sequence 14',
+                'Voyage scheduler utility scaffold canvas star sequence 15',
+                'Voyage scheduler utility scaffold folio helm sequence 16',
+                'Voyage scheduler utility scaffold compartment voyage sequence 17',
+                'Voyage scheduler utility scaffold parcel scheduler sequence 18',
+                'Voyage scheduler utility scaffold balustrade route sequence 19',
+                'Voyage scheduler utility scaffold grid chart sequence 20',
+                'Voyage scheduler utility scaffold terrace current sequence 21',
+                'Voyage scheduler utility scaffold stack logbook sequence 22',
+                'Voyage scheduler utility scaffold ledger star sequence 23',
+                'Voyage scheduler utility scaffold panel helm sequence 24',
+                'Voyage scheduler utility scaffold canvas voyage sequence 25',
+            ];
+            const structures = [
+                'Voyage scheduler utility structure arch voyage sequence 1',
+                'Voyage scheduler utility structure grove scheduler sequence 2',
+                'Voyage scheduler utility structure harbor route sequence 3',
+                'Voyage scheduler utility structure vault chart sequence 4',
+                'Voyage scheduler utility structure arcade current sequence 5',
+                'Voyage scheduler utility structure meadow logbook sequence 6',
+                'Voyage scheduler utility structure spire star sequence 7',
+                'Voyage scheduler utility structure tunnel helm sequence 8',
+                'Voyage scheduler utility structure causeway voyage sequence 9',
+                'Voyage scheduler utility structure hall scheduler sequence 10',
+                'Voyage scheduler utility structure arch route sequence 11',
+                'Voyage scheduler utility structure grove chart sequence 12',
+                'Voyage scheduler utility structure harbor current sequence 13',
+                'Voyage scheduler utility structure vault logbook sequence 14',
+                'Voyage scheduler utility structure arcade star sequence 15',
+                'Voyage scheduler utility structure meadow helm sequence 16',
+                'Voyage scheduler utility structure spire voyage sequence 17',
+                'Voyage scheduler utility structure tunnel scheduler sequence 18',
+                'Voyage scheduler utility structure causeway route sequence 19',
+                'Voyage scheduler utility structure hall chart sequence 20',
+                'Voyage scheduler utility structure arch current sequence 21',
+                'Voyage scheduler utility structure grove logbook sequence 22',
+                'Voyage scheduler utility structure harbor star sequence 23',
+                'Voyage scheduler utility structure vault helm sequence 24',
+                'Voyage scheduler utility structure arcade voyage sequence 25',
+            ];
+            const signals = [
+                'Voyage scheduler utility signal beacon voyage sequence 1',
+                'Voyage scheduler utility signal spark scheduler sequence 2',
+                'Voyage scheduler utility signal signal route sequence 3',
+                'Voyage scheduler utility signal marker chart sequence 4',
+                'Voyage scheduler utility signal glyph current sequence 5',
+                'Voyage scheduler utility signal echo logbook sequence 6',
+                'Voyage scheduler utility signal whisper star sequence 7',
+                'Voyage scheduler utility signal song helm sequence 8',
+                'Voyage scheduler utility signal trail voyage sequence 9',
+                'Voyage scheduler utility signal gleam scheduler sequence 10',
+                'Voyage scheduler utility signal beacon route sequence 11',
+                'Voyage scheduler utility signal spark chart sequence 12',
+                'Voyage scheduler utility signal signal current sequence 13',
+                'Voyage scheduler utility signal marker logbook sequence 14',
+                'Voyage scheduler utility signal glyph star sequence 15',
+                'Voyage scheduler utility signal echo helm sequence 16',
+                'Voyage scheduler utility signal whisper voyage sequence 17',
+                'Voyage scheduler utility signal song scheduler sequence 18',
+                'Voyage scheduler utility signal trail route sequence 19',
+                'Voyage scheduler utility signal gleam chart sequence 20',
+                'Voyage scheduler utility signal beacon current sequence 21',
+                'Voyage scheduler utility signal spark logbook sequence 22',
+                'Voyage scheduler utility signal signal star sequence 23',
+                'Voyage scheduler utility signal marker helm sequence 24',
+                'Voyage scheduler utility signal glyph voyage sequence 25',
+            ];
+            const adornments = [
+                'Voyage scheduler utility adornment lantern voyage sequence 1',
+                'Voyage scheduler utility adornment rune scheduler sequence 2',
+                'Voyage scheduler utility adornment ribbon route sequence 3',
+                'Voyage scheduler utility adornment petal chart sequence 4',
+                'Voyage scheduler utility adornment feather current sequence 5',
+                'Voyage scheduler utility adornment stone logbook sequence 6',
+                'Voyage scheduler utility adornment dew star sequence 7',
+                'Voyage scheduler utility adornment light helm sequence 8',
+                'Voyage scheduler utility adornment mirror voyage sequence 9',
+                'Voyage scheduler utility adornment glow scheduler sequence 10',
+                'Voyage scheduler utility adornment lantern route sequence 11',
+                'Voyage scheduler utility adornment rune chart sequence 12',
+                'Voyage scheduler utility adornment ribbon current sequence 13',
+                'Voyage scheduler utility adornment petal logbook sequence 14',
+                'Voyage scheduler utility adornment feather star sequence 15',
+                'Voyage scheduler utility adornment stone helm sequence 16',
+                'Voyage scheduler utility adornment dew voyage sequence 17',
+                'Voyage scheduler utility adornment light scheduler sequence 18',
+                'Voyage scheduler utility adornment mirror route sequence 19',
+                'Voyage scheduler utility adornment glow chart sequence 20',
+                'Voyage scheduler utility adornment lantern current sequence 21',
+                'Voyage scheduler utility adornment rune logbook sequence 22',
+                'Voyage scheduler utility adornment ribbon star sequence 23',
+                'Voyage scheduler utility adornment petal helm sequence 24',
+                'Voyage scheduler utility adornment feather voyage sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_voyage_scheduler';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Voyage scheduler utility organised payload terraces.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-breeze-organiser',
+        category: 'utility',
+        name: 'Breeze organiser utility',
+        description: 'Organise breezes of thought into airy reference stacks.',
+        icon: 'airplay',
+        accent: '#60a5fa',
+        tags: ['utility', 'breeze', 'organiser', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Breeze organising', sections: 4, emphasise: true, prefix: 'Breeze organiser', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Breeze organising' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Breeze organiser' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Breeze organising').trim() || 'Breeze organising';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Breeze organiser').trim() || 'Breeze organiser';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Breeze organiser utility scaffold terrace breeze sequence 1',
+                'Breeze organiser utility scaffold stack organiser sequence 2',
+                'Breeze organiser utility scaffold ledger draft sequence 3',
+                'Breeze organiser utility scaffold panel gust sequence 4',
+                'Breeze organiser utility scaffold canvas cloud sequence 5',
+                'Breeze organiser utility scaffold folio whisper sequence 6',
+                'Breeze organiser utility scaffold compartment tide sequence 7',
+                'Breeze organiser utility scaffold parcel trail sequence 8',
+                'Breeze organiser utility scaffold balustrade breeze sequence 9',
+                'Breeze organiser utility scaffold grid organiser sequence 10',
+                'Breeze organiser utility scaffold terrace draft sequence 11',
+                'Breeze organiser utility scaffold stack gust sequence 12',
+                'Breeze organiser utility scaffold ledger cloud sequence 13',
+                'Breeze organiser utility scaffold panel whisper sequence 14',
+                'Breeze organiser utility scaffold canvas tide sequence 15',
+                'Breeze organiser utility scaffold folio trail sequence 16',
+                'Breeze organiser utility scaffold compartment breeze sequence 17',
+                'Breeze organiser utility scaffold parcel organiser sequence 18',
+                'Breeze organiser utility scaffold balustrade draft sequence 19',
+                'Breeze organiser utility scaffold grid gust sequence 20',
+                'Breeze organiser utility scaffold terrace cloud sequence 21',
+                'Breeze organiser utility scaffold stack whisper sequence 22',
+                'Breeze organiser utility scaffold ledger tide sequence 23',
+                'Breeze organiser utility scaffold panel trail sequence 24',
+                'Breeze organiser utility scaffold canvas breeze sequence 25',
+            ];
+            const structures = [
+                'Breeze organiser utility structure arch breeze sequence 1',
+                'Breeze organiser utility structure grove organiser sequence 2',
+                'Breeze organiser utility structure harbor draft sequence 3',
+                'Breeze organiser utility structure vault gust sequence 4',
+                'Breeze organiser utility structure arcade cloud sequence 5',
+                'Breeze organiser utility structure meadow whisper sequence 6',
+                'Breeze organiser utility structure spire tide sequence 7',
+                'Breeze organiser utility structure tunnel trail sequence 8',
+                'Breeze organiser utility structure causeway breeze sequence 9',
+                'Breeze organiser utility structure hall organiser sequence 10',
+                'Breeze organiser utility structure arch draft sequence 11',
+                'Breeze organiser utility structure grove gust sequence 12',
+                'Breeze organiser utility structure harbor cloud sequence 13',
+                'Breeze organiser utility structure vault whisper sequence 14',
+                'Breeze organiser utility structure arcade tide sequence 15',
+                'Breeze organiser utility structure meadow trail sequence 16',
+                'Breeze organiser utility structure spire breeze sequence 17',
+                'Breeze organiser utility structure tunnel organiser sequence 18',
+                'Breeze organiser utility structure causeway draft sequence 19',
+                'Breeze organiser utility structure hall gust sequence 20',
+                'Breeze organiser utility structure arch cloud sequence 21',
+                'Breeze organiser utility structure grove whisper sequence 22',
+                'Breeze organiser utility structure harbor tide sequence 23',
+                'Breeze organiser utility structure vault trail sequence 24',
+                'Breeze organiser utility structure arcade breeze sequence 25',
+            ];
+            const signals = [
+                'Breeze organiser utility signal beacon breeze sequence 1',
+                'Breeze organiser utility signal spark organiser sequence 2',
+                'Breeze organiser utility signal signal draft sequence 3',
+                'Breeze organiser utility signal marker gust sequence 4',
+                'Breeze organiser utility signal glyph cloud sequence 5',
+                'Breeze organiser utility signal echo whisper sequence 6',
+                'Breeze organiser utility signal whisper tide sequence 7',
+                'Breeze organiser utility signal song trail sequence 8',
+                'Breeze organiser utility signal trail breeze sequence 9',
+                'Breeze organiser utility signal gleam organiser sequence 10',
+                'Breeze organiser utility signal beacon draft sequence 11',
+                'Breeze organiser utility signal spark gust sequence 12',
+                'Breeze organiser utility signal signal cloud sequence 13',
+                'Breeze organiser utility signal marker whisper sequence 14',
+                'Breeze organiser utility signal glyph tide sequence 15',
+                'Breeze organiser utility signal echo trail sequence 16',
+                'Breeze organiser utility signal whisper breeze sequence 17',
+                'Breeze organiser utility signal song organiser sequence 18',
+                'Breeze organiser utility signal trail draft sequence 19',
+                'Breeze organiser utility signal gleam gust sequence 20',
+                'Breeze organiser utility signal beacon cloud sequence 21',
+                'Breeze organiser utility signal spark whisper sequence 22',
+                'Breeze organiser utility signal signal tide sequence 23',
+                'Breeze organiser utility signal marker trail sequence 24',
+                'Breeze organiser utility signal glyph breeze sequence 25',
+            ];
+            const adornments = [
+                'Breeze organiser utility adornment lantern breeze sequence 1',
+                'Breeze organiser utility adornment rune organiser sequence 2',
+                'Breeze organiser utility adornment ribbon draft sequence 3',
+                'Breeze organiser utility adornment petal gust sequence 4',
+                'Breeze organiser utility adornment feather cloud sequence 5',
+                'Breeze organiser utility adornment stone whisper sequence 6',
+                'Breeze organiser utility adornment dew tide sequence 7',
+                'Breeze organiser utility adornment light trail sequence 8',
+                'Breeze organiser utility adornment mirror breeze sequence 9',
+                'Breeze organiser utility adornment glow organiser sequence 10',
+                'Breeze organiser utility adornment lantern draft sequence 11',
+                'Breeze organiser utility adornment rune gust sequence 12',
+                'Breeze organiser utility adornment ribbon cloud sequence 13',
+                'Breeze organiser utility adornment petal whisper sequence 14',
+                'Breeze organiser utility adornment feather tide sequence 15',
+                'Breeze organiser utility adornment stone trail sequence 16',
+                'Breeze organiser utility adornment dew breeze sequence 17',
+                'Breeze organiser utility adornment light organiser sequence 18',
+                'Breeze organiser utility adornment mirror draft sequence 19',
+                'Breeze organiser utility adornment glow gust sequence 20',
+                'Breeze organiser utility adornment lantern cloud sequence 21',
+                'Breeze organiser utility adornment rune whisper sequence 22',
+                'Breeze organiser utility adornment ribbon tide sequence 23',
+                'Breeze organiser utility adornment petal trail sequence 24',
+                'Breeze organiser utility adornment feather breeze sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_breeze_organiser';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Breeze organiser utility organised payload terraces.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-rain-trellis',
+        category: 'utility',
+        name: 'Rain trellis utility',
+        description: 'Trellis rainfall insights into climbing idea vines.',
+        icon: 'umbrella',
+        accent: '#0ea5e9',
+        tags: ['utility', 'rain', 'trellis', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Rain trellising', sections: 4, emphasise: true, prefix: 'Rain trellis', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Rain trellising' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Rain trellis' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Rain trellising').trim() || 'Rain trellising';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Rain trellis').trim() || 'Rain trellis';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Rain trellis utility scaffold terrace rain sequence 1',
+                'Rain trellis utility scaffold stack trellis sequence 2',
+                'Rain trellis utility scaffold ledger vine sequence 3',
+                'Rain trellis utility scaffold panel drop sequence 4',
+                'Rain trellis utility scaffold canvas branch sequence 5',
+                'Rain trellis utility scaffold folio bud sequence 6',
+                'Rain trellis utility scaffold compartment mist sequence 7',
+                'Rain trellis utility scaffold parcel sparkle sequence 8',
+                'Rain trellis utility scaffold balustrade rain sequence 9',
+                'Rain trellis utility scaffold grid trellis sequence 10',
+                'Rain trellis utility scaffold terrace vine sequence 11',
+                'Rain trellis utility scaffold stack drop sequence 12',
+                'Rain trellis utility scaffold ledger branch sequence 13',
+                'Rain trellis utility scaffold panel bud sequence 14',
+                'Rain trellis utility scaffold canvas mist sequence 15',
+                'Rain trellis utility scaffold folio sparkle sequence 16',
+                'Rain trellis utility scaffold compartment rain sequence 17',
+                'Rain trellis utility scaffold parcel trellis sequence 18',
+                'Rain trellis utility scaffold balustrade vine sequence 19',
+                'Rain trellis utility scaffold grid drop sequence 20',
+                'Rain trellis utility scaffold terrace branch sequence 21',
+                'Rain trellis utility scaffold stack bud sequence 22',
+                'Rain trellis utility scaffold ledger mist sequence 23',
+                'Rain trellis utility scaffold panel sparkle sequence 24',
+                'Rain trellis utility scaffold canvas rain sequence 25',
+            ];
+            const structures = [
+                'Rain trellis utility structure arch rain sequence 1',
+                'Rain trellis utility structure grove trellis sequence 2',
+                'Rain trellis utility structure harbor vine sequence 3',
+                'Rain trellis utility structure vault drop sequence 4',
+                'Rain trellis utility structure arcade branch sequence 5',
+                'Rain trellis utility structure meadow bud sequence 6',
+                'Rain trellis utility structure spire mist sequence 7',
+                'Rain trellis utility structure tunnel sparkle sequence 8',
+                'Rain trellis utility structure causeway rain sequence 9',
+                'Rain trellis utility structure hall trellis sequence 10',
+                'Rain trellis utility structure arch vine sequence 11',
+                'Rain trellis utility structure grove drop sequence 12',
+                'Rain trellis utility structure harbor branch sequence 13',
+                'Rain trellis utility structure vault bud sequence 14',
+                'Rain trellis utility structure arcade mist sequence 15',
+                'Rain trellis utility structure meadow sparkle sequence 16',
+                'Rain trellis utility structure spire rain sequence 17',
+                'Rain trellis utility structure tunnel trellis sequence 18',
+                'Rain trellis utility structure causeway vine sequence 19',
+                'Rain trellis utility structure hall drop sequence 20',
+                'Rain trellis utility structure arch branch sequence 21',
+                'Rain trellis utility structure grove bud sequence 22',
+                'Rain trellis utility structure harbor mist sequence 23',
+                'Rain trellis utility structure vault sparkle sequence 24',
+                'Rain trellis utility structure arcade rain sequence 25',
+            ];
+            const signals = [
+                'Rain trellis utility signal beacon rain sequence 1',
+                'Rain trellis utility signal spark trellis sequence 2',
+                'Rain trellis utility signal signal vine sequence 3',
+                'Rain trellis utility signal marker drop sequence 4',
+                'Rain trellis utility signal glyph branch sequence 5',
+                'Rain trellis utility signal echo bud sequence 6',
+                'Rain trellis utility signal whisper mist sequence 7',
+                'Rain trellis utility signal song sparkle sequence 8',
+                'Rain trellis utility signal trail rain sequence 9',
+                'Rain trellis utility signal gleam trellis sequence 10',
+                'Rain trellis utility signal beacon vine sequence 11',
+                'Rain trellis utility signal spark drop sequence 12',
+                'Rain trellis utility signal signal branch sequence 13',
+                'Rain trellis utility signal marker bud sequence 14',
+                'Rain trellis utility signal glyph mist sequence 15',
+                'Rain trellis utility signal echo sparkle sequence 16',
+                'Rain trellis utility signal whisper rain sequence 17',
+                'Rain trellis utility signal song trellis sequence 18',
+                'Rain trellis utility signal trail vine sequence 19',
+                'Rain trellis utility signal gleam drop sequence 20',
+                'Rain trellis utility signal beacon branch sequence 21',
+                'Rain trellis utility signal spark bud sequence 22',
+                'Rain trellis utility signal signal mist sequence 23',
+                'Rain trellis utility signal marker sparkle sequence 24',
+                'Rain trellis utility signal glyph rain sequence 25',
+            ];
+            const adornments = [
+                'Rain trellis utility adornment lantern rain sequence 1',
+                'Rain trellis utility adornment rune trellis sequence 2',
+                'Rain trellis utility adornment ribbon vine sequence 3',
+                'Rain trellis utility adornment petal drop sequence 4',
+                'Rain trellis utility adornment feather branch sequence 5',
+                'Rain trellis utility adornment stone bud sequence 6',
+                'Rain trellis utility adornment dew mist sequence 7',
+                'Rain trellis utility adornment light sparkle sequence 8',
+                'Rain trellis utility adornment mirror rain sequence 9',
+                'Rain trellis utility adornment glow trellis sequence 10',
+                'Rain trellis utility adornment lantern vine sequence 11',
+                'Rain trellis utility adornment rune drop sequence 12',
+                'Rain trellis utility adornment ribbon branch sequence 13',
+                'Rain trellis utility adornment petal bud sequence 14',
+                'Rain trellis utility adornment feather mist sequence 15',
+                'Rain trellis utility adornment stone sparkle sequence 16',
+                'Rain trellis utility adornment dew rain sequence 17',
+                'Rain trellis utility adornment light trellis sequence 18',
+                'Rain trellis utility adornment mirror vine sequence 19',
+                'Rain trellis utility adornment glow drop sequence 20',
+                'Rain trellis utility adornment lantern branch sequence 21',
+                'Rain trellis utility adornment rune bud sequence 22',
+                'Rain trellis utility adornment ribbon mist sequence 23',
+                'Rain trellis utility adornment petal sparkle sequence 24',
+                'Rain trellis utility adornment feather rain sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_rain_trellis';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Rain trellis utility organised payload terraces.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-moon-index',
+        category: 'utility',
+        name: 'Moon index utility',
+        description: 'Index moonlit notes into phases and gentle segments.',
+        icon: 'calendar',
+        accent: '#6366f1',
+        tags: ['utility', 'moon', 'index', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Moon indexing', sections: 4, emphasise: true, prefix: 'Moon index', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Moon indexing' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Moon index' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Moon indexing').trim() || 'Moon indexing';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Moon index').trim() || 'Moon index';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Moon index utility scaffold terrace moon sequence 1',
+                'Moon index utility scaffold stack index sequence 2',
+                'Moon index utility scaffold ledger phase sequence 3',
+                'Moon index utility scaffold panel glow sequence 4',
+                'Moon index utility scaffold canvas lunar sequence 5',
+                'Moon index utility scaffold folio silver sequence 6',
+                'Moon index utility scaffold compartment night sequence 7',
+                'Moon index utility scaffold parcel quiet sequence 8',
+                'Moon index utility scaffold balustrade moon sequence 9',
+                'Moon index utility scaffold grid index sequence 10',
+                'Moon index utility scaffold terrace phase sequence 11',
+                'Moon index utility scaffold stack glow sequence 12',
+                'Moon index utility scaffold ledger lunar sequence 13',
+                'Moon index utility scaffold panel silver sequence 14',
+                'Moon index utility scaffold canvas night sequence 15',
+                'Moon index utility scaffold folio quiet sequence 16',
+                'Moon index utility scaffold compartment moon sequence 17',
+                'Moon index utility scaffold parcel index sequence 18',
+                'Moon index utility scaffold balustrade phase sequence 19',
+                'Moon index utility scaffold grid glow sequence 20',
+                'Moon index utility scaffold terrace lunar sequence 21',
+                'Moon index utility scaffold stack silver sequence 22',
+                'Moon index utility scaffold ledger night sequence 23',
+                'Moon index utility scaffold panel quiet sequence 24',
+                'Moon index utility scaffold canvas moon sequence 25',
+            ];
+            const structures = [
+                'Moon index utility structure arch moon sequence 1',
+                'Moon index utility structure grove index sequence 2',
+                'Moon index utility structure harbor phase sequence 3',
+                'Moon index utility structure vault glow sequence 4',
+                'Moon index utility structure arcade lunar sequence 5',
+                'Moon index utility structure meadow silver sequence 6',
+                'Moon index utility structure spire night sequence 7',
+                'Moon index utility structure tunnel quiet sequence 8',
+                'Moon index utility structure causeway moon sequence 9',
+                'Moon index utility structure hall index sequence 10',
+                'Moon index utility structure arch phase sequence 11',
+                'Moon index utility structure grove glow sequence 12',
+                'Moon index utility structure harbor lunar sequence 13',
+                'Moon index utility structure vault silver sequence 14',
+                'Moon index utility structure arcade night sequence 15',
+                'Moon index utility structure meadow quiet sequence 16',
+                'Moon index utility structure spire moon sequence 17',
+                'Moon index utility structure tunnel index sequence 18',
+                'Moon index utility structure causeway phase sequence 19',
+                'Moon index utility structure hall glow sequence 20',
+                'Moon index utility structure arch lunar sequence 21',
+                'Moon index utility structure grove silver sequence 22',
+                'Moon index utility structure harbor night sequence 23',
+                'Moon index utility structure vault quiet sequence 24',
+                'Moon index utility structure arcade moon sequence 25',
+            ];
+            const signals = [
+                'Moon index utility signal beacon moon sequence 1',
+                'Moon index utility signal spark index sequence 2',
+                'Moon index utility signal signal phase sequence 3',
+                'Moon index utility signal marker glow sequence 4',
+                'Moon index utility signal glyph lunar sequence 5',
+                'Moon index utility signal echo silver sequence 6',
+                'Moon index utility signal whisper night sequence 7',
+                'Moon index utility signal song quiet sequence 8',
+                'Moon index utility signal trail moon sequence 9',
+                'Moon index utility signal gleam index sequence 10',
+                'Moon index utility signal beacon phase sequence 11',
+                'Moon index utility signal spark glow sequence 12',
+                'Moon index utility signal signal lunar sequence 13',
+                'Moon index utility signal marker silver sequence 14',
+                'Moon index utility signal glyph night sequence 15',
+                'Moon index utility signal echo quiet sequence 16',
+                'Moon index utility signal whisper moon sequence 17',
+                'Moon index utility signal song index sequence 18',
+                'Moon index utility signal trail phase sequence 19',
+                'Moon index utility signal gleam glow sequence 20',
+                'Moon index utility signal beacon lunar sequence 21',
+                'Moon index utility signal spark silver sequence 22',
+                'Moon index utility signal signal night sequence 23',
+                'Moon index utility signal marker quiet sequence 24',
+                'Moon index utility signal glyph moon sequence 25',
+            ];
+            const adornments = [
+                'Moon index utility adornment lantern moon sequence 1',
+                'Moon index utility adornment rune index sequence 2',
+                'Moon index utility adornment ribbon phase sequence 3',
+                'Moon index utility adornment petal glow sequence 4',
+                'Moon index utility adornment feather lunar sequence 5',
+                'Moon index utility adornment stone silver sequence 6',
+                'Moon index utility adornment dew night sequence 7',
+                'Moon index utility adornment light quiet sequence 8',
+                'Moon index utility adornment mirror moon sequence 9',
+                'Moon index utility adornment glow index sequence 10',
+                'Moon index utility adornment lantern phase sequence 11',
+                'Moon index utility adornment rune glow sequence 12',
+                'Moon index utility adornment ribbon lunar sequence 13',
+                'Moon index utility adornment petal silver sequence 14',
+                'Moon index utility adornment feather night sequence 15',
+                'Moon index utility adornment stone quiet sequence 16',
+                'Moon index utility adornment dew moon sequence 17',
+                'Moon index utility adornment light index sequence 18',
+                'Moon index utility adornment mirror phase sequence 19',
+                'Moon index utility adornment glow glow sequence 20',
+                'Moon index utility adornment lantern lunar sequence 21',
+                'Moon index utility adornment rune silver sequence 22',
+                'Moon index utility adornment ribbon night sequence 23',
+                'Moon index utility adornment petal quiet sequence 24',
+                'Moon index utility adornment feather moon sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_moon_index';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Moon index utility organised payload terraces.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-canvas-chapter',
+        category: 'utility',
+        name: 'Canvas chapter utility',
+        description: 'Chapter canvases into sequential scenic story boards.',
+        icon: 'layout',
+        accent: '#facc15',
+        tags: ['utility', 'canvas', 'chapter', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Canvas chaptering', sections: 4, emphasise: true, prefix: 'Canvas chapter', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Canvas chaptering' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Canvas chapter' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Canvas chaptering').trim() || 'Canvas chaptering';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Canvas chapter').trim() || 'Canvas chapter';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Canvas chapter utility scaffold terrace canvas sequence 1',
+                'Canvas chapter utility scaffold stack chapter sequence 2',
+                'Canvas chapter utility scaffold ledger panel sequence 3',
+                'Canvas chapter utility scaffold panel scene sequence 4',
+                'Canvas chapter utility scaffold canvas frame sequence 5',
+                'Canvas chapter utility scaffold folio brush sequence 6',
+                'Canvas chapter utility scaffold compartment story sequence 7',
+                'Canvas chapter utility scaffold parcel color sequence 8',
+                'Canvas chapter utility scaffold balustrade canvas sequence 9',
+                'Canvas chapter utility scaffold grid chapter sequence 10',
+                'Canvas chapter utility scaffold terrace panel sequence 11',
+                'Canvas chapter utility scaffold stack scene sequence 12',
+                'Canvas chapter utility scaffold ledger frame sequence 13',
+                'Canvas chapter utility scaffold panel brush sequence 14',
+                'Canvas chapter utility scaffold canvas story sequence 15',
+                'Canvas chapter utility scaffold folio color sequence 16',
+                'Canvas chapter utility scaffold compartment canvas sequence 17',
+                'Canvas chapter utility scaffold parcel chapter sequence 18',
+                'Canvas chapter utility scaffold balustrade panel sequence 19',
+                'Canvas chapter utility scaffold grid scene sequence 20',
+                'Canvas chapter utility scaffold terrace frame sequence 21',
+                'Canvas chapter utility scaffold stack brush sequence 22',
+                'Canvas chapter utility scaffold ledger story sequence 23',
+                'Canvas chapter utility scaffold panel color sequence 24',
+                'Canvas chapter utility scaffold canvas canvas sequence 25',
+            ];
+            const structures = [
+                'Canvas chapter utility structure arch canvas sequence 1',
+                'Canvas chapter utility structure grove chapter sequence 2',
+                'Canvas chapter utility structure harbor panel sequence 3',
+                'Canvas chapter utility structure vault scene sequence 4',
+                'Canvas chapter utility structure arcade frame sequence 5',
+                'Canvas chapter utility structure meadow brush sequence 6',
+                'Canvas chapter utility structure spire story sequence 7',
+                'Canvas chapter utility structure tunnel color sequence 8',
+                'Canvas chapter utility structure causeway canvas sequence 9',
+                'Canvas chapter utility structure hall chapter sequence 10',
+                'Canvas chapter utility structure arch panel sequence 11',
+                'Canvas chapter utility structure grove scene sequence 12',
+                'Canvas chapter utility structure harbor frame sequence 13',
+                'Canvas chapter utility structure vault brush sequence 14',
+                'Canvas chapter utility structure arcade story sequence 15',
+                'Canvas chapter utility structure meadow color sequence 16',
+                'Canvas chapter utility structure spire canvas sequence 17',
+                'Canvas chapter utility structure tunnel chapter sequence 18',
+                'Canvas chapter utility structure causeway panel sequence 19',
+                'Canvas chapter utility structure hall scene sequence 20',
+                'Canvas chapter utility structure arch frame sequence 21',
+                'Canvas chapter utility structure grove brush sequence 22',
+                'Canvas chapter utility structure harbor story sequence 23',
+                'Canvas chapter utility structure vault color sequence 24',
+                'Canvas chapter utility structure arcade canvas sequence 25',
+            ];
+            const signals = [
+                'Canvas chapter utility signal beacon canvas sequence 1',
+                'Canvas chapter utility signal spark chapter sequence 2',
+                'Canvas chapter utility signal signal panel sequence 3',
+                'Canvas chapter utility signal marker scene sequence 4',
+                'Canvas chapter utility signal glyph frame sequence 5',
+                'Canvas chapter utility signal echo brush sequence 6',
+                'Canvas chapter utility signal whisper story sequence 7',
+                'Canvas chapter utility signal song color sequence 8',
+                'Canvas chapter utility signal trail canvas sequence 9',
+                'Canvas chapter utility signal gleam chapter sequence 10',
+                'Canvas chapter utility signal beacon panel sequence 11',
+                'Canvas chapter utility signal spark scene sequence 12',
+                'Canvas chapter utility signal signal frame sequence 13',
+                'Canvas chapter utility signal marker brush sequence 14',
+                'Canvas chapter utility signal glyph story sequence 15',
+                'Canvas chapter utility signal echo color sequence 16',
+                'Canvas chapter utility signal whisper canvas sequence 17',
+                'Canvas chapter utility signal song chapter sequence 18',
+                'Canvas chapter utility signal trail panel sequence 19',
+                'Canvas chapter utility signal gleam scene sequence 20',
+                'Canvas chapter utility signal beacon frame sequence 21',
+                'Canvas chapter utility signal spark brush sequence 22',
+                'Canvas chapter utility signal signal story sequence 23',
+                'Canvas chapter utility signal marker color sequence 24',
+                'Canvas chapter utility signal glyph canvas sequence 25',
+            ];
+            const adornments = [
+                'Canvas chapter utility adornment lantern canvas sequence 1',
+                'Canvas chapter utility adornment rune chapter sequence 2',
+                'Canvas chapter utility adornment ribbon panel sequence 3',
+                'Canvas chapter utility adornment petal scene sequence 4',
+                'Canvas chapter utility adornment feather frame sequence 5',
+                'Canvas chapter utility adornment stone brush sequence 6',
+                'Canvas chapter utility adornment dew story sequence 7',
+                'Canvas chapter utility adornment light color sequence 8',
+                'Canvas chapter utility adornment mirror canvas sequence 9',
+                'Canvas chapter utility adornment glow chapter sequence 10',
+                'Canvas chapter utility adornment lantern panel sequence 11',
+                'Canvas chapter utility adornment rune scene sequence 12',
+                'Canvas chapter utility adornment ribbon frame sequence 13',
+                'Canvas chapter utility adornment petal brush sequence 14',
+                'Canvas chapter utility adornment feather story sequence 15',
+                'Canvas chapter utility adornment stone color sequence 16',
+                'Canvas chapter utility adornment dew canvas sequence 17',
+                'Canvas chapter utility adornment light chapter sequence 18',
+                'Canvas chapter utility adornment mirror panel sequence 19',
+                'Canvas chapter utility adornment glow scene sequence 20',
+                'Canvas chapter utility adornment lantern frame sequence 21',
+                'Canvas chapter utility adornment rune brush sequence 22',
+                'Canvas chapter utility adornment ribbon story sequence 23',
+                'Canvas chapter utility adornment petal color sequence 24',
+                'Canvas chapter utility adornment feather canvas sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_canvas_chapter';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Canvas chapter utility organised payload terraces.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-horizon-ledger',
+        category: 'utility',
+        name: 'Horizon ledger utility',
+        description: 'Ledger horizons into gradient lines and mirrored spans.',
+        icon: 'minus',
+        accent: '#38bdf8',
+        tags: ['utility', 'horizon', 'ledger', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Horizon ledgering', sections: 4, emphasise: true, prefix: 'Horizon ledger', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Horizon ledgering' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Horizon ledger' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Horizon ledgering').trim() || 'Horizon ledgering';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Horizon ledger').trim() || 'Horizon ledger';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Horizon ledger utility scaffold terrace horizon sequence 1',
+                'Horizon ledger utility scaffold stack ledger sequence 2',
+                'Horizon ledger utility scaffold ledger line sequence 3',
+                'Horizon ledger utility scaffold panel glow sequence 4',
+                'Horizon ledger utility scaffold canvas ridge sequence 5',
+                'Horizon ledger utility scaffold folio crest sequence 6',
+                'Horizon ledger utility scaffold compartment beam sequence 7',
+                'Horizon ledger utility scaffold parcel dusk sequence 8',
+                'Horizon ledger utility scaffold balustrade horizon sequence 9',
+                'Horizon ledger utility scaffold grid ledger sequence 10',
+                'Horizon ledger utility scaffold terrace line sequence 11',
+                'Horizon ledger utility scaffold stack glow sequence 12',
+                'Horizon ledger utility scaffold ledger ridge sequence 13',
+                'Horizon ledger utility scaffold panel crest sequence 14',
+                'Horizon ledger utility scaffold canvas beam sequence 15',
+                'Horizon ledger utility scaffold folio dusk sequence 16',
+                'Horizon ledger utility scaffold compartment horizon sequence 17',
+                'Horizon ledger utility scaffold parcel ledger sequence 18',
+                'Horizon ledger utility scaffold balustrade line sequence 19',
+                'Horizon ledger utility scaffold grid glow sequence 20',
+                'Horizon ledger utility scaffold terrace ridge sequence 21',
+                'Horizon ledger utility scaffold stack crest sequence 22',
+                'Horizon ledger utility scaffold ledger beam sequence 23',
+                'Horizon ledger utility scaffold panel dusk sequence 24',
+                'Horizon ledger utility scaffold canvas horizon sequence 25',
+            ];
+            const structures = [
+                'Horizon ledger utility structure arch horizon sequence 1',
+                'Horizon ledger utility structure grove ledger sequence 2',
+                'Horizon ledger utility structure harbor line sequence 3',
+                'Horizon ledger utility structure vault glow sequence 4',
+                'Horizon ledger utility structure arcade ridge sequence 5',
+                'Horizon ledger utility structure meadow crest sequence 6',
+                'Horizon ledger utility structure spire beam sequence 7',
+                'Horizon ledger utility structure tunnel dusk sequence 8',
+                'Horizon ledger utility structure causeway horizon sequence 9',
+                'Horizon ledger utility structure hall ledger sequence 10',
+                'Horizon ledger utility structure arch line sequence 11',
+                'Horizon ledger utility structure grove glow sequence 12',
+                'Horizon ledger utility structure harbor ridge sequence 13',
+                'Horizon ledger utility structure vault crest sequence 14',
+                'Horizon ledger utility structure arcade beam sequence 15',
+                'Horizon ledger utility structure meadow dusk sequence 16',
+                'Horizon ledger utility structure spire horizon sequence 17',
+                'Horizon ledger utility structure tunnel ledger sequence 18',
+                'Horizon ledger utility structure causeway line sequence 19',
+                'Horizon ledger utility structure hall glow sequence 20',
+                'Horizon ledger utility structure arch ridge sequence 21',
+                'Horizon ledger utility structure grove crest sequence 22',
+                'Horizon ledger utility structure harbor beam sequence 23',
+                'Horizon ledger utility structure vault dusk sequence 24',
+                'Horizon ledger utility structure arcade horizon sequence 25',
+            ];
+            const signals = [
+                'Horizon ledger utility signal beacon horizon sequence 1',
+                'Horizon ledger utility signal spark ledger sequence 2',
+                'Horizon ledger utility signal signal line sequence 3',
+                'Horizon ledger utility signal marker glow sequence 4',
+                'Horizon ledger utility signal glyph ridge sequence 5',
+                'Horizon ledger utility signal echo crest sequence 6',
+                'Horizon ledger utility signal whisper beam sequence 7',
+                'Horizon ledger utility signal song dusk sequence 8',
+                'Horizon ledger utility signal trail horizon sequence 9',
+                'Horizon ledger utility signal gleam ledger sequence 10',
+                'Horizon ledger utility signal beacon line sequence 11',
+                'Horizon ledger utility signal spark glow sequence 12',
+                'Horizon ledger utility signal signal ridge sequence 13',
+                'Horizon ledger utility signal marker crest sequence 14',
+                'Horizon ledger utility signal glyph beam sequence 15',
+                'Horizon ledger utility signal echo dusk sequence 16',
+                'Horizon ledger utility signal whisper horizon sequence 17',
+                'Horizon ledger utility signal song ledger sequence 18',
+                'Horizon ledger utility signal trail line sequence 19',
+                'Horizon ledger utility signal gleam glow sequence 20',
+                'Horizon ledger utility signal beacon ridge sequence 21',
+                'Horizon ledger utility signal spark crest sequence 22',
+                'Horizon ledger utility signal signal beam sequence 23',
+                'Horizon ledger utility signal marker dusk sequence 24',
+                'Horizon ledger utility signal glyph horizon sequence 25',
+            ];
+            const adornments = [
+                'Horizon ledger utility adornment lantern horizon sequence 1',
+                'Horizon ledger utility adornment rune ledger sequence 2',
+                'Horizon ledger utility adornment ribbon line sequence 3',
+                'Horizon ledger utility adornment petal glow sequence 4',
+                'Horizon ledger utility adornment feather ridge sequence 5',
+                'Horizon ledger utility adornment stone crest sequence 6',
+                'Horizon ledger utility adornment dew beam sequence 7',
+                'Horizon ledger utility adornment light dusk sequence 8',
+                'Horizon ledger utility adornment mirror horizon sequence 9',
+                'Horizon ledger utility adornment glow ledger sequence 10',
+                'Horizon ledger utility adornment lantern line sequence 11',
+                'Horizon ledger utility adornment rune glow sequence 12',
+                'Horizon ledger utility adornment ribbon ridge sequence 13',
+                'Horizon ledger utility adornment petal crest sequence 14',
+                'Horizon ledger utility adornment feather beam sequence 15',
+                'Horizon ledger utility adornment stone dusk sequence 16',
+                'Horizon ledger utility adornment dew horizon sequence 17',
+                'Horizon ledger utility adornment light ledger sequence 18',
+                'Horizon ledger utility adornment mirror line sequence 19',
+                'Horizon ledger utility adornment glow glow sequence 20',
+                'Horizon ledger utility adornment lantern ridge sequence 21',
+                'Horizon ledger utility adornment rune crest sequence 22',
+                'Horizon ledger utility adornment ribbon beam sequence 23',
+                'Horizon ledger utility adornment petal dusk sequence 24',
+                'Horizon ledger utility adornment feather horizon sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_horizon_ledger';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Horizon ledger utility organised payload terraces.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-lantern-cabinet',
+        category: 'utility',
+        name: 'Lantern cabinet utility',
+        description: 'Cabinet lantern insights into carefully tiered shelves.',
+        icon: 'inbox',
+        accent: '#f59e0b',
+        tags: ['utility', 'lantern', 'cabinet', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Lantern cabinet', sections: 4, emphasise: true, prefix: 'Lantern cabinet', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Lantern cabinet' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Lantern cabinet' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Lantern cabinet').trim() || 'Lantern cabinet';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Lantern cabinet').trim() || 'Lantern cabinet';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Lantern cabinet utility scaffold terrace lantern sequence 1',
+                'Lantern cabinet utility scaffold stack cabinet sequence 2',
+                'Lantern cabinet utility scaffold ledger shelf sequence 3',
+                'Lantern cabinet utility scaffold panel glow sequence 4',
+                'Lantern cabinet utility scaffold canvas panel sequence 5',
+                'Lantern cabinet utility scaffold folio pane sequence 6',
+                'Lantern cabinet utility scaffold compartment light sequence 7',
+                'Lantern cabinet utility scaffold parcel spark sequence 8',
+                'Lantern cabinet utility scaffold balustrade lantern sequence 9',
+                'Lantern cabinet utility scaffold grid cabinet sequence 10',
+                'Lantern cabinet utility scaffold terrace shelf sequence 11',
+                'Lantern cabinet utility scaffold stack glow sequence 12',
+                'Lantern cabinet utility scaffold ledger panel sequence 13',
+                'Lantern cabinet utility scaffold panel pane sequence 14',
+                'Lantern cabinet utility scaffold canvas light sequence 15',
+                'Lantern cabinet utility scaffold folio spark sequence 16',
+                'Lantern cabinet utility scaffold compartment lantern sequence 17',
+                'Lantern cabinet utility scaffold parcel cabinet sequence 18',
+                'Lantern cabinet utility scaffold balustrade shelf sequence 19',
+                'Lantern cabinet utility scaffold grid glow sequence 20',
+                'Lantern cabinet utility scaffold terrace panel sequence 21',
+                'Lantern cabinet utility scaffold stack pane sequence 22',
+                'Lantern cabinet utility scaffold ledger light sequence 23',
+                'Lantern cabinet utility scaffold panel spark sequence 24',
+                'Lantern cabinet utility scaffold canvas lantern sequence 25',
+            ];
+            const structures = [
+                'Lantern cabinet utility structure arch lantern sequence 1',
+                'Lantern cabinet utility structure grove cabinet sequence 2',
+                'Lantern cabinet utility structure harbor shelf sequence 3',
+                'Lantern cabinet utility structure vault glow sequence 4',
+                'Lantern cabinet utility structure arcade panel sequence 5',
+                'Lantern cabinet utility structure meadow pane sequence 6',
+                'Lantern cabinet utility structure spire light sequence 7',
+                'Lantern cabinet utility structure tunnel spark sequence 8',
+                'Lantern cabinet utility structure causeway lantern sequence 9',
+                'Lantern cabinet utility structure hall cabinet sequence 10',
+                'Lantern cabinet utility structure arch shelf sequence 11',
+                'Lantern cabinet utility structure grove glow sequence 12',
+                'Lantern cabinet utility structure harbor panel sequence 13',
+                'Lantern cabinet utility structure vault pane sequence 14',
+                'Lantern cabinet utility structure arcade light sequence 15',
+                'Lantern cabinet utility structure meadow spark sequence 16',
+                'Lantern cabinet utility structure spire lantern sequence 17',
+                'Lantern cabinet utility structure tunnel cabinet sequence 18',
+                'Lantern cabinet utility structure causeway shelf sequence 19',
+                'Lantern cabinet utility structure hall glow sequence 20',
+                'Lantern cabinet utility structure arch panel sequence 21',
+                'Lantern cabinet utility structure grove pane sequence 22',
+                'Lantern cabinet utility structure harbor light sequence 23',
+                'Lantern cabinet utility structure vault spark sequence 24',
+                'Lantern cabinet utility structure arcade lantern sequence 25',
+            ];
+            const signals = [
+                'Lantern cabinet utility signal beacon lantern sequence 1',
+                'Lantern cabinet utility signal spark cabinet sequence 2',
+                'Lantern cabinet utility signal signal shelf sequence 3',
+                'Lantern cabinet utility signal marker glow sequence 4',
+                'Lantern cabinet utility signal glyph panel sequence 5',
+                'Lantern cabinet utility signal echo pane sequence 6',
+                'Lantern cabinet utility signal whisper light sequence 7',
+                'Lantern cabinet utility signal song spark sequence 8',
+                'Lantern cabinet utility signal trail lantern sequence 9',
+                'Lantern cabinet utility signal gleam cabinet sequence 10',
+                'Lantern cabinet utility signal beacon shelf sequence 11',
+                'Lantern cabinet utility signal spark glow sequence 12',
+                'Lantern cabinet utility signal signal panel sequence 13',
+                'Lantern cabinet utility signal marker pane sequence 14',
+                'Lantern cabinet utility signal glyph light sequence 15',
+                'Lantern cabinet utility signal echo spark sequence 16',
+                'Lantern cabinet utility signal whisper lantern sequence 17',
+                'Lantern cabinet utility signal song cabinet sequence 18',
+                'Lantern cabinet utility signal trail shelf sequence 19',
+                'Lantern cabinet utility signal gleam glow sequence 20',
+                'Lantern cabinet utility signal beacon panel sequence 21',
+                'Lantern cabinet utility signal spark pane sequence 22',
+                'Lantern cabinet utility signal signal light sequence 23',
+                'Lantern cabinet utility signal marker spark sequence 24',
+                'Lantern cabinet utility signal glyph lantern sequence 25',
+            ];
+            const adornments = [
+                'Lantern cabinet utility adornment lantern lantern sequence 1',
+                'Lantern cabinet utility adornment rune cabinet sequence 2',
+                'Lantern cabinet utility adornment ribbon shelf sequence 3',
+                'Lantern cabinet utility adornment petal glow sequence 4',
+                'Lantern cabinet utility adornment feather panel sequence 5',
+                'Lantern cabinet utility adornment stone pane sequence 6',
+                'Lantern cabinet utility adornment dew light sequence 7',
+                'Lantern cabinet utility adornment light spark sequence 8',
+                'Lantern cabinet utility adornment mirror lantern sequence 9',
+                'Lantern cabinet utility adornment glow cabinet sequence 10',
+                'Lantern cabinet utility adornment lantern shelf sequence 11',
+                'Lantern cabinet utility adornment rune glow sequence 12',
+                'Lantern cabinet utility adornment ribbon panel sequence 13',
+                'Lantern cabinet utility adornment petal pane sequence 14',
+                'Lantern cabinet utility adornment feather light sequence 15',
+                'Lantern cabinet utility adornment stone spark sequence 16',
+                'Lantern cabinet utility adornment dew lantern sequence 17',
+                'Lantern cabinet utility adornment light cabinet sequence 18',
+                'Lantern cabinet utility adornment mirror shelf sequence 19',
+                'Lantern cabinet utility adornment glow glow sequence 20',
+                'Lantern cabinet utility adornment lantern panel sequence 21',
+                'Lantern cabinet utility adornment rune pane sequence 22',
+                'Lantern cabinet utility adornment ribbon light sequence 23',
+                'Lantern cabinet utility adornment petal spark sequence 24',
+                'Lantern cabinet utility adornment feather lantern sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_lantern_cabinet';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Lantern cabinet utility organised payload terraces.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-orbit-index',
+        category: 'utility',
+        name: 'Orbit index utility',
+        description: 'Index orbits into nested tracks and swirling labels.',
+        icon: 'refresh-cw',
+        accent: '#22d3ee',
+        tags: ['utility', 'orbit', 'index', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Orbit indexing', sections: 4, emphasise: true, prefix: 'Orbit index', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Orbit indexing' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Orbit index' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Orbit indexing').trim() || 'Orbit indexing';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Orbit index').trim() || 'Orbit index';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Orbit index utility scaffold terrace orbit sequence 1',
+                'Orbit index utility scaffold stack index sequence 2',
+                'Orbit index utility scaffold ledger track sequence 3',
+                'Orbit index utility scaffold panel loop sequence 4',
+                'Orbit index utility scaffold canvas planet sequence 5',
+                'Orbit index utility scaffold folio ring sequence 6',
+                'Orbit index utility scaffold compartment axis sequence 7',
+                'Orbit index utility scaffold parcel signal sequence 8',
+                'Orbit index utility scaffold balustrade orbit sequence 9',
+                'Orbit index utility scaffold grid index sequence 10',
+                'Orbit index utility scaffold terrace track sequence 11',
+                'Orbit index utility scaffold stack loop sequence 12',
+                'Orbit index utility scaffold ledger planet sequence 13',
+                'Orbit index utility scaffold panel ring sequence 14',
+                'Orbit index utility scaffold canvas axis sequence 15',
+                'Orbit index utility scaffold folio signal sequence 16',
+                'Orbit index utility scaffold compartment orbit sequence 17',
+                'Orbit index utility scaffold parcel index sequence 18',
+                'Orbit index utility scaffold balustrade track sequence 19',
+                'Orbit index utility scaffold grid loop sequence 20',
+                'Orbit index utility scaffold terrace planet sequence 21',
+                'Orbit index utility scaffold stack ring sequence 22',
+                'Orbit index utility scaffold ledger axis sequence 23',
+                'Orbit index utility scaffold panel signal sequence 24',
+                'Orbit index utility scaffold canvas orbit sequence 25',
+            ];
+            const structures = [
+                'Orbit index utility structure arch orbit sequence 1',
+                'Orbit index utility structure grove index sequence 2',
+                'Orbit index utility structure harbor track sequence 3',
+                'Orbit index utility structure vault loop sequence 4',
+                'Orbit index utility structure arcade planet sequence 5',
+                'Orbit index utility structure meadow ring sequence 6',
+                'Orbit index utility structure spire axis sequence 7',
+                'Orbit index utility structure tunnel signal sequence 8',
+                'Orbit index utility structure causeway orbit sequence 9',
+                'Orbit index utility structure hall index sequence 10',
+                'Orbit index utility structure arch track sequence 11',
+                'Orbit index utility structure grove loop sequence 12',
+                'Orbit index utility structure harbor planet sequence 13',
+                'Orbit index utility structure vault ring sequence 14',
+                'Orbit index utility structure arcade axis sequence 15',
+                'Orbit index utility structure meadow signal sequence 16',
+                'Orbit index utility structure spire orbit sequence 17',
+                'Orbit index utility structure tunnel index sequence 18',
+                'Orbit index utility structure causeway track sequence 19',
+                'Orbit index utility structure hall loop sequence 20',
+                'Orbit index utility structure arch planet sequence 21',
+                'Orbit index utility structure grove ring sequence 22',
+                'Orbit index utility structure harbor axis sequence 23',
+                'Orbit index utility structure vault signal sequence 24',
+                'Orbit index utility structure arcade orbit sequence 25',
+            ];
+            const signals = [
+                'Orbit index utility signal beacon orbit sequence 1',
+                'Orbit index utility signal spark index sequence 2',
+                'Orbit index utility signal signal track sequence 3',
+                'Orbit index utility signal marker loop sequence 4',
+                'Orbit index utility signal glyph planet sequence 5',
+                'Orbit index utility signal echo ring sequence 6',
+                'Orbit index utility signal whisper axis sequence 7',
+                'Orbit index utility signal song signal sequence 8',
+                'Orbit index utility signal trail orbit sequence 9',
+                'Orbit index utility signal gleam index sequence 10',
+                'Orbit index utility signal beacon track sequence 11',
+                'Orbit index utility signal spark loop sequence 12',
+                'Orbit index utility signal signal planet sequence 13',
+                'Orbit index utility signal marker ring sequence 14',
+                'Orbit index utility signal glyph axis sequence 15',
+                'Orbit index utility signal echo signal sequence 16',
+                'Orbit index utility signal whisper orbit sequence 17',
+                'Orbit index utility signal song index sequence 18',
+                'Orbit index utility signal trail track sequence 19',
+                'Orbit index utility signal gleam loop sequence 20',
+                'Orbit index utility signal beacon planet sequence 21',
+                'Orbit index utility signal spark ring sequence 22',
+                'Orbit index utility signal signal axis sequence 23',
+                'Orbit index utility signal marker signal sequence 24',
+                'Orbit index utility signal glyph orbit sequence 25',
+            ];
+            const adornments = [
+                'Orbit index utility adornment lantern orbit sequence 1',
+                'Orbit index utility adornment rune index sequence 2',
+                'Orbit index utility adornment ribbon track sequence 3',
+                'Orbit index utility adornment petal loop sequence 4',
+                'Orbit index utility adornment feather planet sequence 5',
+                'Orbit index utility adornment stone ring sequence 6',
+                'Orbit index utility adornment dew axis sequence 7',
+                'Orbit index utility adornment light signal sequence 8',
+                'Orbit index utility adornment mirror orbit sequence 9',
+                'Orbit index utility adornment glow index sequence 10',
+                'Orbit index utility adornment lantern track sequence 11',
+                'Orbit index utility adornment rune loop sequence 12',
+                'Orbit index utility adornment ribbon planet sequence 13',
+                'Orbit index utility adornment petal ring sequence 14',
+                'Orbit index utility adornment feather axis sequence 15',
+                'Orbit index utility adornment stone signal sequence 16',
+                'Orbit index utility adornment dew orbit sequence 17',
+                'Orbit index utility adornment light index sequence 18',
+                'Orbit index utility adornment mirror track sequence 19',
+                'Orbit index utility adornment glow loop sequence 20',
+                'Orbit index utility adornment lantern planet sequence 21',
+                'Orbit index utility adornment rune ring sequence 22',
+                'Orbit index utility adornment ribbon axis sequence 23',
+                'Orbit index utility adornment petal signal sequence 24',
+                'Orbit index utility adornment feather orbit sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_orbit_index';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Orbit index utility organised payload terraces.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-ember-codex',
+        category: 'utility',
+        name: 'Ember codex utility',
+        description: 'Codify embers into glowing indexes and warm folios.',
+        icon: 'book',
+        accent: '#fb7185',
+        tags: ['utility', 'ember', 'codex', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Ember codex', sections: 4, emphasise: true, prefix: 'Ember codex', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Ember codex' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Ember codex' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Ember codex').trim() || 'Ember codex';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Ember codex').trim() || 'Ember codex';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Ember codex utility scaffold terrace ember sequence 1',
+                'Ember codex utility scaffold stack codex sequence 2',
+                'Ember codex utility scaffold ledger page sequence 3',
+                'Ember codex utility scaffold panel glow sequence 4',
+                'Ember codex utility scaffold canvas script sequence 5',
+                'Ember codex utility scaffold folio ash sequence 6',
+                'Ember codex utility scaffold compartment emberline sequence 7',
+                'Ember codex utility scaffold parcel glyph sequence 8',
+                'Ember codex utility scaffold balustrade ember sequence 9',
+                'Ember codex utility scaffold grid codex sequence 10',
+                'Ember codex utility scaffold terrace page sequence 11',
+                'Ember codex utility scaffold stack glow sequence 12',
+                'Ember codex utility scaffold ledger script sequence 13',
+                'Ember codex utility scaffold panel ash sequence 14',
+                'Ember codex utility scaffold canvas emberline sequence 15',
+                'Ember codex utility scaffold folio glyph sequence 16',
+                'Ember codex utility scaffold compartment ember sequence 17',
+                'Ember codex utility scaffold parcel codex sequence 18',
+                'Ember codex utility scaffold balustrade page sequence 19',
+                'Ember codex utility scaffold grid glow sequence 20',
+                'Ember codex utility scaffold terrace script sequence 21',
+                'Ember codex utility scaffold stack ash sequence 22',
+                'Ember codex utility scaffold ledger emberline sequence 23',
+                'Ember codex utility scaffold panel glyph sequence 24',
+                'Ember codex utility scaffold canvas ember sequence 25',
+            ];
+            const structures = [
+                'Ember codex utility structure arch ember sequence 1',
+                'Ember codex utility structure grove codex sequence 2',
+                'Ember codex utility structure harbor page sequence 3',
+                'Ember codex utility structure vault glow sequence 4',
+                'Ember codex utility structure arcade script sequence 5',
+                'Ember codex utility structure meadow ash sequence 6',
+                'Ember codex utility structure spire emberline sequence 7',
+                'Ember codex utility structure tunnel glyph sequence 8',
+                'Ember codex utility structure causeway ember sequence 9',
+                'Ember codex utility structure hall codex sequence 10',
+                'Ember codex utility structure arch page sequence 11',
+                'Ember codex utility structure grove glow sequence 12',
+                'Ember codex utility structure harbor script sequence 13',
+                'Ember codex utility structure vault ash sequence 14',
+                'Ember codex utility structure arcade emberline sequence 15',
+                'Ember codex utility structure meadow glyph sequence 16',
+                'Ember codex utility structure spire ember sequence 17',
+                'Ember codex utility structure tunnel codex sequence 18',
+                'Ember codex utility structure causeway page sequence 19',
+                'Ember codex utility structure hall glow sequence 20',
+                'Ember codex utility structure arch script sequence 21',
+                'Ember codex utility structure grove ash sequence 22',
+                'Ember codex utility structure harbor emberline sequence 23',
+                'Ember codex utility structure vault glyph sequence 24',
+                'Ember codex utility structure arcade ember sequence 25',
+            ];
+            const signals = [
+                'Ember codex utility signal beacon ember sequence 1',
+                'Ember codex utility signal spark codex sequence 2',
+                'Ember codex utility signal signal page sequence 3',
+                'Ember codex utility signal marker glow sequence 4',
+                'Ember codex utility signal glyph script sequence 5',
+                'Ember codex utility signal echo ash sequence 6',
+                'Ember codex utility signal whisper emberline sequence 7',
+                'Ember codex utility signal song glyph sequence 8',
+                'Ember codex utility signal trail ember sequence 9',
+                'Ember codex utility signal gleam codex sequence 10',
+                'Ember codex utility signal beacon page sequence 11',
+                'Ember codex utility signal spark glow sequence 12',
+                'Ember codex utility signal signal script sequence 13',
+                'Ember codex utility signal marker ash sequence 14',
+                'Ember codex utility signal glyph emberline sequence 15',
+                'Ember codex utility signal echo glyph sequence 16',
+                'Ember codex utility signal whisper ember sequence 17',
+                'Ember codex utility signal song codex sequence 18',
+                'Ember codex utility signal trail page sequence 19',
+                'Ember codex utility signal gleam glow sequence 20',
+                'Ember codex utility signal beacon script sequence 21',
+                'Ember codex utility signal spark ash sequence 22',
+                'Ember codex utility signal signal emberline sequence 23',
+                'Ember codex utility signal marker glyph sequence 24',
+                'Ember codex utility signal glyph ember sequence 25',
+            ];
+            const adornments = [
+                'Ember codex utility adornment lantern ember sequence 1',
+                'Ember codex utility adornment rune codex sequence 2',
+                'Ember codex utility adornment ribbon page sequence 3',
+                'Ember codex utility adornment petal glow sequence 4',
+                'Ember codex utility adornment feather script sequence 5',
+                'Ember codex utility adornment stone ash sequence 6',
+                'Ember codex utility adornment dew emberline sequence 7',
+                'Ember codex utility adornment light glyph sequence 8',
+                'Ember codex utility adornment mirror ember sequence 9',
+                'Ember codex utility adornment glow codex sequence 10',
+                'Ember codex utility adornment lantern page sequence 11',
+                'Ember codex utility adornment rune glow sequence 12',
+                'Ember codex utility adornment ribbon script sequence 13',
+                'Ember codex utility adornment petal ash sequence 14',
+                'Ember codex utility adornment feather emberline sequence 15',
+                'Ember codex utility adornment stone glyph sequence 16',
+                'Ember codex utility adornment dew ember sequence 17',
+                'Ember codex utility adornment light codex sequence 18',
+                'Ember codex utility adornment mirror page sequence 19',
+                'Ember codex utility adornment glow glow sequence 20',
+                'Ember codex utility adornment lantern script sequence 21',
+                'Ember codex utility adornment rune ash sequence 22',
+                'Ember codex utility adornment ribbon emberline sequence 23',
+                'Ember codex utility adornment petal glyph sequence 24',
+                'Ember codex utility adornment feather ember sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_ember_codex';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Ember codex utility organised payload terraces.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-mariner-catalog',
+        category: 'utility',
+        name: 'Mariner catalog utility',
+        description: 'Catalog payload harbors for mariner charts and keys.',
+        icon: 'compass',
+        accent: '#0ea5e9',
+        tags: ['utility', 'mariner', 'catalog', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Mariner catalog', sections: 4, emphasise: true, prefix: 'Mariner catalog', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Mariner catalog' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Mariner catalog' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Mariner catalog').trim() || 'Mariner catalog';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Mariner catalog').trim() || 'Mariner catalog';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Mariner catalog utility scaffold terrace mariner sequence 1',
+                'Mariner catalog utility scaffold stack catalog sequence 2',
+                'Mariner catalog utility scaffold ledger helm sequence 3',
+                'Mariner catalog utility scaffold panel chart sequence 4',
+                'Mariner catalog utility scaffold canvas tide sequence 5',
+                'Mariner catalog utility scaffold folio isle sequence 6',
+                'Mariner catalog utility scaffold compartment star sequence 7',
+                'Mariner catalog utility scaffold parcel wake sequence 8',
+                'Mariner catalog utility scaffold balustrade mariner sequence 9',
+                'Mariner catalog utility scaffold grid catalog sequence 10',
+                'Mariner catalog utility scaffold terrace helm sequence 11',
+                'Mariner catalog utility scaffold stack chart sequence 12',
+                'Mariner catalog utility scaffold ledger tide sequence 13',
+                'Mariner catalog utility scaffold panel isle sequence 14',
+                'Mariner catalog utility scaffold canvas star sequence 15',
+                'Mariner catalog utility scaffold folio wake sequence 16',
+                'Mariner catalog utility scaffold compartment mariner sequence 17',
+                'Mariner catalog utility scaffold parcel catalog sequence 18',
+                'Mariner catalog utility scaffold balustrade helm sequence 19',
+                'Mariner catalog utility scaffold grid chart sequence 20',
+                'Mariner catalog utility scaffold terrace tide sequence 21',
+                'Mariner catalog utility scaffold stack isle sequence 22',
+                'Mariner catalog utility scaffold ledger star sequence 23',
+                'Mariner catalog utility scaffold panel wake sequence 24',
+                'Mariner catalog utility scaffold canvas mariner sequence 25',
+            ];
+            const structures = [
+                'Mariner catalog utility structure arch mariner sequence 1',
+                'Mariner catalog utility structure grove catalog sequence 2',
+                'Mariner catalog utility structure harbor helm sequence 3',
+                'Mariner catalog utility structure vault chart sequence 4',
+                'Mariner catalog utility structure arcade tide sequence 5',
+                'Mariner catalog utility structure meadow isle sequence 6',
+                'Mariner catalog utility structure spire star sequence 7',
+                'Mariner catalog utility structure tunnel wake sequence 8',
+                'Mariner catalog utility structure causeway mariner sequence 9',
+                'Mariner catalog utility structure hall catalog sequence 10',
+                'Mariner catalog utility structure arch helm sequence 11',
+                'Mariner catalog utility structure grove chart sequence 12',
+                'Mariner catalog utility structure harbor tide sequence 13',
+                'Mariner catalog utility structure vault isle sequence 14',
+                'Mariner catalog utility structure arcade star sequence 15',
+                'Mariner catalog utility structure meadow wake sequence 16',
+                'Mariner catalog utility structure spire mariner sequence 17',
+                'Mariner catalog utility structure tunnel catalog sequence 18',
+                'Mariner catalog utility structure causeway helm sequence 19',
+                'Mariner catalog utility structure hall chart sequence 20',
+                'Mariner catalog utility structure arch tide sequence 21',
+                'Mariner catalog utility structure grove isle sequence 22',
+                'Mariner catalog utility structure harbor star sequence 23',
+                'Mariner catalog utility structure vault wake sequence 24',
+                'Mariner catalog utility structure arcade mariner sequence 25',
+            ];
+            const signals = [
+                'Mariner catalog utility signal beacon mariner sequence 1',
+                'Mariner catalog utility signal spark catalog sequence 2',
+                'Mariner catalog utility signal signal helm sequence 3',
+                'Mariner catalog utility signal marker chart sequence 4',
+                'Mariner catalog utility signal glyph tide sequence 5',
+                'Mariner catalog utility signal echo isle sequence 6',
+                'Mariner catalog utility signal whisper star sequence 7',
+                'Mariner catalog utility signal song wake sequence 8',
+                'Mariner catalog utility signal trail mariner sequence 9',
+                'Mariner catalog utility signal gleam catalog sequence 10',
+                'Mariner catalog utility signal beacon helm sequence 11',
+                'Mariner catalog utility signal spark chart sequence 12',
+                'Mariner catalog utility signal signal tide sequence 13',
+                'Mariner catalog utility signal marker isle sequence 14',
+                'Mariner catalog utility signal glyph star sequence 15',
+                'Mariner catalog utility signal echo wake sequence 16',
+                'Mariner catalog utility signal whisper mariner sequence 17',
+                'Mariner catalog utility signal song catalog sequence 18',
+                'Mariner catalog utility signal trail helm sequence 19',
+                'Mariner catalog utility signal gleam chart sequence 20',
+                'Mariner catalog utility signal beacon tide sequence 21',
+                'Mariner catalog utility signal spark isle sequence 22',
+                'Mariner catalog utility signal signal star sequence 23',
+                'Mariner catalog utility signal marker wake sequence 24',
+                'Mariner catalog utility signal glyph mariner sequence 25',
+            ];
+            const adornments = [
+                'Mariner catalog utility adornment lantern mariner sequence 1',
+                'Mariner catalog utility adornment rune catalog sequence 2',
+                'Mariner catalog utility adornment ribbon helm sequence 3',
+                'Mariner catalog utility adornment petal chart sequence 4',
+                'Mariner catalog utility adornment feather tide sequence 5',
+                'Mariner catalog utility adornment stone isle sequence 6',
+                'Mariner catalog utility adornment dew star sequence 7',
+                'Mariner catalog utility adornment light wake sequence 8',
+                'Mariner catalog utility adornment mirror mariner sequence 9',
+                'Mariner catalog utility adornment glow catalog sequence 10',
+                'Mariner catalog utility adornment lantern helm sequence 11',
+                'Mariner catalog utility adornment rune chart sequence 12',
+                'Mariner catalog utility adornment ribbon tide sequence 13',
+                'Mariner catalog utility adornment petal isle sequence 14',
+                'Mariner catalog utility adornment feather star sequence 15',
+                'Mariner catalog utility adornment stone wake sequence 16',
+                'Mariner catalog utility adornment dew mariner sequence 17',
+                'Mariner catalog utility adornment light catalog sequence 18',
+                'Mariner catalog utility adornment mirror helm sequence 19',
+                'Mariner catalog utility adornment glow chart sequence 20',
+                'Mariner catalog utility adornment lantern tide sequence 21',
+                'Mariner catalog utility adornment rune isle sequence 22',
+                'Mariner catalog utility adornment ribbon star sequence 23',
+                'Mariner catalog utility adornment petal wake sequence 24',
+                'Mariner catalog utility adornment feather mariner sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_mariner_catalog';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Mariner catalog utility organised payload terraces.');
+            return [clone];
+        }
+    },
+    {
+        id: 'fantasy-utility-summit-almanac',
+        category: 'utility',
+        name: 'Summit almanac utility',
+        description: 'Almanac payload peaks into summit-ready annotations.',
+        icon: 'bar-chart-2',
+        accent: '#f97316',
+        tags: ['utility', 'summit', 'almanac', 'fantasy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'Summit almanac', sections: 4, emphasise: true, prefix: 'Summit almanac', annotate: true },
+        form: [
+            { key: 'mode', label: 'Mode', type: 'text', placeholder: 'Summit almanac' },
+            { key: 'sections', label: 'Sections', type: 'number', min: 1, max: 12 },
+            { key: 'emphasise', label: 'Emphasise highlights', type: 'checkbox' },
+            { key: 'prefix', label: 'Prefix', type: 'text', placeholder: 'Summit almanac' },
+            { key: 'annotate', label: 'Add annotations', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const basePayload = QuickActionTools.toText(clone.payload ?? '');
+            const mode = (config?.mode || 'Summit almanac').trim() || 'Summit almanac';
+            const sections = Math.max(1, parseInt(config?.sections, 10) || 1);
+            const emphasise = config?.emphasise !== false;
+            const prefix = (config?.prefix || 'Summit almanac').trim() || 'Summit almanac';
+            const annotate = config?.annotate !== false;
+            const scaffolding = [
+                'Summit almanac utility scaffold terrace summit sequence 1',
+                'Summit almanac utility scaffold stack almanac sequence 2',
+                'Summit almanac utility scaffold ledger peak sequence 3',
+                'Summit almanac utility scaffold panel ridge sequence 4',
+                'Summit almanac utility scaffold canvas climb sequence 5',
+                'Summit almanac utility scaffold folio log sequence 6',
+                'Summit almanac utility scaffold compartment crest sequence 7',
+                'Summit almanac utility scaffold parcel snow sequence 8',
+                'Summit almanac utility scaffold balustrade summit sequence 9',
+                'Summit almanac utility scaffold grid almanac sequence 10',
+                'Summit almanac utility scaffold terrace peak sequence 11',
+                'Summit almanac utility scaffold stack ridge sequence 12',
+                'Summit almanac utility scaffold ledger climb sequence 13',
+                'Summit almanac utility scaffold panel log sequence 14',
+                'Summit almanac utility scaffold canvas crest sequence 15',
+                'Summit almanac utility scaffold folio snow sequence 16',
+                'Summit almanac utility scaffold compartment summit sequence 17',
+                'Summit almanac utility scaffold parcel almanac sequence 18',
+                'Summit almanac utility scaffold balustrade peak sequence 19',
+                'Summit almanac utility scaffold grid ridge sequence 20',
+                'Summit almanac utility scaffold terrace climb sequence 21',
+                'Summit almanac utility scaffold stack log sequence 22',
+                'Summit almanac utility scaffold ledger crest sequence 23',
+                'Summit almanac utility scaffold panel snow sequence 24',
+                'Summit almanac utility scaffold canvas summit sequence 25',
+            ];
+            const structures = [
+                'Summit almanac utility structure arch summit sequence 1',
+                'Summit almanac utility structure grove almanac sequence 2',
+                'Summit almanac utility structure harbor peak sequence 3',
+                'Summit almanac utility structure vault ridge sequence 4',
+                'Summit almanac utility structure arcade climb sequence 5',
+                'Summit almanac utility structure meadow log sequence 6',
+                'Summit almanac utility structure spire crest sequence 7',
+                'Summit almanac utility structure tunnel snow sequence 8',
+                'Summit almanac utility structure causeway summit sequence 9',
+                'Summit almanac utility structure hall almanac sequence 10',
+                'Summit almanac utility structure arch peak sequence 11',
+                'Summit almanac utility structure grove ridge sequence 12',
+                'Summit almanac utility structure harbor climb sequence 13',
+                'Summit almanac utility structure vault log sequence 14',
+                'Summit almanac utility structure arcade crest sequence 15',
+                'Summit almanac utility structure meadow snow sequence 16',
+                'Summit almanac utility structure spire summit sequence 17',
+                'Summit almanac utility structure tunnel almanac sequence 18',
+                'Summit almanac utility structure causeway peak sequence 19',
+                'Summit almanac utility structure hall ridge sequence 20',
+                'Summit almanac utility structure arch climb sequence 21',
+                'Summit almanac utility structure grove log sequence 22',
+                'Summit almanac utility structure harbor crest sequence 23',
+                'Summit almanac utility structure vault snow sequence 24',
+                'Summit almanac utility structure arcade summit sequence 25',
+            ];
+            const signals = [
+                'Summit almanac utility signal beacon summit sequence 1',
+                'Summit almanac utility signal spark almanac sequence 2',
+                'Summit almanac utility signal signal peak sequence 3',
+                'Summit almanac utility signal marker ridge sequence 4',
+                'Summit almanac utility signal glyph climb sequence 5',
+                'Summit almanac utility signal echo log sequence 6',
+                'Summit almanac utility signal whisper crest sequence 7',
+                'Summit almanac utility signal song snow sequence 8',
+                'Summit almanac utility signal trail summit sequence 9',
+                'Summit almanac utility signal gleam almanac sequence 10',
+                'Summit almanac utility signal beacon peak sequence 11',
+                'Summit almanac utility signal spark ridge sequence 12',
+                'Summit almanac utility signal signal climb sequence 13',
+                'Summit almanac utility signal marker log sequence 14',
+                'Summit almanac utility signal glyph crest sequence 15',
+                'Summit almanac utility signal echo snow sequence 16',
+                'Summit almanac utility signal whisper summit sequence 17',
+                'Summit almanac utility signal song almanac sequence 18',
+                'Summit almanac utility signal trail peak sequence 19',
+                'Summit almanac utility signal gleam ridge sequence 20',
+                'Summit almanac utility signal beacon climb sequence 21',
+                'Summit almanac utility signal spark log sequence 22',
+                'Summit almanac utility signal signal crest sequence 23',
+                'Summit almanac utility signal marker snow sequence 24',
+                'Summit almanac utility signal glyph summit sequence 25',
+            ];
+            const adornments = [
+                'Summit almanac utility adornment lantern summit sequence 1',
+                'Summit almanac utility adornment rune almanac sequence 2',
+                'Summit almanac utility adornment ribbon peak sequence 3',
+                'Summit almanac utility adornment petal ridge sequence 4',
+                'Summit almanac utility adornment feather climb sequence 5',
+                'Summit almanac utility adornment stone log sequence 6',
+                'Summit almanac utility adornment dew crest sequence 7',
+                'Summit almanac utility adornment light snow sequence 8',
+                'Summit almanac utility adornment mirror summit sequence 9',
+                'Summit almanac utility adornment glow almanac sequence 10',
+                'Summit almanac utility adornment lantern peak sequence 11',
+                'Summit almanac utility adornment rune ridge sequence 12',
+                'Summit almanac utility adornment ribbon climb sequence 13',
+                'Summit almanac utility adornment petal log sequence 14',
+                'Summit almanac utility adornment feather crest sequence 15',
+                'Summit almanac utility adornment stone snow sequence 16',
+                'Summit almanac utility adornment dew summit sequence 17',
+                'Summit almanac utility adornment light almanac sequence 18',
+                'Summit almanac utility adornment mirror peak sequence 19',
+                'Summit almanac utility adornment glow ridge sequence 20',
+                'Summit almanac utility adornment lantern climb sequence 21',
+                'Summit almanac utility adornment rune log sequence 22',
+                'Summit almanac utility adornment ribbon crest sequence 23',
+                'Summit almanac utility adornment petal snow sequence 24',
+                'Summit almanac utility adornment feather summit sequence 25',
+            ];
+            const organised = [];
+            for (let segment = 0; segment < sections; segment++) {
+                for (let index = 0; index < scaffolding.length; index++) {
+                    const scaffold = scaffolding[index];
+                    const structure = structures[(index + segment) % structures.length];
+                    const signal = signals[(index + segment * 2) % signals.length];
+                    const adornment = adornments[(index + segment * 3) % adornments.length];
+                    const emphasis = emphasise && index % 2 === 0 ? 'highlight' : 'soft';
+                    organised.push(`${prefix} | ${mode} | section ${segment + 1} | ${scaffold} | ${structure} | ${signal} | ${adornment} | emphasis ${emphasis}`);
+                }
+            }
+            const annotations = [];
+            organised.forEach((entry, index) => {
+                annotations.push(`${index + 1} :: ${entry}`);
+                if (annotate && index % 3 === 0) {
+                    annotations.push(`note ${index + 1} :: ${prefix} anchors ${mode}`);
+                }
+                if (annotate && index % 5 === 0) {
+                    annotations.push(`guide ${index + 1} :: signal ${signals[index % signals.length]}`);
+                }
+            });
+            const cleaned = [];
+            const seen = new Set();
+            annotations.forEach((item) => {
+                if (!seen.has(item)) {
+                    cleaned.push(item);
+                    seen.add(item);
+                }
+            });
+            const base = basePayload.trim();
+            if (base) {
+                cleaned.unshift(`base::${base}`);
+            }
+            const newlineChar = String.fromCharCode(10);
+            const safeKey = 'fantasy_utility_summit_almanac';
+            clone.vars[`${safeKey}_mode`] = mode;
+            clone.vars[`${safeKey}_sections`] = sections;
+            clone.vars[`${safeKey}_entries`] = cleaned.length;
+            clone.payload = cleaned.join(newlineChar);
+            clone.logs.push('Summit almanac utility organised payload terraces.');
+            return [clone];
+        }
+    }
+];
 QuickActionModuleDefinitions.push(...QuickActionAdditionalModules);
+QuickActionModuleDefinitions.push(...QuickActionFantasyModules);
 
 const QuickActionModuleMap = new Map();
 const QuickActionModulesByCategory = { triggers: [], actions: [], utilities: [] };
