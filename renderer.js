@@ -14565,7 +14565,12 @@ const QuickActionLab = {
         }
 
         moduleDef.form.forEach(field => {
-            const label = Utils.createElement('label', { text: field.label || field.key });
+            // Try to translate field label
+            const labelText = field.label || field.key;
+            const translationKey = `form_field_${labelText.toLowerCase().replace(/\s+/g, '_')}`;
+            const translatedLabel = LocalizationRenderer.t(translationKey);
+            const finalLabel = (translatedLabel && !translatedLabel.startsWith('Missing:')) ? translatedLabel : labelText;
+            const label = Utils.createElement('label', { text: finalLabel });
             container.appendChild(label);
 
             const currentValue = node.config?.[field.key] ?? moduleDef.defaultConfig?.[field.key] ?? '';
@@ -14577,6 +14582,22 @@ const QuickActionLab = {
                     }
                 });
                 container.appendChild(selectWrapper);
+                return;
+            }
+
+            // Handle checkbox with iOS-style toggle switch
+            if (field.type === 'checkbox') {
+                const toggleLabel = Utils.createElement('label', { className: 'toggle-switch-ios' });
+                const toggleInput = document.createElement('input');
+                toggleInput.type = 'checkbox';
+                toggleInput.checked = currentValue === true || currentValue === 'true';
+                toggleInput.addEventListener('change', () => {
+                    this.updateNodeConfig(node.id, field.key, toggleInput.checked);
+                });
+                const slider = Utils.createElement('span', { className: 'slider' });
+                toggleLabel.appendChild(toggleInput);
+                toggleLabel.appendChild(slider);
+                container.appendChild(toggleLabel);
                 return;
             }
 
@@ -14618,9 +14639,16 @@ const QuickActionLab = {
 
         const labelSpan = document.createElement('span');
         const matchingOption = options.find(option => option.value === currentValue);
-        labelSpan.textContent = matchingOption
-            ? (matchingOption.label || matchingOption.value)
-            : (currentValue || field.placeholder || '');
+        let optionLabelText = '';
+        if (matchingOption) {
+            const optLabel = matchingOption.label || matchingOption.value;
+            const optTransKey = `form_field_${String(optLabel).toLowerCase().replace(/\s+/g, '_')}`;
+            const optTranslated = LocalizationRenderer.t(optTransKey);
+            optionLabelText = (optTranslated && !optTranslated.startsWith('Missing:')) ? optTranslated : optLabel;
+        } else {
+            optionLabelText = currentValue || field.placeholder || '';
+        }
+        labelSpan.textContent = optionLabelText;
         trigger.appendChild(labelSpan);
 
         const arrow = document.createElement('span');
@@ -14648,7 +14676,10 @@ const QuickActionLab = {
                 optionEl.dataset.value = option.value;
 
                 const optionSpan = document.createElement('span');
-                optionSpan.textContent = option.label || option.value;
+                const rawLabel = option.label || option.value;
+                const transKey = `form_field_${String(rawLabel).toLowerCase().replace(/\s+/g, '_')}`;
+                const translated = LocalizationRenderer.t(transKey);
+                optionSpan.textContent = (translated && !translated.startsWith('Missing:')) ? translated : rawLabel;
                 optionEl.appendChild(optionSpan);
 
                 if (option.value === currentValue) {
@@ -14883,6 +14914,58 @@ const QuickActionLab = {
 
     addNode(moduleId) {
         if (!this.builderState) return;
+        
+        // If adding a trigger (except manual-trigger), remove ALL existing triggers including manual-trigger
+        const moduleDef = QuickActionModuleMap.get(moduleId);
+        if (moduleDef && moduleDef.category === 'trigger' && moduleId !== 'manual-trigger') {
+            // Remove ALL existing trigger nodes (including manual-trigger)
+            const triggersToRemove = this.builderState.nodes.filter(node => {
+                const nodeMod = QuickActionModuleMap.get(node.moduleId);
+                return nodeMod && nodeMod.category === 'trigger';
+            });
+            
+            if (triggersToRemove.length > 0) {
+                const triggerIds = new Set(triggersToRemove.map(n => n.id));
+                
+                // Find nodes that were connected to the old triggers (to reconnect them)
+                const nextNodes = new Set();
+                this.builderState.connections.forEach(conn => {
+                    if (triggerIds.has(conn.from?.nodeId)) {
+                        nextNodes.add(conn.to?.nodeId);
+                    }
+                });
+                
+                // Remove trigger nodes and their connections
+                this.builderState.nodes = this.builderState.nodes.filter(node => !triggerIds.has(node.id));
+                this.builderState.connections = this.builderState.connections.filter(conn => 
+                    !triggerIds.has(conn.from?.nodeId) && !triggerIds.has(conn.to?.nodeId)
+                );
+                
+                // Clear selection if removed node was selected
+                if (triggerIds.has(this.builderState.selectedNodeId)) {
+                    this.builderState.selectedNodeId = null;
+                }
+                
+                // Add new trigger at the position of the first removed trigger
+                const firstTrigger = triggersToRemove[0];
+                const position = firstTrigger ? firstTrigger.position : { x: 120, y: 200 };
+                const node = this.createNodeDefinition(moduleId, position);
+                this.builderState.nodes.unshift(node);
+                this.builderState.selectedNodeId = node.id;
+                
+                // Reconnect to next nodes
+                nextNodes.forEach(nextNodeId => {
+                    const nextNode = this.builderState.nodes.find(n => n.id === nextNodeId);
+                    if (nextNode) {
+                        this.createConnection(node.id, 'next', nextNodeId, 'input');
+                    }
+                });
+                
+                this.renderBuilder();
+                return;
+            }
+        }
+        
         const position = { x: 260 + this.builderState.nodes.length * 120, y: 220 + (this.builderState.nodes.length % 3) * 110 };
         const node = this.createNodeDefinition(moduleId, position);
         this.builderState.nodes.push(node);
