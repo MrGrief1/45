@@ -159,6 +159,19 @@ body.no-animations * {
   transition: none !important;
   animation: none !important;
 }
+
+/* Исключение для builder-модального окна - анимации должны работать всегда */
+body.no-animations .quick-action-builder-modal,
+body.no-animations .quick-action-builder-modal *,
+body.no-animations .builder-dialog,
+body.no-animations .builder-backdrop {
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+              visibility 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              backdrop-filter 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  animation: none !important;
+}
 #app-container {
   background-color: transparent;
   transition:
@@ -3338,12 +3351,22 @@ input[type="range"]:active::-webkit-slider-thumb {
   padding: var(--builder-shell-padding-y) var(--builder-shell-padding-x);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+              visibility 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
 }
 
 .quick-action-builder-modal.active {
   opacity: 1;
   visibility: visible;
+  pointer-events: auto;
+}
+
+/* Состояние закрытия модального окна */
+.quick-action-builder-modal.closing {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .builder-backdrop {
@@ -3353,11 +3376,16 @@ input[type="range"]:active::-webkit-slider-thumb {
   backdrop-filter: blur(8px) brightness(0.95);
   -webkit-backdrop-filter: blur(8px) brightness(0.95);
   opacity: 0;
-  transition: opacity 0.3s ease, backdrop-filter 0.3s ease;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+              backdrop-filter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .quick-action-builder-modal.active .builder-backdrop {
   opacity: 1;
+}
+
+.quick-action-builder-modal.closing .builder-backdrop {
+  opacity: 0;
 }
 
 .builder-dialog {
@@ -3382,12 +3410,64 @@ input[type="range"]:active::-webkit-slider-thumb {
   opacity: 0;
   transform: scale(0.92) translateY(30px);
   transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
-              transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+              transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform, filter;
 }
 
 .quick-action-builder-modal.active .builder-dialog {
   opacity: 1;
   transform: scale(1) translateY(0);
+  filter: blur(0px);
+}
+
+/* Явная анимация закрытия диалога - работает даже когда active еще есть */
+/* Используем более специфичный селектор для гарантии приоритета */
+.quick-action-builder-modal.closing .builder-dialog,
+.quick-action-builder-modal.closing.active .builder-dialog,
+.builder-dialog.closing {
+  opacity: 0 !important;
+  transform: scale(0.92) translateY(30px) !important;
+  filter: blur(4px) !important;
+}
+
+/* Когда модальное окно закрывается, диалог должен анимироваться */
+.quick-action-builder-modal:not(.active) .builder-dialog:not(.closing) {
+  opacity: 0;
+  transform: scale(0.92) translateY(30px);
+}
+
+/* Анимация для содержимого диалога при закрытии */
+.builder-dialog-header,
+.builder-body {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.builder-title-group h2,
+.builder-title-group p {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.quick-action-builder-modal.closing .builder-dialog-header,
+.quick-action-builder-modal.closing .builder-body,
+.builder-dialog.closing .builder-dialog-header,
+.builder-dialog.closing .builder-body {
+  opacity: 0 !important;
+  transform: translateY(-10px) !important;
+}
+
+.quick-action-builder-modal.closing .builder-title-group h2,
+.quick-action-builder-modal.closing .builder-title-group p,
+.builder-dialog.closing .builder-title-group h2,
+.builder-dialog.closing .builder-title-group p {
+  opacity: 0 !important;
+  transform: translateY(-5px) !important;
 }
 
 .builder-dialog-header {
@@ -4205,6 +4285,126 @@ input[type="range"]:active::-webkit-slider-thumb {
   box-shadow: 0 14px 32px rgba(var(--highlight-color-rgb, 88, 101, 242), 0.45);
 }
 
+/* =================================================================================
+// === Global Confirm Dialog ===
+// ================================================================================= */
+.global-confirm-dialog {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.global-confirm-dialog[aria-hidden="false"] {
+  display: flex;
+}
+
+.global-confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(12px);
+}
+
+.global-confirm-card {
+  position: relative;
+  background: rgba(var(--base-bg-color-rgb), 0.98);
+  backdrop-filter: blur(28px);
+  border: 1px solid rgba(var(--border-color-rgb, 255, 255, 255), 0.25);
+  border-radius: 14px;
+  padding: 16px 20px;
+  box-shadow: 
+    0 20px 40px rgba(15, 23, 42, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  max-width: 340px;
+  width: 85%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  animation: confirmSlideIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow-y: auto;
+}
+
+.global-confirm-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.25);
+  flex-shrink: 0;
+}
+
+.global-confirm-icon i {
+  width: 24px;
+  height: 24px;
+}
+
+.global-confirm-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+  text-align: center;
+  line-height: 1.3;
+}
+
+.global-confirm-message {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(var(--text-color-rgb, 29, 29, 31), 0.75);
+  text-align: center;
+}
+
+.global-confirm-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-top: 2px;
+}
+
+.global-confirm-button {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.global-confirm-button.primary {
+  background: #ef4444;
+  color: white;
+  box-shadow: 0 10px 24px rgba(239, 68, 68, 0.35);
+}
+
+.global-confirm-button.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(239, 68, 68, 0.45);
+}
+
+.global-confirm-button.secondary {
+  background: rgba(var(--secondary-bg-color-rgb), 0.85);
+  color: var(--text-color);
+  border: 1px solid rgba(var(--border-color-rgb, 255, 255, 255), 0.15);
+}
+
+.global-confirm-button.secondary:hover {
+  transform: translateY(-2px);
+  background: rgba(var(--secondary-bg-color-rgb), 0.95);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15);
+}
+
 .builder-canvas {
   position: relative;
   width: 100%;
@@ -4220,15 +4420,24 @@ input[type="range"]:active::-webkit-slider-thumb {
 .builder-connection-layer {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   transform-origin: 0 0;
+  /* Clip any filter/glow overspill to avoid visual artifacts over UI */
+  overflow: hidden;
+  /* Lines should render behind nodes */
+  z-index: 0;
 }
 
 .builder-connection-layer path {
   fill: none;
   stroke: var(--highlight-color);
   stroke-width: 3;
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.25));
+  /* Reduce heavy shadows to prevent strange overlays */
+  filter: none;
+  /* Разрешаем ховеры только по самой линии, не блокируя полотно */
+  pointer-events: stroke;
 }
 
 .builder-connection-layer path.is-preview {
@@ -4236,9 +4445,78 @@ input[type="range"]:active::-webkit-slider-thumb {
   stroke: rgba(var(--text-color-rgb, 29, 29, 31), 0.4);
 }
 
+/* Connection UI overlay (delete buttons) */
+.builder-connection-ui {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transform-origin: 0 0;
+  overflow: hidden;
+  z-index: 2; /* above nodes */
+}
+
+/* Connection delete button */
+.builder-connection-ui .connection-delete-btn {
+  pointer-events: all;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Visible state controlled from JS for reliable hover */
+.builder-connection-ui .connection-delete-btn.is-visible {
+  opacity: 0.9;
+}
+
+/* Ensure button and its children always receive pointer events even if parent svg is passive */
+.builder-connection-ui .connection-delete-btn,
+.builder-connection-ui .connection-delete-btn * {
+  pointer-events: all;
+}
+
+/* Показывать крестик при наведении на саму линию (оставлено для совместимости, в UI слое управляем через JS) */
+.builder-connection-layer path:hover + .connection-delete-btn {
+  opacity: 0.8;
+}
+/* Поддержка отображения при наведении непосредственно на кнопку */
+.builder-connection-ui .connection-delete-btn.hover,
+.builder-connection-ui .connection-delete-btn:hover {
+  opacity: 1 !important;
+}
+
+.builder-connection-ui .connection-delete-btn:hover {
+  opacity: 1 !important;
+  /* Avoid scale to prevent visual jitter when approaching the button */
+  transform: none;
+}
+
+.connection-delete-bg {
+  fill: rgba(239, 68, 68, 0.9);
+  stroke: rgba(255, 255, 255, 0.3);
+  stroke-width: 2;
+  transition: all 0.2s ease;
+}
+
+.connection-delete-btn:hover .connection-delete-bg {
+  fill: #dc2626;
+  stroke: rgba(255, 255, 255, 0.5);
+  r: 14;
+}
+
+.connection-delete-icon {
+  stroke: white;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
 .builder-node-layer {
   position: absolute;
   inset: 0;
+  /* Keep nodes below the connection layer so the delete button is clickable */
+  z-index: 1;
 }
 
 .builder-empty-state {
@@ -4634,5 +4912,467 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 .builder-resize-handle:hover::after {
   color: var(--highlight-color);
+}
+
+/* ========== FILE DROP ZONE STYLES ========== */
+.file-drop-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.file-drop-zone input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(var(--text-color-rgb), 0.15);
+  background: rgba(var(--secondary-bg-color-rgb), 0.5);
+  color: var(--text-color);
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.file-drop-zone input:focus {
+  outline: none;
+  border-color: var(--highlight-color);
+  background: rgba(var(--secondary-bg-color-rgb), 0.8);
+  box-shadow: 0 0 0 3px rgba(var(--highlight-color-rgb), 0.1);
+}
+
+.drop-area {
+  position: relative;
+  padding: 24px;
+  border: 2px dashed rgba(var(--text-color-rgb), 0.2);
+  border-radius: 8px;
+  background: rgba(var(--secondary-bg-color-rgb), 0.3);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-height: 80px;
+  justify-content: center;
+}
+
+.drop-area svg {
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+.drop-area span {
+  font-size: 13px;
+  color: rgba(var(--text-color-rgb), 0.6);
+  transition: all 0.3s ease;
+}
+
+.drop-area:hover {
+  border-color: rgba(var(--highlight-color-rgb), 0.5);
+  background: rgba(var(--highlight-color-rgb), 0.05);
+  transform: translateY(-1px);
+}
+
+.drop-area:hover svg {
+  opacity: 0.8;
+  stroke: var(--highlight-color);
+  transform: translateY(-2px);
+}
+
+.drop-area:hover span {
+  color: var(--highlight-color);
+}
+
+.drop-area.drag-active {
+  border-color: var(--highlight-color);
+  background: rgba(var(--highlight-color-rgb), 0.15);
+  transform: scale(1.02);
+  box-shadow: 
+    0 8px 24px rgba(var(--highlight-color-rgb), 0.25),
+    inset 0 0 0 1px rgba(var(--highlight-color-rgb), 0.3);
+}
+
+.drop-area.drag-active svg {
+  opacity: 1;
+  stroke: var(--highlight-color);
+  transform: translateY(-4px) scale(1.1);
+  animation: pulse-icon 1s ease-in-out infinite;
+}
+
+.drop-area.drag-active span {
+  color: var(--highlight-color);
+  font-weight: 500;
+}
+
+@keyframes pulse-icon {
+  0%, 100% {
+    transform: translateY(-4px) scale(1.1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.15);
+  }
+}
+
+/* Dark theme adjustments */
+body.theme-dark .drop-area {
+  background: rgba(var(--secondary-bg-color-rgb), 0.2);
+  border-color: rgba(var(--text-color-rgb), 0.15);
+}
+
+body.theme-dark .drop-area:hover {
+  background: rgba(var(--highlight-color-rgb), 0.08);
+}
+
+body.theme-dark .drop-area.drag-active {
+  background: rgba(var(--highlight-color-rgb), 0.2);
+  box-shadow: 
+    0 12px 32px rgba(var(--highlight-color-rgb), 0.3),
+    inset 0 0 0 1px rgba(var(--highlight-color-rgb), 0.4);
+}
+
+/* ========== QUICK ACTION MODAL WITH GLASS EFFECT ========== */
+.qa-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.qa-modal-backdrop.visible {
+  opacity: 1;
+}
+
+.qa-modal {
+  position: relative;
+  width: 90%;
+  max-width: 520px;
+  max-height: 85vh;
+  background: rgba(var(--base-bg-color-rgb), 0.85);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-radius: 20px;
+  box-shadow: 
+    0 24px 64px rgba(0, 0, 0, 0.4),
+    0 12px 32px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(var(--text-color-rgb), 0.08);
+  overflow: hidden;
+  opacity: 0;
+  transform: scale(0.95) translateY(20px);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.qa-modal.visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.qa-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px 20px 28px;
+  border-bottom: 1px solid rgba(var(--text-color-rgb), 0.08);
+  background: linear-gradient(to bottom, 
+    rgba(var(--highlight-color-rgb), 0.05), 
+    transparent);
+}
+
+.qa-modal-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.qa-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(var(--text-color-rgb), 0.06);
+  color: var(--text-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.qa-modal-close:hover {
+  background: rgba(var(--text-color-rgb), 0.12);
+  transform: scale(1.05);
+}
+
+.qa-modal-close:active {
+  transform: scale(0.95);
+}
+
+.qa-modal-body {
+  padding: 24px 28px;
+  max-height: calc(85vh - 180px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.qa-modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.qa-modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.qa-modal-body::-webkit-scrollbar-thumb {
+  background: rgba(var(--text-color-rgb), 0.2);
+  border-radius: 4px;
+}
+
+.qa-modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--text-color-rgb), 0.3);
+}
+
+.qa-modal-field {
+  margin-bottom: 20px;
+}
+
+.qa-modal-field:last-child {
+  margin-bottom: 0;
+}
+
+.qa-modal-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.qa-modal-field input,
+.qa-modal-field textarea,
+.qa-modal-field select {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(var(--text-color-rgb), 0.12);
+  background: rgba(var(--secondary-bg-color-rgb), 0.4);
+  color: var(--text-color);
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.qa-modal-field input:focus,
+.qa-modal-field textarea:focus,
+.qa-modal-field select:focus {
+  outline: none;
+  border-color: var(--highlight-color);
+  background: rgba(var(--secondary-bg-color-rgb), 0.6);
+  box-shadow: 0 0 0 4px rgba(var(--highlight-color-rgb), 0.12);
+}
+
+.qa-modal-drop-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.qa-modal-drop-area {
+  position: relative;
+  padding: 32px 24px;
+  border: 2px dashed rgba(var(--text-color-rgb), 0.2);
+  border-radius: 12px;
+  background: rgba(var(--secondary-bg-color-rgb), 0.25);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-height: 120px;
+  justify-content: center;
+}
+
+.qa-modal-drop-area svg {
+  opacity: 0.4;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 2px 8px rgba(var(--highlight-color-rgb), 0.2));
+}
+
+.qa-modal-drop-area span {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(var(--text-color-rgb), 0.6);
+  transition: all 0.3s ease;
+}
+
+.qa-modal-drop-area:hover {
+  border-color: rgba(var(--highlight-color-rgb), 0.6);
+  background: rgba(var(--highlight-color-rgb), 0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(var(--highlight-color-rgb), 0.15);
+}
+
+.qa-modal-drop-area:hover svg {
+  opacity: 0.8;
+  stroke: var(--highlight-color);
+  transform: translateY(-4px);
+}
+
+.qa-modal-drop-area:hover span {
+  color: var(--highlight-color);
+}
+
+.qa-modal-drop-area.drag-active {
+  border-color: var(--highlight-color);
+  border-width: 3px;
+  background: rgba(var(--highlight-color-rgb), 0.18);
+  transform: scale(1.03);
+  box-shadow: 
+    0 16px 48px rgba(var(--highlight-color-rgb), 0.3),
+    inset 0 0 0 1px rgba(var(--highlight-color-rgb), 0.4);
+}
+
+.qa-modal-drop-area.drag-active svg {
+  opacity: 1;
+  stroke: var(--highlight-color);
+  transform: translateY(-8px) scale(1.15);
+  animation: modal-pulse-icon 0.8s ease-in-out infinite;
+}
+
+.qa-modal-drop-area.drag-active span {
+  color: var(--highlight-color);
+  font-weight: 600;
+  transform: scale(1.05);
+}
+
+@keyframes modal-pulse-icon {
+  0%, 100% {
+    transform: translateY(-8px) scale(1.15);
+    filter: drop-shadow(0 4px 12px rgba(var(--highlight-color-rgb), 0.4));
+  }
+  50% {
+    transform: translateY(-12px) scale(1.2);
+    filter: drop-shadow(0 8px 24px rgba(var(--highlight-color-rgb), 0.6));
+  }
+}
+
+.qa-modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 20px 28px 24px 28px;
+  border-top: 1px solid rgba(var(--text-color-rgb), 0.08);
+  background: rgba(var(--secondary-bg-color-rgb), 0.3);
+  justify-content: space-between;
+  align-items: center;
+}
+
+.qa-modal-execute,
+.qa-modal-cancel {
+  padding: 10px 24px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+}
+
+.qa-modal-execute {
+  background: linear-gradient(135deg, var(--highlight-color), rgba(var(--highlight-color-rgb), 0.85));
+  color: white;
+  box-shadow: 
+    0 4px 12px rgba(var(--highlight-color-rgb), 0.3),
+    0 2px 6px rgba(var(--highlight-color-rgb), 0.2);
+}
+
+.qa-modal-execute:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 20px rgba(var(--highlight-color-rgb), 0.4),
+    0 4px 12px rgba(var(--highlight-color-rgb), 0.3);
+}
+
+.qa-modal-execute:active {
+  transform: translateY(0);
+}
+
+.qa-modal-cancel {
+  background: rgba(var(--text-color-rgb), 0.08);
+  color: var(--text-color);
+}
+
+.qa-modal-cancel:hover {
+  background: rgba(var(--text-color-rgb), 0.15);
+}
+
+.qa-modal-cancel:active {
+  transform: scale(0.98);
+}
+
+/* Dark theme adjustments */
+body.theme-dark .qa-modal {
+  background: rgba(var(--base-bg-color-rgb), 0.75);
+  box-shadow: 
+    0 24px 64px rgba(0, 0, 0, 0.6),
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+body.theme-dark .qa-modal-drop-area {
+  background: rgba(var(--secondary-bg-color-rgb), 0.2);
+  border-color: rgba(var(--text-color-rgb), 0.15);
+}
+
+body.theme-dark .qa-modal-drop-area:hover {
+  background: rgba(var(--highlight-color-rgb), 0.12);
+}
+
+body.theme-dark .qa-modal-drop-area.drag-active {
+  background: rgba(var(--highlight-color-rgb), 0.25);
+  box-shadow: 
+    0 16px 48px rgba(var(--highlight-color-rgb), 0.4),
+    inset 0 0 0 1px rgba(var(--highlight-color-rgb), 0.5);
+}
+
+.qa-modal-footer {
+  position: relative;
+}
+
+.qa-modal-esc-hint {
+  font-size: 12px;
+  opacity: 0.5;
+  font-weight: 400;
+  color: var(--text-color);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.qa-modal-execute svg,
+.qa-modal-execute:disabled {
+  cursor: not-allowed;
 }
 

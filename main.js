@@ -2719,6 +2719,19 @@ function relaunchAsAdmin() {
 // === Обработчики IPC (Inter-Process Communication) ===
 // =================================================================================
 // ... existing code ...
+ipcMain.handle('open-file-dialog', async (event, options = {}) => {
+    try {
+        const result = await dialog.showOpenDialog({
+            properties: options.properties || ['openFile'],
+            filters: options.filters || []
+        });
+        return result;
+    } catch (error) {
+        Logger.error('File dialog error:', error);
+        return { canceled: true, filePaths: [] };
+    }
+});
+
 ipcMain.on('set-prevent-close', (event, shouldPrevent) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win && !win.isDestroyed()) {

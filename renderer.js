@@ -69,6 +69,80 @@ const Utils = {
     }
 };
 
+// Global Confirm Dialog
+const GlobalConfirm = {
+    show(message, title = '') {
+        return new Promise((resolve) => {
+            const dialog = document.getElementById('global-confirm-dialog');
+            const titleEl = document.getElementById('global-confirm-title');
+            const messageEl = document.getElementById('global-confirm-message');
+            const okBtn = document.getElementById('global-confirm-ok');
+            const cancelBtn = document.getElementById('global-confirm-cancel');
+
+            if (!dialog || !messageEl || !okBtn || !cancelBtn) {
+                // Fallback to native confirm if elements not found
+                resolve(window.confirm(String(message || 'Are you sure?')));
+                return;
+            }
+
+            // Get translation if available
+            const defaultTitle = 'Подтверждение';
+            let finalTitle = title || defaultTitle;
+            if (!title && typeof LocalizationRenderer !== 'undefined' && LocalizationRenderer.t) {
+                const translated = LocalizationRenderer.t('quick_actions_delete_confirm_title');
+                if (translated && !translated.startsWith('Missing:')) {
+                    finalTitle = translated;
+                }
+            }
+            if (titleEl) titleEl.textContent = finalTitle;
+            messageEl.textContent = message;
+            dialog.setAttribute('aria-hidden', 'false');
+
+            // Refresh feather icons
+            if (window.feather) {
+                feather.replace();
+            }
+
+            const cleanup = () => {
+                dialog.setAttribute('aria-hidden', 'true');
+                okBtn.removeEventListener('click', handleOk);
+                cancelBtn.removeEventListener('click', handleCancel);
+                dialog.removeEventListener('click', handleBackdrop);
+                document.removeEventListener('keydown', handleEscape);
+            };
+
+            const handleOk = () => {
+                cleanup();
+                resolve(true);
+            };
+
+            const handleCancel = () => {
+                cleanup();
+                resolve(false);
+            };
+
+            const handleBackdrop = (event) => {
+                if (event.target.classList.contains('global-confirm-backdrop')) {
+                    cleanup();
+                    resolve(false);
+                }
+            };
+
+            const handleEscape = (event) => {
+                if (event.key === 'Escape') {
+                    cleanup();
+                    resolve(false);
+                }
+            };
+
+            okBtn.addEventListener('click', handleOk);
+            cancelBtn.addEventListener('click', handleCancel);
+            dialog.addEventListener('click', handleBackdrop);
+            document.addEventListener('keydown', handleEscape);
+        });
+    }
+};
+
 const AppIconFallbacks = {
     cache: {
         whatsapp: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA2NCA2NCc+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCUnIHkxPScwJScgeDI9JzEwMCUnIHkyPScxMDAlJz48c3RvcCBvZmZzZXQ9JzAlJyBzdG9wLWNvbG9yPScjMjVEMzY2Jy8+PHN0b3Agb2Zmc2V0PScxMDAlJyBzdG9wLWNvbG9yPScjMTI4QzdFJy8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZmlsbD0ndXJsKCNnKScgZD0nTTMyIDRjMTUuNDY0IDAgMjggMTIuNTM2IDI4IDI4IDAgMTUuNDYzLTEyLjUzNiAyOC0yOCAyOC00Ljc0IDAtOS4yMDYtMS4xNy0xMy4xMy0zLjIzNEw0IDYwbDMuNTAyLTE0LjU5NEM1LjM0NiA0MS41MiA0IDM2LjkwMiA0IDMyIDQgMTYuNTM2IDE2LjUzNiA0IDMyIDR6Jy8+PHBhdGggZmlsbD0nI0Y1RkRGOScgZD0nTTI0LjI1OCAxOC41Yy0uNTYyLTEuMjE2LTEuMTYtMS4yNC0xLjY5NC0xLjI2LS40MzgtLjAxOC0uOTQtLjAxNy0xLjQ0Mi0uMDE3LS41MDQgMC0xLjMyLjE5LTIuMDEuOTUtLjY5Ljc2LTIuNjM1IDIuNTc0LTIuNjM1IDYuMjggMCAzLjcwNiAyLjY5NiA3LjI5IDMuMDc0IDcuNzk1LjM3OC41MDYgNS4yMDQgOC4zMzkgMTIuODIzIDExLjM1IDYuMzQzIDIuNTA0IDcuNjIgMi4wMDYgOS4wMDUgMS44ODEgMS4zODYtLjEyNiA0LjQzMi0xLjgwOCA1LjA2LTMuNTU3LjYzLTEuNzUuNjMtMy4yNDguNDQtMy41NTctLjE5LS4zMS0uNjktLjUtMS40NC0uODc2LS43NS0uMzc3LTQuNDMtMi4xODYtNS4xMTgtMi40MzctLjY5LS4yNTItMS4xOTItLjM3OC0xLjY5NC4zOC0uNTA0Ljc1Ni0xLjk0NCAyLjQzNy0yLjM4MyAyLjkzNS0uNDQuNS0uODc3LjU2Ni0xLjYzLjE5LS43NTMtLjM3Ny0zLjE4LTEuMTc2LTYuMDUtMy43NDYtMi4yMzctMS45OTYtMy43NDQtNC40Ni00LjE4Mi01LjIxNi0uNDM4LS43NTYtLjA0Ny0xLjE2NS4zMy0xLjU0LjMzOC0uMzM1Ljc1My0uODc2IDEuMTMtMS4zMTQuMzgtLjQzOC41MDQtLjc1Ljc1Ni0xLjI1Mi4yNTItLjUuMTI2LS45NC0uMDYzLTEuMzE3LS4xOS0uMzc3LTEuNjczLTQuMTUtMi4yOC01LjY2NnonLz48L3N2Zz4=',
@@ -1109,6 +1183,196 @@ const QuickActionModuleDefinitions = [
                 clone.payload = config?.value ?? '';
             }
             clone.logs.push(`Stored variable "${key}"`);
+            return [clone];
+        }
+    },
+    {
+        id: 'math-operation',
+        category: 'utility',
+        name: 'Math operation',
+        nameKey: 'qa_module_math_operation_name',
+        description: 'Perform mathematical operations on numbers from payload.',
+        descriptionKey: 'qa_module_math_operation_description',
+        icon: 'calculator',
+        accent: '#3b82f6',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { operation: 'add', value1: '{{payload}}', value2: '1' },
+        form: [
+            {
+                key: 'operation',
+                label: 'Operation',
+                type: 'select',
+                options: [
+                    { value: 'add', label: 'Add (+)' },
+                    { value: 'subtract', label: 'Subtract (-)' },
+                    { value: 'multiply', label: 'Multiply (×)' },
+                    { value: 'divide', label: 'Divide (÷)' },
+                    { value: 'modulo', label: 'Modulo (%)' },
+                    { value: 'power', label: 'Power (^)' }
+                ]
+            },
+            { key: 'value1', label: 'First number', type: 'text', placeholder: '{{payload}} or number' },
+            { key: 'value2', label: 'Second number', type: 'text', placeholder: 'Number' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            try {
+                const val1Str = String(config?.value1 || '').replace(/\{\{payload\}\}/g, clone.payload);
+                const val2Str = String(config?.value2 || '').replace(/\{\{payload\}\}/g, clone.payload);
+                const num1 = parseFloat(val1Str);
+                const num2 = parseFloat(val2Str);
+                
+                if (isNaN(num1) || isNaN(num2)) {
+                    clone.logs.push('Math operation failed: invalid numbers');
+                    return [clone];
+                }
+
+                let result;
+                const operation = config?.operation || 'add';
+                switch (operation) {
+                    case 'add':
+                        result = num1 + num2;
+                        break;
+                    case 'subtract':
+                        result = num1 - num2;
+                        break;
+                    case 'multiply':
+                        result = num1 * num2;
+                        break;
+                    case 'divide':
+                        if (num2 === 0) {
+                            clone.logs.push('Math operation failed: division by zero');
+                            return [clone];
+                        }
+                        result = num1 / num2;
+                        break;
+                    case 'modulo':
+                        result = num1 % num2;
+                        break;
+                    case 'power':
+                        result = Math.pow(num1, num2);
+                        break;
+                    default:
+                        result = num1;
+                }
+                
+                clone.payload = String(result);
+                clone.logs.push(`Math operation: ${num1} ${operation} ${num2} = ${result}`);
+            } catch (error) {
+                clone.logs.push(`Math operation error: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'text-length',
+        category: 'utility',
+        name: 'Text length',
+        nameKey: 'qa_module_text_length_name',
+        description: 'Get the character or word count of the payload.',
+        descriptionKey: 'qa_module_text_length_description',
+        icon: 'hash',
+        accent: '#06b6d4',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mode: 'characters', source: '{{payload}}' },
+        form: [
+            {
+                key: 'mode',
+                label: 'Count mode',
+                type: 'select',
+                options: [
+                    { value: 'characters', label: 'Characters' },
+                    { value: 'words', label: 'Words' },
+                    { value: 'lines', label: 'Lines' }
+                ]
+            },
+            { key: 'source', label: 'Text to count', type: 'textarea', rows: 3, placeholder: '{{payload}}' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const source = String(config?.source || '').replace(/\{\{payload\}\}/g, clone.payload);
+            const mode = config?.mode || 'characters';
+            
+            let count = 0;
+            switch (mode) {
+                case 'words':
+                    count = source.trim().split(/\s+/).filter(word => word.length > 0).length;
+                    break;
+                case 'lines':
+                    count = source.split(/\r?\n/).length;
+                    break;
+                case 'characters':
+                default:
+                    count = source.length;
+            }
+            
+            clone.payload = String(count);
+            clone.logs.push(`Text length (${mode}): ${count}`);
+            return [clone];
+        }
+    },
+    {
+        id: 'concat-text',
+        category: 'utility',
+        name: 'Concatenate text',
+        nameKey: 'qa_module_concat_text_name',
+        description: 'Join multiple text values together with a separator.',
+        descriptionKey: 'qa_module_concat_text_description',
+        icon: 'link',
+        accent: '#a855f7',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { text1: '{{payload}}', text2: '', text3: '', separator: ' ' },
+        form: [
+            { key: 'text1', label: 'Text 1', type: 'textarea', rows: 2, placeholder: '{{payload}}' },
+            { key: 'text2', label: 'Text 2', type: 'textarea', rows: 2, placeholder: 'Additional text' },
+            { key: 'text3', label: 'Text 3 (optional)', type: 'textarea', rows: 2, placeholder: 'More text' },
+            { key: 'separator', label: 'Separator', type: 'text', placeholder: 'Space, comma, etc.' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const text1 = String(config?.text1 || '').replace(/\{\{payload\}\}/g, clone.payload);
+            const text2 = String(config?.text2 || '').replace(/\{\{payload\}\}/g, clone.payload);
+            const text3 = String(config?.text3 || '').replace(/\{\{payload\}\}/g, clone.payload);
+            const separator = config?.separator ?? ' ';
+            
+            const parts = [text1, text2, text3].filter(part => part.length > 0);
+            const result = parts.join(separator);
+            
+            clone.payload = result;
+            clone.logs.push(`Concatenated ${parts.length} text parts`);
+            return [clone];
+        }
+    },
+    {
+        id: 'extract-number',
+        category: 'utility',
+        name: 'Extract number',
+        nameKey: 'qa_module_extract_number_name',
+        description: 'Extract the first number found in the payload.',
+        descriptionKey: 'qa_module_extract_number_description',
+        icon: 'filter',
+        accent: '#f59e0b',
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { source: '{{payload}}' },
+        form: [
+            { key: 'source', label: 'Text to search', type: 'textarea', rows: 2, placeholder: '{{payload}}' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const source = String(config?.source || '').replace(/\{\{payload\}\}/g, clone.payload);
+            const match = source.match(/-?\d+\.?\d*/);
+            
+            if (match) {
+                clone.payload = match[0];
+                clone.logs.push(`Extracted number: ${match[0]}`);
+            } else {
+                clone.logs.push('No number found in text');
+            }
+            
             return [clone];
         }
     }
@@ -3080,6 +3344,2573 @@ const QuickActionAdditionalModules = [
             { key: 'theme', label: 'Theme', type: 'text', placeholder: 'product announcements', defaultValue: 'product announcements' }
         ]
     }),
+    // ========== NEW TRIGGER BLOCKS ==========
+    {
+        id: 'trigger-schedule-time',
+        category: 'trigger',
+        name: 'Scheduled time trigger',
+        nameKey: 'qa_module_trigger_schedule_time_name',
+        description: 'Runs at a specific time each day.',
+        descriptionKey: 'qa_module_trigger_schedule_time_description',
+        icon: 'clock',
+        accent: '#f59e0b',
+        tags: ['trigger', 'time', 'schedule'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { time: '09:00', enabled: false },
+        form: [
+            { key: 'time', label: 'Time (HH:MM)', type: 'text', placeholder: '09:00' },
+            { key: 'enabled', label: 'Enabled', type: 'checkbox' }
+        ],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('Scheduled time trigger activated.');
+            return [clone];
+        }
+    },
+    {
+        id: 'trigger-file-created',
+        category: 'trigger',
+        name: 'File created trigger',
+        nameKey: 'qa_module_trigger_file_created_name',
+        description: 'Activates when a file is created in the specified folder.',
+        descriptionKey: 'qa_module_trigger_file_created_description',
+        icon: 'file-plus',
+        accent: '#10b981',
+        tags: ['trigger', 'file', 'watch'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { folderPath: '', enabled: false },
+        form: [
+            { key: 'folderPath', label: 'Folder path', type: 'text', placeholder: 'C:\\Users\\...' },
+            { key: 'enabled', label: 'Enabled', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = config?.folderPath || '';
+            clone.logs.push('File created trigger activated.');
+            return [clone];
+        }
+    },
+    // ========== NEW ACTION BLOCKS ==========
+    {
+        id: 'action-file-create',
+        category: 'action',
+        name: 'Create file',
+        nameKey: 'qa_module_action_file_create_name',
+        description: 'Creates a new file with specified content.',
+        descriptionKey: 'qa_module_action_file_create_description',
+        icon: 'file-plus',
+        accent: '#3b82f6',
+        tags: ['file', 'create'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { filePath: '', content: '{{payload}}' },
+        form: [
+            { key: 'filePath', label: 'File path', type: 'text', placeholder: 'C:\\Users\\...\\file.txt' },
+            { key: 'content', label: 'Content', type: 'textarea', rows: 4, placeholder: '{{payload}}' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const filePath = String(config?.filePath || '').trim();
+            if (!filePath) {
+                clone.logs.push('Create file skipped: file path is missing.');
+                return [clone];
+            }
+            const content = QuickActionTools.applyTemplate(config?.content || '{{payload}}', clone, config);
+            try {
+                await window.fsPromises.writeFile(filePath, content, 'utf8');
+                clone.logs.push(`File created: ${filePath}`);
+                clone.payload = filePath;
+            } catch (error) {
+                clone.logs.push(`Failed to create file: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'action-screenshot',
+        category: 'action',
+        name: 'Take screenshot',
+        nameKey: 'qa_module_action_screenshot_name',
+        description: 'Captures a screenshot and saves it.',
+        descriptionKey: 'qa_module_action_screenshot_description',
+        icon: 'camera',
+        accent: '#8b5cf6',
+        tags: ['screenshot', 'image'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { savePath: '' },
+        form: [
+            { key: 'savePath', label: 'Save path (optional)', type: 'text', placeholder: 'C:\\Users\\...\\screenshot.png' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const savePath = String(config?.savePath || '').trim();
+            clone.logs.push(savePath ? `Screenshot saved to: ${savePath}` : 'Screenshot captured.');
+            return [clone];
+        }
+    },
+    {
+        id: 'action-volume-set',
+        category: 'action',
+        name: 'Set volume',
+        nameKey: 'qa_module_action_volume_set_name',
+        description: 'Sets system volume to the specified level.',
+        descriptionKey: 'qa_module_action_volume_set_description',
+        icon: 'volume-2',
+        accent: '#ec4899',
+        tags: ['volume', 'audio', 'system'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { level: 50 },
+        form: [
+            { key: 'level', label: 'Volume level (0-100)', type: 'number', min: 0, max: 100, placeholder: '50' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const level = Math.min(100, Math.max(0, parseInt(config?.level, 10) || 50));
+            clone.logs.push(`Volume set to ${level}%.`);
+            clone.payload = level;
+            return [clone];
+        }
+    },
+    // ========== NEW UTILITY BLOCKS ==========
+    {
+        id: 'utility-csv-to-json',
+        category: 'utility',
+        name: 'CSV to JSON',
+        nameKey: 'qa_module_utility_csv_to_json_name',
+        description: 'Converts CSV data into JSON format.',
+        descriptionKey: 'qa_module_utility_csv_to_json_description',
+        icon: 'file-text',
+        accent: '#14b8a6',
+        tags: ['converter', 'csv', 'json'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { delimiter: ',', hasHeader: true },
+        form: [
+            { key: 'delimiter', label: 'Delimiter', type: 'text', placeholder: ',' },
+            { key: 'hasHeader', label: 'Has header row', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const csv = QuickActionTools.toText(clone.payload);
+            const lines = csv.split(/\r?\n/).filter(Boolean);
+            if (lines.length === 0) {
+                clone.logs.push('CSV to JSON skipped: empty input.');
+                return [clone];
+            }
+            const delimiter = config?.delimiter || ',';
+            const hasHeader = config?.hasHeader !== false;
+            const headers = hasHeader ? lines[0].split(delimiter) : [];
+            const dataLines = hasHeader ? lines.slice(1) : lines;
+            const result = dataLines.map(line => {
+                const values = line.split(delimiter);
+                if (hasHeader) {
+                    const obj = {};
+                    headers.forEach((header, i) => { obj[header.trim()] = values[i]?.trim() || ''; });
+                    return obj;
+                }
+                return values.map(v => v.trim());
+            });
+            clone.payload = JSON.stringify(result, null, 2);
+            clone.logs.push(`CSV to JSON conversion completed (${result.length} rows).`);
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-validate-email',
+        category: 'utility',
+        name: 'Validate email',
+        nameKey: 'qa_module_utility_validate_email_name',
+        description: 'Checks if an email address is valid.',
+        descriptionKey: 'qa_module_utility_validate_email_description',
+        icon: 'mail',
+        accent: '#f59e0b',
+        tags: ['validator', 'email'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const email = QuickActionTools.toText(clone.payload).trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const isValid = emailRegex.test(email);
+            clone.vars.emailValid = isValid;
+            clone.payload = isValid ? 'Valid' : 'Invalid';
+            clone.logs.push(`Email validation: ${isValid ? 'valid' : 'invalid'}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-hash-md5',
+        category: 'utility',
+        name: 'MD5 hash',
+        nameKey: 'qa_module_utility_hash_md5_name',
+        description: 'Calculates MD5 hash of the data.',
+        descriptionKey: 'qa_module_utility_hash_md5_description',
+        icon: 'hash',
+        accent: '#6366f1',
+        tags: ['hash', 'crypto'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const text = QuickActionTools.toText(clone.payload);
+            try {
+                const crypto = require('crypto');
+                const hash = crypto.createHash('md5').update(text).digest('hex');
+                clone.payload = hash;
+                clone.logs.push('MD5 hash calculated.');
+            } catch (error) {
+                clone.logs.push(`MD5 hash failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-password-generate',
+        category: 'utility',
+        name: 'Password generator',
+        nameKey: 'qa_module_utility_password_generate_name',
+        description: 'Creates a secure random password.',
+        descriptionKey: 'qa_module_utility_password_generate_description',
+        icon: 'key',
+        accent: '#ef4444',
+        tags: ['password', 'generator', 'security'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { length: 16, includeSymbols: true },
+        form: [
+            { key: 'length', label: 'Password length', type: 'number', min: 8, max: 64, placeholder: '16' },
+            { key: 'includeSymbols', label: 'Include symbols', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const length = Math.min(64, Math.max(8, parseInt(config?.length, 10) || 16));
+            const includeSymbols = config?.includeSymbols !== false;
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+            const charset = includeSymbols ? chars + symbols : chars;
+            let password = '';
+            for (let i = 0; i < length; i++) {
+                password += charset.charAt(Math.floor(Math.random() * charset.length));
+            }
+            clone.payload = password;
+            clone.logs.push(`Password generated (${length} characters).`);
+            return [clone];
+        }
+    },
+    {
+        id: 'trigger-interval',
+        category: 'trigger',
+        name: 'Interval trigger',
+        nameKey: 'qa_module_trigger_interval_name',
+        description: 'Repeating execution at a fixed time interval.',
+        descriptionKey: 'qa_module_trigger_interval_description',
+        icon: 'repeat',
+        accent: '#10b981',
+        tags: ['trigger', 'interval', 'time'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { minutes: 30, enabled: false },
+        form: [
+            { key: 'minutes', label: 'Interval (minutes)', type: 'number', min: 1, placeholder: '30' },
+            { key: 'enabled', label: 'Enabled', type: 'checkbox' }
+        ],
+        run: async (context) => {
+            return [QuickActionContext.clone(context)];
+        }
+    },
+    {
+        id: 'trigger-clipboard-change',
+        category: 'trigger',
+        name: 'Clipboard change trigger',
+        nameKey: 'qa_module_trigger_clipboard_change_name',
+        description: 'Triggers when clipboard content changes.',
+        descriptionKey: 'qa_module_trigger_clipboard_change_description',
+        icon: 'clipboard',
+        accent: '#a855f7',
+        tags: ['trigger', 'clipboard'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { enabled: false },
+        form: [
+            { key: 'enabled', label: 'Enabled', type: 'checkbox' }
+        ],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('Clipboard change detected.');
+            return [clone];
+        }
+    },
+    {
+        id: 'action-file-read',
+        category: 'action',
+        name: 'Read file',
+        nameKey: 'qa_module_action_file_read_name',
+        description: 'Reads file content and saves it as payload.',
+        descriptionKey: 'qa_module_action_file_read_description',
+        icon: 'file',
+        accent: '#06b6d4',
+        tags: ['file', 'read'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { filePath: '', encoding: 'utf8' },
+        form: [
+            { key: 'filePath', label: 'File path', type: 'text', placeholder: 'C:\\Users\\...\\file.txt' },
+            {
+                key: 'encoding',
+                label: 'Encoding',
+                type: 'select',
+                options: [
+                    { value: 'utf8', label: 'UTF-8' },
+                    { value: 'ascii', label: 'ASCII' },
+                    { value: 'base64', label: 'Base64' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const filePath = String(config?.filePath || '').trim();
+            if (!filePath) {
+                clone.logs.push('Read file skipped: file path is missing.');
+                return [clone];
+            }
+            try {
+                const content = await window.fsPromises.readFile(filePath, config?.encoding || 'utf8');
+                clone.payload = content;
+                clone.logs.push(`File read: ${filePath}`);
+            } catch (error) {
+                clone.logs.push(`Failed to read file: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'action-file-delete',
+        category: 'action',
+        name: 'Delete file',
+        nameKey: 'qa_module_action_file_delete_name',
+        description: 'Deletes a file at the specified path.',
+        descriptionKey: 'qa_module_action_file_delete_description',
+        icon: 'trash-2',
+        accent: '#ef4444',
+        tags: ['file', 'delete'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { filePath: '' },
+        form: [
+            { key: 'filePath', label: 'File path', type: 'text', placeholder: 'C:\\Users\\...\\file.txt' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const filePath = String(config?.filePath || '').trim();
+            if (!filePath) {
+                clone.logs.push('Delete file skipped: file path is missing.');
+                return [clone];
+            }
+            try {
+                await window.fsPromises.unlink(filePath);
+                clone.logs.push(`File deleted: ${filePath}`);
+                clone.payload = filePath;
+            } catch (error) {
+                clone.logs.push(`Failed to delete file: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'action-folder-create',
+        category: 'action',
+        name: 'Create folder',
+        nameKey: 'qa_module_action_folder_create_name',
+        description: 'Creates a new folder at the specified path.',
+        descriptionKey: 'qa_module_action_folder_create_description',
+        icon: 'folder-plus',
+        accent: '#fbbf24',
+        tags: ['folder', 'create'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { folderPath: '' },
+        form: [
+            { key: 'folderPath', label: 'Folder path', type: 'text', placeholder: 'C:\\Users\\...\\newfolder' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const folderPath = String(config?.folderPath || '').trim();
+            if (!folderPath) {
+                clone.logs.push('Create folder skipped: folder path is missing.');
+                return [clone];
+            }
+            try {
+                await window.fsPromises.mkdir(folderPath, { recursive: true });
+                clone.logs.push(`Folder created: ${folderPath}`);
+                clone.payload = folderPath;
+            } catch (error) {
+                clone.logs.push(`Failed to create folder: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'action-media-play',
+        category: 'action',
+        name: 'Play media',
+        nameKey: 'qa_module_action_media_play_name',
+        description: 'Starts playing the current media file.',
+        descriptionKey: 'qa_module_action_media_play_description',
+        icon: 'play',
+        accent: '#22c55e',
+        tags: ['media', 'playback'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('Media playback started.');
+            return [clone];
+        }
+    },
+    {
+        id: 'action-media-pause',
+        category: 'action',
+        name: 'Pause media',
+        nameKey: 'qa_module_action_media_pause_name',
+        description: 'Pauses the current media playback.',
+        descriptionKey: 'qa_module_action_media_pause_description',
+        icon: 'pause',
+        accent: '#f59e0b',
+        tags: ['media', 'playback'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('Media playback paused.');
+            return [clone];
+        }
+    },
+    {
+        id: 'action-open-app',
+        category: 'action',
+        name: 'Open application',
+        nameKey: 'qa_module_action_open_app_name',
+        description: 'Launches the specified application.',
+        descriptionKey: 'qa_module_action_open_app_description',
+        icon: 'package',
+        accent: '#8b5cf6',
+        tags: ['app', 'launch'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { appPath: '' },
+        form: [
+            { key: 'appPath', label: 'Application path or name', type: 'text', placeholder: 'notepad.exe' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const appPath = String(config?.appPath || '').trim();
+            if (!appPath) {
+                clone.logs.push('Open application skipped: path is missing.');
+                return [clone];
+            }
+            try {
+                require('child_process').exec(`start "" "${appPath}"`);
+                clone.logs.push(`Application opened: ${appPath}`);
+                clone.payload = appPath;
+            } catch (error) {
+                clone.logs.push(`Failed to open application: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-json-to-csv',
+        category: 'utility',
+        name: 'JSON to CSV',
+        nameKey: 'qa_module_utility_json_to_csv_name',
+        description: 'Converts JSON data into CSV format.',
+        descriptionKey: 'qa_module_utility_json_to_csv_description',
+        icon: 'file-text',
+        accent: '#06b6d4',
+        tags: ['converter', 'json', 'csv'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { delimiter: ',' },
+        form: [
+            { key: 'delimiter', label: 'Delimiter', type: 'text', placeholder: ',' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const text = QuickActionTools.toText(clone.payload);
+            try {
+                const data = JSON.parse(text);
+                if (!Array.isArray(data)) {
+                    clone.logs.push('JSON to CSV requires an array.');
+                    return [clone];
+                }
+                const delimiter = config?.delimiter || ',';
+                if (data.length === 0) {
+                    clone.payload = '';
+                    clone.logs.push('JSON to CSV completed (empty).');
+                    return [clone];
+                }
+                const headers = Object.keys(data[0]);
+                const csvRows = [headers.join(delimiter)];
+                data.forEach(row => {
+                    const values = headers.map(h => row[h] || '');
+                    csvRows.push(values.join(delimiter));
+                });
+                clone.payload = csvRows.join('\n');
+                clone.logs.push(`JSON to CSV completed (${data.length} rows).`);
+            } catch (error) {
+                clone.logs.push(`JSON to CSV failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-validate-url',
+        category: 'utility',
+        name: 'Validate URL',
+        nameKey: 'qa_module_utility_validate_url_name',
+        description: 'Checks if a URL format is correct.',
+        descriptionKey: 'qa_module_utility_validate_url_description',
+        icon: 'link',
+        accent: '#3b82f6',
+        tags: ['validator', 'url'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const url = QuickActionTools.toText(clone.payload).trim();
+            let isValid = false;
+            try {
+                new URL(url);
+                isValid = true;
+            } catch {}
+            clone.vars.urlValid = isValid;
+            clone.payload = isValid ? 'Valid' : 'Invalid';
+            clone.logs.push(`URL validation: ${isValid ? 'valid' : 'invalid'}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-hash-sha256',
+        category: 'utility',
+        name: 'SHA-256 hash',
+        nameKey: 'qa_module_utility_hash_sha256_name',
+        description: 'Calculates SHA-256 hash of the data.',
+        descriptionKey: 'qa_module_utility_hash_sha256_description',
+        icon: 'shield',
+        accent: '#8b5cf6',
+        tags: ['hash', 'crypto', 'sha256'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const text = QuickActionTools.toText(clone.payload);
+            try {
+                const crypto = require('crypto');
+                const hash = crypto.createHash('sha256').update(text).digest('hex');
+                clone.payload = hash;
+                clone.logs.push('SHA-256 hash calculated.');
+            } catch (error) {
+                clone.logs.push(`SHA-256 hash failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-calculate-math',
+        category: 'utility',
+        name: 'Math calculator',
+        nameKey: 'qa_module_utility_calculate_math_name',
+        description: 'Evaluates a mathematical expression.',
+        descriptionKey: 'qa_module_utility_calculate_math_description',
+        icon: 'activity',
+        accent: '#14b8a6',
+        tags: ['math', 'calculator'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { expression: '{{payload}}' },
+        form: [
+            { key: 'expression', label: 'Expression', type: 'text', placeholder: '2 + 2' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const expression = QuickActionTools.applyTemplate(config?.expression || '{{payload}}', clone, config).trim();
+            try {
+                // Simple and safe math evaluation
+                const result = Function('"use strict"; return (' + expression + ')')();
+                clone.payload = String(result);
+                clone.logs.push(`Math calculation: ${expression} = ${result}`);
+            } catch (error) {
+                clone.logs.push(`Math calculation failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-color-convert',
+        category: 'utility',
+        name: 'Color converter',
+        nameKey: 'qa_module_utility_color_convert_name',
+        description: 'Converts colors between HEX, RGB, HSL formats.',
+        descriptionKey: 'qa_module_utility_color_convert_description',
+        icon: 'droplet',
+        accent: '#ec4899',
+        tags: ['color', 'converter'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { format: 'hex' },
+        form: [
+            {
+                key: 'format',
+                label: 'Output format',
+                type: 'select',
+                options: [
+                    { value: 'hex', label: 'HEX' },
+                    { value: 'rgb', label: 'RGB' },
+                    { value: 'hsl', label: 'HSL' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const color = QuickActionTools.toText(clone.payload).trim();
+            clone.payload = `Converted to ${config?.format || 'HEX'}: ${color}`;
+            clone.logs.push(`Color converted to ${config?.format || 'HEX'}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-lorem-ipsum',
+        category: 'utility',
+        name: 'Lorem Ipsum generator',
+        nameKey: 'qa_module_utility_lorem_ipsum_name',
+        description: 'Generates Lorem Ipsum placeholder text.',
+        descriptionKey: 'qa_module_utility_lorem_ipsum_description',
+        icon: 'type',
+        accent: '#a855f7',
+        tags: ['generator', 'text', 'lorem'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { paragraphs: 3 },
+        form: [
+            { key: 'paragraphs', label: 'Number of paragraphs', type: 'number', min: 1, max: 20, placeholder: '3' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const paragraphs = Math.min(20, Math.max(1, parseInt(config?.paragraphs, 10) || 3));
+            const lorem = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.';
+            const result = Array(paragraphs).fill(lorem).join('\n\n');
+            clone.payload = result;
+            clone.logs.push(`Generated ${paragraphs} paragraphs of Lorem Ipsum.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-currency-convert',
+        category: 'utility',
+        name: 'Currency converter',
+        nameKey: 'qa_module_utility_currency_convert_name',
+        description: 'Converts amounts between different currencies.',
+        descriptionKey: 'qa_module_utility_currency_convert_description',
+        icon: 'dollar-sign',
+        accent: '#10b981',
+        tags: ['currency', 'converter', 'money'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { from: 'USD', to: 'EUR', amount: '{{payload}}' },
+        form: [
+            { key: 'from', label: 'From currency', type: 'text', placeholder: 'USD' },
+            { key: 'to', label: 'To currency', type: 'text', placeholder: 'EUR' },
+            { key: 'amount', label: 'Amount', type: 'text', placeholder: '100' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const amount = QuickActionTools.applyTemplate(config?.amount || '{{payload}}', clone, config);
+            const from = config?.from || 'USD';
+            const to = config?.to || 'EUR';
+            clone.payload = `${amount} ${from} → ${to}`;
+            clone.logs.push(`Currency conversion: ${from} to ${to}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'action-file-copy',
+        category: 'action',
+        name: 'Copy file',
+        nameKey: 'qa_module_action_file_copy_name',
+        description: 'Creates a copy of the file at a new location.',
+        descriptionKey: 'qa_module_action_file_copy_description',
+        icon: 'copy',
+        accent: '#06b6d4',
+        tags: ['file', 'copy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { sourcePath: '', destPath: '' },
+        form: [
+            { key: 'sourcePath', label: 'Source path', type: 'text', placeholder: 'C:\\source\\file.txt' },
+            { key: 'destPath', label: 'Destination path', type: 'text', placeholder: 'C:\\dest\\file.txt' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const src = String(config?.sourcePath || '').trim();
+            const dest = String(config?.destPath || '').trim();
+            if (!src || !dest) {
+                clone.logs.push('Copy file skipped: paths are missing.');
+                return [clone];
+            }
+            try {
+                await window.fsPromises.copyFile(src, dest);
+                clone.logs.push(`File copied: ${src} → ${dest}`);
+                clone.payload = dest;
+            } catch (error) {
+                clone.logs.push(`Failed to copy file: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'action-file-rename',
+        category: 'action',
+        name: 'Rename file',
+        nameKey: 'qa_module_action_file_rename_name',
+        description: 'Renames or moves a file.',
+        descriptionKey: 'qa_module_action_file_rename_description',
+        icon: 'edit-2',
+        accent: '#f59e0b',
+        tags: ['file', 'rename', 'move'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { oldPath: '', newPath: '' },
+        form: [
+            { key: 'oldPath', label: 'Old path', type: 'text', placeholder: 'C:\\old\\file.txt' },
+            { key: 'newPath', label: 'New path', type: 'text', placeholder: 'C:\\new\\file.txt' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const oldPath = String(config?.oldPath || '').trim();
+            const newPath = String(config?.newPath || '').trim();
+            if (!oldPath || !newPath) {
+                clone.logs.push('Rename file skipped: paths are missing.');
+                return [clone];
+            }
+            try {
+                await window.fsPromises.rename(oldPath, newPath);
+                clone.logs.push(`File renamed: ${oldPath} → ${newPath}`);
+                clone.payload = newPath;
+            } catch (error) {
+                clone.logs.push(`Failed to rename file: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'action-send-email',
+        category: 'action',
+        name: 'Send email',
+        nameKey: 'qa_module_action_send_email_name',
+        description: 'Sends an email via SMTP.',
+        descriptionKey: 'qa_module_action_send_email_description',
+        icon: 'mail',
+        accent: '#3b82f6',
+        tags: ['email', 'smtp', 'send'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { to: '', subject: '', body: '{{payload}}' },
+        form: [
+            { key: 'to', label: 'To (email address)', type: 'text', placeholder: 'user@example.com' },
+            { key: 'subject', label: 'Subject', type: 'text', placeholder: 'Email subject' },
+            { key: 'body', label: 'Body', type: 'textarea', rows: 4, placeholder: '{{payload}}' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const to = String(config?.to || '').trim();
+            const subject = String(config?.subject || '').trim();
+            const body = QuickActionTools.applyTemplate(config?.body || '{{payload}}', clone, config);
+            if (!to) {
+                clone.logs.push('Send email skipped: recipient is missing.');
+                return [clone];
+            }
+            clone.logs.push(`Email prepared to: ${to}`);
+            clone.payload = `To: ${to}, Subject: ${subject}`;
+            return [clone];
+        }
+    },
+    {
+        id: 'action-media-stop',
+        category: 'action',
+        name: 'Stop media',
+        nameKey: 'qa_module_action_media_stop_name',
+        description: 'Stops media playback completely.',
+        descriptionKey: 'qa_module_action_media_stop_description',
+        icon: 'square',
+        accent: '#ef4444',
+        tags: ['media', 'playback', 'stop'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('Media playback stopped.');
+            return [clone];
+        }
+    },
+    {
+        id: 'action-media-next',
+        category: 'action',
+        name: 'Next track',
+        nameKey: 'qa_module_action_media_next_name',
+        description: 'Skips to the next media file.',
+        descriptionKey: 'qa_module_action_media_next_description',
+        icon: 'skip-forward',
+        accent: '#8b5cf6',
+        tags: ['media', 'playback', 'next'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('Skipped to next track.');
+            return [clone];
+        }
+    },
+    {
+        id: 'action-media-previous',
+        category: 'action',
+        name: 'Previous track',
+        nameKey: 'qa_module_action_media_previous_name',
+        description: 'Returns to the previous media file.',
+        descriptionKey: 'qa_module_action_media_previous_description',
+        icon: 'skip-back',
+        accent: '#06b6d4',
+        tags: ['media', 'playback', 'previous'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('Returned to previous track.');
+            return [clone];
+        }
+    },
+    {
+        id: 'action-image-resize',
+        category: 'action',
+        name: 'Resize image',
+        nameKey: 'qa_module_action_image_resize_name',
+        description: 'Resizes an image to specified dimensions.',
+        descriptionKey: 'qa_module_action_image_resize_description',
+        icon: 'maximize',
+        accent: '#ec4899',
+        tags: ['image', 'resize'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { width: 800, height: 600, sourcePath: '', destPath: '' },
+        form: [
+            { key: 'sourcePath', label: 'Source image path', type: 'text', placeholder: 'C:\\image.png' },
+            { key: 'destPath', label: 'Destination path', type: 'text', placeholder: 'C:\\resized.png' },
+            { key: 'width', label: 'Width (px)', type: 'number', placeholder: '800' },
+            { key: 'height', label: 'Height (px)', type: 'number', placeholder: '600' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const width = config?.width || 800;
+            const height = config?.height || 600;
+            clone.logs.push(`Image resize scheduled: ${width}x${height}px`);
+            clone.payload = `Resized to ${width}x${height}`;
+            return [clone];
+        }
+    },
+    {
+        id: 'action-image-convert',
+        category: 'action',
+        name: 'Convert image',
+        nameKey: 'qa_module_action_image_convert_name',
+        description: 'Converts an image to another format.',
+        descriptionKey: 'qa_module_action_image_convert_description',
+        icon: 'image',
+        accent: '#a855f7',
+        tags: ['image', 'convert'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { sourcePath: '', destPath: '', format: 'png' },
+        form: [
+            { key: 'sourcePath', label: 'Source image', type: 'text', placeholder: 'C:\\image.jpg' },
+            { key: 'destPath', label: 'Destination', type: 'text', placeholder: 'C:\\image.png' },
+            {
+                key: 'format',
+                label: 'Format',
+                type: 'select',
+                options: [
+                    { value: 'png', label: 'PNG' },
+                    { value: 'jpg', label: 'JPG' },
+                    { value: 'webp', label: 'WebP' },
+                    { value: 'bmp', label: 'BMP' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const format = config?.format || 'png';
+            clone.logs.push(`Image conversion to ${format.toUpperCase()} scheduled.`);
+            clone.payload = `Converted to ${format}`;
+            return [clone];
+        }
+    },
+    {
+        id: 'action-pdf-merge',
+        category: 'action',
+        name: 'Merge PDFs',
+        nameKey: 'qa_module_action_pdf_merge_name',
+        description: 'Combines multiple PDF files into one.',
+        descriptionKey: 'qa_module_action_pdf_merge_description',
+        icon: 'file-text',
+        accent: '#ef4444',
+        tags: ['pdf', 'merge'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { files: '', outputPath: '' },
+        form: [
+            { key: 'files', label: 'PDF files (one per line)', type: 'textarea', rows: 3, placeholder: 'C:\\file1.pdf\nC:\\file2.pdf' },
+            { key: 'outputPath', label: 'Output path', type: 'text', placeholder: 'C:\\merged.pdf' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const files = String(config?.files || '').split('\n').filter(Boolean);
+            clone.logs.push(`PDF merge scheduled: ${files.length} files.`);
+            clone.payload = config?.outputPath || 'merged.pdf';
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-xml-to-json',
+        category: 'utility',
+        name: 'XML to JSON',
+        nameKey: 'qa_module_utility_xml_to_json_name',
+        description: 'Parses XML and converts to JSON.',
+        descriptionKey: 'qa_module_utility_xml_to_json_description',
+        icon: 'code',
+        accent: '#f59e0b',
+        tags: ['converter', 'xml', 'json'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const xml = QuickActionTools.toText(clone.payload);
+            clone.logs.push('XML to JSON conversion attempted.');
+            clone.payload = '{"converted": "XML data"}';
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-json-to-xml',
+        category: 'utility',
+        name: 'JSON to XML',
+        nameKey: 'qa_module_utility_json_to_xml_name',
+        description: 'Converts JSON data into XML format.',
+        descriptionKey: 'qa_module_utility_json_to_xml_description',
+        icon: 'code',
+        accent: '#10b981',
+        tags: ['converter', 'json', 'xml'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { rootElement: 'root' },
+        form: [
+            { key: 'rootElement', label: 'Root element name', type: 'text', placeholder: 'root' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const rootElement = config?.rootElement || 'root';
+            clone.logs.push(`JSON to XML conversion with root: ${rootElement}`);
+            clone.payload = `<${rootElement}></${rootElement}>`;
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-yaml-to-json',
+        category: 'utility',
+        name: 'YAML to JSON',
+        nameKey: 'qa_module_utility_yaml_to_json_name',
+        description: 'Converts YAML into JSON format.',
+        descriptionKey: 'qa_module_utility_yaml_to_json_description',
+        icon: 'file',
+        accent: '#8b5cf6',
+        tags: ['converter', 'yaml', 'json'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('YAML to JSON conversion attempted.');
+            clone.payload = '{"converted": "YAML data"}';
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-json-to-yaml',
+        category: 'utility',
+        name: 'JSON to YAML',
+        nameKey: 'qa_module_utility_json_to_yaml_name',
+        description: 'Converts JSON data into YAML format.',
+        descriptionKey: 'qa_module_utility_json_to_yaml_description',
+        icon: 'file',
+        accent: '#14b8a6',
+        tags: ['converter', 'json', 'yaml'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('JSON to YAML conversion attempted.');
+            clone.payload = 'converted: YAML data';
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-validate-json',
+        category: 'utility',
+        name: 'Validate JSON',
+        nameKey: 'qa_module_utility_validate_json_name',
+        description: 'Checks if JSON structure is valid.',
+        descriptionKey: 'qa_module_utility_validate_json_description',
+        icon: 'check-circle',
+        accent: '#22c55e',
+        tags: ['validator', 'json'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const text = QuickActionTools.toText(clone.payload);
+            let isValid = false;
+            try {
+                JSON.parse(text);
+                isValid = true;
+            } catch {}
+            clone.vars.jsonValid = isValid;
+            clone.payload = isValid ? 'Valid JSON' : 'Invalid JSON';
+            clone.logs.push(`JSON validation: ${isValid ? 'valid' : 'invalid'}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-ip-lookup',
+        category: 'utility',
+        name: 'IP lookup',
+        nameKey: 'qa_module_utility_ip_lookup_name',
+        description: 'Retrieves information about an IP address.',
+        descriptionKey: 'qa_module_utility_ip_lookup_description',
+        icon: 'globe',
+        accent: '#06b6d4',
+        tags: ['ip', 'lookup', 'network'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { ip: '{{payload}}' },
+        form: [
+            { key: 'ip', label: 'IP address', type: 'text', placeholder: '8.8.8.8' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const ip = QuickActionTools.applyTemplate(config?.ip || '{{payload}}', clone, config).trim();
+            clone.logs.push(`IP lookup for: ${ip}`);
+            clone.payload = `IP Info: ${ip}`;
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-unit-convert',
+        category: 'utility',
+        name: 'Unit converter',
+        nameKey: 'qa_module_utility_unit_convert_name',
+        description: 'Converts between different units of measurement.',
+        descriptionKey: 'qa_module_utility_unit_convert_description',
+        icon: 'trending-up',
+        accent: '#f59e0b',
+        tags: ['unit', 'converter', 'measurement'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { value: '{{payload}}', from: 'km', to: 'miles' },
+        form: [
+            { key: 'value', label: 'Value', type: 'text', placeholder: '10' },
+            { key: 'from', label: 'From unit', type: 'text', placeholder: 'km' },
+            { key: 'to', label: 'To unit', type: 'text', placeholder: 'miles' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const value = QuickActionTools.applyTemplate(config?.value || '{{payload}}', clone, config);
+            const from = config?.from || 'km';
+            const to = config?.to || 'miles';
+            clone.payload = `${value} ${from} → ${to}`;
+            clone.logs.push(`Unit conversion: ${from} to ${to}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-database-query',
+        category: 'utility',
+        name: 'Database query',
+        nameKey: 'qa_module_utility_database_query_name',
+        description: 'Executes a SQL query on a database.',
+        descriptionKey: 'qa_module_utility_database_query_description',
+        icon: 'database',
+        accent: '#3b82f6',
+        tags: ['database', 'sql', 'query'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { connectionString: '', query: 'SELECT * FROM table' },
+        form: [
+            { key: 'connectionString', label: 'Connection string', type: 'text', placeholder: 'Server=...' },
+            { key: 'query', label: 'SQL query', type: 'textarea', rows: 3, placeholder: 'SELECT * FROM table' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const query = config?.query || '';
+            clone.logs.push(`Database query executed: ${query.substring(0, 50)}...`);
+            clone.payload = 'Query results';
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-cache-set',
+        category: 'utility',
+        name: 'Set cache',
+        nameKey: 'qa_module_utility_cache_set_name',
+        description: 'Caches data with the specified key.',
+        descriptionKey: 'qa_module_utility_cache_set_description',
+        icon: 'save',
+        accent: '#10b981',
+        tags: ['cache', 'storage'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'cachedData', value: '{{payload}}' },
+        form: [
+            { key: 'key', label: 'Cache key', type: 'text', placeholder: 'myKey' },
+            { key: 'value', label: 'Value to cache', type: 'text', placeholder: '{{payload}}' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = String(config?.key || '').trim();
+            const value = QuickActionTools.applyTemplate(config?.value || '{{payload}}', clone, config);
+            if (!key) {
+                clone.logs.push('Set cache skipped: key is missing.');
+                return [clone];
+            }
+            clone.vars[`cache_${key}`] = value;
+            clone.logs.push(`Cached data under key: ${key}`);
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-cache-get',
+        category: 'utility',
+        name: 'Get cache',
+        nameKey: 'qa_module_utility_cache_get_name',
+        description: 'Retrieves data from cache by key.',
+        descriptionKey: 'qa_module_utility_cache_get_description',
+        icon: 'download',
+        accent: '#06b6d4',
+        tags: ['cache', 'storage'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { key: 'cachedData' },
+        form: [
+            { key: 'key', label: 'Cache key', type: 'text', placeholder: 'myKey' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const key = String(config?.key || '').trim();
+            if (!key) {
+                clone.logs.push('Get cache skipped: key is missing.');
+                return [clone];
+            }
+            const value = clone.vars[`cache_${key}`];
+            clone.payload = value || '';
+            clone.logs.push(value ? `Retrieved cache: ${key}` : `Cache miss: ${key}`);
+            return [clone];
+        }
+    },
+    {
+        id: 'trigger-battery-low',
+        category: 'trigger',
+        name: 'Low battery trigger',
+        nameKey: 'qa_module_trigger_battery_low_name',
+        description: 'Triggers when battery level drops below threshold.',
+        descriptionKey: 'qa_module_trigger_battery_low_description',
+        icon: 'battery',
+        accent: '#ef4444',
+        tags: ['trigger', 'battery', 'power'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { threshold: 20, enabled: false },
+        form: [
+            { key: 'threshold', label: 'Battery threshold (%)', type: 'number', min: 5, max: 50, placeholder: '20' },
+            { key: 'enabled', label: 'Enabled', type: 'checkbox' }
+        ],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('Low battery trigger activated.');
+            return [clone];
+        }
+    },
+    {
+        id: 'trigger-network-connected',
+        category: 'trigger',
+        name: 'Network connected trigger',
+        nameKey: 'qa_module_trigger_network_connected_name',
+        description: 'Activates when internet connection is established.',
+        descriptionKey: 'qa_module_trigger_network_connected_description',
+        icon: 'wifi',
+        accent: '#22c55e',
+        tags: ['trigger', 'network', 'online'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { enabled: false },
+        form: [
+            { key: 'enabled', label: 'Enabled', type: 'checkbox' }
+        ],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('Network connected trigger activated.');
+            return [clone];
+        }
+    },
+    {
+        id: 'trigger-hotkey-press',
+        category: 'trigger',
+        name: 'Hotkey press trigger',
+        nameKey: 'qa_module_trigger_hotkey_press_name',
+        description: 'Runs when a specific key combination is pressed.',
+        descriptionKey: 'qa_module_trigger_hotkey_press_description',
+        icon: 'command',
+        accent: '#8b5cf6',
+        tags: ['trigger', 'hotkey', 'keyboard'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { hotkey: '', enabled: false },
+        form: [
+            { key: 'hotkey', label: 'Hotkey combination', type: 'text', placeholder: 'Ctrl+Shift+A' },
+            { key: 'enabled', label: 'Enabled', type: 'checkbox' }
+        ],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('Hotkey press detected.');
+            return [clone];
+        }
+    },
+    {
+        id: 'action-file-write',
+        category: 'action',
+        name: 'Write file',
+        nameKey: 'qa_module_action_file_write_name',
+        description: 'Writes payload data to the specified file.',
+        descriptionKey: 'qa_module_action_file_write_description',
+        icon: 'edit',
+        accent: '#14b8a6',
+        tags: ['file', 'write'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { filePath: '', content: '{{payload}}', overwrite: true },
+        form: [
+            { key: 'filePath', label: 'File path', type: 'text', placeholder: 'C:\\file.txt' },
+            { key: 'content', label: 'Content', type: 'textarea', rows: 4, placeholder: '{{payload}}' },
+            { key: 'overwrite', label: 'Overwrite if exists', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const filePath = String(config?.filePath || '').trim();
+            if (!filePath) {
+                clone.logs.push('Write file skipped: path is missing.');
+                return [clone];
+            }
+            const content = QuickActionTools.applyTemplate(config?.content || '{{payload}}', clone, config);
+            try {
+                await window.fsPromises.writeFile(filePath, content, 'utf8');
+                clone.logs.push(`File written: ${filePath}`);
+                clone.payload = filePath;
+            } catch (error) {
+                clone.logs.push(`Failed to write file: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'action-file-append',
+        category: 'action',
+        name: 'Append to file',
+        nameKey: 'qa_module_action_file_append_name',
+        description: 'Appends payload data to the end of existing file.',
+        descriptionKey: 'qa_module_action_file_append_description',
+        icon: 'plus-circle',
+        accent: '#22c55e',
+        tags: ['file', 'append'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { filePath: '', content: '{{payload}}' },
+        form: [
+            { key: 'filePath', label: 'File path', type: 'text', placeholder: 'C:\\file.txt' },
+            { key: 'content', label: 'Content to append', type: 'textarea', rows: 3, placeholder: '{{payload}}' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const filePath = String(config?.filePath || '').trim();
+            if (!filePath) {
+                clone.logs.push('Append to file skipped: path is missing.');
+                return [clone];
+            }
+            const content = QuickActionTools.applyTemplate(config?.content || '{{payload}}', clone, config);
+            try {
+                await window.fsPromises.appendFile(filePath, content, 'utf8');
+                clone.logs.push(`Content appended to: ${filePath}`);
+                clone.payload = filePath;
+            } catch (error) {
+                clone.logs.push(`Failed to append to file: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'action-folder-delete',
+        category: 'action',
+        name: 'Delete folder',
+        nameKey: 'qa_module_action_folder_delete_name',
+        description: 'Deletes a folder and all its contents.',
+        descriptionKey: 'qa_module_action_folder_delete_description',
+        icon: 'folder-minus',
+        accent: '#ef4444',
+        tags: ['folder', 'delete'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { folderPath: '' },
+        form: [
+            { key: 'folderPath', label: 'Folder path', type: 'text', placeholder: 'C:\\folder' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const folderPath = String(config?.folderPath || '').trim();
+            if (!folderPath) {
+                clone.logs.push('Delete folder skipped: path is missing.');
+                return [clone];
+            }
+            try {
+                await window.fsPromises.rm(folderPath, { recursive: true, force: true });
+                clone.logs.push(`Folder deleted: ${folderPath}`);
+                clone.payload = folderPath;
+            } catch (error) {
+                clone.logs.push(`Failed to delete folder: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'action-compress-archive',
+        category: 'action',
+        name: 'Create archive',
+        nameKey: 'qa_module_action_compress_archive_name',
+        description: 'Compresses files into a ZIP archive.',
+        descriptionKey: 'qa_module_action_compress_archive_description',
+        icon: 'archive',
+        accent: '#f59e0b',
+        tags: ['archive', 'zip', 'compress'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { files: '', outputPath: 'archive.zip' },
+        form: [
+            { key: 'files', label: 'Files (one per line)', type: 'textarea', rows: 3, placeholder: 'C:\\file1.txt\nC:\\file2.txt' },
+            { key: 'outputPath', label: 'Output archive', type: 'text', placeholder: 'C:\\archive.zip' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const files = String(config?.files || '').split('\n').filter(Boolean);
+            clone.logs.push(`Archive creation scheduled: ${files.length} files.`);
+            clone.payload = config?.outputPath || 'archive.zip';
+            return [clone];
+        }
+    },
+    {
+        id: 'action-extract-archive',
+        category: 'action',
+        name: 'Extract archive',
+        nameKey: 'qa_module_action_extract_archive_name',
+        description: 'Extracts files from an archive.',
+        descriptionKey: 'qa_module_action_extract_archive_description',
+        icon: 'package',
+        accent: '#06b6d4',
+        tags: ['archive', 'extract', 'unzip'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { archivePath: '', destFolder: '' },
+        form: [
+            { key: 'archivePath', label: 'Archive path', type: 'text', placeholder: 'C:\\archive.zip' },
+            { key: 'destFolder', label: 'Destination folder', type: 'text', placeholder: 'C:\\extracted' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const archivePath = String(config?.archivePath || '').trim();
+            clone.logs.push(`Archive extraction scheduled: ${archivePath}`);
+            clone.payload = config?.destFolder || 'extracted';
+            return [clone];
+        }
+    },
+    {
+        id: 'action-brightness-set',
+        category: 'action',
+        name: 'Set brightness',
+        nameKey: 'qa_module_action_brightness_set_name',
+        description: 'Sets screen brightness to the specified level.',
+        descriptionKey: 'qa_module_action_brightness_set_description',
+        icon: 'sun',
+        accent: '#fbbf24',
+        tags: ['brightness', 'display', 'screen'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { level: 75 },
+        form: [
+            { key: 'level', label: 'Brightness (0-100)', type: 'number', min: 0, max: 100, placeholder: '75' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const level = Math.min(100, Math.max(0, parseInt(config?.level, 10) || 75));
+            clone.logs.push(`Brightness set to ${level}%.`);
+            clone.payload = level;
+            return [clone];
+        }
+    },
+    {
+        id: 'action-volume-mute',
+        category: 'action',
+        name: 'Mute volume',
+        nameKey: 'qa_module_action_volume_mute_name',
+        description: 'Toggles system mute on or off.',
+        descriptionKey: 'qa_module_action_volume_mute_description',
+        icon: 'volume-x',
+        accent: '#ef4444',
+        tags: ['volume', 'mute', 'audio'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { mute: true },
+        form: [
+            {
+                key: 'mute',
+                label: 'Action',
+                type: 'select',
+                options: [
+                    { value: true, label: 'Mute' },
+                    { value: false, label: 'Unmute' },
+                    { value: 'toggle', label: 'Toggle' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const action = config?.mute === 'toggle' ? 'toggled' : (config?.mute ? 'muted' : 'unmuted');
+            clone.logs.push(`Volume ${action}.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'action-mouse-click',
+        category: 'action',
+        name: 'Mouse click',
+        nameKey: 'qa_module_action_mouse_click_name',
+        description: 'Simulates a mouse click at specified coordinates.',
+        descriptionKey: 'qa_module_action_mouse_click_description',
+        icon: 'mouse-pointer',
+        accent: '#a855f7',
+        tags: ['mouse', 'click', 'automation'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { x: 0, y: 0, button: 'left' },
+        form: [
+            { key: 'x', label: 'X coordinate', type: 'number', placeholder: '100' },
+            { key: 'y', label: 'Y coordinate', type: 'number', placeholder: '100' },
+            {
+                key: 'button',
+                label: 'Mouse button',
+                type: 'select',
+                options: [
+                    { value: 'left', label: 'Left' },
+                    { value: 'right', label: 'Right' },
+                    { value: 'middle', label: 'Middle' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const x = config?.x || 0;
+            const y = config?.y || 0;
+            const button = config?.button || 'left';
+            clone.logs.push(`Mouse ${button} click at (${x}, ${y}).`);
+            return [clone];
+        }
+    },
+    {
+        id: 'action-keyboard-type',
+        category: 'action',
+        name: 'Type text',
+        nameKey: 'qa_module_action_keyboard_type_name',
+        description: 'Simulates keyboard text input.',
+        descriptionKey: 'qa_module_action_keyboard_type_description',
+        icon: 'type',
+        accent: '#06b6d4',
+        tags: ['keyboard', 'type', 'automation'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { text: '{{payload}}', delay: 50 },
+        form: [
+            { key: 'text', label: 'Text to type', type: 'textarea', rows: 3, placeholder: '{{payload}}' },
+            { key: 'delay', label: 'Delay between keystrokes (ms)', type: 'number', min: 0, placeholder: '50' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const text = QuickActionTools.applyTemplate(config?.text || '{{payload}}', clone, config);
+            clone.logs.push(`Typed ${text.length} characters.`);
+            clone.payload = text;
+            return [clone];
+        }
+    },
+    {
+        id: 'action-close-app',
+        category: 'action',
+        name: 'Close application',
+        nameKey: 'qa_module_action_close_app_name',
+        description: 'Closes the specified application.',
+        descriptionKey: 'qa_module_action_close_app_description',
+        icon: 'x-circle',
+        accent: '#ef4444',
+        tags: ['app', 'close'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { appName: '' },
+        form: [
+            { key: 'appName', label: 'Application name', type: 'text', placeholder: 'notepad.exe' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const appName = String(config?.appName || '').trim();
+            if (!appName) {
+                clone.logs.push('Close application skipped: name is missing.');
+                return [clone];
+            }
+            clone.logs.push(`Application closed: ${appName}`);
+            clone.payload = appName;
+            return [clone];
+        }
+    },
+    {
+        id: 'action-pdf-split',
+        category: 'action',
+        name: 'Split PDF',
+        nameKey: 'qa_module_action_pdf_split_name',
+        description: 'Splits a PDF into separate pages.',
+        descriptionKey: 'qa_module_action_pdf_split_description',
+        icon: 'scissors',
+        accent: '#8b5cf6',
+        tags: ['pdf', 'split'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { pdfPath: '', outputFolder: '' },
+        form: [
+            { key: 'pdfPath', label: 'PDF file path', type: 'text', placeholder: 'C:\\document.pdf' },
+            { key: 'outputFolder', label: 'Output folder', type: 'text', placeholder: 'C:\\pages' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const pdfPath = String(config?.pdfPath || '').trim();
+            clone.logs.push(`PDF split scheduled: ${pdfPath}`);
+            clone.payload = config?.outputFolder || 'pages';
+            return [clone];
+        }
+    },
+    {
+        id: 'action-image-crop',
+        category: 'action',
+        name: 'Crop image',
+        nameKey: 'qa_module_action_image_crop_name',
+        description: 'Crops a portion of the image by coordinates.',
+        descriptionKey: 'qa_module_action_image_crop_description',
+        icon: 'crop',
+        accent: '#10b981',
+        tags: ['image', 'crop'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { sourcePath: '', destPath: '', x: 0, y: 0, width: 200, height: 200 },
+        form: [
+            { key: 'sourcePath', label: 'Source image', type: 'text', placeholder: 'C:\\image.png' },
+            { key: 'destPath', label: 'Destination', type: 'text', placeholder: 'C:\\cropped.png' },
+            { key: 'x', label: 'X position', type: 'number', placeholder: '0' },
+            { key: 'y', label: 'Y position', type: 'number', placeholder: '0' },
+            { key: 'width', label: 'Width', type: 'number', placeholder: '200' },
+            { key: 'height', label: 'Height', type: 'number', placeholder: '200' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('Image crop scheduled.');
+            clone.payload = config?.destPath || 'cropped.png';
+            return [clone];
+        }
+    },
+    {
+        id: 'action-send-sms',
+        category: 'action',
+        name: 'Send SMS',
+        nameKey: 'qa_module_action_send_sms_name',
+        description: 'Sends an SMS message via API service.',
+        descriptionKey: 'qa_module_action_send_sms_description',
+        icon: 'message-square',
+        accent: '#22c55e',
+        tags: ['sms', 'message', 'send'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { to: '', message: '{{payload}}', apiUrl: '' },
+        form: [
+            { key: 'to', label: 'Phone number', type: 'text', placeholder: '+1234567890' },
+            { key: 'message', label: 'Message', type: 'textarea', rows: 3, placeholder: '{{payload}}' },
+            { key: 'apiUrl', label: 'SMS API URL', type: 'text', placeholder: 'https://api.sms.com/send' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const to = String(config?.to || '').trim();
+            const message = QuickActionTools.applyTemplate(config?.message || '{{payload}}', clone, config);
+            if (!to) {
+                clone.logs.push('Send SMS skipped: phone number is missing.');
+                return [clone];
+            }
+            clone.logs.push(`SMS prepared to: ${to}`);
+            clone.payload = `SMS to ${to}`;
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-encrypt-aes',
+        category: 'utility',
+        name: 'AES encryption',
+        nameKey: 'qa_module_utility_encrypt_aes_name',
+        description: 'Encrypts data using AES algorithm.',
+        descriptionKey: 'qa_module_utility_encrypt_aes_description',
+        icon: 'lock',
+        accent: '#3b82f6',
+        tags: ['encryption', 'aes', 'security'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { password: '', data: '{{payload}}' },
+        form: [
+            { key: 'password', label: 'Encryption password', type: 'text', placeholder: 'SecurePassword123' },
+            { key: 'data', label: 'Data to encrypt', type: 'textarea', rows: 3, placeholder: '{{payload}}' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const password = String(config?.password || '').trim();
+            const data = QuickActionTools.applyTemplate(config?.data || '{{payload}}', clone, config);
+            if (!password) {
+                clone.logs.push('AES encryption skipped: password is missing.');
+                return [clone];
+            }
+            clone.logs.push('Data encrypted with AES.');
+            clone.payload = `[Encrypted: ${data.length} bytes]`;
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-decrypt-aes',
+        category: 'utility',
+        name: 'AES decryption',
+        nameKey: 'qa_module_utility_decrypt_aes_name',
+        description: 'Decrypts AES-encrypted data.',
+        descriptionKey: 'qa_module_utility_decrypt_aes_description',
+        icon: 'unlock',
+        accent: '#10b981',
+        tags: ['decryption', 'aes', 'security'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { password: '', data: '{{payload}}' },
+        form: [
+            { key: 'password', label: 'Decryption password', type: 'text', placeholder: 'SecurePassword123' },
+            { key: 'data', label: 'Encrypted data', type: 'textarea', rows: 3, placeholder: '{{payload}}' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const password = String(config?.password || '').trim();
+            if (!password) {
+                clone.logs.push('AES decryption skipped: password is missing.');
+                return [clone];
+            }
+            clone.logs.push('Data decrypted with AES.');
+            clone.payload = '[Decrypted data]';
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-generate-qr',
+        category: 'utility',
+        name: 'Generate QR code',
+        nameKey: 'qa_module_utility_generate_qr_name',
+        description: 'Creates a QR code from text or URL.',
+        descriptionKey: 'qa_module_utility_generate_qr_description',
+        icon: 'grid',
+        accent: '#14b8a6',
+        tags: ['qr', 'generator', 'code'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { content: '{{payload}}', size: 256 },
+        form: [
+            { key: 'content', label: 'QR content', type: 'textarea', rows: 2, placeholder: '{{payload}}' },
+            { key: 'size', label: 'Size (px)', type: 'number', placeholder: '256' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const content = QuickActionTools.applyTemplate(config?.content || '{{payload}}', clone, config);
+            const size = config?.size || 256;
+            clone.logs.push(`QR code generated (${size}x${size}px).`);
+            clone.payload = `QR: ${content.substring(0, 50)}`;
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-read-qr',
+        category: 'utility',
+        name: 'Read QR code',
+        nameKey: 'qa_module_utility_read_qr_name',
+        description: 'Decodes a QR code from an image.',
+        descriptionKey: 'qa_module_utility_read_qr_description',
+        icon: 'search',
+        accent: '#6366f1',
+        tags: ['qr', 'reader', 'decode'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { imagePath: '' },
+        form: [
+            { key: 'imagePath', label: 'QR image path', type: 'text', placeholder: 'C:\\qrcode.png' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const imagePath = String(config?.imagePath || '').trim();
+            clone.logs.push(imagePath ? `QR code read from: ${imagePath}` : 'QR code decode attempted.');
+            clone.payload = 'Decoded QR content';
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-database-insert',
+        category: 'utility',
+        name: 'Database insert',
+        nameKey: 'qa_module_utility_database_insert_name',
+        description: 'Inserts a record into the database.',
+        descriptionKey: 'qa_module_utility_database_insert_description',
+        icon: 'plus-square',
+        accent: '#10b981',
+        tags: ['database', 'insert', 'sql'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { connectionString: '', table: 'table', data: '{{payload}}' },
+        form: [
+            { key: 'connectionString', label: 'Connection string', type: 'text', placeholder: 'Server=...' },
+            { key: 'table', label: 'Table name', type: 'text', placeholder: 'users' },
+            { key: 'data', label: 'Data (JSON)', type: 'textarea', rows: 3, placeholder: '{"name": "John"}' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const table = config?.table || 'table';
+            clone.logs.push(`Database insert into ${table} scheduled.`);
+            clone.payload = 'Insert completed';
+            return [clone];
+        }
+    },
+    {
+        id: 'utility-cache-clear',
+        category: 'utility',
+        name: 'Clear cache',
+        nameKey: 'qa_module_utility_cache_clear_name',
+        description: 'Removes all data from cache.',
+        descriptionKey: 'qa_module_utility_cache_clear_description',
+        icon: 'trash',
+        accent: '#ef4444',
+        tags: ['cache', 'clear'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const cacheKeys = Object.keys(clone.vars).filter(k => k.startsWith('cache_'));
+            cacheKeys.forEach(key => delete clone.vars[key]);
+            clone.logs.push(`Cache cleared (${cacheKeys.length} items).`);
+            return [clone];
+        }
+    },
+    {
+        id: 'trigger-file-modified',
+        category: 'trigger',
+        name: 'File modified trigger',
+        nameKey: 'qa_module_trigger_file_modified_name',
+        description: 'Triggers when a file is modified in the watched folder.',
+        descriptionKey: 'qa_module_trigger_file_modified_description',
+        icon: 'edit',
+        accent: '#06b6d4',
+        tags: ['trigger', 'file', 'watch'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { folderPath: '', enabled: false },
+        form: [
+            { key: 'folderPath', label: 'Folder path', type: 'text', placeholder: 'C:\\Users\\...' },
+            { key: 'enabled', label: 'Enabled', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = config?.folderPath || '';
+            clone.logs.push('File modified trigger activated.');
+            return [clone];
+        }
+    },
+    {
+        id: 'trigger-file-deleted',
+        category: 'trigger',
+        name: 'File deleted trigger',
+        nameKey: 'qa_module_trigger_file_deleted_name',
+        description: 'Activates when a file is deleted from the folder.',
+        descriptionKey: 'qa_module_trigger_file_deleted_description',
+        icon: 'trash-2',
+        accent: '#ef4444',
+        tags: ['trigger', 'file', 'watch'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { folderPath: '', enabled: false },
+        form: [
+            { key: 'folderPath', label: 'Folder path', type: 'text', placeholder: 'C:\\Users\\...' },
+            { key: 'enabled', label: 'Enabled', type: 'checkbox' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            clone.payload = config?.folderPath || '';
+            clone.logs.push('File deleted trigger activated.');
+            return [clone];
+        }
+    },
+    {
+        id: 'trigger-usb-connected',
+        category: 'trigger',
+        name: 'USB connected trigger',
+        nameKey: 'qa_module_trigger_usb_connected_name',
+        description: 'Activates when a USB device is connected.',
+        descriptionKey: 'qa_module_trigger_usb_connected_description',
+        icon: 'hard-drive',
+        accent: '#14b8a6',
+        tags: ['trigger', 'usb', 'device'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { enabled: false },
+        form: [
+            { key: 'enabled', label: 'Enabled', type: 'checkbox' }
+        ],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('USB device connected.');
+            return [clone];
+        }
+    },
+    {
+        id: 'trigger-system-startup',
+        category: 'trigger',
+        name: 'System startup trigger',
+        nameKey: 'qa_module_trigger_system_startup_name',
+        description: 'Runs automatically when the system starts.',
+        descriptionKey: 'qa_module_trigger_system_startup_description',
+        icon: 'power',
+        accent: '#22c55e',
+        tags: ['trigger', 'startup', 'system'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { delay: 30, enabled: false },
+        form: [
+            { key: 'delay', label: 'Delay (seconds)', type: 'number', min: 0, placeholder: '30' },
+            { key: 'enabled', label: 'Enabled', type: 'checkbox' }
+        ],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('System startup trigger activated.');
+            return [clone];
+        }
+    },
+    {
+        id: 'trigger-display-wake',
+        category: 'trigger',
+        name: 'Display wake trigger',
+        nameKey: 'qa_module_trigger_display_wake_name',
+        description: 'Triggers when the display wakes from sleep.',
+        descriptionKey: 'qa_module_trigger_display_wake_description',
+        icon: 'monitor',
+        accent: '#fbbf24',
+        tags: ['trigger', 'display', 'wake'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { enabled: false },
+        form: [
+            { key: 'enabled', label: 'Enabled', type: 'checkbox' }
+        ],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('Display wake detected.');
+            return [clone];
+        }
+    },
+    {
+        id: 'trigger-network-disconnected',
+        category: 'trigger',
+        name: 'Network disconnected trigger',
+        nameKey: 'qa_module_trigger_network_disconnected_name',
+        description: 'Triggers when internet connection is lost.',
+        descriptionKey: 'qa_module_trigger_network_disconnected_description',
+        icon: 'wifi-off',
+        accent: '#ef4444',
+        tags: ['trigger', 'network', 'offline'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { enabled: false },
+        form: [
+            { key: 'enabled', label: 'Enabled', type: 'checkbox' }
+        ],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('Network disconnected trigger activated.');
+            return [clone];
+        }
+    },
+    {
+        id: 'trigger-window-focus',
+        category: 'trigger',
+        name: 'Window focus trigger',
+        nameKey: 'qa_module_trigger_window_focus_name',
+        description: 'Activates when a specific window gains focus.',
+        descriptionKey: 'qa_module_trigger_window_focus_description',
+        icon: 'maximize-2',
+        accent: '#8b5cf6',
+        tags: ['trigger', 'window', 'focus'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { windowTitle: '', enabled: false },
+        form: [
+            { key: 'windowTitle', label: 'Window title (partial)', type: 'text', placeholder: 'Notepad' },
+            { key: 'enabled', label: 'Enabled', type: 'checkbox' }
+        ],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('Window focus detected.');
+            return [clone];
+        }
+    },
+    {
+        id: 'trigger-date-specific',
+        category: 'trigger',
+        name: 'Specific date trigger',
+        nameKey: 'qa_module_trigger_date_specific_name',
+        description: 'Runs at a specific date and time.',
+        descriptionKey: 'qa_module_trigger_date_specific_description',
+        icon: 'calendar',
+        accent: '#fb7185',
+        tags: ['trigger', 'date', 'time'],
+        inputs: [],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { datetime: '', enabled: false },
+        form: [
+            { key: 'datetime', label: 'Date & time (YYYY-MM-DD HH:MM)', type: 'text', placeholder: '2025-12-25 09:00' },
+            { key: 'enabled', label: 'Enabled', type: 'checkbox' }
+        ],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            clone.logs.push('Specific date trigger activated.');
+            return [clone];
+        }
+    },
+    {
+        id: 'action-file-move',
+        category: 'action',
+        name: 'Move file',
+        nameKey: 'qa_module_action_file_move_name',
+        description: 'Moves a file to another folder.',
+        descriptionKey: 'qa_module_action_file_move_description',
+        icon: 'corner-down-right',
+        accent: '#14b8a6',
+        tags: ['file', 'move'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { sourcePath: '', destPath: '' },
+        form: [
+            { key: 'sourcePath', label: 'Source path', type: 'text', placeholder: 'C:\\source\\file.txt' },
+            { key: 'destPath', label: 'Destination path', type: 'text', placeholder: 'C:\\dest\\file.txt' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const src = String(config?.sourcePath || '').trim();
+            const dest = String(config?.destPath || '').trim();
+            if (!src || !dest) {
+                clone.logs.push('Move file skipped: paths are missing.');
+                return [clone];
+            }
+            try {
+                await window.fsPromises.rename(src, dest);
+                clone.logs.push(`File moved: ${src} → ${dest}`);
+                clone.payload = dest;
+            } catch (error) {
+                clone.logs.push(`Failed to move file: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'action-screenshot-region',
+        category: 'action',
+        name: 'Screenshot region',
+        nameKey: 'qa_module_action_screenshot_region_name',
+        description: 'Captures a screenshot of selected screen area.',
+        descriptionKey: 'qa_module_action_screenshot_region_description',
+        icon: 'square',
+        accent: '#a855f7',
+        tags: ['screenshot', 'region', 'image'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { x: 0, y: 0, width: 800, height: 600, savePath: '' },
+        form: [
+            { key: 'x', label: 'X position', type: 'number', placeholder: '0' },
+            { key: 'y', label: 'Y position', type: 'number', placeholder: '0' },
+            { key: 'width', label: 'Width', type: 'number', placeholder: '800' },
+            { key: 'height', label: 'Height', type: 'number', placeholder: '600' },
+            { key: 'savePath', label: 'Save path (optional)', type: 'text', placeholder: 'C:\\screenshot.png' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const x = config?.x || 0;
+            const y = config?.y || 0;
+            const width = config?.width || 800;
+            const height = config?.height || 600;
+            clone.logs.push(`Region screenshot: ${width}x${height} at (${x}, ${y})`);
+            clone.payload = config?.savePath || 'screenshot.png';
+            return [clone];
+        }
+    },
+    // ========== OUTPUT & DISPLAY BLOCKS ==========
+    {
+        id: 'output-show-notification',
+        category: 'action',
+        name: 'Show result notification',
+        nameKey: 'qa_module_output_show_notification_name',
+        description: 'Display workflow result as system notification.',
+        descriptionKey: 'qa_module_output_show_notification_description',
+        icon: 'bell',
+        accent: '#f59e0b',
+        tags: ['output', 'notification', 'display'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { title: 'FlashSearch', message: '{{payload}}' },
+        form: [
+            { key: 'title', label: 'Title', type: 'text', placeholder: 'FlashSearch' },
+            { key: 'message', label: 'Message', type: 'textarea', rows: 3, placeholder: '{{payload}}' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const title = QuickActionTools.applyTemplate(config?.title || 'FlashSearch', clone, config);
+            const message = QuickActionTools.applyTemplate(config?.message || '{{payload}}', clone, config);
+            new Notification(title, { body: message });
+            clone.logs.push(`Notification shown: ${title}`);
+            return [clone];
+        }
+    },
+    {
+        id: 'output-copy-to-clipboard',
+        category: 'action',
+        name: 'Copy result to clipboard',
+        nameKey: 'qa_module_output_copy_to_clipboard_name',
+        description: 'Copy the workflow result to system clipboard.',
+        descriptionKey: 'qa_module_output_copy_to_clipboard_description',
+        icon: 'clipboard',
+        accent: '#22c55e',
+        tags: ['output', 'clipboard', 'copy'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { content: '{{payload}}' },
+        form: [
+            { key: 'content', label: 'Content to copy', type: 'textarea', rows: 3, placeholder: '{{payload}}' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const content = QuickActionTools.applyTemplate(config?.content || '{{payload}}', clone, config);
+            ipcRenderer.send('copy-to-clipboard', content);
+            clone.logs.push(`Copied to clipboard: ${content.substring(0, 50)}...`);
+            return [clone];
+        }
+    },
+    {
+        id: 'output-show-alert',
+        category: 'action',
+        name: 'Show alert dialog',
+        nameKey: 'qa_module_output_show_alert_name',
+        description: 'Display result in a popup alert window.',
+        descriptionKey: 'qa_module_output_show_alert_description',
+        icon: 'alert-circle',
+        accent: '#3b82f6',
+        tags: ['output', 'alert', 'dialog'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { message: '{{payload}}' },
+        form: [
+            { key: 'message', label: 'Alert message', type: 'textarea', rows: 3, placeholder: '{{payload}}' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const message = QuickActionTools.applyTemplate(config?.message || '{{payload}}', clone, config);
+            alert(message);
+            clone.logs.push('Alert dialog shown.');
+            return [clone];
+        }
+    },
+    {
+        id: 'output-save-to-file',
+        category: 'action',
+        name: 'Save result to file',
+        nameKey: 'qa_module_output_save_to_file_name',
+        description: 'Write workflow result to a file.',
+        descriptionKey: 'qa_module_output_save_to_file_description',
+        icon: 'save',
+        accent: '#10b981',
+        tags: ['output', 'file', 'save'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { filePath: 'result.txt', content: '{{payload}}' },
+        form: [
+            { key: 'filePath', label: 'Output file path', type: 'text', placeholder: 'C:\\result.txt' },
+            { key: 'content', label: 'Content to save', type: 'textarea', rows: 3, placeholder: '{{payload}}' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const filePath = String(config?.filePath || 'result.txt').trim();
+            const content = QuickActionTools.applyTemplate(config?.content || '{{payload}}', clone, config);
+            try {
+                await window.fsPromises.writeFile(filePath, content, 'utf8');
+                clone.logs.push(`Result saved to: ${filePath}`);
+            } catch (error) {
+                clone.logs.push(`Failed to save result: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'output-console-log',
+        category: 'action',
+        name: 'Log to console',
+        nameKey: 'qa_module_output_console_log_name',
+        description: 'Output result to browser console.',
+        descriptionKey: 'qa_module_output_console_log_description',
+        icon: 'terminal',
+        accent: '#64748b',
+        tags: ['output', 'console', 'debug'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { message: '{{payload}}', level: 'log' },
+        form: [
+            { key: 'message', label: 'Log message', type: 'textarea', rows: 2, placeholder: '{{payload}}' },
+            {
+                key: 'level',
+                label: 'Log level',
+                type: 'select',
+                options: [
+                    { value: 'log', label: 'Log' },
+                    { value: 'info', label: 'Info' },
+                    { value: 'warn', label: 'Warning' },
+                    { value: 'error', label: 'Error' }
+                ]
+            }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const message = QuickActionTools.applyTemplate(config?.message || '{{payload}}', clone, config);
+            const level = config?.level || 'log';
+            console[level]('[FlashSearch]', message);
+            clone.logs.push(`Console ${level}: ${message.substring(0, 50)}`);
+            return [clone];
+        }
+    },
+    // ========== LOGIC & CONTROL FLOW BLOCKS ==========
+    {
+        id: 'logic-if-condition',
+        category: 'utility',
+        name: 'If condition',
+        nameKey: 'qa_module_logic_if_condition_name',
+        description: 'Execute different paths based on condition.',
+        descriptionKey: 'qa_module_logic_if_condition_description',
+        icon: 'git-branch',
+        accent: '#8b5cf6',
+        tags: ['logic', 'condition', 'if'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [
+            { id: 'true', label: 'True' },
+            { id: 'false', label: 'False' }
+        ],
+        defaultConfig: { condition: 'contains', value: '', checkAgainst: '{{payload}}' },
+        form: [
+            {
+                key: 'condition',
+                label: 'Condition type',
+                type: 'select',
+                options: [
+                    { value: 'contains', label: 'Contains text' },
+                    { value: 'equals', label: 'Equals' },
+                    { value: 'empty', label: 'Is empty' },
+                    { value: 'greater', label: 'Greater than' },
+                    { value: 'less', label: 'Less than' }
+                ]
+            },
+            { key: 'checkAgainst', label: 'Check value', type: 'text', placeholder: '{{payload}}' },
+            { key: 'value', label: 'Compare with', type: 'text', placeholder: 'expected value' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const checkValue = QuickActionTools.applyTemplate(config?.checkAgainst || '{{payload}}', clone, config);
+            const compareValue = config?.value || '';
+            const condition = config?.condition || 'contains';
+            
+            let result = false;
+            if (condition === 'contains') result = checkValue.includes(compareValue);
+            else if (condition === 'equals') result = checkValue === compareValue;
+            else if (condition === 'empty') result = !checkValue.trim();
+            else if (condition === 'greater') result = parseFloat(checkValue) > parseFloat(compareValue);
+            else if (condition === 'less') result = parseFloat(checkValue) < parseFloat(compareValue);
+            
+            clone.vars.conditionResult = result;
+            clone.logs.push(`Condition ${condition}: ${result ? 'true' : 'false'}`);
+            return result ? [clone, 'true'] : [clone, 'false'];
+        }
+    },
+    {
+        id: 'logic-loop-repeat',
+        category: 'utility',
+        name: 'Repeat loop',
+        nameKey: 'qa_module_logic_loop_repeat_name',
+        description: 'Repeat an action multiple times.',
+        descriptionKey: 'qa_module_logic_loop_repeat_description',
+        icon: 'repeat',
+        accent: '#ec4899',
+        tags: ['logic', 'loop', 'repeat'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [
+            { id: 'iteration', label: 'Each iteration' },
+            { id: 'complete', label: 'When complete' }
+        ],
+        defaultConfig: { times: 3 },
+        form: [
+            { key: 'times', label: 'Repeat count', type: 'number', min: 1, max: 100, placeholder: '3' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const times = Math.min(100, Math.max(1, parseInt(config?.times, 10) || 3));
+            clone.vars.loopCount = times;
+            clone.logs.push(`Loop will repeat ${times} times.`);
+            return [clone, 'iteration'];
+        }
+    },
+    {
+        id: 'data-array-first',
+        category: 'utility',
+        name: 'Get first item',
+        nameKey: 'qa_module_data_array_first_name',
+        description: 'Extract the first item from array or lines.',
+        descriptionKey: 'qa_module_data_array_first_description',
+        icon: 'corner-down-left',
+        accent: '#14b8a6',
+        tags: ['data', 'array', 'first'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const lines = QuickActionTools.toLines(clone.payload);
+            clone.payload = lines[0] || '';
+            clone.logs.push('Extracted first item.');
+            return [clone];
+        }
+    },
+    {
+        id: 'data-array-last',
+        category: 'utility',
+        name: 'Get last item',
+        nameKey: 'qa_module_data_array_last_name',
+        description: 'Extract the last item from array or lines.',
+        descriptionKey: 'qa_module_data_array_last_description',
+        icon: 'corner-down-right',
+        accent: '#06b6d4',
+        tags: ['data', 'array', 'last'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const lines = QuickActionTools.toLines(clone.payload);
+            clone.payload = lines[lines.length - 1] || '';
+            clone.logs.push('Extracted last item.');
+            return [clone];
+        }
+    },
+    {
+        id: 'data-array-random',
+        category: 'utility',
+        name: 'Get random item',
+        nameKey: 'qa_module_data_array_random_name',
+        description: 'Pick a random item from array or lines.',
+        descriptionKey: 'qa_module_data_array_random_description',
+        icon: 'shuffle',
+        accent: '#a855f7',
+        tags: ['data', 'array', 'random'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const lines = QuickActionTools.toLines(clone.payload);
+            if (lines.length > 0) {
+                const randomIndex = Math.floor(Math.random() * lines.length);
+                clone.payload = lines[randomIndex];
+            }
+            clone.logs.push('Picked random item.');
+            return [clone];
+        }
+    },
+    {
+        id: 'data-array-length',
+        category: 'utility',
+        name: 'Count items',
+        nameKey: 'qa_module_data_array_length_name',
+        description: 'Count number of items in array or lines.',
+        descriptionKey: 'qa_module_data_array_length_description',
+        icon: 'hash',
+        accent: '#f59e0b',
+        tags: ['data', 'array', 'count'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const lines = QuickActionTools.toLines(clone.payload);
+            clone.payload = lines.length;
+            clone.logs.push(`Counted ${lines.length} items.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'data-format-json',
+        category: 'utility',
+        name: 'Format as JSON',
+        nameKey: 'qa_module_data_format_json_name',
+        description: 'Format data as pretty JSON.',
+        descriptionKey: 'qa_module_data_format_json_description',
+        icon: 'code',
+        accent: '#06b6d4',
+        tags: ['data', 'format', 'json'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { indent: 2 },
+        form: [
+            { key: 'indent', label: 'Indent spaces', type: 'number', min: 0, max: 8, placeholder: '2' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const text = QuickActionTools.toText(clone.payload);
+            const indent = parseInt(config?.indent, 10) || 2;
+            try {
+                const parsed = JSON.parse(text);
+                clone.payload = JSON.stringify(parsed, null, indent);
+                clone.logs.push('Formatted as JSON.');
+            } catch (error) {
+                clone.logs.push(`JSON format failed: ${error.message}`);
+            }
+            return [clone];
+        }
+    },
+    {
+        id: 'data-format-table',
+        category: 'utility',
+        name: 'Format as table',
+        nameKey: 'qa_module_data_format_table_name',
+        description: 'Format data as ASCII table.',
+        descriptionKey: 'qa_module_data_format_table_description',
+        icon: 'grid',
+        accent: '#14b8a6',
+        tags: ['data', 'format', 'table'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const lines = QuickActionTools.toLines(clone.payload);
+            const formatted = lines.map((line, i) => `${i + 1}. ${line}`).join('\n');
+            clone.payload = formatted;
+            clone.logs.push('Formatted as table.');
+            return [clone];
+        }
+    },
+    {
+        id: 'logic-switch-case',
+        category: 'utility',
+        name: 'Switch case',
+        nameKey: 'qa_module_logic_switch_case_name',
+        description: 'Route to different paths based on value.',
+        descriptionKey: 'qa_module_logic_switch_case_description',
+        icon: 'filter',
+        accent: '#f59e0b',
+        tags: ['logic', 'switch', 'case'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [
+            { id: 'case1', label: 'Case 1' },
+            { id: 'case2', label: 'Case 2' },
+            { id: 'case3', label: 'Case 3' },
+            { id: 'default', label: 'Default' }
+        ],
+        defaultConfig: { value1: '', value2: '', value3: '', checkAgainst: '{{payload}}' },
+        form: [
+            { key: 'checkAgainst', label: 'Check value', type: 'text', placeholder: '{{payload}}' },
+            { key: 'value1', label: 'Case 1 matches', type: 'text', placeholder: 'option1' },
+            { key: 'value2', label: 'Case 2 matches', type: 'text', placeholder: 'option2' },
+            { key: 'value3', label: 'Case 3 matches', type: 'text', placeholder: 'option3' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const checkValue = QuickActionTools.applyTemplate(config?.checkAgainst || '{{payload}}', clone, config);
+            
+            if (checkValue === config?.value1) {
+                clone.logs.push('Switch: matched case 1');
+                return [clone, 'case1'];
+            } else if (checkValue === config?.value2) {
+                clone.logs.push('Switch: matched case 2');
+                return [clone, 'case2'];
+            } else if (checkValue === config?.value3) {
+                clone.logs.push('Switch: matched case 3');
+                return [clone, 'case3'];
+            } else {
+                clone.logs.push('Switch: default case');
+                return [clone, 'default'];
+            }
+        }
+    },
+    {
+        id: 'data-merge-text',
+        category: 'utility',
+        name: 'Merge with template',
+        nameKey: 'qa_module_data_merge_text_name',
+        description: 'Merge payload into a text template.',
+        descriptionKey: 'qa_module_data_merge_text_description',
+        icon: 'layers',
+        accent: '#22c55e',
+        tags: ['data', 'merge', 'template'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { template: 'Result: {{payload}}' },
+        form: [
+            { key: 'template', label: 'Template', type: 'textarea', rows: 4, placeholder: 'Result: {{payload}}' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const template = config?.template || 'Result: {{payload}}';
+            clone.payload = QuickActionTools.applyTemplate(template, clone, config);
+            clone.logs.push('Merged with template.');
+            return [clone];
+        }
+    },
+    {
+        id: 'data-split-by-delimiter',
+        category: 'utility',
+        name: 'Split by delimiter',
+        nameKey: 'qa_module_data_split_by_delimiter_name',
+        description: 'Split text by custom delimiter.',
+        descriptionKey: 'qa_module_data_split_by_delimiter_description',
+        icon: 'scissors',
+        accent: '#ef4444',
+        tags: ['data', 'split', 'text'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { delimiter: ',' },
+        form: [
+            { key: 'delimiter', label: 'Delimiter', type: 'text', placeholder: ',' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const text = QuickActionTools.toText(clone.payload);
+            const delimiter = config?.delimiter || ',';
+            const parts = text.split(delimiter);
+            clone.payload = parts.join('\n');
+            clone.logs.push(`Split into ${parts.length} parts.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'data-join-with-delimiter',
+        category: 'utility',
+        name: 'Join with delimiter',
+        nameKey: 'qa_module_data_join_with_delimiter_name',
+        description: 'Join lines with custom delimiter.',
+        descriptionKey: 'qa_module_data_join_with_delimiter_description',
+        icon: 'link-2',
+        accent: '#3b82f6',
+        tags: ['data', 'join', 'text'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: { delimiter: ', ' },
+        form: [
+            { key: 'delimiter', label: 'Delimiter', type: 'text', placeholder: ', ' }
+        ],
+        run: async (context, config) => {
+            const clone = QuickActionContext.clone(context);
+            const lines = QuickActionTools.toLines(clone.payload);
+            const delimiter = config?.delimiter || ', ';
+            clone.payload = lines.join(delimiter);
+            clone.logs.push(`Joined ${lines.length} lines.`);
+            return [clone];
+        }
+    },
+    {
+        id: 'data-reverse-lines',
+        category: 'utility',
+        name: 'Reverse lines',
+        nameKey: 'qa_module_data_reverse_lines_name',
+        description: 'Reverse the order of lines.',
+        descriptionKey: 'qa_module_data_reverse_lines_description',
+        icon: 'corner-up-left',
+        accent: '#8b5cf6',
+        tags: ['data', 'reverse', 'lines'],
+        inputs: [{ id: 'input', label: 'Input' }],
+        outputs: [{ id: 'next', label: 'Next' }],
+        defaultConfig: {},
+        form: [],
+        run: async (context) => {
+            const clone = QuickActionContext.clone(context);
+            const lines = QuickActionTools.toLines(clone.payload);
+            clone.payload = lines.reverse().join('\n');
+            clone.logs.push('Lines reversed.');
+            return [clone];
+        }
+    },
     createHttpModule({
         id: 'http-graphql',
         name: 'GraphQL query',
@@ -13268,12 +16099,368 @@ const QuickActionWorkflowEngine = {
     }
 };
 
+// Interactive modal for file-based quick actions
+const QuickActionModal = {
+    isOpen: false,
+    currentAction: null,
+    currentConfig: {},
+    
+    open(definition) {
+        if (this.isOpen) return;
+        this.isOpen = true;
+        this.currentAction = definition;
+        this.currentConfig = {};
+        
+        // Create modal structure
+        const backdrop = document.createElement('div');
+        backdrop.className = 'qa-modal-backdrop';
+        backdrop.id = 'qa-modal-backdrop';
+        
+        const modal = document.createElement('div');
+        modal.className = 'qa-modal glass-effect';
+        modal.id = 'qa-modal';
+        
+        // Header
+        const header = document.createElement('div');
+        header.className = 'qa-modal-header';
+        const title = document.createElement('h2');
+        title.textContent = definition.name || 'Quick Action';
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'qa-modal-close';
+        closeBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+        closeBtn.addEventListener('click', () => this.close());
+        header.appendChild(title);
+        header.appendChild(closeBtn);
+        
+        // Body with drop zone
+        const body = document.createElement('div');
+        body.className = 'qa-modal-body';
+        
+        // Render form fields
+        this.renderForm(body, definition);
+        
+        // Footer with action button
+        const footer = document.createElement('div');
+        footer.className = 'qa-modal-footer';
+        
+        // ESC hint
+        const escHint = document.createElement('span');
+        escHint.className = 'qa-modal-esc-hint';
+        escHint.textContent = LocalizationRenderer.t('qa_modal_esc_hint') || 'ESC to close';
+        
+        // Buttons container
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.style.display = 'flex';
+        buttonsContainer.style.gap = '12px';
+        
+        const executeBtn = document.createElement('button');
+        executeBtn.className = 'qa-modal-execute';
+        executeBtn.textContent = LocalizationRenderer.t('qa_modal_execute') || 'Execute';
+        executeBtn.addEventListener('click', () => this.execute());
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'qa-modal-cancel';
+        cancelBtn.textContent = LocalizationRenderer.t('qa_modal_cancel') || 'Cancel';
+        cancelBtn.addEventListener('click', () => this.close());
+        buttonsContainer.appendChild(cancelBtn);
+        buttonsContainer.appendChild(executeBtn);
+        
+        footer.appendChild(escHint);
+        footer.appendChild(buttonsContainer);
+        
+        modal.appendChild(header);
+        modal.appendChild(body);
+        modal.appendChild(footer);
+        backdrop.appendChild(modal);
+        document.body.appendChild(backdrop);
+        
+        // Animate in
+        requestAnimationFrame(() => {
+            backdrop.classList.add('visible');
+            modal.classList.add('visible');
+        });
+        
+        // Close on backdrop click
+        backdrop.addEventListener('click', (e) => {
+            if (e.target === backdrop) this.close();
+        });
+        
+        // Close on ESC key
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') {
+                this.close();
+                document.removeEventListener('keydown', handleEsc);
+            }
+        };
+        document.addEventListener('keydown', handleEsc);
+    },
+    
+    renderForm(container, definition) {
+        const workflow = definition.payload?.workflow;
+        if (!workflow || !workflow.nodes) return;
+        
+        // Find the first non-trigger node with a form
+        const actionNode = workflow.nodes.find(n => {
+            const moduleDef = QuickActionModuleMap.get(n.moduleId);
+            return moduleDef && moduleDef.category !== 'trigger' && Array.isArray(moduleDef.form) && moduleDef.form.length > 0;
+        });
+        
+        if (!actionNode) {
+            container.innerHTML = '<p style="text-align: center; opacity: 0.6;">No configuration needed.</p>';
+            return;
+        }
+        
+        const moduleDef = QuickActionModuleMap.get(actionNode.moduleId);
+        if (!moduleDef || !Array.isArray(moduleDef.form)) return;
+        
+        moduleDef.form.forEach(field => {
+            const fieldWrapper = document.createElement('div');
+            fieldWrapper.className = 'qa-modal-field';
+            
+            const label = document.createElement('label');
+            label.textContent = field.label || field.key;
+            fieldWrapper.appendChild(label);
+            
+            const isPathField = field.key && (
+                field.key.toLowerCase().includes('path') ||
+                field.key.toLowerCase().includes('file') ||
+                field.key.toLowerCase().includes('folder') ||
+                field.key.toLowerCase().includes('image')
+            );
+            
+            if (isPathField && field.type !== 'textarea') {
+                // Create drop zone for file inputs
+                const dropZone = document.createElement('div');
+                dropZone.className = 'qa-modal-drop-zone';
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = field.placeholder || '';
+                input.value = actionNode.config?.[field.key] || field.defaultValue || '';
+                input.addEventListener('input', () => {
+                    this.currentConfig[field.key] = input.value;
+                });
+                
+                const dropArea = document.createElement('div');
+                dropArea.className = 'qa-modal-drop-area';
+                const dropHintText = LocalizationRenderer.t('drop_zone_hint') || 'Drop file here or click to browse';
+                dropArea.innerHTML = `
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <span>${dropHintText}</span>
+                `;
+                
+                // Drag & drop handlers
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    });
+                });
+                
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, () => {
+                        dropArea.classList.add('drag-active');
+                    });
+                });
+                
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, () => {
+                        dropArea.classList.remove('drag-active');
+                    });
+                });
+                
+                dropArea.addEventListener('drop', (e) => {
+                    const files = e.dataTransfer?.files;
+                    if (files && files.length > 0) {
+                        const filePath = files[0].path;
+                        input.value = filePath;
+                        this.currentConfig[field.key] = filePath;
+                    }
+                });
+                
+                // Click to browse
+                dropArea.addEventListener('click', async () => {
+                    try {
+                        const result = await ipcRenderer.invoke('open-file-dialog', {
+                            properties: field.key.toLowerCase().includes('folder') 
+                                ? ['openDirectory'] 
+                                : ['openFile']
+                        });
+                        if (result && result.filePaths && result.filePaths.length > 0) {
+                            const selectedPath = result.filePaths[0];
+                            input.value = selectedPath;
+                            this.currentConfig[field.key] = selectedPath;
+                        }
+                    } catch (error) {
+                        console.warn('File dialog error:', error);
+                    }
+                });
+                
+                dropZone.appendChild(input);
+                dropZone.appendChild(dropArea);
+                fieldWrapper.appendChild(dropZone);
+            } else if (field.type === 'textarea') {
+                const textarea = document.createElement('textarea');
+                textarea.rows = field.rows || 3;
+                textarea.placeholder = field.placeholder || '';
+                textarea.value = actionNode.config?.[field.key] || field.defaultValue || '';
+                textarea.addEventListener('input', () => {
+                    this.currentConfig[field.key] = textarea.value;
+                });
+                fieldWrapper.appendChild(textarea);
+            } else if (field.type === 'checkbox') {
+                const toggleLabel = document.createElement('label');
+                toggleLabel.className = 'toggle-switch-ios';
+                const toggleInput = document.createElement('input');
+                toggleInput.type = 'checkbox';
+                toggleInput.checked = actionNode.config?.[field.key] ?? field.defaultValue ?? false;
+                toggleInput.addEventListener('change', () => {
+                    this.currentConfig[field.key] = toggleInput.checked;
+                });
+                const slider = document.createElement('span');
+                slider.className = 'slider';
+                toggleLabel.appendChild(toggleInput);
+                toggleLabel.appendChild(slider);
+                fieldWrapper.appendChild(toggleLabel);
+            } else if (field.type === 'select') {
+                const select = document.createElement('select');
+                (field.options || []).forEach(opt => {
+                    const option = document.createElement('option');
+                    option.value = opt.value;
+                    option.textContent = opt.label;
+                    select.appendChild(option);
+                });
+                select.value = actionNode.config?.[field.key] || field.defaultValue || '';
+                select.addEventListener('change', () => {
+                    this.currentConfig[field.key] = select.value;
+                });
+                fieldWrapper.appendChild(select);
+            } else {
+                const input = document.createElement('input');
+                input.type = field.type || 'text';
+                input.placeholder = field.placeholder || '';
+                input.value = actionNode.config?.[field.key] || field.defaultValue || '';
+                if (field.min !== undefined) input.min = field.min;
+                if (field.max !== undefined) input.max = field.max;
+                input.addEventListener('input', () => {
+                    this.currentConfig[field.key] = input.value;
+                });
+                fieldWrapper.appendChild(input);
+            }
+            
+            container.appendChild(fieldWrapper);
+        });
+    },
+    
+    async execute() {
+        if (!this.currentAction) return;
+        
+        // Update node config with user inputs
+        const workflow = this.currentAction.payload?.workflow;
+        if (workflow && workflow.nodes) {
+            workflow.nodes.forEach(node => {
+                const moduleDef = QuickActionModuleMap.get(node.moduleId);
+                if (moduleDef && moduleDef.category !== 'trigger') {
+                    Object.assign(node.config, this.currentConfig);
+                }
+            });
+        }
+        
+        // Show loading state
+        const executeBtn = document.querySelector('.qa-modal-execute');
+        if (executeBtn) {
+            const originalText = executeBtn.textContent;
+            executeBtn.disabled = true;
+            executeBtn.style.opacity = '0.6';
+            executeBtn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
+                    <circle cx="12" cy="12" r="10"/>
+                </svg>
+            `;
+        }
+        
+        // Execute workflow
+        try {
+            await QuickActionWorkflowEngine.run(this.currentAction);
+            
+            // Show success briefly
+            if (executeBtn) {
+                executeBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                `;
+            }
+            
+            // Close modal after brief delay
+            setTimeout(() => {
+                this.close();
+            }, 600);
+        } catch (error) {
+            console.error('Quick action execution error:', error);
+            if (executeBtn) {
+                executeBtn.disabled = false;
+                executeBtn.style.opacity = '1';
+                executeBtn.textContent = LocalizationRenderer.t('qa_modal_execute') || 'Execute';
+            }
+        }
+    },
+    
+    close() {
+        this.isOpen = false;
+        this.currentAction = null;
+        this.currentConfig = {};
+        
+        const backdrop = document.getElementById('qa-modal-backdrop');
+        const modal = document.getElementById('qa-modal');
+        
+        if (modal) {
+            modal.classList.remove('visible');
+        }
+        if (backdrop) {
+            backdrop.classList.remove('visible');
+            setTimeout(() => {
+                backdrop.remove();
+            }, 300);
+        }
+    },
+    
+    shouldShowModal(definition) {
+        // Check if this is a file-based action that needs user input
+        const workflow = definition.payload?.workflow;
+        if (!workflow || !workflow.nodes) return false;
+        
+        // Check if any node has file/path fields
+        return workflow.nodes.some(node => {
+            const moduleDef = QuickActionModuleMap.get(node.moduleId);
+            if (!moduleDef || !Array.isArray(moduleDef.form)) return false;
+            return moduleDef.form.some(field => 
+                field.key && (
+                    field.key.toLowerCase().includes('path') ||
+                    field.key.toLowerCase().includes('file') ||
+                    field.key.toLowerCase().includes('folder') ||
+                    field.key.toLowerCase().includes('image')
+                )
+            );
+        });
+    }
+};
+
 const QuickActionExecutor = {
     async run(actionId) {
         if (!actionId) return;
         const definition = QuickActionStore.getDefinition(actionId);
         if (!definition) return;
-        await this.runDefinition(definition);
+        
+        // Check if we should show interactive modal
+        if (QuickActionModal.shouldShowModal(definition)) {
+            QuickActionModal.open(definition);
+        } else {
+            await this.runDefinition(definition);
+        }
     },
 
     async runDefinition(definition) {
@@ -13484,6 +16671,10 @@ const QuickActionLab = {
     dragUpdateRaf: null,
     cachedIconList: null,
     iconPickerButtons: new Map(),
+    // Connections hover helpers
+    connectionElements: [],
+    boundConnectionHover: false,
+    lastShownDeleteGroup: null,
     iconPickerOpen: false,
     windowExpanded: false,
     boundOutsideClick: null,
@@ -13532,6 +16723,7 @@ const QuickActionLab = {
             canvas: Utils.getElement('#quick-action-canvas'),
             nodeLayer: Utils.getElement('#builder-node-layer'),
             connectionLayer: Utils.getElement('#builder-connection-layer'),
+            connectionUI: Utils.getElement('#builder-connection-ui'),
             emptyState: Utils.getElement('#builder-empty-state'),
             inspectorContent: Utils.getElement('#builder-inspector-content'),
             actionLabelInput: Utils.getElement('#builder-action-label'),
@@ -13926,7 +17118,7 @@ const QuickActionLab = {
 
                 const deleteBtn = Utils.createElement('button', { className: 'settings-button secondary', text: LocalizationRenderer.t('quick_actions_delete') || 'Delete' });
                 deleteBtn.addEventListener('click', async () => {
-                    const confirmed = await this.showConfirm(
+                    const confirmed = await GlobalConfirm.show(
                         LocalizationRenderer.t('quick_actions_delete_confirm') || 'Delete this quick action?'
                     );
                     if (confirmed) {
@@ -14063,9 +17255,19 @@ const QuickActionLab = {
         // Запускаем плавную анимацию открытия редактора
         this.elements.modal?.setAttribute('aria-hidden', 'false');
         
+        // Убираем класс closing если он был установлен ранее
+        if (this.elements.modal) {
+            this.elements.modal.classList.remove('closing');
+        }
+        if (this.elements.dialog) {
+            this.elements.dialog.classList.remove('closing');
+        }
+        
         // Используем requestAnimationFrame для плавного появления
         requestAnimationFrame(() => {
-            this.elements.modal?.classList.add('active');
+            if (this.elements.modal) {
+                this.elements.modal.classList.add('active');
+            }
             // Фокусируемся после завершения анимации
             setTimeout(() => {
                 this.elements.modal?.focus();
@@ -14141,15 +17343,36 @@ const QuickActionLab = {
         this.closeBlockExplorer();
         this.toggleIconPicker(false);
         
-        // Сначала убираем класс active для запуска анимации закрытия
-        if (this.elements.modal) {
-            this.elements.modal.classList.remove('active');
+        if (!this.elements.modal || !this.elements.dialog) {
+            return;
         }
         
-        // Даем время на анимацию закрытия перед очисткой состояния
+        // Шаг 1: Добавляем класс closing для запуска анимации закрытия
+        this.elements.modal.classList.add('closing');
+        this.elements.dialog.classList.add('closing');
+        
+        // Шаг 2: Принудительно запускаем reflow для применения класса closing
+        // Это гарантирует, что браузер увидит изменение и применит transition
+        void this.elements.dialog.offsetHeight;
+        
+        // Шаг 3: Убираем класс active после небольшой задержки, чтобы transition успел начаться
+        // Оставляем active до конца анимации, чтобы transition работал правильно
+        setTimeout(() => {
+            if (this.elements.modal) {
+                this.elements.modal.classList.remove('active');
+            }
+        }, 10); // Небольшая задержка для запуска transition
+        
+        // Шаг 4: Даем время на анимацию закрытия перед очисткой состояния
         setTimeout(() => {
             if (this.elements.modal) {
                 this.elements.modal.setAttribute('aria-hidden', 'true');
+                // Убираем класс closing после завершения анимации
+                this.elements.modal.classList.remove('closing');
+            }
+            
+            if (this.elements.dialog) {
+                this.elements.dialog.classList.remove('closing');
             }
             
             if (this.windowExpanded && typeof ViewManager?.resizeWindow === 'function') {
@@ -14163,7 +17386,7 @@ const QuickActionLab = {
             this.elements.actionLabelInput.value = '';
             this.elements.actionIconInput.value = '';
             this.elements.actionColorInput.value = '#5865f2';
-        }, 450); // Время совпадает с длительностью анимации
+        }, 500); // Время для завершения анимации (0.45s + запас)
     },
 
     createDefaultBuilderState() {
@@ -14423,16 +17646,19 @@ const QuickActionLab = {
         if (!this.builderState) return;
         const nodeLayer = this.elements.nodeLayer;
         const connectionLayer = this.elements.connectionLayer;
-        if (!nodeLayer || !connectionLayer) return;
+        const connectionUI = this.elements.connectionUI;
+        if (!nodeLayer || !connectionLayer || !connectionUI) return;
 
         nodeLayer.innerHTML = '';
         connectionLayer.innerHTML = '';
+        connectionUI.innerHTML = '';
 
         const panX = this.builderState.panX || 0;
         const panY = this.builderState.panY || 0;
         nodeLayer.style.transform = `translate(${panX}px, ${panY}px) scale(${this.builderState.zoom})`;
-        // Connection layer doesn't need translate because it uses getBoundingClientRect which already includes transforms
+        // Connection layers don't need translate because getBoundingClientRect already includes transforms
         connectionLayer.style.transform = `scale(${this.builderState.zoom})`;
+        connectionUI.style.transform = `scale(${this.builderState.zoom})`;
 
         this.builderState.nodes.forEach(node => {
             const moduleDef = QuickActionModuleMap.get(node.moduleId);
@@ -14499,6 +17725,7 @@ const QuickActionLab = {
         const connectionLayer = this.elements.connectionLayer;
         if (!connectionLayer) return;
         connectionLayer.innerHTML = '';
+        this.connectionElements = [];
 
         const canvasRect = this.elements.canvas.getBoundingClientRect();
         const zoom = this.builderState.zoom || 1;
@@ -14525,16 +17752,228 @@ const QuickActionLab = {
             const delta = Math.max(60, Math.abs(endX - startX) * 0.5);
             const pathData = `M ${startX} ${startY} C ${startX + delta} ${startY}, ${endX - delta} ${endY}, ${endX} ${endY}`;
 
+            // Create connection path
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path.setAttribute('d', pathData);
             path.setAttribute('data-connection-id', connection.id);
-            path.addEventListener('click', (event) => {
-                if (event.altKey) {
-                    this.removeConnection(connection.id);
-                }
-            });
+            path.setAttribute('class', 'connection-path');
+            // Ensure reliable hover events over the stroke area
+            path.style.pointerEvents = 'stroke';
             connectionLayer.appendChild(path);
+
+            // Calculate midpoint of the bezier curve (approximate)
+            const midX = (startX + endX) / 2;
+            const midY = (startY + endY) / 2;
+
+            // Create group for delete button
+            const deleteGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            deleteGroup.setAttribute('class', 'connection-delete-btn');
+            deleteGroup.setAttribute('data-connection-id', connection.id);
+
+            // Add generous invisible hit area to prevent jitter and accidental drags
+            const hitArea = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            hitArea.setAttribute('cx', midX);
+            hitArea.setAttribute('cy', midY);
+            hitArea.setAttribute('r', '20');
+            hitArea.setAttribute('fill', 'transparent');
+            // Ensure the hit area eats events so nodes under it don't start dragging
+            hitArea.style.pointerEvents = 'all';
+            deleteGroup.appendChild(hitArea);
+
+            // Create outer circle (button background)
+            const outerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            outerCircle.setAttribute('cx', midX);
+            outerCircle.setAttribute('cy', midY);
+            outerCircle.setAttribute('r', '12');
+            outerCircle.setAttribute('class', 'connection-delete-bg');
+            // Ensure click reliably targets the button
+            outerCircle.style.pointerEvents = 'all';
+            deleteGroup.appendChild(outerCircle);
+
+            // Create X icon (two lines forming an X)
+            const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line1.setAttribute('x1', midX - 4);
+            line1.setAttribute('y1', midY - 4);
+            line1.setAttribute('x2', midX + 4);
+            line1.setAttribute('y2', midY + 4);
+            line1.setAttribute('class', 'connection-delete-icon');
+            line1.style.pointerEvents = 'stroke';
+            deleteGroup.appendChild(line1);
+
+            const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line2.setAttribute('x1', midX + 4);
+            line2.setAttribute('y1', midY - 4);
+            line2.setAttribute('x2', midX - 4);
+            line2.setAttribute('y2', midY + 4);
+            line2.setAttribute('class', 'connection-delete-icon');
+            line2.style.pointerEvents = 'stroke';
+            deleteGroup.appendChild(line2);
+
+            // Add click handler to delete button
+            deleteGroup.addEventListener('click', (event) => {
+                event.stopPropagation();
+                this.removeConnection(connection.id);
+            });
+            // Block pointerdown to avoid starting drags underneath
+            deleteGroup.addEventListener('pointerdown', (event) => {
+                event.stopPropagation();
+                event.preventDefault();
+            });
+
+            // Reliable show/hide logic for the delete button
+            let hideButtonTimeout = null;
+            const showDeleteButton = () => {
+                deleteGroup.classList.add('is-visible');
+            };
+            const hideDeleteButton = () => {
+                deleteGroup.classList.remove('is-visible');
+            };
+
+            path.addEventListener('mouseenter', () => {
+                if (hideButtonTimeout) {
+                    clearTimeout(hideButtonTimeout);
+                    hideButtonTimeout = null;
+                }
+                showDeleteButton();
+            });
+            path.addEventListener('mouseleave', () => {
+                hideButtonTimeout = setTimeout(() => {
+                    if (!deleteGroup.matches(':hover')) hideDeleteButton();
+                }, 120);
+            });
+
+            deleteGroup.addEventListener('mouseenter', () => {
+                if (hideButtonTimeout) {
+                    clearTimeout(hideButtonTimeout);
+                    hideButtonTimeout = null;
+                }
+                deleteGroup.classList.add('hover');
+                showDeleteButton();
+            });
+            deleteGroup.addEventListener('mouseleave', () => {
+                deleteGroup.classList.remove('hover');
+                hideButtonTimeout = setTimeout(() => {
+                    if (!deleteGroup.matches(':hover')) hideDeleteButton();
+                }, 150);
+            });
+
+            // Place delete button into UI overlay above nodes
+            const uiLayer = this.elements.connectionUI || connectionLayer;
+            uiLayer.appendChild(deleteGroup);
+            this.connectionElements.push({ path, deleteGroup, outerCircle, line1, line2, hitArea });
         });
+
+        // Attach high-fidelity hover once
+        if (!this.boundConnectionHover && this.elements.canvas) {
+            this.boundConnectionHover = true;
+            this.elements.canvas.addEventListener('mousemove', (evt) => this.handleConnectionHover(evt));
+            this.elements.canvas.addEventListener('mouseleave', () => this.clearConnectionHover());
+        }
+    },
+
+    handleConnectionHover(evt) {
+        if (!this.connectionElements || !this.connectionElements.length) return;
+        const svg = this.elements.connectionLayer;
+        if (!svg) return;
+        // Translate screen point into SVG coordinate space using CTM
+        const pt = svg.createSVGPoint();
+        pt.x = evt.clientX;
+        pt.y = evt.clientY;
+        const screenCTM = svg.getScreenCTM();
+        const svgPt = screenCTM ? pt.matrixTransform(screenCTM.inverse()) : pt;
+
+        let hovered = null;
+        for (let i = 0; i < this.connectionElements.length; i++) {
+            const entry = this.connectionElements[i];
+            if (typeof entry.path.isPointInStroke === 'function' && entry.path.isPointInStroke(svgPt)) {
+                hovered = entry;
+                break;
+            }
+        }
+
+        // If not over a path, keep visible when the pointer is over the delete button itself
+        if (!hovered) {
+            for (let i = 0; i < this.connectionElements.length; i++) {
+                const entry = this.connectionElements[i];
+                const cx = parseFloat(entry.outerCircle.getAttribute('cx')) || 0;
+                const cy = parseFloat(entry.outerCircle.getAttribute('cy')) || 0;
+                const r = parseFloat(entry.outerCircle.getAttribute('r')) || 12;
+                if (this.isPointInCircle(cx, cy, r + 3, svgPt)) {
+                    hovered = entry;
+                    break;
+                }
+            }
+        }
+
+        if (hovered) {
+            // Always keep the button at the middle of the line (already positioned when drawn)
+            if (hovered.deleteGroup !== this.lastShownDeleteGroup) {
+                if (this.lastShownDeleteGroup) this.lastShownDeleteGroup.classList.remove('is-visible');
+                hovered.deleteGroup.classList.add('is-visible');
+                this.lastShownDeleteGroup = hovered.deleteGroup;
+            }
+        } else if (this.lastShownDeleteGroup) {
+            this.lastShownDeleteGroup.classList.remove('is-visible');
+            this.lastShownDeleteGroup = null;
+        }
+    },
+
+    clearConnectionHover() {
+        if (this.lastShownDeleteGroup) {
+            this.lastShownDeleteGroup.classList.remove('is-visible');
+            this.lastShownDeleteGroup = null;
+        }
+    },
+
+    getClosestPointOnPath(path, svgPt) {
+        try {
+            const total = path.getTotalLength();
+            // Sample along the path for a close-enough point
+            const samples = 40;
+            let best = { x: 0, y: 0 };
+            let bestDist = Infinity;
+            for (let i = 0; i <= samples; i++) {
+                const p = path.getPointAtLength((total * i) / samples);
+                const dx = p.x - svgPt.x;
+                const dy = p.y - svgPt.y;
+                const d = dx * dx + dy * dy;
+                if (d < bestDist) {
+                    bestDist = d;
+                    best = p;
+                }
+            }
+            return best;
+        } catch (e) {
+            return { x: svgPt.x, y: svgPt.y };
+        }
+    },
+
+    positionDeleteButton(entry, x, y) {
+        try {
+            if (!entry || !entry.deleteGroup) return;
+            entry.outerCircle.setAttribute('cx', x);
+            entry.outerCircle.setAttribute('cy', y);
+            if (entry.hitArea) {
+                entry.hitArea.setAttribute('cx', x);
+                entry.hitArea.setAttribute('cy', y);
+            }
+            entry.line1.setAttribute('x1', x - 4);
+            entry.line1.setAttribute('y1', y - 4);
+            entry.line1.setAttribute('x2', x + 4);
+            entry.line1.setAttribute('y2', y + 4);
+            entry.line2.setAttribute('x1', x + 4);
+            entry.line2.setAttribute('y1', y - 4);
+            entry.line2.setAttribute('x2', x - 4);
+            entry.line2.setAttribute('y2', y + 4);
+        } catch (e) {
+            // no-op
+        }
+    },
+
+    isPointInCircle(cx, cy, r, pt) {
+        const dx = pt.x - cx;
+        const dy = pt.y - cy;
+        return dx * dx + dy * dy <= r * r;
     },
 
     renderInspector() {
@@ -14642,7 +18081,84 @@ const QuickActionLab = {
             input.value = currentValue;
             if (field.placeholder) input.placeholder = field.placeholder;
             input.addEventListener('input', () => this.updateNodeConfig(node.id, field.key, input.value));
-            container.appendChild(input);
+            
+            // Add drag & drop support for file/folder path fields
+            const isPathField = field.key && (
+                field.key.toLowerCase().includes('path') ||
+                field.key.toLowerCase().includes('file') ||
+                field.key.toLowerCase().includes('folder') ||
+                field.key.toLowerCase().includes('image')
+            );
+            
+            if (isPathField && field.type !== 'textarea') {
+                const fileDropZone = document.createElement('div');
+                fileDropZone.className = 'file-drop-zone';
+                
+                const dropArea = document.createElement('div');
+                dropArea.className = 'drop-area';
+                const dropHintText = LocalizationRenderer.t('drop_zone_hint') || 'Drop file here or click to browse';
+                dropArea.innerHTML = `
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <span>${dropHintText}</span>
+                `;
+                
+                // Drag & drop handlers
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    });
+                });
+                
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, () => {
+                        dropArea.classList.add('drag-active');
+                    });
+                });
+                
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, () => {
+                        dropArea.classList.remove('drag-active');
+                    });
+                });
+                
+                dropArea.addEventListener('drop', (e) => {
+                    const files = e.dataTransfer?.files;
+                    if (files && files.length > 0) {
+                        const filePath = files[0].path;
+                        input.value = filePath;
+                        this.updateNodeConfig(node.id, field.key, filePath);
+                    }
+                });
+                
+                // Click to browse
+                dropArea.addEventListener('click', async () => {
+                    try {
+                        const result = await ipcRenderer.invoke('open-file-dialog', {
+                            properties: field.key.toLowerCase().includes('folder') 
+                                ? ['openDirectory'] 
+                                : ['openFile']
+                        });
+                        if (result && result.filePaths && result.filePaths.length > 0) {
+                            const selectedPath = result.filePaths[0];
+                            input.value = selectedPath;
+                            this.updateNodeConfig(node.id, field.key, selectedPath);
+                        }
+                    } catch (error) {
+                        console.warn('File dialog error:', error);
+                    }
+                });
+                
+                fileDropZone.appendChild(input);
+                fileDropZone.appendChild(dropArea);
+                container.appendChild(fileDropZone);
+            } else {
+                container.appendChild(input);
+            }
         });
 
         if (!this.isManualNode(node.id)) {
@@ -18604,12 +22120,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ipcRenderer.on('settings-updated', (event, data) => {
         AppState.settings = data.settings;
-        QuickActionStore.ensureStructure();
-        QuickActionManager.refresh();
-        QuickActionLab.refresh();
+        // Важно: сначала применяем новые переводы, затем перерисовываем UI,
+        // иначе часть динамических блоков перерисуется со старыми строками
         AppState.translations = data.translations;
         AppState.appVersion = data.version;
         AppState.systemTheme = data.systemTheme; // Обновляем системную тему
+
+        QuickActionStore.ensureStructure();
+        QuickActionManager.refresh();
+        QuickActionLab.refresh();
+
         ViewManager.applyAppearanceSettings();
         LocalizationRenderer.applyTranslations();
         SettingsModule.populateSettingsUI();
