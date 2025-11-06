@@ -13032,7 +13032,6 @@ const QuickActionFantasyModules = [
     }
 ];
 QuickActionModuleDefinitions.push(...QuickActionAdditionalModules);
-QuickActionModuleDefinitions.push(...QuickActionFantasyModules);
 
 const QuickActionModuleMap = new Map();
 const QuickActionModulesByCategory = { triggers: [], actions: [], utilities: [] };
@@ -14060,9 +14059,18 @@ const QuickActionLab = {
         this.updateIconPreview();
         this.toggleIconPicker(false);
         this.applyBuilderSize();
-        this.elements.modal?.classList.add('active');
+        
+        // Запускаем плавную анимацию открытия редактора
         this.elements.modal?.setAttribute('aria-hidden', 'false');
-        this.elements.modal?.focus();
+        
+        // Используем requestAnimationFrame для плавного появления
+        requestAnimationFrame(() => {
+            this.elements.modal?.classList.add('active');
+            // Фокусируемся после завершения анимации
+            setTimeout(() => {
+                this.elements.modal?.focus();
+            }, 450);
+        });
     },
 
     applyBuilderSize() {
@@ -14131,21 +14139,31 @@ const QuickActionLab = {
 
     closeBuilder() {
         this.closeBlockExplorer();
+        this.toggleIconPicker(false);
+        
+        // Сначала убираем класс active для запуска анимации закрытия
         if (this.elements.modal) {
             this.elements.modal.classList.remove('active');
-            this.elements.modal.setAttribute('aria-hidden', 'true');
         }
-        this.toggleIconPicker(false);
-        if (this.windowExpanded && typeof ViewManager?.resizeWindow === 'function') {
-            this.windowExpanded = false;
-            requestAnimationFrame(() => ViewManager.resizeWindow());
-        } else {
-            this.windowExpanded = false;
-        }
-        this.builderState = null;
-        this.elements.actionLabelInput.value = '';
-        this.elements.actionIconInput.value = '';
-        this.elements.actionColorInput.value = '#5865f2';
+        
+        // Даем время на анимацию закрытия перед очисткой состояния
+        setTimeout(() => {
+            if (this.elements.modal) {
+                this.elements.modal.setAttribute('aria-hidden', 'true');
+            }
+            
+            if (this.windowExpanded && typeof ViewManager?.resizeWindow === 'function') {
+                this.windowExpanded = false;
+                requestAnimationFrame(() => ViewManager.resizeWindow());
+            } else {
+                this.windowExpanded = false;
+            }
+            
+            this.builderState = null;
+            this.elements.actionLabelInput.value = '';
+            this.elements.actionIconInput.value = '';
+            this.elements.actionColorInput.value = '#5865f2';
+        }, 450); // Время совпадает с длительностью анимации
     },
 
     createDefaultBuilderState() {
@@ -14240,6 +14258,8 @@ const QuickActionLab = {
     },
 
     moduleMatchesSearch(module, term = '') {
+        // Exclude experimental/fantasy-tagged modules from lists and explorer
+        if (Array.isArray(module?.tags) && module.tags.includes('fantasy')) return false;
         if (!term) return true;
         const lower = term.toLowerCase();
         const fields = [

@@ -51,6 +51,22 @@ body.anim-fade #aux-container {
  * так как оно общее для всех окон.
  */
 
+/* --- Анимация закрытия окна --- */
+/* Анимация закрытия (обратная анимации открытия) */
+body.anim-scale #aux-container.closing {
+    opacity: 0;
+    transform: scale(0.97);
+}
+
+body.anim-slide #aux-container.closing {
+    opacity: 0;
+    transform: translateY(15px);
+}
+
+body.anim-fade #aux-container.closing {
+    opacity: 0;
+}
+
 /* Отключение анимаций */
 body.no-animations #aux-container {
     transition: none !important;
