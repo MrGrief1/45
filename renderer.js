@@ -71,73 +71,165 @@ const Utils = {
 
 // Global Confirm Dialog
 const GlobalConfirm = {
-    show(message, title = '') {
+    ensureDom() {
+        let root = document.getElementById('global-confirm-dialog');
+        if (root) return root;
+        root = document.createElement('div');
+        root.id = 'global-confirm-dialog';
+        root.className = 'global-confirm-dialog';
+        root.setAttribute('aria-hidden', 'true');
+        root.setAttribute('role', 'dialog');
+        root.setAttribute('aria-modal', 'true');
+
+        const backdrop = document.createElement('div');
+        backdrop.className = 'global-confirm-backdrop';
+
+        const card = document.createElement('div');
+        card.className = 'global-confirm-card';
+
+        const icon = document.createElement('div');
+        icon.className = 'global-confirm-icon';
+        icon.innerHTML = "<i data-feather='alert-circle'></i>";
+
+        const title = document.createElement('h3');
+        title.id = 'global-confirm-title';
+        title.className = 'global-confirm-title';
+
+        const message = document.createElement('p');
+        message.id = 'global-confirm-message';
+        message.className = 'global-confirm-message';
+
+        const actions = document.createElement('div');
+        actions.className = 'global-confirm-actions';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.id = 'global-confirm-cancel';
+        cancelBtn.className = 'global-confirm-button secondary';
+        cancelBtn.textContent = 'Отмена';
+        const okBtn = document.createElement('button');
+        okBtn.id = 'global-confirm-ok';
+        okBtn.className = 'global-confirm-button primary';
+        okBtn.textContent = 'OK';
+        actions.appendChild(cancelBtn);
+        actions.appendChild(okBtn);
+
+        card.appendChild(icon);
+        card.appendChild(title);
+        card.appendChild(message);
+        card.appendChild(actions);
+        root.appendChild(backdrop);
+        root.appendChild(card);
+        document.body.appendChild(root);
+        if (window.feather) feather.replace();
+        return root;
+    },
+
+    show(messageText, titleText = '') {
         return new Promise((resolve) => {
-            const dialog = document.getElementById('global-confirm-dialog');
-            const titleEl = document.getElementById('global-confirm-title');
-            const messageEl = document.getElementById('global-confirm-message');
-            const okBtn = document.getElementById('global-confirm-ok');
-            const cancelBtn = document.getElementById('global-confirm-cancel');
-
-            if (!dialog || !messageEl || !okBtn || !cancelBtn) {
-                // Fallback to native confirm if elements not found
-                resolve(window.confirm(String(message || 'Are you sure?')));
-                return;
-            }
-
-            // Get translation if available
-            const defaultTitle = 'Подтверждение';
-            let finalTitle = title || defaultTitle;
-            if (!title && typeof LocalizationRenderer !== 'undefined' && LocalizationRenderer.t) {
-                const translated = LocalizationRenderer.t('quick_actions_delete_confirm_title');
-                if (translated && !translated.startsWith('Missing:')) {
-                    finalTitle = translated;
+            const dialog = this.ensureDom();
+            
+            // CRITICAL: Ensure dialog is ALWAYS in body, never inside any modal or builder
+            let currentParent = dialog.parentElement;
+            let needsMove = false;
+            
+            // Check if dialog is inside builder modal or any other container
+            while (currentParent && currentParent !== document.body) {
+                if (currentParent.classList?.contains('quick-action-builder-modal') ||
+                    currentParent.classList?.contains('builder-dialog') ||
+                    currentParent.id === 'quick-action-builder-modal' ||
+                    currentParent.classList?.contains('builder-backdrop')) {
+                    needsMove = true;
+                    break;
                 }
+                currentParent = currentParent.parentElement;
+            }
+            
+            if (needsMove || dialog.parentElement !== document.body) {
+                // Remove from current parent if exists
+                if (dialog.parentElement) {
+                    dialog.parentElement.removeChild(dialog);
+                }
+                // Always append to body
+                document.body.appendChild(dialog);
+            }
+            
+            const titleEl = dialog.querySelector('#global-confirm-title');
+            const messageEl = dialog.querySelector('#global-confirm-message');
+            const okBtn = dialog.querySelector('#global-confirm-ok');
+            const cancelBtn = dialog.querySelector('#global-confirm-cancel');
+            const backdrop = dialog.querySelector('.global-confirm-backdrop');
+            const card = dialog.querySelector('.global-confirm-card');
+
+            const defaultTitle = 'Подтверждение';
+            let finalTitle = titleText || defaultTitle;
+            if (!titleText && typeof LocalizationRenderer !== 'undefined' && LocalizationRenderer.t) {
+                const translated = LocalizationRenderer.t('quick_actions_delete_confirm_title');
+                if (translated && !translated.startsWith('Missing:')) finalTitle = translated;
             }
             if (titleEl) titleEl.textContent = finalTitle;
-            messageEl.textContent = message;
-            dialog.setAttribute('aria-hidden', 'false');
+            if (messageEl) messageEl.textContent = String(messageText ?? '');
 
-            // Refresh feather icons
-            if (window.feather) {
-                feather.replace();
+            dialog.setAttribute('aria-hidden', 'false');
+            
+            // CRITICAL: Lock all dimensions and positioning - prevent ANY inheritance
+            try {
+                if (dialog) {
+                    dialog.style.setProperty('position', 'fixed', 'important');
+                    dialog.style.setProperty('z-index', '99999', 'important');
+                    dialog.style.setProperty('inset', '0', 'important');
+                    dialog.style.setProperty('width', 'auto', 'important');
+                    dialog.style.setProperty('height', 'auto', 'important');
+                    dialog.style.setProperty('max-width', 'none', 'important');
+                    dialog.style.setProperty('max-height', 'none', 'important');
+                }
+                
+                if (card) {
+                    const w = '340px';
+                    const h = '180px';
+                    // Force using !important so nothing can override
+                    card.style.setProperty('width', w, 'important');
+                    card.style.setProperty('max-width', w, 'important');
+                    card.style.setProperty('min-width', w, 'important');
+                    // Set height properties to prevent collapsing - FIXED size, not viewport-relative
+                    card.style.setProperty('height', h, 'important');
+                    card.style.setProperty('min-height', h, 'important');
+                    card.style.setProperty('max-height', h, 'important');
+                    // Prevent flex growth in any parent
+                    card.style.setProperty('flex', '0 0 auto', 'important');
+                    card.style.setProperty('flex-grow', '0', 'important');
+                    card.style.setProperty('flex-shrink', '0', 'important');
+                    card.style.setProperty('flex-basis', 'auto', 'important');
+                    // Ensure absolute positioning
+                    card.style.setProperty('position', 'absolute', 'important');
+                    card.style.setProperty('left', '50%', 'important');
+                    card.style.setProperty('top', '50%', 'important');
+                    card.style.setProperty('transform', 'translate(-50%, -50%)', 'important');
+                    // Ensure padding is maintained
+                    card.style.setProperty('padding', '18px 22px', 'important');
+                    // Prevent any height inheritance
+                    card.style.setProperty('box-sizing', 'border-box', 'important');
+                    // Block any overflow that could cause expansion
+                    card.style.setProperty('overflow', 'hidden', 'important');
+                }
+            } catch (e) {
+                console.error('Error setting dialog styles:', e);
             }
 
             const cleanup = () => {
                 dialog.setAttribute('aria-hidden', 'true');
                 okBtn.removeEventListener('click', handleOk);
                 cancelBtn.removeEventListener('click', handleCancel);
-                dialog.removeEventListener('click', handleBackdrop);
+                backdrop.removeEventListener('click', handleBackdrop);
                 document.removeEventListener('keydown', handleEscape);
             };
 
-            const handleOk = () => {
-                cleanup();
-                resolve(true);
-            };
-
-            const handleCancel = () => {
-                cleanup();
-                resolve(false);
-            };
-
-            const handleBackdrop = (event) => {
-                if (event.target.classList.contains('global-confirm-backdrop')) {
-                    cleanup();
-                    resolve(false);
-                }
-            };
-
-            const handleEscape = (event) => {
-                if (event.key === 'Escape') {
-                    cleanup();
-                    resolve(false);
-                }
-            };
+            const handleOk = () => { cleanup(); resolve(true); };
+            const handleCancel = () => { cleanup(); resolve(false); };
+            const handleBackdrop = () => { cleanup(); resolve(false); };
+            const handleEscape = (event) => { if (event.key === 'Escape') { cleanup(); resolve(false); } };
 
             okBtn.addEventListener('click', handleOk);
             cancelBtn.addEventListener('click', handleCancel);
-            dialog.addEventListener('click', handleBackdrop);
+            backdrop.addEventListener('click', handleBackdrop);
             document.addEventListener('keydown', handleEscape);
         });
     }
@@ -16677,6 +16769,7 @@ const QuickActionLab = {
     lastShownDeleteGroup: null,
     iconPickerOpen: false,
     windowExpanded: false,
+    previousWindowSize: null,
     boundOutsideClick: null,
     builderSelectWrappers: new Set(),
     boundSelectOutsideClick: null,
@@ -16692,6 +16785,7 @@ const QuickActionLab = {
         this.iconPickerButtons = new Map();
         this.iconPickerOpen = false;
         this.windowExpanded = false;
+        this.previousWindowSize = null;
         this.builderSelectWrappers = new Set();
         this.moduleSearchTerm = '';
         this.blockExplorerSearchTerm = '';
@@ -17251,6 +17345,8 @@ const QuickActionLab = {
         this.updateIconPreview();
         this.toggleIconPicker(false);
         this.applyBuilderSize();
+        // Mark body as builder-open to allow CSS to adapt modal sizes
+        try { document.body.classList.add('builder-open'); } catch (e) {}
         
         // Запускаем плавную анимацию открытия редактора
         this.elements.modal?.setAttribute('aria-hidden', 'false');
@@ -17268,10 +17364,13 @@ const QuickActionLab = {
             if (this.elements.modal) {
                 this.elements.modal.classList.add('active');
             }
-            // Фокусируемся после завершения анимации
+            // Перерисовка соединений после того как модалка появилась в потоке
+            this.scheduleConnectionRedraw();
+            // Повторная подстраховка после завершения анимации появления
             setTimeout(() => {
+                this.scheduleConnectionRedraw();
                 this.elements.modal?.focus();
-            }, 450);
+            }, 460);
         });
     },
 
@@ -17337,6 +17436,8 @@ const QuickActionLab = {
         }
         this.pendingBuilderSize = null;
         this.resizing = null;
+        // После изменения размеров диалога гарантируем перерасчёт линий
+        this.scheduleConnectionRedraw();
     },
 
     closeBuilder() {
@@ -17345,6 +17446,22 @@ const QuickActionLab = {
         
         if (!this.elements.modal || !this.elements.dialog) {
             return;
+        }
+        
+        // Немедленно восстанавливаем размер окна и убираем класс builder-open
+        try { document.body.classList.remove('builder-open'); } catch (e) {}
+        
+        if (this.windowExpanded) {
+            const prev = this.previousWindowSize;
+            this.windowExpanded = false;
+            this.previousWindowSize = null;
+            if (prev && prev.width && prev.height) {
+                ipcRenderer.send('resize-window', { width: prev.width, height: prev.height });
+            } else if (typeof ViewManager?.resizeWindow === 'function') {
+                ViewManager.resizeWindow();
+            }
+        } else if (typeof ViewManager?.resizeWindow === 'function') {
+            ViewManager.resizeWindow();
         }
         
         // Шаг 1: Добавляем класс closing для запуска анимации закрытия
@@ -17373,13 +17490,6 @@ const QuickActionLab = {
             
             if (this.elements.dialog) {
                 this.elements.dialog.classList.remove('closing');
-            }
-            
-            if (this.windowExpanded && typeof ViewManager?.resizeWindow === 'function') {
-                this.windowExpanded = false;
-                requestAnimationFrame(() => ViewManager.resizeWindow());
-            } else {
-                this.windowExpanded = false;
             }
             
             this.builderState = null;
@@ -17723,8 +17833,10 @@ const QuickActionLab = {
     drawConnections() {
         if (!this.builderState) return;
         const connectionLayer = this.elements.connectionLayer;
+        const uiLayer = this.elements.connectionUI;
         if (!connectionLayer) return;
         connectionLayer.innerHTML = '';
+        if (uiLayer) uiLayer.innerHTML = '';
         this.connectionElements = [];
 
         const canvasRect = this.elements.canvas.getBoundingClientRect();
@@ -17734,9 +17846,27 @@ const QuickActionLab = {
         connectionLayer.setAttribute('width', `${baseWidth}`);
         connectionLayer.setAttribute('height', `${baseHeight}`);
         connectionLayer.setAttribute('viewBox', `0 0 ${baseWidth} ${baseHeight}`);
+        // Keep UI overlay (delete buttons) in the same coordinate system as the path layer
+        if (this.elements.connectionUI) {
+            this.elements.connectionUI.setAttribute('width', `${baseWidth}`);
+            this.elements.connectionUI.setAttribute('height', `${baseHeight}`);
+            this.elements.connectionUI.setAttribute('viewBox', `0 0 ${baseWidth} ${baseHeight}`);
+        }
 
-        const canvasLeft = canvasRect.left;
-        const canvasTop = canvasRect.top;
+        const toSvgPoint = (screenX, screenY) => {
+            try {
+                const svg = connectionLayer;
+                const pt = svg.createSVGPoint();
+                pt.x = screenX;
+                pt.y = screenY;
+                const ctm = svg.getScreenCTM();
+                if (ctm && typeof ctm.inverse === 'function') {
+                    const p = pt.matrixTransform(ctm.inverse());
+                    return { x: p.x, y: p.y };
+                }
+            } catch (e) {}
+            return { x: screenX, y: screenY };
+        };
 
         this.builderState.connections.forEach(connection => {
             const fromPort = this.findPortElement(connection.from?.nodeId, connection.from?.portId, 'output');
@@ -17745,10 +17875,12 @@ const QuickActionLab = {
 
             const fromRect = fromPort.getBoundingClientRect();
             const toRect = toPort.getBoundingClientRect();
-            const startX = (fromRect.left + fromRect.width / 2 - canvasLeft) / zoom;
-            const startY = (fromRect.top + fromRect.height / 2 - canvasTop) / zoom;
-            const endX = (toRect.left + toRect.width / 2 - canvasLeft) / zoom;
-            const endY = (toRect.top + toRect.height / 2 - canvasTop) / zoom;
+            const s = toSvgPoint(fromRect.left + fromRect.width / 2, fromRect.top + fromRect.height / 2);
+            const e = toSvgPoint(toRect.left + toRect.width / 2, toRect.top + toRect.height / 2);
+            const startX = s.x;
+            const startY = s.y;
+            const endX = e.x;
+            const endY = e.y;
             const delta = Math.max(60, Math.abs(endX - startX) * 0.5);
             const pathData = `M ${startX} ${startY} C ${startX + delta} ${startY}, ${endX - delta} ${endY}, ${endX} ${endY}`;
 
@@ -17769,12 +17901,15 @@ const QuickActionLab = {
             const deleteGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             deleteGroup.setAttribute('class', 'connection-delete-btn');
             deleteGroup.setAttribute('data-connection-id', connection.id);
+            // Размеры контролов делаем независимыми от зума: масштабируем геометрию, а не группу
+            const zoomForUi = this.builderState?.zoom || 1;
+            const sizeScale = 1 / (zoomForUi > 0 ? zoomForUi : 1);
 
             // Add generous invisible hit area to prevent jitter and accidental drags
             const hitArea = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             hitArea.setAttribute('cx', midX);
             hitArea.setAttribute('cy', midY);
-            hitArea.setAttribute('r', '20');
+            hitArea.setAttribute('r', String(20 * sizeScale));
             hitArea.setAttribute('fill', 'transparent');
             // Ensure the hit area eats events so nodes under it don't start dragging
             hitArea.style.pointerEvents = 'all';
@@ -17784,27 +17919,28 @@ const QuickActionLab = {
             const outerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             outerCircle.setAttribute('cx', midX);
             outerCircle.setAttribute('cy', midY);
-            outerCircle.setAttribute('r', '12');
+            outerCircle.setAttribute('r', String(12 * sizeScale));
             outerCircle.setAttribute('class', 'connection-delete-bg');
             // Ensure click reliably targets the button
             outerCircle.style.pointerEvents = 'all';
             deleteGroup.appendChild(outerCircle);
 
             // Create X icon (two lines forming an X)
+            const lineOffset = 4 * sizeScale;
             const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line1.setAttribute('x1', midX - 4);
-            line1.setAttribute('y1', midY - 4);
-            line1.setAttribute('x2', midX + 4);
-            line1.setAttribute('y2', midY + 4);
+            line1.setAttribute('x1', String(midX - lineOffset));
+            line1.setAttribute('y1', String(midY - lineOffset));
+            line1.setAttribute('x2', String(midX + lineOffset));
+            line1.setAttribute('y2', String(midY + lineOffset));
             line1.setAttribute('class', 'connection-delete-icon');
             line1.style.pointerEvents = 'stroke';
             deleteGroup.appendChild(line1);
 
             const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line2.setAttribute('x1', midX + 4);
-            line2.setAttribute('y1', midY - 4);
-            line2.setAttribute('x2', midX - 4);
-            line2.setAttribute('y2', midY + 4);
+            line2.setAttribute('x1', String(midX + lineOffset));
+            line2.setAttribute('y1', String(midY - lineOffset));
+            line2.setAttribute('x2', String(midX - lineOffset));
+            line2.setAttribute('y2', String(midY + lineOffset));
             line2.setAttribute('class', 'connection-delete-icon');
             line2.style.pointerEvents = 'stroke';
             deleteGroup.appendChild(line2);
@@ -17953,18 +18089,24 @@ const QuickActionLab = {
             if (!entry || !entry.deleteGroup) return;
             entry.outerCircle.setAttribute('cx', x);
             entry.outerCircle.setAttribute('cy', y);
+            // Поддерживаем неизменный визуальный размер кнопки при обновлении позиции
+            const zoomForUi = this.builderState?.zoom || 1;
+            const sizeScale = 1 / (zoomForUi > 0 ? zoomForUi : 1);
+            entry.outerCircle.setAttribute('r', String(12 * sizeScale));
             if (entry.hitArea) {
                 entry.hitArea.setAttribute('cx', x);
                 entry.hitArea.setAttribute('cy', y);
+                entry.hitArea.setAttribute('r', String(20 * sizeScale));
             }
-            entry.line1.setAttribute('x1', x - 4);
-            entry.line1.setAttribute('y1', y - 4);
-            entry.line1.setAttribute('x2', x + 4);
-            entry.line1.setAttribute('y2', y + 4);
-            entry.line2.setAttribute('x1', x + 4);
-            entry.line2.setAttribute('y1', y - 4);
-            entry.line2.setAttribute('x2', x - 4);
-            entry.line2.setAttribute('y2', y + 4);
+            const o = 4 * sizeScale;
+            entry.line1.setAttribute('x1', String(x - o));
+            entry.line1.setAttribute('y1', String(y - o));
+            entry.line1.setAttribute('x2', String(x + o));
+            entry.line1.setAttribute('y2', String(y + o));
+            entry.line2.setAttribute('x1', String(x + o));
+            entry.line2.setAttribute('y1', String(y - o));
+            entry.line2.setAttribute('x2', String(x - o));
+            entry.line2.setAttribute('y2', String(y + o));
         } catch (e) {
             // no-op
         }
@@ -18768,6 +18910,12 @@ const QuickActionLab = {
         if (needsWidth || needsHeight) {
             const width = needsWidth ? requiredWidth : window.innerWidth;
             const height = needsHeight ? requiredHeight : window.innerHeight;
+            if (!this.windowExpanded) {
+                this.previousWindowSize = {
+                    width: Math.round(window.innerWidth),
+                    height: Math.round(window.innerHeight)
+                };
+            }
             this.windowExpanded = true;
             ipcRenderer.send('resize-window', { width, height });
         }
@@ -20192,6 +20340,14 @@ const SearchModule = {
     }
 };
 
+// Utility to ensure only one custom menu is visible at a time
+function hideAllMenus(except) {
+    try { if (except !== 'folder') FolderContextMenu.hide?.(); } catch {}
+    try { if (except !== 'pinned') PinnedContextMenu.hide?.(); } catch {}
+    try { if (except !== 'custom') CustomContextMenu.hide?.(); } catch {}
+    try { if (except !== 'app') AppContextMenu.hide?.(); } catch {}
+}
+
 const FolderContextMenu = {
     colors: [
         null,
@@ -20322,6 +20478,7 @@ const FolderContextMenu = {
 
     show(event, folder) {
         if (!this.menuEl || !folder || folder.id === 'pinned') return;
+        hideAllMenus('folder');
 
         const resolvedFolder = this.getFolderById(folder.id) || folder;
 
@@ -20478,6 +20635,7 @@ const PinnedContextMenu = {
 
     show(x, y) {
         if (!this.menuEl) return;
+        hideAllMenus('pinned');
         this.menuEl.classList.add('visible');
         this.menuEl.style.left = '-9999px';
         this.menuEl.style.top = '-9999px';
@@ -21637,6 +21795,7 @@ const CustomContextMenu = {
     
     show(event) {
         if (!this.element) return;
+        hideAllMenus('custom');
         
         const x = event.clientX;
         const y = event.clientY;
@@ -21787,6 +21946,7 @@ const AppContextMenu = {
     },
     show(appData, x, y) {
         if (!this.el) return;
+        hideAllMenus('app');
         this.currentApp = appData;
         this.renderItems();
         this.el.setAttribute('aria-hidden', 'false');
@@ -21885,6 +22045,11 @@ const ViewManager = {
         requestAnimationFrame(() => this.resizeWindow());
     },
     resizeWindow: function() {
+        // Freeze window resizing while any overlay modal is visible
+        const modalOpen = document.querySelector('.global-confirm-dialog[aria-hidden="false"], .global-alert-dialog[aria-hidden="false"], #quick-action-builder-modal.active');
+        if (modalOpen) {
+            return;
+        }
         const appContainer = Utils.getElement('#app-container');
         if (!appContainer) return;
 

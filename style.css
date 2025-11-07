@@ -681,7 +681,7 @@ body.dark-theme .aux-header {
   max-width: var(--dynamic-width);
   min-height: var(--dynamic-height);
   display: flex;
-  align-items: stretch;
+  align-items: center;
   padding: clamp(10px, calc(var(--dynamic-height) * 0.18), 16px);
   gap: clamp(10px, calc(var(--dynamic-height) * 0.22), 20px);
   box-sizing: border-box;
@@ -739,9 +739,9 @@ body.dark-theme .aux-header {
   align-items: center;
   justify-content: flex-end;
   flex: 0 0 auto;
-  min-height: max(52px, var(--dynamic-height));
-  height: auto;
+  height: max(52px, var(--dynamic-height));
   min-width: 0;
+  overflow: visible;
 }
 
 #quick-action-bar {
@@ -755,7 +755,7 @@ body.dark-theme .aux-header {
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 #quick-action-bar:empty::after {
@@ -830,27 +830,28 @@ body.dark-theme .aux-header {
   border-radius: min(var(--dynamic-border-radius), calc(var(--qa-button-size) / 2));
   position: relative;
   background-color: rgba(var(--secondary-bg-color-rgb), var(--dynamic-opacity));
-  border: 1px solid rgba(var(--border-color-rgb, 148, 163, 184), 0.45);
-  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.22);
+  border: 1px solid rgba(var(--border-color-rgb, 148, 163, 184), 0.5);
+  /* subtle inner contour to avoid "overly white" look on bright themes */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 16px rgba(15, 23, 42, 0.18);
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
 .quick-action-button:hover,
 .quick-action-button:focus-visible {
   transform: translateY(-2px);
-  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.28);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.24);
   background-color: rgba(var(--secondary-bg-color-rgb), calc(var(--dynamic-opacity) + 0.08));
   border-color: rgba(255, 255, 255, 0.7);
 }
 
 .quick-action-button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4), 0 18px 34px rgba(15, 23, 42, 0.28);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4), 0 10px 20px rgba(15, 23, 42, 0.24);
 }
 
 .quick-action-button:active {
   transform: translateY(0);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.22);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
 }
 
 .quick-action-button .icon {
@@ -963,6 +964,8 @@ body.dark-theme .aux-header {
   -webkit-backdrop-filter: blur(20px);
   padding: 8px;
   display: none;
+  /* Neutralize hover tint */
+  --context-menu-button-hover: rgba(var(--text-color-rgb, 29, 29, 31), 0.12);
 }
 
 .pinned-context-menu.visible {
@@ -1048,7 +1051,7 @@ body.dark-theme .aux-header {
 }
 
 .custom-context-item:hover {
-  background: rgba(var(--highlight-color-rgb, 88, 101, 242), 0.12);
+  background: rgba(var(--text-color-rgb, 29, 29, 31), 0.12);
   transform: translateX(2px);
 }
 
@@ -1075,7 +1078,7 @@ body.dark-theme .aux-header {
   max-width: 320px;
   padding: 10px 12px;
   border-radius: 14px;
-  background: rgba(var(--base-bg-color-rgb, 17, 24, 39), 0.86);
+  background: rgba(var(--base-bg-color-rgb, 17, 24, 39), 0.96);
   border: 1px solid rgba(var(--border-color-rgb, 148, 163, 184), 0.28);
   box-shadow: 0 18px 44px rgba(15, 23, 42, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   color: var(--text-color);
@@ -1145,7 +1148,8 @@ body.dark-theme .aux-header {
 }
 
 .app-context-item:hover {
-  background: rgba(var(--highlight-color-rgb, 88, 101, 242), 0.12);
+  /* Neutral hover without accent glow */
+  background: rgba(var(--text-color-rgb, 29, 29, 31), 0.12);
   transform: translateX(2px);
 }
 
@@ -1272,6 +1276,8 @@ body.dark-theme .aux-header {
   padding: 18px 20px;
   display: none;
   overflow: hidden;
+  /* Neutralize hover tint for folder menu buttons */
+  --context-menu-button-hover: rgba(var(--text-color-rgb, 29, 29, 31), 0.12);
 }
 
 .folder-context-menu.visible {
@@ -1667,7 +1673,7 @@ body.dark-theme .aux-header {
   flex-grow: 1;
   padding: 20px 40px 20px 30px;
   overflow-y: auto;
-  overflow-x: visible;
+  overflow-x: hidden; /* Prevent horizontal bleed of cards/shadows */
 }
 
 .tab-content {
@@ -2864,7 +2870,8 @@ input[type="range"]:active::-webkit-slider-thumb {
   justify-content: center;
 }
 
-.addon-card-icon i {
+.addon-card-icon i,
+.addon-card-icon svg {
   width: 20px;
   height: 20px;
   color: var(--highlight-color);
@@ -3038,8 +3045,13 @@ input[type="range"]:active::-webkit-slider-thumb {
 }
 
 .quick-action-active-list {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
+  align-items: stretch;
+  width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 .quick-action-card {
@@ -3052,6 +3064,8 @@ input[type="range"]:active::-webkit-slider-thumb {
   padding: 16px 20px;
   background: linear-gradient(145deg, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.6));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 20px 40px rgba(15, 23, 42, 0.2);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .quick-action-card.is-disabled {
@@ -3720,9 +3734,9 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 .block-explorer-dialog {
   position: relative;
-  max-width: 1000px;
-  width: min(95vw, 1000px);
-  max-height: min(90vh, 800px);
+  max-width: 1200px;
+  width: min(96vw, 1200px);
+  max-height: min(92vh, 900px);
   background: rgba(var(--base-bg-color-rgb), 0.98);
   border-radius: 28px;
   border: 1px solid rgba(var(--text-color-rgb, 29, 29, 31), 0.12);
@@ -3890,6 +3904,12 @@ input[type="range"]:active::-webkit-slider-thumb {
   flex-shrink: 0;
 }
 
+/* Ensure consistent icon size within explorer cards */
+.block-explorer-card-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
 .block-explorer-card h4 {
   margin: 0;
   font-size: 16px;
@@ -3997,12 +4017,13 @@ input[type="range"]:active::-webkit-slider-thumb {
   backdrop-filter: blur(24px);
   border: 1px solid rgba(var(--border-color-rgb, 255, 255, 255), 0.2);
   border-radius: 20px;
-  padding: 28px 32px;
+  padding: 20px 22px;
   box-shadow: 
     0 24px 48px rgba(15, 23, 42, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  max-width: 420px;
-  width: 90%;
+  width: 360px;
+  max-width: 360px;
+  min-width: 360px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -4032,7 +4053,8 @@ input[type="range"]:active::-webkit-slider-thumb {
   color: var(--highlight-color);
 }
 
-.builder-confirm-icon i {
+.builder-confirm-icon i,
+.builder-confirm-icon svg {
   width: 32px;
   height: 32px;
 }
@@ -4147,7 +4169,8 @@ input[type="range"]:active::-webkit-slider-thumb {
   color: var(--highlight-color);
 }
 
-.custom-alert-icon i {
+.custom-alert-icon i,
+.custom-alert-icon svg {
   width: 32px;
   height: 32px;
 }
@@ -4199,6 +4222,8 @@ input[type="range"]:active::-webkit-slider-thumb {
   align-items: center;
   justify-content: center;
   z-index: 9999;
+  border-radius: var(--dynamic-border-radius);
+  overflow: hidden;
 }
 
 .global-alert-dialog[aria-hidden="false"] {
@@ -4210,6 +4235,8 @@ input[type="range"]:active::-webkit-slider-thumb {
   inset: 0;
   background: rgba(15, 23, 42, 0.7);
   backdrop-filter: blur(12px);
+  border-radius: inherit;
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
 }
 
 .global-alert-card {
@@ -4243,7 +4270,8 @@ input[type="range"]:active::-webkit-slider-thumb {
   box-shadow: 0 8px 24px rgba(var(--highlight-color-rgb, 88, 101, 242), 0.25);
 }
 
-.global-alert-icon i {
+.global-alert-icon i,
+.global-alert-icon svg {
   width: 36px;
   height: 36px;
 }
@@ -4289,16 +4317,35 @@ input[type="range"]:active::-webkit-slider-thumb {
 // === Global Confirm Dialog ===
 // ================================================================================= */
 .global-confirm-dialog {
-  position: fixed;
+  position: fixed !important;
   inset: 0;
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 99999 !important;
+  /* Rounded overlay clipped to app shape */
+  border-radius: var(--dynamic-border-radius);
+  overflow: hidden;
+  /* Ensure dialog is always on top and not affected by parent containers */
+  isolation: isolate;
+  /* Hard reset of builder-related CSS variables to avoid inheritance */
+  --builder-dialog-width: unset !important;
+  --builder-dialog-height: unset !important;
+  --builder-shell-padding-x: 0 !important;
+  --builder-shell-padding-y: 0 !important;
+  /* Explicitly lock overlay dimensions to viewport */
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  contain: layout style paint;
 }
 
 .global-confirm-dialog[aria-hidden="false"] {
   display: flex;
+  /* when modal visible, do not let app resize logic run off these variables */
+  --builder-dialog-width: unset !important;
+  --builder-dialog-height: unset !important;
 }
 
 .global-confirm-backdrop {
@@ -4306,27 +4353,88 @@ input[type="range"]:active::-webkit-slider-thumb {
   inset: 0;
   background: rgba(15, 23, 42, 0.7);
   backdrop-filter: blur(12px);
+  /* mirror rounded corners on backdrop too */
+  border-radius: inherit;
+  /* ensure crisp rounded corners across browsers */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  /* Standard mask for non-webkit browsers */
+  mask-image: radial-gradient(#fff, #000);
 }
 
 .global-confirm-card {
-  position: relative;
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
   background: rgba(var(--base-bg-color-rgb), 0.98);
   backdrop-filter: blur(28px);
   border: 1px solid rgba(var(--border-color-rgb, 255, 255, 255), 0.25);
   border-radius: 14px;
-  padding: 16px 20px;
+  padding: 18px 22px !important;
   box-shadow: 
     0 20px 40px rgba(15, 23, 42, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  max-width: 340px;
-  width: 85%;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
+  width: 340px !important;
+  min-width: 340px !important;
+  max-width: 340px !important;
+  height: 180px !important;
+  min-height: 180px !important;
+  max-height: 180px !important;
+  display: flex !important;
+  flex-direction: column !important;
   align-items: center;
-  gap: 12px;
-  animation: confirmSlideIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-  overflow-y: auto;
+  gap: 12px !important;
+  /* Disable movement animation to avoid visual shift */
+  animation: none !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  contain: layout style paint !important;
+  flex: 0 0 auto !important;
+  flex-grow: 0 !important;
+  flex-shrink: 0 !important;
+  flex-basis: auto !important;
+  /* Prevent any parent container from affecting size */
+  isolation: isolate !important;
+  /* Explicitly prevent inheritance from any parent */
+  margin: 0 !important;
+  /* Reset any CSS variables that might affect size */
+  --builder-dialog-width: unset !important;
+  --builder-dialog-height: unset !important;
+}
+
+/* Ensure fixed size regardless of builder state - highest specificity */
+body.builder-open .global-confirm-card,
+body:not(.builder-open) .global-confirm-card,
+.quick-action-builder-modal .global-confirm-card,
+.quick-action-builder-modal.active .global-confirm-card,
+.builder-dialog .global-confirm-card,
+.quick-action-builder-modal .builder-dialog .global-confirm-card,
+#quick-action-builder-modal .global-confirm-card,
+.quick-action-builder-modal .global-confirm-dialog .global-confirm-card,
+.builder-dialog .global-confirm-dialog .global-confirm-card {
+  width: 340px !important;
+  max-width: 340px !important;
+  min-width: 340px !important;
+  height: 180px !important;
+  min-height: 180px !important;
+  max-height: 180px !important;
+  flex: 0 0 auto !important;
+  flex-grow: 0 !important;
+  flex-shrink: 0 !important;
+  flex-basis: auto !important;
+  /* Prevent any inheritance from parent containers */
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  /* Prevent grid/flex inheritance */
+  grid-column: unset !important;
+  grid-row: unset !important;
+  grid-area: unset !important;
+  align-self: unset !important;
+  justify-self: unset !important;
+  /* Ensure padding is maintained */
+  padding: 18px 22px !important;
 }
 
 .global-confirm-icon {
@@ -4342,7 +4450,8 @@ input[type="range"]:active::-webkit-slider-thumb {
   flex-shrink: 0;
 }
 
-.global-confirm-icon i {
+.global-confirm-icon i,
+.global-confirm-icon svg {
   width: 24px;
   height: 24px;
 }
@@ -4362,13 +4471,38 @@ input[type="range"]:active::-webkit-slider-thumb {
   line-height: 1.4;
   color: rgba(var(--text-color-rgb, 29, 29, 31), 0.75);
   text-align: center;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
+/* Prevent child elements from forcing expansion or collapsing */
+.global-confirm-card * {
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+/* Ensure icon doesn't collapse */
+.global-confirm-icon {
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+}
+
+/* Ensure title and message don't collapse */
+.global-confirm-title,
+.global-confirm-message {
+  flex-shrink: 0 !important;
+  min-height: auto !important;
+  line-height: normal !important;
+}
+
+/* Ensure actions container doesn't collapse */
 .global-confirm-actions {
   display: flex;
   gap: 8px;
   width: 100%;
-  margin-top: 2px;
+  margin-top: auto !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
 }
 
 .global-confirm-button {
@@ -4424,8 +4558,8 @@ input[type="range"]:active::-webkit-slider-thumb {
   height: 100%;
   pointer-events: none;
   transform-origin: 0 0;
-  /* Clip any filter/glow overspill to avoid visual artifacts over UI */
-  overflow: hidden;
+  /* Allow curves to extend beyond the SVG viewport so long arcs don't get clipped */
+  overflow: visible;
   /* Lines should render behind nodes */
   z-index: 0;
 }
@@ -4453,7 +4587,8 @@ input[type="range"]:active::-webkit-slider-thumb {
   height: 100%;
   pointer-events: none;
   transform-origin: 0 0;
-  overflow: hidden;
+  /* Keep controls visible even when curve control points go outside */
+  overflow: visible;
   z-index: 2; /* above nodes */
 }
 
@@ -4497,6 +4632,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   stroke: rgba(255, 255, 255, 0.3);
   stroke-width: 2;
   transition: all 0.2s ease;
+  vector-effect: non-scaling-stroke;
 }
 
 .connection-delete-btn:hover .connection-delete-bg {
@@ -4510,6 +4646,8 @@ input[type="range"]:active::-webkit-slider-thumb {
   stroke-width: 2.5;
   stroke-linecap: round;
   pointer-events: none;
+  /* Keep the X stroke crisp even when the canvas is zoomed */
+  vector-effect: non-scaling-stroke;
 }
 
 .builder-node-layer {
@@ -4767,7 +4905,10 @@ input[type="range"]:active::-webkit-slider-thumb {
   max-height: 260px;
   overflow-y: auto;
   min-width: 260px;
+  max-width: min(340px, calc(100vw - 32px));
   z-index: 30;
+  contain: layout paint;
+  overscroll-behavior: contain;
 }
 
 .icon-picker[hidden] {
