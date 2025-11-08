@@ -127,5 +127,9 @@
     "category_media": "Media",
     "category_utilities": "Utilities",
     "category_games": "Games",
-    "category_other": "Other"
+    "category_other": "Other",
+    "confirm_delete_automation_title": "Delete automation",
+    "confirm_delete_automation_message": "Are you sure you want to delete \"%s\"?",
+    "confirm_delete_confirm": "Delete",
+    "confirm_delete_cancel": "Cancel"
   }

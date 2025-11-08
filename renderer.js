@@ -91,6 +91,108 @@ const AppIconFallbacks = {
     }
 };
 
+const ConfirmationDialog = {
+    overlayEl: null,
+    dialogEl: null,
+    titleEl: null,
+    messageEl: null,
+    confirmButton: null,
+    cancelButton: null,
+    iconEl: null,
+    resolveFn: null,
+    keydownHandler: null,
+
+    init() {
+        if (this.overlayEl) return;
+
+        this.overlayEl = document.createElement('div');
+        this.overlayEl.id = 'confirmation-dialog-overlay';
+        this.overlayEl.innerHTML = `
+            <div class="glass-element confirmation-dialog" role="dialog" aria-modal="true" aria-labelledby="confirmation-title" aria-describedby="confirmation-message">
+                <div class="confirmation-icon" aria-hidden="true"></div>
+                <h2 id="confirmation-title" class="confirmation-title"></h2>
+                <p id="confirmation-message" class="confirmation-message"></p>
+                <div class="confirmation-actions">
+                    <button type="button" class="confirmation-button secondary" data-action="cancel"></button>
+                    <button type="button" class="confirmation-button danger" data-action="confirm"></button>
+                </div>
+            </div>
+        `;
+
+        this.dialogEl = this.overlayEl.querySelector('.confirmation-dialog');
+        this.titleEl = this.overlayEl.querySelector('.confirmation-title');
+        this.messageEl = this.overlayEl.querySelector('.confirmation-message');
+        this.confirmButton = this.overlayEl.querySelector('[data-action="confirm"]');
+        this.cancelButton = this.overlayEl.querySelector('[data-action="cancel"]');
+        this.iconEl = this.overlayEl.querySelector('.confirmation-icon');
+
+        this.overlayEl.addEventListener('click', (event) => {
+            if (event.target === this.overlayEl) {
+                this.hide(false);
+            }
+        });
+
+        this.cancelButton.addEventListener('click', () => this.hide(false));
+        this.confirmButton.addEventListener('click', () => this.hide(true));
+
+        this.keydownHandler = (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                this.hide(false);
+            }
+            if (event.key === 'Enter') {
+                if (document.activeElement === this.cancelButton) {
+                    this.hide(false);
+                } else {
+                    this.hide(true);
+                }
+            }
+        };
+
+        document.body.appendChild(this.overlayEl);
+    },
+
+    async show({ title, message, confirmText, cancelText, icon = 'alert-triangle' }) {
+        if (!this.overlayEl) {
+            this.init();
+        }
+
+        if (window.feather?.icons?.[icon]) {
+            this.iconEl.innerHTML = window.feather.icons[icon].toSvg({ width: 36, height: 36 });
+        } else {
+            this.iconEl.textContent = '!';
+        }
+
+        this.titleEl.textContent = title || '';
+        this.messageEl.textContent = message || '';
+        this.confirmButton.textContent = confirmText || 'OK';
+        this.cancelButton.textContent = cancelText || 'Cancel';
+
+        this.overlayEl.classList.add('visible');
+        document.addEventListener('keydown', this.keydownHandler);
+
+        // Focus confirm button after the dialog becomes visible for accessibility
+        requestAnimationFrame(() => {
+            this.confirmButton.focus();
+        });
+
+        return new Promise((resolve) => {
+            this.resolveFn = resolve;
+        });
+    },
+
+    hide(result) {
+        if (!this.overlayEl) return;
+        this.overlayEl.classList.remove('visible');
+        document.removeEventListener('keydown', this.keydownHandler);
+
+        if (typeof this.resolveFn === 'function') {
+            this.resolveFn(Boolean(result));
+        }
+        this.resolveFn = null;
+    }
+};
+
 // =================================================================================
 // === Система Локализации (Клиентская сторона) ===
 // =================================================================================
@@ -348,12 +450,29 @@ const SettingsModule = {
         }
     },
 
-    removeAutomation: function(index) {
+    removeAutomation: async function(index) {
         const automations = [...(AppState.settings.customAutomations || [])];
-        if (index >= 0 && index < automations.length) {
-            automations.splice(index, 1);
-            ipcRenderer.send('update-setting', 'customAutomations', automations);
+        if (index < 0 || index >= automations.length) {
+            return;
         }
+
+        const targetAutomation = automations[index] || null;
+        const automationName = targetAutomation?.name || LocalizationRenderer.t('settings_auto_name');
+
+        const confirmed = await ConfirmationDialog.show({
+            title: LocalizationRenderer.t('confirm_delete_automation_title'),
+            message: LocalizationRenderer.t('confirm_delete_automation_message', automationName),
+            confirmText: LocalizationRenderer.t('confirm_delete_confirm'),
+            cancelText: LocalizationRenderer.t('confirm_delete_cancel'),
+            icon: 'alert-triangle'
+        });
+
+        if (!confirmed) {
+            return;
+        }
+
+        automations.splice(index, 1);
+        ipcRenderer.send('update-setting', 'customAutomations', automations);
     },
 
     setupShortcutRecorder: function() {
@@ -1958,6 +2077,7 @@ document.addEventListener('DOMContentLoaded', () => {
     PinnedAppsModule.init();
     AuxPanelManager.init();
     CustomSelect.init();
+    ConfirmationDialog.init();
 
     ipcRenderer.on('file-icon-response', (event, { path, dataUrl }) => {
         AppState.iconCache.set(path, dataUrl || null);

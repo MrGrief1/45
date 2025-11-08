@@ -130,5 +130,9 @@
   "category_media": "Медиа",
   "category_utilities": "Утилиты",
   "category_games": "Игры",
-  "category_other": "Другое"
+  "category_other": "Другое",
+  "confirm_delete_automation_title": "Подтверждение удаления",
+  "confirm_delete_automation_message": "Вы действительно хотите удалить «%s»?",
+  "confirm_delete_confirm": "Удалить",
+  "confirm_delete_cancel": "Отмена"
 }
