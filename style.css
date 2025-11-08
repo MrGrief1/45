@@ -4362,10 +4362,11 @@ input[type="range"]:active::-webkit-slider-thumb {
 }
 
 .global-confirm-card {
-  position: absolute !important;
-  left: 50% !important;
-  top: 50% !important;
-  transform: translate(-50%, -50%) !important;
+  position: relative !important;
+  margin: 0 auto !important;
+  left: auto !important;
+  top: auto !important;
+  transform: none !important;
   background: rgba(var(--base-bg-color-rgb), 0.98);
   backdrop-filter: blur(28px);
   border: 1px solid rgba(var(--border-color-rgb, 255, 255, 255), 0.25);
@@ -4396,7 +4397,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   /* Prevent any parent container from affecting size */
   isolation: isolate !important;
   /* Explicitly prevent inheritance from any parent */
-  margin: 0 !important;
+  margin: 0 auto !important;
   /* Reset any CSS variables that might affect size */
   --builder-dialog-width: unset !important;
   --builder-dialog-height: unset !important;
@@ -4423,10 +4424,11 @@ body:not(.builder-open) .global-confirm-card,
   flex-shrink: 0 !important;
   flex-basis: auto !important;
   /* Prevent any inheritance from parent containers */
-  position: absolute !important;
-  left: 50% !important;
-  top: 50% !important;
-  transform: translate(-50%, -50%) !important;
+  position: relative !important;
+  margin: 0 auto !important;
+  left: auto !important;
+  top: auto !important;
+  transform: none !important;
   /* Prevent grid/flex inheritance */
   grid-column: unset !important;
   grid-row: unset !important;
