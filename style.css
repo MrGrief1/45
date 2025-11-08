@@ -4365,7 +4365,8 @@ input[type="range"]:active::-webkit-slider-thumb {
   position: absolute !important;
   left: 50% !important;
   top: 50% !important;
-  transform: translate(-50%, -50%) !important;
+  transform: translate(-50%, -50%) scale(1) !important;
+  transform-origin: 50% 50% !important;
   background: rgba(var(--base-bg-color-rgb), 0.98);
   backdrop-filter: blur(28px);
   border: 1px solid rgba(var(--border-color-rgb, 255, 255, 255), 0.25);
@@ -4376,10 +4377,12 @@ input[type="range"]:active::-webkit-slider-thumb {
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   width: 340px !important;
   min-width: 340px !important;
-  max-width: 340px !important;
+  max-width: min(340px, calc(100vw - 48px)) !important;
   height: 180px !important;
   min-height: 180px !important;
-  max-height: 180px !important;
+  max-height: min(180px, calc(100vh - 48px)) !important;
+  transform: translate(-50%, -50%) scale(1) !important;
+  transform-origin: 50% 50% !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center;
@@ -4413,11 +4416,11 @@ body:not(.builder-open) .global-confirm-card,
 .quick-action-builder-modal .global-confirm-dialog .global-confirm-card,
 .builder-dialog .global-confirm-dialog .global-confirm-card {
   width: 340px !important;
-  max-width: 340px !important;
+  max-width: min(340px, calc(100vw - 48px)) !important;
   min-width: 340px !important;
   height: 180px !important;
   min-height: 180px !important;
-  max-height: 180px !important;
+  max-height: min(180px, calc(100vh - 48px)) !important;
   flex: 0 0 auto !important;
   flex-grow: 0 !important;
   flex-shrink: 0 !important;
@@ -4426,7 +4429,8 @@ body:not(.builder-open) .global-confirm-card,
   position: absolute !important;
   left: 50% !important;
   top: 50% !important;
-  transform: translate(-50%, -50%) !important;
+  transform: translate(-50%, -50%) scale(1) !important;
+  transform-origin: 50% 50% !important;
   /* Prevent grid/flex inheritance */
   grid-column: unset !important;
   grid-row: unset !important;
