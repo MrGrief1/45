@@ -315,7 +315,6 @@
   "subscription_compare_subtitle": "选择最适合你的自动化体验。",
   "license_enter_key": "输入许可证密钥",
   "license_activate_button": "激活",
-  "license_deactivate_button": "停用",
   "subscription_automation_limit_note": "已使用 %s / %s 条自动化",
   "subscription_automation_limit_reached": "免费版最多支持 %s 条自动化。升级到 Pro 以添加更多。",
   "subscription_clipboard_limit_note": "免费版仅保留最近 %s 条记录。",

@@ -320,7 +320,6 @@
   "subscription_compare_subtitle": "Выберите подходящий набор инструментов.",
   "license_enter_key": "Введите лицензионный ключ",
   "license_activate_button": "Активировать",
-  "license_deactivate_button": "Деактивировать",
   "subscription_automation_limit_note": "Использовано %s из %s автоматизаций",
   "subscription_automation_limit_reached": "Бесплатный тариф поддерживает только %s автоматизаций. Перейдите на Pro, чтобы добавить больше.",
   "subscription_clipboard_limit_note": "В бесплатном тарифе сохраняются только последние %s записи.",

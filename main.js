@@ -46,7 +46,7 @@ if (!fs.existsSync(localUserDataPath)) {
 app.setPath('userData', localUserDataPath);
 
 
-const IS_DEV = process.env.NODE_ENV !== 'production';
+const IS_DEV = !app.isPackaged;
 
 const USER_DATA_PATH = app.getPath('userData');
 const CONFIG_PATH = path.join(USER_DATA_PATH, `${APP_NAME}_config.json`);
