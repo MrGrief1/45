@@ -4,12 +4,45 @@
     "description": "A Spotlight clone for Windows",
     "main": "main.js",
     "scripts": {
-        "start": "electron ."
+        "start": "electron .",
+        "build": "electron-builder",
+        "build:win": "electron-builder --win --x64",
+        "build:dir": "electron-builder --dir"
     },
     "author": "AI Assistant",
     "license": "MIT",
     "devDependencies": {
-        "electron": "^38.1.2"
+        "electron": "^38.1.2",
+        "electron-builder": "^24.6.4"
+    },
+    "build": {
+        "appId": "com.flashsearch.desktop",
+        "productName": "FlashSearch",
+        "files": [
+            "**/*",
+            "!dist{,/**}",
+            "!build{,/**}",
+            "!**/*.map"
+        ],
+        "asar": true,
+        "directories": {
+            "output": "dist"
+        },
+        "win": {
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": [
+                        "x64"
+                    ]
+                }
+            ]
+        },
+        "nsis": {
+            "oneClick": true,
+            "perMachine": false,
+            "allowToChangeInstallationDirectory": false
+        }
     },
     "dependencies": {
         "electron-store": "^8.1.0",
