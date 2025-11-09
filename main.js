@@ -3097,11 +3097,6 @@ ipcMain.on('close-subscription-portal', () => {
         SubscriptionPortal.window.close();
     }
 });
-ipcMain.on('deactivate-license', () => {
-    try {
-        settingsManager.updateSetting('licenseKey', ''); // сохранит и оповестит
-    } catch {}
-});
 ipcMain.on('open-auxiliary-window', (event, type) => {
     // This is now handled by the renderer process.
 });
