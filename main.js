@@ -2458,6 +2458,7 @@ const WindowManager = {
             webPreferences: {
                 nodeIntegration: true,
                 contextIsolation: false,
+                devTools: false,
             }
         });
 
@@ -2644,6 +2645,8 @@ if (process.platform === 'win32') {
 app.whenReady().then(() => {
     Logger.info(`${APP_NAME} v${APP_VERSION} is ready.`);
     applicationIsReady = true;
+
+    Menu.setApplicationMenu(null);
 
     // НОВОЕ: Загружаем кэш иконок
     loadIconCache();
@@ -3059,7 +3062,8 @@ const SubscriptionPortal = {
             webPreferences: {
                 nodeIntegration: false,
                 contextIsolation: true,
-                preload: path.join(__dirname, 'subscription-preload.js')
+                preload: path.join(__dirname, 'subscription-preload.js'),
+                devTools: false
             }
         });
 
